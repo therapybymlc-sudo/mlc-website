@@ -26,8 +26,8 @@ import CouplesTherapy from "./pages/CouplesTherapy";
 import AdolescentTherapy from "./pages/AdolescentTherapy";
 import GroupSupportCircles from "./pages/GroupSupportCircles";
 import Supervision from "./pages/Supervision";
-import MindfulnessRelaxation from "./pages/MindfulnessandRelaxation";
-import TrainingPrograms from "./pages/TrainingandPrograms";
+import MindfulnessRelaxation from "./pages/MindfulnessAndRelaxation";
+import TrainingPrograms from "./pages/TrainingAndPrograms";
 
 // 🩺 Therapist Dashboard Pages
 import TherapistLogin from "./pages/login/TherapistLogin";
