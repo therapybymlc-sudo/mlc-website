@@ -1,0 +1,178 @@
+import { ChakraProvider, Flex } from "@chakra-ui/react";
+import { Helmet, HelmetProvider } from "react-helmet-async";
+import theme from "./theme/theme";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+// 🌿 Public Pages
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Services from "./pages/Services";
+import MeetTheTeam from "./pages/MeetTheTeam";
+import BookNow from "./pages/BookNow";
+import ContactUs from "./pages/ContactUs";
+import Careers from "./pages/Careers";
+
+// 🌿 Service Detail Pages
+import IndividualTherapy from "./pages/IndividualTherapy";
+import CouplesTherapy from "./pages/CouplesTherapy";
+import AdolescentTherapy from "./pages/AdolescentTherapy";
+import GroupSupportCircles from "./pages/GroupSupportCircles";
+import Supervision from "./pages/Supervision";
+import MindfulnessRelaxation from "./pages/MindfulnessandRelaxation";
+import TrainingPrograms from "./pages/TrainingandPrograms";
+
+// 🩺 Therapist Dashboard Pages
+import TherapistLogin from "./pages/login/TherapistLogin";
+import TherapistDashboard from "./pages/dashboards/TherapistDashboard";
+import Clients from "./pages/dashboards/Clients";
+import ClientProfile from "./pages/dashboards/ClientProfile";
+import ClientInfo from "./pages/dashboards/ClientInfo";
+import ClientNotes from "./pages/dashboards/ClientNotes";
+import ClientFiles from "./pages/dashboards/ClientFiles";
+import ClientAppointments from "./pages/dashboards/ClientAppointments";
+import AppointmentDetail from "./pages/dashboards/AppointmentDetail";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+/**
+ * 🌸 AppLayout:
+ * Keeps Navbar & Footer consistent across all public pages.
+ * You can later hide Navbar/Footer on dashboard routes by
+ * changing `showNavbar` or checking the pathname.
+ */
+function AppLayout({ children }) {
+  const { pathname } = useLocation();
+  const showNavbar = !pathname.startsWith("/dashboard"); // hides Navbar on dashboard pages if needed
+  const baseOrigin =
+    typeof window !== "undefined" ? window.location.origin : "https://mlchealth.in";
+  const canonicalUrl = `${baseOrigin}${pathname}`;
+  const isPrivateRoute =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/login/therapist");
+
+  return (
+    <Flex direction="column" minH="100vh" bg="rgba(169, 203, 183, 0.12)">
+      <Helmet>
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="MLC Health & Wellness Centre" />
+        <meta
+          property="og:title"
+          content="MLC Health & Wellness Centre | Online Therapy Across India"
+        />
+        <meta
+          property="og:description"
+          content="Structured, ethical, and emotionally attuned online therapy across India. Individual, couples, adolescent therapy and clinician development programs."
+        />
+        <meta property="og:image" content={`${baseOrigin}/hero-bg.jpg`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="MLC Health & Wellness Centre" />
+        <meta
+          name="twitter:description"
+          content="Structured, ethical online therapy across India for individuals, couples, adolescents, and clinicians."
+        />
+        <meta name="twitter:image" content={`${baseOrigin}/hero-bg.jpg`} />
+        {isPrivateRoute && <meta name="robots" content="noindex,nofollow" />}
+      </Helmet>
+      {showNavbar && <Navbar />}
+      <Flex as="main" flex="1" direction="column">
+        {children}
+      </Flex>
+      {showNavbar && <Footer />}
+    </Flex>
+  );
+}
+
+export default function App() {
+  return (
+    <ChakraProvider theme={theme}>
+      <HelmetProvider>
+        <Router>
+          <AppLayout>
+            <Routes>
+              {/* 🌿 Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/meettheteam" element={<MeetTheTeam />} />
+              <Route path="/book" element={<BookNow />} />
+              <Route path="/contactus" element={<ContactUs />} />
+              <Route path="/careers" element={<Careers />} />
+
+              {/* 🌸 Service Detail Pages */}
+              <Route path="/individual-therapy" element={<IndividualTherapy />} />
+              <Route path="/couples-therapy" element={<CouplesTherapy />} />
+              <Route path="/adolescent-therapy" element={<AdolescentTherapy />} />
+              <Route
+                path="/group-support-circles"
+                element={<GroupSupportCircles />}
+              />
+              <Route path="/supervision" element={<Supervision />} />
+              <Route
+                path="/mindfulness-relaxation"
+                element={<MindfulnessRelaxation />}
+              />
+              <Route path="/training-programs" element={<TrainingPrograms />} />
+
+              {/* 🩺 Therapist Authentication & Dashboard */}
+              <Route path="/login/therapist" element={<TherapistLogin />} />
+
+              <Route
+                path="/dashboard/therapist"
+                element={
+                  <ProtectedRoute>
+                    <TherapistDashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/therapist/clients"
+                element={
+                  <ProtectedRoute>
+                    <Clients />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* 🧠 Client Profile Nested Routes */}
+              <Route
+                path="/dashboard/therapist/clients/:id"
+                element={
+                  <ProtectedRoute>
+                    <ClientProfile />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="info" replace />} />
+                <Route path="info" element={<ClientInfo />} />
+                <Route path="notes" element={<ClientNotes />} />
+                <Route path="files" element={<ClientFiles />} />
+                <Route path="appointments" element={<ClientAppointments />} />
+              </Route>
+
+              <Route
+                path="/dashboard/therapist/appointments/:id"
+                element={
+                  <ProtectedRoute>
+                    <AppointmentDetail />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* 🪶 Fallback: anything unknown → Home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AppLayout>
+        </Router>
+      </HelmetProvider>
+    </ChakraProvider>
+  );
+}
