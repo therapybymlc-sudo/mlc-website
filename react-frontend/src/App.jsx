@@ -28,6 +28,7 @@ import GroupSupportCircles from "./pages/GroupSupportCircles";
 import Supervision from "./pages/Supervision";
 import MindfulnessRelaxation from "./pages/MindfulnessAndRelaxation";
 import TrainingPrograms from "./pages/TrainingAndPrograms";
+import Client from "./pages/Client";
 
 // 🩺 Therapist Dashboard Pages
 import TherapistLogin from "./pages/login/TherapistLogin";
@@ -105,6 +106,7 @@ export default function App() {
               <Route path="/book" element={<BookNow />} />
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/careers" element={<Careers />} />
+              <Route path="/client" element={<Client />} />
 
               {/* 🌸 Service Detail Pages */}
               <Route path="/individual-therapy" element={<IndividualTherapy />} />
