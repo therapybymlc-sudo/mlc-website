@@ -29,6 +29,7 @@ import Supervision from "./pages/Supervision";
 import MindfulnessRelaxation from "./pages/MindfulnessAndRelaxation";
 import TrainingPrograms from "./pages/TrainingAndPrograms";
 import Client from "./pages/Client";
+import Therapists from "./pages/Therapists";
 
 // 🩺 Therapist Dashboard Pages
 import TherapistLogin from "./pages/login/TherapistLogin";
@@ -107,6 +108,7 @@ export default function App() {
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/client" element={<Client />} />
+              <Route path="/therapists" element={<Therapists />} />
 
               {/* 🌸 Service Detail Pages */}
               <Route path="/individual-therapy" element={<IndividualTherapy />} />
@@ -121,7 +123,15 @@ export default function App() {
                 path="/mindfulness-relaxation"
                 element={<MindfulnessRelaxation />}
               />
+              <Route
+                path="/mindfulness"
+                element={<MindfulnessRelaxation />}
+              />
               <Route path="/training-programs" element={<TrainingPrograms />} />
+              <Route
+                path="/group-therapy"
+                element={<GroupSupportCircles />}
+              />
 
               {/* 🩺 Therapist Authentication & Dashboard */}
               <Route path="/login/therapist" element={<TherapistLogin />} />
