@@ -7,10 +7,18 @@ import {
   Image,
   SimpleGrid,
   Container,
+  HStack,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  Icon,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import theme from "../theme/theme";
 import { Helmet } from "react-helmet-async";
+import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
 
 const MotionBox = motion(Box);
 
@@ -79,7 +87,8 @@ export default function Home() {
           fontSize="md"
           maxW="lg"
         >
-          Where healing is human, structured, and ethically grounded.
+          Therapy is a space where you can slow down, speak openly, and begin to
+          understand what you're going through.
         </Text>
         <Text
           mt={2}
@@ -88,68 +97,97 @@ export default function Home() {
           fontSize="md"
           maxW="xl"
         >
-          Providing online therapy across India with clearly defined approaches, emotional depth,
-          and uncompromising clinical standards.
+          At MLC Therapy, we offer thoughtful online therapy across India in
+          spaces designed to help you feel heard, supported, and respected.
         </Text>
-        <Button
+        <HStack
           mt={6}
-          size="lg"
-          bg="#56756D"
-          color="white"
-          borderRadius="full"
-          _hover={{ bg: "#C9A960", color: "white" }}
-          as="a"
-          href="/book"
-          fontFamily="'Lato', sans-serif"
-          fontWeight="500"
-          px={8}
-          boxShadow="md"
+          spacing={4}
+          flexWrap="wrap"
+          justify="center"
         >
-          Book a Session
-        </Button>
+          <Button
+            size="lg"
+            bg="#56756D"
+            color="white"
+            borderRadius="full"
+            _hover={{ bg: "#C9A960", color: "white" }}
+            as="a"
+            href="/client"
+            fontFamily="'Lato', sans-serif"
+            fontWeight="500"
+            px={8}
+            boxShadow="md"
+          >
+            I'm Looking for Therapy
+          </Button>
+          <Button
+            size="lg"
+            bg="#C9A960"
+            color="white"
+            borderRadius="full"
+            _hover={{ bg: "#56756D", color: "white" }}
+            as="a"
+            href="/therapists"
+            fontFamily="'Lato', sans-serif"
+            fontWeight="500"
+            px={8}
+            boxShadow="md"
+          >
+            I'm a Therapist
+          </Button>
+        </HStack>
       </MotionBox>
 
-      {/* VALUE SECTION */}
+      {/* CLIENT REASSURANCE BUBBLES */}
       <Box bg="white" py={16} px={6}>
         <Container maxW="6xl">
-          <Heading
-            fontFamily="'Playfair Display', serif"
-            color="#2E2E2E"
-            mb={10}
-            fontSize={{ base: "2xl", md: "3xl" }}
-            fontWeight="600"
-            textAlign="center"
-          >
-            What Makes MLC Different
-          </Heading>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            <Box bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-              <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
-                Clarity &amp; Structure
-              </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                We do not “pull techniques out of a hat.” Every client’s work is guided by a
-                defined therapeutic approach and clear case conceptualisation.
-              </Text>
-            </Box>
-            <Box bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-              <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
-                Emotional Depth &amp; Safety
-              </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                Healing requires attuned presence. We create spaces where you feel seen, not
-                managed.
-              </Text>
-            </Box>
-            <Box bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-              <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
-                High Clinical Standards
-              </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                Our work is grounded in ethical frameworks, supervision, and structured
-                documentation aligned with international standards.
-              </Text>
-            </Box>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+            {[
+              {
+                icon: FiUsers,
+                title: "A Space Where You Can Speak Freely",
+                body: "Therapy here is a place where you can talk about what’s on your mind without feeling judged.",
+              },
+              {
+                icon: FiCompass,
+                title: "Thoughtful Guidance",
+                body: "Your therapist works with you to understand what you're experiencing and how to move forward.",
+              },
+              {
+                icon: FiCheckCircle,
+                title: "Finding the Right Fit",
+                body: "Your first few sessions help you decide whether the therapist feels like the right fit for you. You are always free to choose what feels best for you.",
+              },
+              {
+                icon: FiFeather,
+                title: "Move at Your Own Pace",
+                body: "There is no pressure to rush therapy. The process always respects your comfort and readiness.",
+              },
+            ].map((item) => (
+              <Box
+                key={item.title}
+                bg="#F9F9F9"
+                borderRadius="2xl"
+                p={6}
+                boxShadow="md"
+                border="1px solid"
+                borderColor="blackAlpha.100"
+              >
+                <Icon as={item.icon} boxSize={7} color="#56756D" mb={3} />
+                <Heading
+                  size="sm"
+                  mb={2}
+                  fontFamily="'Playfair Display', serif"
+                  color="#2E2E2E"
+                >
+                  {item.title}
+                </Heading>
+                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" fontSize="sm">
+                  {item.body}
+                </Text>
+              </Box>
+            ))}
           </SimpleGrid>
         </Container>
       </Box>
@@ -177,9 +215,10 @@ export default function Home() {
               lineHeight="1.8"
               fontSize="lg"
             >
-              At MLC Therapy, we build spaces grounded in empathy and
-              evidence-based care, where clients feel truly seen and therapists
-              are supported to bring their best selves to the room.
+              At MLC Therapy, we believe therapy works best when it combines
+              empathy with thoughtful psychological care. Our goal is simple: to
+              create spaces where you feel comfortable exploring what you're
+              going through while working toward meaningful personal change.
             </Text>
             <Button
               mt={6}
@@ -223,25 +262,25 @@ export default function Home() {
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
           {[
             {
-              title: "Counseling & Therapy Services",
-              desc: "Evidence-based therapy that helps you heal, grow, and build resilience.",
+              title: "Counseling & Therapy",
+              desc: "One-on-one therapy sessions designed to help you navigate emotional challenges, relationships, anxiety, life transitions, and personal growth.",
               img: "/service1_new.jpg",
-              link: "/book",
-              btn: "Book a Session",
+              link: "/services",
+              btn: "Learn More",
             },
             {
               title: "Workshops & Groups",
-              desc: "Interactive circles and workshops designed for connection and insight.",
+              desc: "Small group workshops and circles focused on emotional awareness, connection, and shared learning.",
               img: "/service2_new.jpg",
               link: "/services",
-              btn: "Join a Group",
+              btn: "Explore",
             },
             {
               title: "Internships & Supervision",
-              desc: "A therapist-first learning environment that nurtures ethical practice.",
+              desc: "Professional development spaces for therapists and psychology trainees who want to grow in ethical and reflective practice.",
               img: "/service3_new.jpg",
-              link: "/careers",
-              btn: "Start Learning",
+              link: "/supervision",
+              btn: "View Programs",
             },
           ].map((s) => (
             <Box
@@ -299,6 +338,63 @@ export default function Home() {
           MLC Therapy provides online counselling and psychotherapy services across Mumbai, Delhi,
           Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.
         </Text>
+      </Box>
+
+      {/* FAQ SECTION */}
+      <Box bg="white" py={20} px={6}>
+        <Container maxW="6xl">
+          <Heading
+            fontFamily="'Playfair Display', serif"
+            color="#2E2E2E"
+            mb={8}
+            textAlign="center"
+            fontWeight="600"
+          >
+            Common Questions About Starting Therapy
+          </Heading>
+          <Accordion allowToggle maxW="4xl" mx="auto">
+            {[
+              {
+                q: "How do I know if therapy is right for me?",
+                a: "Many people come to therapy simply because something in life feels difficult, confusing, or overwhelming. You don’t need to be in crisis to benefit from therapy. If something has been weighing on your mind, therapy can provide a space to explore it.",
+              },
+              {
+                q: "What happens in the first session?",
+                a: "The first session is a conversation where you can share what has been going on and what you hope might change. Your therapist will also help explain how therapy works and answer any questions you may have.",
+              },
+              {
+                q: "What if I’m not sure the therapist is the right fit?",
+                a: "Finding the right therapist matters. The first few sessions allow you to see whether you feel comfortable and understood. If it does not feel like the right fit, you are always free to explore other options.",
+              },
+              {
+                q: "Do I need to prepare before my session?",
+                a: "No preparation is necessary. You can simply come as you are and talk about what has been on your mind.",
+              },
+              {
+                q: "Is therapy confidential?",
+                a: "Yes. Therapy sessions are private and confidential except in rare situations required by law related to safety.",
+              },
+            ].map((item) => (
+              <AccordionItem key={item.q} border="none" mb={4} bg="#F9F9F9" borderRadius="lg">
+                <AccordionButton _expanded={{ bg: "#E8ECE8" }}>
+                  <Box
+                    flex="1"
+                    textAlign="left"
+                    fontFamily="'Lato', sans-serif"
+                    color="#2E2E2E"
+                    fontWeight="medium"
+                  >
+                    {item.q}
+                  </Box>
+                  <AccordionIcon />
+                </AccordionButton>
+                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif" color="#555">
+                  {item.a}
+                </AccordionPanel>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </Container>
       </Box>
     </>
   );
