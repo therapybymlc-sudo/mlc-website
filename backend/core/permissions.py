@@ -2,12 +2,8 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 def get_roles_from_request(request):
     """
-    Your KeycloakAuthentication returns (decoded_token, None) as request.user.
-    decoded_token looks like:
-      {
-        "realm_access": {"roles": ["admin", "therapist", ...]},
-        ...
-      }
+    Legacy role helper (unused). If you re-enable role-based auth,
+    populate roles from your auth provider (e.g., Clerk custom claims).
     """
     decoded = getattr(request, "user", None)
     if not isinstance(decoded, dict):

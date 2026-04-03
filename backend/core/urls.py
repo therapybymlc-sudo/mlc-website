@@ -42,12 +42,12 @@ router.register(r"session-links", TherapistSessionLinkViewSet, basename="session
 # ----------------------------
 @api_view(["GET"])
 def keycloak_test(request):
-    return Response({"message": "Keycloak test route working."})
+    return Response({"message": "Clerk test route working."})
 
 @api_view(["GET"])
 def keycloak_login(request):
-    # Real login is handled by Keycloak on the frontend; this is just a stub.
-    return Response({"message": "Login handled by Keycloak."})
+    # Real login is handled by Clerk on the frontend; this is just a stub.
+    return Response({"message": "Login handled by Clerk."})
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])

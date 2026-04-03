@@ -1,10 +1,8 @@
-import { Box, Button, Heading, VStack, Text } from "@chakra-ui/react";
+import { Box, Heading, VStack, Text } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
-import { useAuth } from "../../context/AuthContext";
+import { SignIn } from "@clerk/clerk-react";
 
 export default function TherapistLogin() {
-  const { login } = useAuth();
-
   return (
     <Box textAlign="center" mt={20}>
       <Helmet>
@@ -20,15 +18,7 @@ export default function TherapistLogin() {
       <VStack spacing={6}>
         <Heading>Therapist Login</Heading>
         <Text>Secure access for therapists to manage clients and notes</Text>
-        <Button
-          bg="#A9CBB7"
-          color="black"
-          borderRadius="full"
-          _hover={{ bg: "#C9A960", color: "white" }}
-          onClick={login}
-        >
-          Login with Keycloak
-        </Button>
+        <SignIn routing="path" path="/login/therapist" />
       </VStack>
     </Box>
   );

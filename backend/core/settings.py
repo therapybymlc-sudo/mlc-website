@@ -107,24 +107,21 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "react-frontend", "dist", "assets")]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ==========================
-# Keycloak Configuration
+# Clerk Configuration
 # ==========================
-KEYCLOAK_SERVER_URL = os.getenv("KEYCLOAK_SERVER_URL", "http://localhost:8080/")
-KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "mlc-realm")
-KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "mlc-frontend")
-KEYCLOAK_CLIENT_SECRET_KEY = os.getenv("KEYCLOAK_CLIENT_SECRET_KEY", "")
-KEYCLOAK_VERIFY = os.getenv("KEYCLOAK_VERIFY", "False").lower() in ("true", "1")
+CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL", "")
+CLERK_ISSUER = os.getenv("CLERK_ISSUER", "")
 
 # ==========================
 # Django REST Framework
 # ==========================
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "auth.keycloak_auth.KeycloakAuthentication",
+        "auth.clerk_auth.ClerkAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",  # ✅ requires valid Keycloak token
+        "rest_framework.permissions.IsAuthenticated",  # ✅ requires valid Clerk token
     ],
 }
 # ==========================

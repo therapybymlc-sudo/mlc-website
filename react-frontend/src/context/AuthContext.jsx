@@ -1,111 +1,82 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo } from "react";
+import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/clerk-react";
 import api from "../api";
-import Keycloak from "keycloak-js";
-
-// --- Create ONE Keycloak instance at module scope (singleton)
-let keycloakInstance = new Keycloak({
-  url: "http://localhost:8080/",
-  realm: "mlc-realm",
-  clientId: "mlc-frontend",
-});
-
-// A shared promise prevents calling init twice (StrictMode-safe)
-let initPromise = null;
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { isLoaded, isSignedIn, getToken } = useClerkAuth();
+  const { user } = useUser();
+  const clerk = useClerk();
+  const tokenTemplate = import.meta.env.VITE_CLERK_JWT_TEMPLATE;
 
-  // ---- INIT (once)
+  const roles = useMemo(() => {
+    const metaRoles = user?.publicMetadata?.roles;
+    if (Array.isArray(metaRoles)) return metaRoles;
+    if (user?.publicMetadata?.role) return [user.publicMetadata.role];
+    return [];
+  }, [user]);
+
+  const isAdmin = roles.includes("admin");
+
   useEffect(() => {
-    if (!initPromise) {
-      initPromise = keycloakInstance.init({
-        onLoad: "check-sso", // don't force login initially
-        pkceMethod: "S256",
-        checkLoginIframe: false,
-        silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
-      });
-    }
-
-    initPromise
-      .then(async (authenticated) => {
-        setIsAuthenticated(authenticated);
-
-        if (authenticated) {
-          try {
-            if (keycloakInstance.token) {
-              localStorage.setItem("access_token", keycloakInstance.token);
-              api.defaults.headers.Authorization = `Bearer ${keycloakInstance.token}`;
-            }
-            const profile = await keycloakInstance.loadUserProfile();
-            setUser(profile);
-          } catch (e) {
-            console.error("Failed to load user profile", e);
-          }
-        }
-
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("🔴 Keycloak init failed:", err);
-        setLoading(false);
-      });
-
-    // Optional: background token refresh
-    const refresh = setInterval(async () => {
+    let isMounted = true;
+    const syncToken = async () => {
       try {
-        if (keycloakInstance && keycloakInstance.token) {
-          const refreshed = await keycloakInstance.updateToken(60); // refresh if < 60s remaining
-          if (refreshed && keycloakInstance.token) {
-            localStorage.setItem("access_token", keycloakInstance.token);
-            api.defaults.headers.Authorization = `Bearer ${keycloakInstance.token}`;
+        if (!isLoaded) return;
+        if (!isSignedIn) {
+          if (isMounted) {
+            localStorage.removeItem("access_token");
+            delete api.defaults.headers.Authorization;
+          }
+          return;
+        }
+        const token = await getToken(
+          tokenTemplate ? { template: tokenTemplate } : undefined
+        );
+        if (isMounted) {
+          if (token) {
+            localStorage.setItem("access_token", token);
+            api.defaults.headers.Authorization = `Bearer ${token}`;
+          } else {
+            localStorage.removeItem("access_token");
+            delete api.defaults.headers.Authorization;
           }
         }
       } catch (e) {
-        console.warn("Token refresh failed", e);
+        console.warn("Clerk token sync failed", e);
       }
-    }, 30_000);
+    };
+    syncToken();
+    return () => {
+      isMounted = false;
+    };
+  }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
 
-    return () => clearInterval(refresh);
-  }, []);
-
-  // --- Role extraction helper
-  const getUserRoles = () => {
-    if (!keycloakInstance?.tokenParsed?.realm_access) return [];
-    return keycloakInstance.tokenParsed.realm_access.roles || [];
-  };
-
-  const roles = getUserRoles();
-  const isAdmin = roles.includes("admin"); // your Keycloak admin role
-
-  // ---- Auth API we expose to the app
   const login = () =>
-    keycloakInstance.login({
-      redirectUri: `${window.location.origin}/dashboard/therapist`,
+    clerk.redirectToSignIn({
+      redirectUrl: `${window.location.origin}/dashboard/therapist`,
     });
 
   const logout = () =>
-    keycloakInstance.logout({
-      redirectUri: window.location.origin,
+    clerk.signOut({
+      redirectUrl: window.location.origin,
     });
 
-  const token = keycloakInstance.token ?? null;
+  const token = localStorage.getItem("access_token");
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated,
+        isAuthenticated: !!isSignedIn,
         user,
-        loading,
+        loading: !isLoaded,
         login,
         logout,
         token,
         roles,
         isAdmin,
-        keycloak: keycloakInstance,
+        clerk,
       }}
     >
       {children}

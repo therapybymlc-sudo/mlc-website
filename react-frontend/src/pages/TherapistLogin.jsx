@@ -1,5 +1,6 @@
-import { Box, Heading, Text, Button } from "@chakra-ui/react";
+import { Box, Heading, Text, VStack } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
+import { SignIn } from "@clerk/clerk-react";
 
 function TherapistLogin() {
   return (
@@ -14,12 +15,13 @@ function TherapistLogin() {
               <meta property="og:image" content="https://mlchealth.in/logo_tra.png" />
         <meta name="twitter:image" content="https://mlchealth.in/logo_tra.png" />
       </Helmet>
-      <Heading mb={4}>Therapist Portal</Heading>
-      <Text fontSize="lg" color="gray.600" mb={6}>
-        Private login area for MLC Therapists.  
-        Once integrated, this will connect to your Keycloak authentication.
-      </Text>
-      <Button colorScheme="blue" size="lg">Login</Button>
+      <VStack spacing={6}>
+        <Heading mb={2}>Therapist Portal</Heading>
+        <Text fontSize="lg" color="gray.600" mb={2}>
+          Private login area for MLC Therapists.
+        </Text>
+        <SignIn routing="path" path="/login/therapist" />
+      </VStack>
     </Box>
   );
 }
