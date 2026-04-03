@@ -19,8 +19,18 @@ import {
   DrawerHeader,
   useDisclosure,
   Image,
+  SimpleGrid,
+  Textarea,
+  Tag,
+  TagLabel,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
   CalendarIcon,
@@ -45,7 +55,146 @@ export default function TherapistDashboard() {
   const [preselectClientId, setPreselectClientId] = useState("");
   const [sessionLinks, setSessionLinks] = useState([]);
   const [newSessionLink, setNewSessionLink] = useState({ name: "", url: "", is_default: false });
+  const [showCareCheckin, setShowCareCheckin] = useState(false);
+  const [careStep, setCareStep] = useState(0);
+  const [careCheckin, setCareCheckin] = useState(() => {
+    const saved = localStorage.getItem("mlc_therapist_checkin_data");
+    if (!saved) return { mood: "", energy: "", gratitude: "", note: "" };
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return { mood: "", energy: "", gratitude: "", note: "" };
+    }
+  });
+  const [careNote, setCareNote] = useState(
+    localStorage.getItem("mlc_therapist_care_note") || ""
+  );
+  const [careJournal, setCareJournal] = useState("");
   const location = useLocation();
+
+  const moodOptions = useMemo(
+    () => [
+      { label: "Grounded", color: "green" },
+      { label: "Open", color: "teal" },
+      { label: "Neutral", color: "gray" },
+      { label: "Tired", color: "orange" },
+      { label: "Overloaded", color: "red" },
+    ],
+    []
+  );
+
+  const [therapistJournalEntries, setTherapistJournalEntries] = useState(() => {
+    const raw = localStorage.getItem("mlc_therapist_journal_entries");
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  });
+
+  const careSteps = [
+    {
+      title: "A gentle check‑in for you",
+      body: (
+        <VStack align="stretch" spacing={3}>
+          <Text color="gray.600">How are you arriving today?</Text>
+          <HStack spacing={2} flexWrap="wrap">
+            {moodOptions.map((m) => (
+              <Button
+                key={m.label}
+                size="sm"
+                variant={careCheckin.mood === m.label ? "solid" : "outline"}
+                colorScheme={m.color}
+                onClick={() => setCareCheckin((p) => ({ ...p, mood: m.label }))}
+              >
+                {m.label}
+              </Button>
+            ))}
+          </HStack>
+        </VStack>
+      ),
+    },
+    {
+      title: "Energy check",
+      body: (
+        <VStack align="stretch" spacing={2}>
+          <Text color="gray.600">What’s your energy level?</Text>
+          <HStack spacing={2} flexWrap="wrap">
+            {["Low", "Medium", "High"].map((level) => (
+              <Button
+                key={level}
+                size="sm"
+                variant={careCheckin.energy === level ? "solid" : "outline"}
+                colorScheme="purple"
+                onClick={() => setCareCheckin((p) => ({ ...p, energy: level }))}
+              >
+                {level}
+              </Button>
+            ))}
+          </HStack>
+        </VStack>
+      ),
+    },
+    {
+      title: "One thing you’re grateful for",
+      body: (
+        <VStack align="stretch" spacing={3}>
+          <Text color="gray.600">
+            It can feel hard sometimes, but gratitude often appears when we look just
+            beyond the obvious.
+          </Text>
+          <Textarea
+            placeholder="A small gratitude from today..."
+            value={careCheckin.gratitude}
+            onChange={(e) =>
+              setCareCheckin((p) => ({ ...p, gratitude: e.target.value }))
+            }
+          />
+        </VStack>
+      ),
+    },
+    {
+      title: "Anything you want to hold gently?",
+      body: (
+        <Textarea
+          placeholder="Optional note for your own care..."
+          value={careCheckin.note}
+          onChange={(e) => setCareCheckin((p) => ({ ...p, note: e.target.value }))}
+        />
+      ),
+    },
+  ];
+
+  const saveCareCheckin = () => {
+    localStorage.setItem("mlc_therapist_checkin_data", JSON.stringify(careCheckin));
+    localStorage.setItem(
+      "mlc_therapist_checkin_last",
+      new Date().toISOString().slice(0, 10)
+    );
+    setShowCareCheckin(false);
+    setCareStep(0);
+    toast({ title: "Check‑in saved", status: "success" });
+  };
+
+  const saveCareNote = () => {
+    localStorage.setItem("mlc_therapist_care_note", careNote);
+    toast({ title: "Saved", status: "success" });
+  };
+
+  const saveCareJournal = () => {
+    if (!careJournal.trim()) return;
+    const entry = {
+      id: Date.now(),
+      text: careJournal.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [entry, ...therapistJournalEntries].slice(0, 30);
+    localStorage.setItem("mlc_therapist_journal_entries", JSON.stringify(updated));
+    setTherapistJournalEntries(updated);
+    setCareJournal("");
+    toast({ title: "Saved to your private journal", status: "success" });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -62,6 +211,87 @@ export default function TherapistDashboard() {
             onPreselectConsumed={() => setPreselectClientId("")}
           />
         );
+      case "care":
+        return (
+          <VStack align="start" spacing={6}>
+            <Heading fontFamily="Playfair Display">Therapist Care</Heading>
+            <Text color="gray.600" maxW="2xl">
+              A gentle space just for you — check in, reflect, and nurture your own
+              steadiness.
+            </Text>
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="100%">
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <HStack justify="space-between" mb={3}>
+                  <Heading size="md">Daily check‑in</Heading>
+                  <Tag colorScheme="purple" borderRadius="full">
+                    <TagLabel>{careCheckin.mood || "Not set"}</TagLabel>
+                  </Tag>
+                </HStack>
+                <Text color="gray.500" mb={4}>
+                  Start your day with a small moment of care.
+                </Text>
+                <Button onClick={() => setShowCareCheckin(true)} colorScheme="teal">
+                  Open check‑in
+                </Button>
+              </Box>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={3}>
+                  Notes to self
+                </Heading>
+                <Textarea
+                  placeholder="A gentle reminder for yourself today..."
+                  value={careNote}
+                  onChange={(e) => setCareNote(e.target.value)}
+                />
+                <Button mt={3} onClick={saveCareNote} colorScheme="purple">
+                  Save note
+                </Button>
+              </Box>
+            </SimpleGrid>
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="100%">
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={3}>
+                  Private journal
+                </Heading>
+                <Textarea
+                  placeholder="Reflections for you only..."
+                  value={careJournal}
+                  onChange={(e) => setCareJournal(e.target.value)}
+                  minH="140px"
+                  mb={3}
+                />
+                <Button onClick={saveCareJournal} colorScheme="teal">
+                  Save entry
+                </Button>
+                <Divider my={4} />
+                <VStack align="start" spacing={2}>
+                  {therapistJournalEntries.length === 0 ? (
+                    <Text color="gray.500">No entries yet.</Text>
+                  ) : (
+                    therapistJournalEntries.slice(0, 3).map((entry) => (
+                      <Box key={entry.id} p={3} bg="#F2F8F5" borderRadius="xl" w="100%">
+                        <Text fontSize="sm" color="gray.500">
+                          {new Date(entry.createdAt).toLocaleDateString()}
+                        </Text>
+                        <Text noOfLines={3}>{entry.text}</Text>
+                      </Box>
+                    ))
+                  )}
+                </VStack>
+              </Box>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={3}>
+                  Reflection prompts
+                </Heading>
+                <VStack align="start" spacing={3}>
+                  <Text>What felt steady in your work today?</Text>
+                  <Text>Where did you feel most present?</Text>
+                  <Text>What support do you need this week?</Text>
+                </VStack>
+              </Box>
+            </SimpleGrid>
+          </VStack>
+        );
       case "noteTemplates": // ✅ new tab for Note Templates
         return <NoteTemplates />;
       default:
@@ -74,6 +304,36 @@ export default function TherapistDashboard() {
               Manage your clients, write notes, track appointments, and organize files —
               all in one seamless space.
             </Text>
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="100%">
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <HStack justify="space-between" mb={3}>
+                  <Heading size="md">Today’s therapist check‑in</Heading>
+                  <Tag colorScheme="purple" borderRadius="full">
+                    <TagLabel>{careCheckin.mood || "Not set"}</TagLabel>
+                  </Tag>
+                </HStack>
+                <Text color="gray.500" mb={4}>
+                  A gentle pause before your day begins.
+                </Text>
+                <Button onClick={() => setShowCareCheckin(true)} colorScheme="teal">
+                  Start check‑in
+                </Button>
+              </Box>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={3}>
+                  Care note to self
+                </Heading>
+                <Textarea
+                  placeholder="A small reminder for yourself..."
+                  value={careNote}
+                  onChange={(e) => setCareNote(e.target.value)}
+                  minH="120px"
+                />
+                <Button mt={3} onClick={saveCareNote} colorScheme="purple">
+                  Save note
+                </Button>
+              </Box>
+            </SimpleGrid>
             <Box w="100%" bg="white" p={4} borderRadius="lg" border="1px solid #E2E8F0">
               <Heading size="sm" mb={3}>
                 My current session links
@@ -211,6 +471,14 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const last = localStorage.getItem("mlc_therapist_checkin_last");
+    if (last !== today) {
+      setShowCareCheckin(true);
+    }
+  }, []);
+
+  useEffect(() => {
     (async () => {
       try {
         const res = await apiGet("session-links/");
@@ -282,6 +550,15 @@ export default function TherapistDashboard() {
           onSidebarClose();
         }}
         icon={<CalendarIcon />}
+      />
+      <SidebarButton
+        label="Therapist Care"
+        active={activeTab === "care"}
+        onClick={() => {
+          setActiveTab("care");
+          onSidebarClose();
+        }}
+        icon={<ViewIcon />}
       />
 
       {/* ✅ Admin-only Note Templates tab */}
@@ -372,6 +649,32 @@ export default function TherapistDashboard() {
       <Box flex="1" p={{ base: 4, md: 10 }} overflowY="auto" bg="#F9F9F9">
         {renderContent()}
       </Box>
+
+      <Modal isOpen={showCareCheckin} onClose={() => setShowCareCheckin(false)} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{careSteps[careStep]?.title}</ModalHeader>
+          <ModalBody>{careSteps[careStep]?.body}</ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              {careStep > 0 && (
+                <Button variant="ghost" onClick={() => setCareStep((s) => s - 1)}>
+                  Back
+                </Button>
+              )}
+              {careStep < careSteps.length - 1 ? (
+                <Button colorScheme="teal" onClick={() => setCareStep((s) => s + 1)}>
+                  Next
+                </Button>
+              ) : (
+                <Button colorScheme="purple" onClick={saveCareCheckin}>
+                  Save check‑in
+                </Button>
+              )}
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 }
