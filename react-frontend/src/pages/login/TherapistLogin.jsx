@@ -18,7 +18,7 @@ export default function TherapistLogin() {
       <VStack spacing={6}>
         <Heading>Therapist Login</Heading>
         <Text>Secure access for therapists to manage clients and notes</Text>
-        <SignIn routing="path" path="/login/therapist" />
+        <SignIn routing="path" path="/login/therapist" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />
       </VStack>
     </Box>
   );

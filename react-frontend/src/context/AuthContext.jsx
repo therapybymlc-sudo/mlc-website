@@ -18,6 +18,8 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const isAdmin = roles.includes("admin");
+  const isTherapist = isAdmin || roles.includes("therapist");
+  const isClient = !isTherapist;
 
   useEffect(() => {
     let isMounted = true;
@@ -55,7 +57,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = () =>
     clerk.redirectToSignIn({
-      redirectUrl: `${window.location.origin}/dashboard/therapist`,
+      redirectUrl: `${window.location.origin}/dashboard`,
     });
 
   const logout = () =>
@@ -76,6 +78,8 @@ export const AuthProvider = ({ children }) => {
         token,
         roles,
         isAdmin,
+        isTherapist,
+        isClient,
         clerk,
       }}
     >

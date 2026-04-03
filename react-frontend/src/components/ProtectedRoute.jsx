@@ -3,8 +3,8 @@ import { Navigate } from "react-router-dom";
 import { Spinner, Center } from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children }) {
-  const { loading, isAuthenticated } = useAuth();
+export default function ProtectedRoute({ children, allowRoles }) {
+  const { loading, isAuthenticated, roles } = useAuth();
 
   if (loading) {
     return (
@@ -16,6 +16,13 @@ export default function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login/therapist" replace />;
+  }
+
+  if (Array.isArray(allowRoles) && allowRoles.length > 0) {
+    const hasRole = roles?.some((role) => allowRoles.includes(role));
+    if (!hasRole) {
+      return <Navigate to="/dashboard/client" replace />;
+    }
   }
 
   return children;

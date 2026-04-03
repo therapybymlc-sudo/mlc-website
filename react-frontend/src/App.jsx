@@ -42,6 +42,8 @@ import ClientFiles from "./pages/dashboards/ClientFiles";
 import ClientAppointments from "./pages/dashboards/ClientAppointments";
 import AppointmentDetail from "./pages/dashboards/AppointmentDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardRouter from "./pages/dashboards/DashboardRouter";
+import ClientDashboard from "./pages/dashboards/ClientDashboard";
 
 /**
  * 🌸 AppLayout:
@@ -135,11 +137,12 @@ export default function App() {
 
               {/* 🩺 Therapist Authentication & Dashboard */}
               <Route path="/login/therapist" element={<TherapistLogin />} />
+              <Route path="/dashboard" element={<DashboardRouter />} />
 
               <Route
                 path="/dashboard/therapist"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowRoles={["therapist", "admin"]}>
                     <TherapistDashboard />
                   </ProtectedRoute>
                 }
@@ -148,7 +151,7 @@ export default function App() {
               <Route
                 path="/dashboard/therapist/clients"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowRoles={["therapist", "admin"]}>
                     <Clients />
                   </ProtectedRoute>
                 }
@@ -158,7 +161,7 @@ export default function App() {
               <Route
                 path="/dashboard/therapist/clients/:id"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowRoles={["therapist", "admin"]}>
                     <ClientProfile />
                   </ProtectedRoute>
                 }
@@ -173,8 +176,17 @@ export default function App() {
               <Route
                 path="/dashboard/therapist/appointments/:id"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowRoles={["therapist", "admin"]}>
                     <AppointmentDetail />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard/client"
+                element={
+                  <ProtectedRoute>
+                    <ClientDashboard />
                   </ProtectedRoute>
                 }
               />

@@ -20,7 +20,7 @@ function TherapistLogin() {
         <Text fontSize="lg" color="gray.600" mb={2}>
           Private login area for MLC Therapists.
         </Text>
-        <SignIn routing="path" path="/login/therapist" />
+        <SignIn routing="path" path="/login/therapist" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />
       </VStack>
     </Box>
   );
