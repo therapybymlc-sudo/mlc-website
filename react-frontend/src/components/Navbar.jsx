@@ -19,6 +19,7 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
+  { label: "For Therapists", href: "/therapists" },
   { label: "Meet the Team", href: "/meettheteam" },
   { label: "Book Now", href: "/book" },
   { label: "Contact Us", href: "/contactus" },
