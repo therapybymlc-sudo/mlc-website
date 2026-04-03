@@ -80,7 +80,7 @@ const prompts = [
 
 export default function ClientDashboard() {
   const toast = useToast();
-  const { logout } = useAuth();
+  const { logout, isPremium } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [activeSection, setActiveSection] = useState("overview");
   const [journalText, setJournalText] = useState("");
@@ -327,6 +327,7 @@ export default function ClientDashboard() {
     { id: "materials", label: "Therapist Materials" },
     { id: "sessions", label: "My Sessions" },
     { id: "prompts", label: "Reflection Prompts" },
+    { id: "premium", label: "Premium Studio" },
     { id: "profile", label: "My Profile" },
   ];
 
@@ -538,6 +539,36 @@ export default function ClientDashboard() {
               </VStack>
             </Box>
           </SimpleGrid>
+
+          <Box
+            w="100%"
+            p={{ base: 6, md: 8 }}
+            borderRadius="2xl"
+            bg="linear-gradient(135deg, #161222, #2B223B)"
+            color="white"
+            boxShadow="2xl"
+          >
+            <HStack justify="space-between" flexWrap="wrap" spacing={4}>
+              <Box>
+                <Tag bg="#C9A960" color="black" borderRadius="full" mb={3}>
+                  Premium Studio
+                </Tag>
+                <Heading size="md">A calm, beautiful space that grows with you</Heading>
+                <Text color="whiteAlpha.700" mt={2} maxW="xl">
+                  Cloud‑synced journaling, daily rituals, and a private wellbeing
+                  library — crafted to feel lush, simple, and supportive.
+                </Text>
+              </Box>
+              <Button
+                onClick={() => setActiveSection("premium")}
+                bg="#C9A960"
+                color="black"
+                _hover={{ bg: "#E3C77B" }}
+              >
+                {isPremium ? "Open Premium" : "Explore Premium"}
+              </Button>
+            </HStack>
+          </Box>
         </VStack>
       );
     }
@@ -721,6 +752,117 @@ export default function ClientDashboard() {
             <Text><strong>Pronouns:</strong> {profile?.pronouns || "—"}</Text>
             <Text><strong>Timezone:</strong> {profile?.timezone || "—"}</Text>
             <Text><strong>Avatar URL:</strong> {profile?.avatarUrl || "—"}</Text>
+          </VStack>
+        </Box>
+      );
+    }
+
+    if (activeSection === "premium") {
+      return (
+        <Box
+          bg="linear-gradient(135deg, #130F1B 0%, #241C33 50%, #3A2C4A 100%)"
+          color="white"
+          p={{ base: 6, md: 10 }}
+          borderRadius="3xl"
+          boxShadow="2xl"
+        >
+          <VStack align="start" spacing={8}>
+            <HStack justify="space-between" w="100%" flexWrap="wrap">
+              <Box>
+                <Tag bg="#C9A960" color="black" borderRadius="full" mb={3}>
+                  Premium Studio
+                </Tag>
+                <Heading fontFamily="Playfair Display" size="xl">
+                  The Lux Studio
+                </Heading>
+                <Text color="whiteAlpha.700" mt={3} maxW="2xl">
+                  A refined, cloud‑synced experience for clients who want deeper
+                  support, beautiful rituals, and continuity across devices.
+                </Text>
+              </Box>
+              <Box textAlign={{ base: "left", md: "right" }}>
+                {isPremium ? (
+                  <Button bg="white" color="black">
+                    Premium Preview Enabled
+                  </Button>
+                ) : (
+                  <Button bg="#C9A960" color="black">
+                    Upgrade (coming soon)
+                  </Button>
+                )}
+                <Text fontSize="sm" color="whiteAlpha.600" mt={2}>
+                  Admin preview is enabled for you.
+                </Text>
+              </Box>
+            </HStack>
+
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} w="100%">
+              {[
+                { label: "Cloud Journal", value: "Sync across devices" },
+                { label: "Daily Rituals", value: "Morning + evening flow" },
+                { label: "Wellbeing Library", value: "Breathwork + meditations" },
+              ].map((stat) => (
+                <Box
+                  key={stat.label}
+                  bg="rgba(255,255,255,0.08)"
+                  p={4}
+                  borderRadius="2xl"
+                  border="1px solid rgba(255,255,255,0.12)"
+                >
+                  <Text fontSize="sm" color="whiteAlpha.600">
+                    {stat.label}
+                  </Text>
+                  <Text fontWeight="semibold">{stat.value}</Text>
+                </Box>
+              ))}
+            </SimpleGrid>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+                <Heading size="md" mb={2}>
+                  Cloud Journal
+                </Heading>
+                <Text color="whiteAlpha.700">
+                  Keep your journal encrypted, searchable, and available everywhere.
+                </Text>
+                <Button mt={4} variant="outline" colorScheme="yellow">
+                  Start syncing
+                </Button>
+              </Box>
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+                <Heading size="md" mb={2}>
+                  Daily Rituals
+                </Heading>
+                <Text color="whiteAlpha.700">
+                  Gentle reminders, morning grounding, and evening reflections.
+                </Text>
+                <Button mt={4} variant="outline" colorScheme="yellow">
+                  Configure rituals
+                </Button>
+              </Box>
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+                <Heading size="md" mb={2}>
+                  Wellbeing Library
+                </Heading>
+                <Text color="whiteAlpha.700">
+                  Breathwork, meditations, and therapy tools curated by MLC.
+                </Text>
+                <Button mt={4} variant="outline" colorScheme="yellow">
+                  Explore library
+                </Button>
+              </Box>
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+                <Heading size="md" mb={2}>
+                  Progress Tracker
+                </Heading>
+                <Text color="whiteAlpha.700">
+                  Visualize patterns and celebrate progress over time.
+                </Text>
+                <Button mt={4} variant="outline" colorScheme="yellow">
+                  View insights
+                </Button>
+              </Box>
+            </SimpleGrid>
           </VStack>
         </Box>
       );

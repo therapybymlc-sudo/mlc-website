@@ -17,9 +17,11 @@ export const AuthProvider = ({ children }) => {
     return [];
   }, [user]);
 
+  const premiumPreviewEnabled = import.meta.env.VITE_PREMIUM_PREVIEW === "true";
   const isAdmin = roles.includes("admin");
   const isTherapist = isAdmin || roles.includes("therapist");
   const isClient = !isTherapist;
+  const isPremium = premiumPreviewEnabled || isAdmin || roles.includes("premium");
 
   useEffect(() => {
     let isMounted = true;
@@ -80,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin,
         isTherapist,
         isClient,
+        isPremium,
         clerk,
       }}
     >
