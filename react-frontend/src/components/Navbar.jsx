@@ -9,9 +9,12 @@ import {
   useDisclosure,
   VStack,
   Divider,
+  Avatar,
+  Button,
 } from "@chakra-ui/react";
 import { HamburgerIcon, CloseIcon } from "@chakra-ui/icons";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const logoSrc = "/logo_tra.png";
 
@@ -28,6 +31,7 @@ const navLinks = [
 
 export default function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isAuthenticated, login, logout } = useAuth();
 
   return (
     <Box
@@ -46,37 +50,71 @@ export default function Navbar() {
         flexWrap="wrap"
         gap={{ base: 3, md: 4 }}
       >
-        {/* 🌿 Logo + Name */}
+        {/* 🌿 Top-left Dashboard / Login + Logo */}
         <HStack
           spacing={3}
           alignItems="center"
           flexShrink={0}
           maxW={{ base: "100%", md: "auto" }}
         >
-          <Image
-            src={logoSrc}
-            alt="MLC Logo"
-            boxSize={{ base: "44px", md: "55px" }}
-          />
-          <Box lineHeight="1.1" whiteSpace={{ base: "normal", md: "nowrap" }} minW={0}>
-            <Text
-              fontFamily="'Playfair Display', serif"
-              fontWeight="semibold"
-              fontSize={{ base: "sm", sm: "md", md: "lg" }}
-              color="#2E2E2E"
-            >
-              MLC Health & Wellness Centre
-            </Text>
-            <Text
-              fontFamily="'Lato', sans-serif"
-              fontSize={{ base: "xs", sm: "sm" }}
-              color="#56756D"
-              mt={0.5}
-              display={{ base: "none", sm: "block" }}
-            >
-              A space to feel, to heal, to become
-            </Text>
-          </Box>
+          {isAuthenticated ? (
+            <HStack spacing={2}>
+              <Avatar size="sm" src="/logo_tra.png" name="Dashboard" />
+              <Button
+                as={Link}
+                to="/dashboard"
+                size="sm"
+                variant="ghost"
+                fontWeight="medium"
+                borderRadius="full"
+              >
+                Your Dashboard
+              </Button>
+              <Button size="xs" variant="outline" onClick={logout}>
+                Log out
+              </Button>
+            </HStack>
+          ) : (
+            <HStack spacing={2}>
+              <Avatar size="sm" src="/logo_tra.png" name="Therapist Login" />
+              <Button
+                size="sm"
+                variant="ghost"
+                fontWeight="medium"
+                borderRadius="full"
+                onClick={login}
+              >
+                Therapist Login
+              </Button>
+            </HStack>
+          )}
+
+          <HStack spacing={3} alignItems="center">
+            <Image
+              src={logoSrc}
+              alt="MLC Logo"
+              boxSize={{ base: "44px", md: "55px" }}
+            />
+            <Box lineHeight="1.1" whiteSpace={{ base: "normal", md: "nowrap" }} minW={0}>
+              <Text
+                fontFamily="'Playfair Display', serif"
+                fontWeight="semibold"
+                fontSize={{ base: "sm", sm: "md", md: "lg" }}
+                color="#2E2E2E"
+              >
+                MLC Health & Wellness Centre
+              </Text>
+              <Text
+                fontFamily="'Lato', sans-serif"
+                fontSize={{ base: "xs", sm: "sm" }}
+                color="#56756D"
+                mt={0.5}
+                display={{ base: "none", sm: "block" }}
+              >
+                A space to feel, to heal, to become
+              </Text>
+            </Box>
+          </HStack>
         </HStack>
 
         {/* 💻 Desktop Menu */}

@@ -9,11 +9,8 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { FaInstagram, FaLinkedin } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
 
 export default function Footer() {
-  const { isAuthenticated, login, logout } = useAuth();
-
   return (
     <Box bg="#2E2E2E" color="white" py={10} px={{ base: 6, md: 16 }}>
       <VStack spacing={6} align="start" maxW="7xl" mx="auto">
@@ -73,43 +70,6 @@ export default function Footer() {
         </VStack>
 
         <Divider borderColor="gray.600" />
-
-        {/* 🧠 Therapist Login / Portal */}
-        {!isAuthenticated ? (
-          <Button
-            size="sm"
-            bg="#A9CBB7"
-            color="black"
-            borderRadius="full"
-            _hover={{ bg: "#C9A960", color: "white" }}
-            onClick={login}
-          >
-            Therapist Login
-          </Button>
-        ) : (
-          <HStack spacing={3}>
-            <Button
-              as="a"
-              href="/dashboard/therapist"
-              size="sm"
-              bg="#C9A960"
-              color="white"
-              borderRadius="full"
-              _hover={{ bg: "#A9CBB7", color: "black" }}
-            >
-              Go to Portal
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              color="whiteAlpha.800"
-              _hover={{ color: "white" }}
-              onClick={logout}
-            >
-              Log out
-            </Button>
-          </HStack>
-        )}
 
         {/* 🪶 Copyright */}
         <Text fontFamily="'Lato', sans-serif" fontSize="sm" pt={4}>
