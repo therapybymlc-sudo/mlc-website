@@ -6,7 +6,7 @@ services:
     plan: free
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
-    healthCheckPath: /api/health/
+    healthCheckPath: /healthz
     envVars:
       - key: DJANGO_SECRET_KEY
         sync: false

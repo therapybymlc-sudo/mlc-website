@@ -2,6 +2,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
+from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -57,6 +58,9 @@ def protected_view(request):
         "user": str(request.user),
     })
 
+def healthz(request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
     # Serve your built React (optional for local dev at 5173)
     path("", TemplateView.as_view(template_name="index.html"), name="frontend-home"),
@@ -71,5 +75,5 @@ urlpatterns = [
     path("api/", include(router.urls)),
 
     # Simple health check
-    path("api/health/", lambda r: Response({"status": "ok"})),
+    path("healthz", healthz, name="healthz"),
 ]
