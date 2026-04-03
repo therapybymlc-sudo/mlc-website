@@ -140,6 +140,16 @@ _cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "")
 if _cors_env:
     CORS_ALLOWED_ORIGINS += [o.strip() for o in _cors_env.split(",") if o.strip()]
 
+# Allow Vercel preview domains (and other regex-based origins) via env
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+_cors_regex_env = os.getenv("CORS_ALLOWED_ORIGIN_REGEXES", "")
+if _cors_regex_env:
+    CORS_ALLOWED_ORIGIN_REGEXES += [
+        o.strip() for o in _cors_regex_env.split(",") if o.strip()
+    ]
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "accept",
