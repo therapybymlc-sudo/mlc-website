@@ -76,7 +76,7 @@ export default function Navbar() {
             </HStack>
           ) : (
             <HStack spacing={2}>
-              <Avatar size="sm" src="/logo_tra.png" name="Therapist Login" />
+              <Avatar size="sm" src="/logo_tra.png" name="Sign in" />
               <Button
                 size="sm"
                 variant="ghost"
@@ -84,7 +84,7 @@ export default function Navbar() {
                 borderRadius="full"
                 onClick={login}
               >
-                Therapist Login
+                Sign in
               </Button>
             </HStack>
           )}
