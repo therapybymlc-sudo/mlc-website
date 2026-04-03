@@ -2,26 +2,32 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 def get_roles_from_request(request):
     """
-    Legacy role helper (unused). If you re-enable role-based auth,
-    populate roles from your auth provider (e.g., Clerk custom claims).
+    Extract roles from Clerk JWT payload (request.auth).
+    Expect a custom claim like:
+      { "roles": ["admin", "therapist"] }
+    or nested under public_metadata.
     """
-    decoded = getattr(request, "user", None)
-    if not isinstance(decoded, dict):
+    payload = getattr(request, "auth", None)
+    if not isinstance(payload, dict):
         return set()
-    roles = decoded.get("realm_access", {}).get("roles", []) or []
+    roles = payload.get("roles")
+    if not roles:
+        roles = payload.get("public_metadata", {}).get("roles")
+    if not roles:
+        roles = []
     return set(roles)
 
 
 class IsAuthenticatedWithJWT(BasePermission):
     def has_permission(self, request, view):
-        return isinstance(getattr(request, "user", None), dict)
+        return isinstance(getattr(request, "auth", None), dict)
 
 
 class HasAnyRole(BasePermission):
     required_roles = []
 
     def has_permission(self, request, view):
-        if not isinstance(getattr(request, "user", None), dict):
+        if not isinstance(getattr(request, "auth", None), dict):
             return False
         roles = get_roles_from_request(request)
         return bool(roles.intersection(set(self.required_roles)))

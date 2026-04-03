@@ -41,11 +41,11 @@ router.register(r"session-links", TherapistSessionLinkViewSet, basename="session
 # Small utility/test endpoints
 # ----------------------------
 @api_view(["GET"])
-def keycloak_test(request):
+def auth_test(request):
     return Response({"message": "Clerk test route working."})
 
 @api_view(["GET"])
-def keycloak_login(request):
+def auth_login(request):
     # Real login is handled by Clerk on the frontend; this is just a stub.
     return Response({"message": "Login handled by Clerk."})
 
@@ -63,8 +63,8 @@ urlpatterns = [
 
     # Admin & simple test/probe routes
     path("admin/", admin.site.urls),
-    path("keycloak-test/", keycloak_test, name="keycloak_test"),
-    path("keycloak-login/", keycloak_login, name="keycloak_login"),
+    path("auth-test/", auth_test, name="auth_test"),
+    path("auth-login/", auth_login, name="auth_login"),
     path("protected/", protected_view, name="protected"),
 
     # REST API

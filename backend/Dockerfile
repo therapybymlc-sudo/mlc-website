@@ -11,10 +11,9 @@ WORKDIR /app
 # Copy dependency list first (to leverage Docker caching)
 COPY requirements.txt .
 
-# Install dependencies (including secure JWT and Keycloak libs)
+# Install dependencies
 RUN pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && pip install "python-jose[cryptography]" python-keycloak
+    && pip install -r requirements.txt
 
 # Copy all backend source files into the container
 COPY . .
@@ -24,4 +23,3 @@ EXPOSE 8000
 
 # Default command (can be overridden in docker-compose)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-

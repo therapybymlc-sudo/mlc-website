@@ -50,7 +50,7 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 defaults={"email": email or f"{username}@example.invalid"},
             )
 
-            return (user, token)
+            return (user, payload)
 
         except jwt.ExpiredSignatureError:
             raise exceptions.AuthenticationFailed("Token expired")
