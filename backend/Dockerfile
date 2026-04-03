@@ -21,5 +21,5 @@ COPY . .
 # Expose port 8000 for Django
 EXPOSE 8000
 
-# Default command (can be overridden in docker-compose)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Default command for production (Render)
+CMD ["sh", "-c", "gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
