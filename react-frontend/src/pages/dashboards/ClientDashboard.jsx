@@ -36,6 +36,10 @@ import {
   AccordionIcon,
   FormControl,
   FormLabel,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
 } from "@chakra-ui/react";
 import { useMemo, useState, useEffect } from "react";
 import {
@@ -48,6 +52,7 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import RichTextEditor from "../../components/RichTextEditor";
 
 const LOCAL_KEYS = {
   journal: "mlc_client_journal_entries",
@@ -57,8 +62,12 @@ const LOCAL_KEYS = {
   profile: "mlc_client_profile",
   checkin: "mlc_client_checkin_last",
   checkinData: "mlc_client_checkin_data",
+  checkinHistory: "mlc_client_checkin_history",
   profileCompleted: "mlc_client_profile_completed",
   profileDraft: "mlc_client_profile_draft",
+  journalDraft: "mlc_client_journal_draft",
+  notesRich: "mlc_client_session_notes_rich",
+  notesDraft: "mlc_client_notes_draft",
 };
 
 const getLocalDayKey = () => {
@@ -96,16 +105,51 @@ const prompts = [
   "A moment I felt proud of myself was…",
 ];
 
+const journalEmotions = [
+  "Calm",
+  "Hopeful",
+  "Grateful",
+  "Anxious",
+  "Overwhelmed",
+  "Tired",
+  "Sad",
+  "Angry",
+  "Motivated",
+];
+
+const stripHtml = (value) =>
+  value ? value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "";
+
 export default function ClientDashboard() {
   const toast = useToast();
   const { logout, isPremium } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [activeSection, setActiveSection] = useState("overview");
-  const [journalText, setJournalText] = useState("");
+  const [journalContent, setJournalContent] = useState(() => {
+    const draft = localStorage.getItem(LOCAL_KEYS.journalDraft);
+    if (!draft) return { html: "", text: "" };
+    try {
+      return JSON.parse(draft);
+    } catch {
+      return { html: "", text: "" };
+    }
+  });
+  const [journalEmotion, setJournalEmotion] = useState("Calm");
+  const [journalIntensity, setJournalIntensity] = useState(5);
   const [timeZones, setTimeZones] = useState([]);
-  const [noteText, setNoteText] = useState(
-    localStorage.getItem(LOCAL_KEYS.notes) || ""
-  );
+  const [notesContent, setNotesContent] = useState(() => {
+    const saved = localStorage.getItem(LOCAL_KEYS.notesRich);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return { html: "", text: "" };
+      }
+    }
+    const legacy = localStorage.getItem(LOCAL_KEYS.notes) || "";
+    return { html: legacy ? `<p>${legacy}</p>` : "", text: legacy };
+  });
+  const [shareNotes, setShareNotes] = useState(false);
   const [mood, setMood] = useState(
     localStorage.getItem(LOCAL_KEYS.mood) || "Okay"
   );
@@ -169,6 +213,7 @@ export default function ClientDashboard() {
     }
   });
   const [journalEntries, setJournalEntries] = useState([]);
+  const [checkinHistory, setCheckinHistory] = useState([]);
   const [sharedItems, setSharedItems] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -177,9 +222,21 @@ export default function ClientDashboard() {
     const rawJournal = localStorage.getItem(LOCAL_KEYS.journal);
     const rawGoals = localStorage.getItem(LOCAL_KEYS.goals);
     const rawCheckin = localStorage.getItem(LOCAL_KEYS.checkinData);
+    const rawHistory = localStorage.getItem(LOCAL_KEYS.checkinHistory);
     if (rawJournal) {
       try {
-        setJournalEntries(JSON.parse(rawJournal));
+        const parsed = JSON.parse(rawJournal);
+        const normalized = Array.isArray(parsed)
+          ? parsed.map((entry) => ({
+              ...entry,
+              html:
+                entry.html ||
+                (entry.text ? `<p>${entry.text}</p>` : ""),
+              text: entry.text || stripHtml(entry.html || ""),
+              intensity: entry.intensity || 5,
+            }))
+          : [];
+        setJournalEntries(normalized);
       } catch {
         setJournalEntries([]);
       }
@@ -212,10 +269,18 @@ export default function ClientDashboard() {
         });
       }
     }
+    if (rawHistory) {
+      try {
+        setCheckinHistory(JSON.parse(rawHistory));
+      } catch {
+        setCheckinHistory([]);
+      }
+    }
   };
 
   const syncFromApi = async () => {
     if (!isPremium) {
+      hydrateLocal();
       try {
         const shares = await apiGet("material-shares/");
         setSharedItems(shares || []);
@@ -238,8 +303,11 @@ export default function ClientDashboard() {
 
       const normalizedJournals = (journals || []).map((entry) => ({
         id: entry.id,
-        text: entry.entry,
+        html: entry.entry || "",
+        text: stripHtml(entry.entry || ""),
         mood: entry.mood || "Okay",
+        emotion: entry.emotion || "",
+        intensity: entry.intensity || 5,
         createdAt: entry.created_at,
       }));
       setJournalEntries(normalizedJournals);
@@ -298,6 +366,19 @@ export default function ClientDashboard() {
             setShowCheckin(false);
           }
         }
+
+        const history = checkins.map((item) => ({
+          id: item.id || item.checkin_date,
+          createdAt: item.created_at || item.checkin_date,
+          dateKey: item.checkin_date,
+          mood: item.mood || "",
+          energy: item.energy || "",
+          stress: item.stress || "",
+          gratitude: item.gratitude || "",
+          notes: item.notes || "",
+        }));
+        setCheckinHistory(history);
+        localStorage.setItem(LOCAL_KEYS.checkinHistory, JSON.stringify(history));
       }
 
       setSharedItems(shares || []);
@@ -311,31 +392,41 @@ export default function ClientDashboard() {
   };
 
   const saveJournal = () => {
-    if (!journalText.trim()) return;
+    if (!journalContent.text.trim()) return;
+    const createdAt = new Date().toISOString();
     const entry = {
-      entry: journalText.trim(),
+      entry: journalContent.html,
       mood,
+      emotion: journalEmotion,
+      intensity: journalIntensity,
       shared_with_therapist: false,
     };
     const fallbackEntry = {
       id: Date.now(),
-      text: journalText.trim(),
+      html: journalContent.html,
+      text: journalContent.text,
       mood,
-      createdAt: new Date().toISOString(),
+      emotion: journalEmotion,
+      intensity: journalIntensity,
+      createdAt,
     };
     const updatedLocal = [fallbackEntry, ...journalEntries].slice(0, 30);
     localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(updatedLocal));
     setJournalEntries(updatedLocal);
-    setJournalText("");
+    setJournalContent({ html: "", text: "" });
+    localStorage.removeItem(LOCAL_KEYS.journalDraft);
     if (isPremium) {
       apiPost("client-journals/", entry)
         .then((saved) => {
           const next = [
             {
               id: saved.id,
-              text: saved.entry,
+              html: saved.entry || "",
+              text: stripHtml(saved.entry || ""),
               mood: saved.mood || mood,
-              createdAt: saved.created_at,
+              emotion: saved.emotion || journalEmotion,
+              intensity: saved.intensity || journalIntensity,
+              createdAt: saved.created_at || createdAt,
             },
             ...updatedLocal.filter((e) => e.id !== fallbackEntry.id),
           ];
@@ -350,8 +441,40 @@ export default function ClientDashboard() {
   };
 
   const saveNotes = () => {
-    localStorage.setItem(LOCAL_KEYS.notes, noteText);
+    localStorage.setItem(LOCAL_KEYS.notesRich, JSON.stringify(notesContent));
+    localStorage.setItem(LOCAL_KEYS.notes, notesContent.text || "");
+    localStorage.setItem(LOCAL_KEYS.notesDraft, JSON.stringify(notesContent));
     toast({ title: "Saved notes for next session", status: "success" });
+  };
+
+  const exportJournalEntry = (entry) => {
+    if (!entry) return;
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <html>
+        <head>
+          <title>Journal Entry</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #2E2E2E; }
+            h1 { font-size: 20px; margin-bottom: 4px; }
+            .meta { color: #666; font-size: 12px; margin-bottom: 16px; }
+            img { max-width: 100%; border-radius: 12px; margin-top: 8px; }
+          </style>
+        </head>
+        <body>
+          <h1>Journal Entry</h1>
+          <div class="meta">
+            ${new Date(entry.createdAt).toLocaleString()} • ${entry.mood || "Okay"}
+            ${entry.emotion ? ` • ${entry.emotion}` : ""} • ${entry.intensity || 5}/10
+          </div>
+          <div>${entry.html || `<p>${entry.text || ""}</p>`}</div>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
   };
 
   const updateMood = (label) => {
@@ -626,6 +749,23 @@ export default function ClientDashboard() {
   ];
 
   const saveCheckin = () => {
+    const createdAt = new Date().toISOString();
+    const historyEntry = {
+      id: createdAt,
+      createdAt,
+      dateKey: getLocalDayKey(),
+      mood: checkinData.mood,
+      energy: checkinData.energy,
+      stress: checkinData.stress,
+      gratitude: checkinData.gratitude,
+      notes: checkinData.note,
+    };
+    const nextHistory = [historyEntry, ...checkinHistory].slice(0, 60);
+    setCheckinHistory(nextHistory);
+    localStorage.setItem(
+      LOCAL_KEYS.checkinHistory,
+      JSON.stringify(nextHistory)
+    );
     localStorage.setItem(LOCAL_KEYS.checkinData, JSON.stringify(checkinData));
     localStorage.setItem(LOCAL_KEYS.checkin, getLocalDayKey());
     setShowCheckin(false);
@@ -669,6 +809,14 @@ export default function ClientDashboard() {
     const storedCompleted = localStorage.getItem(LOCAL_KEYS.profileCompleted);
     const storedProfile = localStorage.getItem(LOCAL_KEYS.profile);
     const storedDraft = localStorage.getItem(LOCAL_KEYS.profileDraft);
+    const storedNotesDraft = localStorage.getItem(LOCAL_KEYS.notesDraft);
+    if (storedNotesDraft) {
+      try {
+        setNotesContent(JSON.parse(storedNotesDraft));
+      } catch {
+        localStorage.removeItem(LOCAL_KEYS.notesDraft);
+      }
+    }
     if (storedDraft) {
       try {
         setProfileDraft(JSON.parse(storedDraft));
@@ -701,6 +849,14 @@ export default function ClientDashboard() {
   useEffect(() => {
     localStorage.setItem(LOCAL_KEYS.profileDraft, JSON.stringify(profileDraft));
   }, [profileDraft]);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_KEYS.journalDraft, JSON.stringify(journalContent));
+  }, [journalContent]);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_KEYS.notesDraft, JSON.stringify(notesContent));
+  }, [notesContent]);
 
   useEffect(() => {
     const today = getLocalDayKey();
@@ -833,14 +989,45 @@ export default function ClientDashboard() {
                   Upgrade to Premium to sync your journal across devices.
                 </Text>
               )}
-              <Textarea
+              <RichTextEditor
+                value={journalContent.html}
+                onChange={setJournalContent}
                 placeholder="Write what’s on your mind..."
-                value={journalText}
-                onChange={(e) => setJournalText(e.target.value)}
-                mb={3}
-                minH="140px"
+                isPremium={isPremium}
+                minHeight="140px"
+                allowImages
               />
-              <Button onClick={saveJournal} colorScheme="teal">
+              <HStack mt={3} spacing={4} flexWrap="wrap">
+                <FormControl maxW="220px">
+                  <FormLabel fontSize="sm">Emotion</FormLabel>
+                  <Select
+                    value={journalEmotion}
+                    onChange={(e) => setJournalEmotion(e.target.value)}
+                  >
+                    {journalEmotions.map((emotion) => (
+                      <option key={emotion} value={emotion}>
+                        {emotion}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Box flex="1" minW="220px">
+                  <FormLabel fontSize="sm">Intensity: {journalIntensity}/10</FormLabel>
+                  <Slider
+                    value={journalIntensity}
+                    min={1}
+                    max={10}
+                    step={1}
+                    onChange={(value) => setJournalIntensity(value)}
+                  >
+                    <SliderTrack bg="green.100">
+                      <SliderFilledTrack bg="green.400" />
+                    </SliderTrack>
+                    <SliderThumb />
+                  </Slider>
+                </Box>
+              </HStack>
+              <Button mt={3} onClick={saveJournal} colorScheme="teal">
                 Save Entry
               </Button>
               <Divider my={4} />
@@ -853,7 +1040,10 @@ export default function ClientDashboard() {
                   journalEntries.slice(0, 3).map((entry) => (
                     <Box key={entry.id} p={3} bg="#F2F8F5" borderRadius="xl" w="100%">
                       <Text fontSize="sm" color="gray.500">
-                        {new Date(entry.createdAt).toLocaleDateString()} • {entry.mood}
+                        {new Date(entry.createdAt).toLocaleString()} • {entry.mood}
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">
+                        {entry.emotion ? `${entry.emotion} • ` : ""}{entry.intensity}/10
                       </Text>
                       <Text noOfLines={3}>{entry.text}</Text>
                     </Box>
@@ -867,11 +1057,13 @@ export default function ClientDashboard() {
                 <Heading size="md" mb={3}>
                   Notes for Next Session
                 </Heading>
-                <Textarea
+                <RichTextEditor
+                  value={notesContent.html}
+                  onChange={setNotesContent}
                   placeholder="Things I want to talk about..."
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  minH="120px"
+                  isPremium={isPremium}
+                  minHeight="140px"
+                  allowImages
                 />
                 <Button mt={3} onClick={saveNotes} colorScheme="purple">
                   Save Notes
@@ -882,14 +1074,27 @@ export default function ClientDashboard() {
                 <Heading size="md" mb={3}>
                   Grounding Toolkit
                 </Heading>
-                <VStack align="start" spacing={2}>
-                  {tools.map((tool) => (
-                    <HStack key={tool}>
-                      <CheckCircleIcon color="green.400" />
-                      <Text>{tool}</Text>
-                    </HStack>
-                  ))}
-                </VStack>
+                {isPremium ? (
+                  <VStack align="start" spacing={2}>
+                    {tools.map((tool) => (
+                      <HStack key={tool}>
+                        <CheckCircleIcon color="green.400" />
+                        <Text>{tool}</Text>
+                      </HStack>
+                    ))}
+                  </VStack>
+                ) : (
+                  <Box p={4} bg="#FBF8F3" borderRadius="xl">
+                    <Text fontWeight="semibold">Premium feature</Text>
+                    <Text color="gray.600" mt={1}>
+                      Unlock guided grounding tools, audio practices, and calming
+                      routines with Premium.
+                    </Text>
+                    <Button mt={3} size="sm" colorScheme="purple">
+                      Upgrade to unlock
+                    </Button>
+                  </Box>
+                )}
               </Box>
             </VStack>
           </SimpleGrid>
@@ -924,7 +1129,8 @@ export default function ClientDashboard() {
                 <CalendarIcon color="purple.400" />
               </HStack>
               <Text color="gray.500" mb={4}>
-                Your upcoming and past sessions will appear here.
+                Your upcoming and past sessions will appear here. Invoices shared by
+                your therapist will show up in your Sessions page.
               </Text>
               <Box p={4} bg="#F2F8F5" borderRadius="xl">
                 <Text color="gray.500">No sessions to show yet.</Text>
@@ -1058,14 +1264,45 @@ export default function ClientDashboard() {
               Upgrade to Premium to sync your journal across devices.
             </Text>
           )}
-          <Textarea
+          <RichTextEditor
+            value={journalContent.html}
+            onChange={setJournalContent}
             placeholder="Write what’s on your mind..."
-            value={journalText}
-            onChange={(e) => setJournalText(e.target.value)}
-            mb={3}
-            minH="180px"
+            isPremium={isPremium}
+            minHeight="200px"
+            allowImages
           />
-          <Button onClick={saveJournal} colorScheme="teal">
+          <HStack mt={3} spacing={4} flexWrap="wrap">
+            <FormControl maxW="240px">
+              <FormLabel fontSize="sm">Emotion</FormLabel>
+              <Select
+                value={journalEmotion}
+                onChange={(e) => setJournalEmotion(e.target.value)}
+              >
+                {journalEmotions.map((emotion) => (
+                  <option key={emotion} value={emotion}>
+                    {emotion}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
+            <Box flex="1" minW="220px">
+              <FormLabel fontSize="sm">Intensity: {journalIntensity}/10</FormLabel>
+              <Slider
+                value={journalIntensity}
+                min={1}
+                max={10}
+                step={1}
+                onChange={(value) => setJournalIntensity(value)}
+              >
+                <SliderTrack bg="green.100">
+                  <SliderFilledTrack bg="green.400" />
+                </SliderTrack>
+                <SliderThumb />
+              </Slider>
+            </Box>
+          </HStack>
+          <Button mt={3} onClick={saveJournal} colorScheme="teal">
             Save Entry
           </Button>
           <Divider my={4} />
@@ -1075,8 +1312,16 @@ export default function ClientDashboard() {
             ) : (
               journalEntries.map((entry) => (
                 <Box key={entry.id} p={3} bg="#F2F8F5" borderRadius="xl" w="100%">
-                  <Text fontSize="sm" color="gray.500">
-                    {new Date(entry.createdAt).toLocaleDateString()} • {entry.mood}
+                  <HStack justify="space-between">
+                    <Text fontSize="sm" color="gray.500">
+                      {new Date(entry.createdAt).toLocaleString()} • {entry.mood}
+                    </Text>
+                    <Button size="xs" variant="ghost" onClick={() => exportJournalEntry(entry)}>
+                      Export PDF
+                    </Button>
+                  </HStack>
+                  <Text fontSize="sm" color="gray.600">
+                    {entry.emotion ? `${entry.emotion} • ` : ""}{entry.intensity}/10
                   </Text>
                   <Text>{entry.text}</Text>
                 </Box>
@@ -1093,12 +1338,28 @@ export default function ClientDashboard() {
           <Heading size="md" mb={3}>
             Notes for Next Session
           </Heading>
-          <Textarea
+          <RichTextEditor
+            value={notesContent.html}
+            onChange={setNotesContent}
             placeholder="Things I want to talk about..."
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            minH="160px"
+            isPremium={isPremium}
+            minHeight="180px"
+            allowImages
           />
+          <HStack mt={3} spacing={3}>
+            <Checkbox
+              isChecked={shareNotes}
+              onChange={(e) => setShareNotes(e.target.checked)}
+              isDisabled={!isPremium}
+            >
+              Share with therapist (Premium)
+            </Checkbox>
+            {!isPremium && (
+              <Text fontSize="sm" color="purple.500">
+                Upgrade to share notes with your therapist.
+              </Text>
+            )}
+          </HStack>
           <Button mt={3} onClick={saveNotes} colorScheme="purple">
             Save Notes
           </Button>
@@ -1123,6 +1384,30 @@ export default function ClientDashboard() {
           <Button onClick={() => setShowCheckin(true)} colorScheme="teal">
             Start check‑in
           </Button>
+          <Divider my={6} />
+          <Heading size="sm" mb={3}>
+            Your recent check‑ins
+          </Heading>
+          <VStack align="start" spacing={3} mb={4}>
+            {checkinHistory.length === 0 ? (
+              <Text color="gray.500">No check‑ins saved yet.</Text>
+            ) : (
+              checkinHistory.slice(0, 7).map((entry) => (
+                <Box key={entry.id} p={3} bg="#F2F8F5" borderRadius="xl" w="100%">
+                  <Text fontSize="sm" color="gray.500">
+                    {entry.createdAt
+                      ? new Date(entry.createdAt).toLocaleString()
+                      : entry.dateKey}
+                  </Text>
+                  <Text fontSize="sm">
+                    {entry.mood && `Mood: ${entry.mood} · `}
+                    {entry.energy && `Energy: ${entry.energy} · `}
+                    {entry.stress && `Stress: ${entry.stress}`}
+                  </Text>
+                </Box>
+              ))
+            )}
+          </VStack>
           <Divider my={6} />
           <Heading size="sm" mb={3}>
             How to use your daily check‑in
@@ -1249,7 +1534,19 @@ export default function ClientDashboard() {
           <Heading size="md" mb={3}>
             My Sessions
           </Heading>
-          <Text color="gray.500">No sessions to show yet.</Text>
+          <Text color="gray.500" mb={4}>
+            Your session schedule and invoices will appear here.
+          </Text>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <Box p={4} bg="#F2F8F5" borderRadius="xl">
+              <Text fontWeight="semibold">Upcoming sessions</Text>
+              <Text color="gray.500">No sessions scheduled yet.</Text>
+            </Box>
+            <Box p={4} bg="#FBF8F3" borderRadius="xl">
+              <Text fontWeight="semibold">Invoices & receipts</Text>
+              <Text color="gray.500">No invoices shared yet.</Text>
+            </Box>
+          </SimpleGrid>
         </Box>
       );
     }

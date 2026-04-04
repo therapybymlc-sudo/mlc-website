@@ -29,6 +29,13 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  FormControl,
+  FormLabel,
+  Select,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
@@ -46,6 +53,7 @@ import ClientFiles from "./ClientFiles";
 import Schedule from "./Schedule";
 import NoteTemplates from "./NoteTemplates"; // ✅ added
 import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import RichTextEditor from "../../components/RichTextEditor";
 
 export default function TherapistDashboard() {
   const { user, logout, isAdmin, isPremium, isTherapist, isTherapistPreview } =
@@ -86,7 +94,17 @@ export default function TherapistDashboard() {
   const [careNote, setCareNote] = useState(
     localStorage.getItem("mlc_therapist_care_note") || ""
   );
-  const [careJournal, setCareJournal] = useState("");
+  const [careJournalContent, setCareJournalContent] = useState(() => {
+    const draft = localStorage.getItem("mlc_therapist_journal_draft");
+    if (!draft) return { html: "", text: "" };
+    try {
+      return JSON.parse(draft);
+    } catch {
+      return { html: "", text: "" };
+    }
+  });
+  const [careJournalEmotion, setCareJournalEmotion] = useState("Grounded");
+  const [careJournalIntensity, setCareJournalIntensity] = useState(5);
   const location = useLocation();
 
   const moodOptions = useMemo(
@@ -104,7 +122,17 @@ export default function TherapistDashboard() {
     const raw = localStorage.getItem("mlc_therapist_journal_entries");
     if (!raw) return [];
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.map((entry) => ({
+            ...entry,
+            html:
+              entry.html ||
+              (entry.text ? `<p>${entry.text}</p>` : ""),
+            text: entry.text || "",
+            intensity: entry.intensity || 5,
+          }))
+        : [];
     } catch {
       return [];
     }
@@ -200,16 +228,20 @@ export default function TherapistDashboard() {
   };
 
   const saveCareJournal = () => {
-    if (!careJournal.trim()) return;
+    if (!careJournalContent.text.trim()) return;
     const entry = {
       id: Date.now(),
-      text: careJournal.trim(),
+      html: careJournalContent.html,
+      text: careJournalContent.text,
+      emotion: careJournalEmotion,
+      intensity: careJournalIntensity,
       createdAt: new Date().toISOString(),
     };
     const updated = [entry, ...therapistJournalEntries].slice(0, 30);
     localStorage.setItem("mlc_therapist_journal_entries", JSON.stringify(updated));
     setTherapistJournalEntries(updated);
-    setCareJournal("");
+    setCareJournalContent({ html: "", text: "" });
+    localStorage.removeItem("mlc_therapist_journal_draft");
     toast({ title: "Saved to your private journal", status: "success" });
   };
 
@@ -469,14 +501,49 @@ export default function TherapistDashboard() {
                 <Heading size="md" mb={3}>
                   Private journal
                 </Heading>
-                <Textarea
+                <RichTextEditor
+                  value={careJournalContent.html}
+                  onChange={setCareJournalContent}
                   placeholder="Reflections for you only..."
-                  value={careJournal}
-                  onChange={(e) => setCareJournal(e.target.value)}
-                  minH="140px"
-                  mb={3}
+                  isPremium={true}
+                  minHeight="160px"
+                  allowImages
                 />
-                <Button onClick={saveCareJournal} colorScheme="teal">
+                <HStack mt={3} spacing={4} flexWrap="wrap">
+                  <FormControl maxW="220px">
+                    <FormLabel fontSize="sm">Emotion</FormLabel>
+                    <Select
+                      value={careJournalEmotion}
+                      onChange={(e) => setCareJournalEmotion(e.target.value)}
+                    >
+                      {["Grounded", "Open", "Neutral", "Tired", "Overloaded"].map(
+                        (emotion) => (
+                          <option key={emotion} value={emotion}>
+                            {emotion}
+                          </option>
+                        )
+                      )}
+                    </Select>
+                  </FormControl>
+                  <Box flex="1" minW="200px">
+                    <FormLabel fontSize="sm">
+                      Intensity: {careJournalIntensity}/10
+                    </FormLabel>
+                    <Slider
+                      value={careJournalIntensity}
+                      min={1}
+                      max={10}
+                      step={1}
+                      onChange={(value) => setCareJournalIntensity(value)}
+                    >
+                      <SliderTrack bg="green.100">
+                        <SliderFilledTrack bg="green.400" />
+                      </SliderTrack>
+                      <SliderThumb />
+                    </Slider>
+                  </Box>
+                </HStack>
+                <Button mt={3} onClick={saveCareJournal} colorScheme="teal">
                   Save entry
                 </Button>
                 <Divider my={4} />
@@ -487,7 +554,10 @@ export default function TherapistDashboard() {
                     therapistJournalEntries.slice(0, 3).map((entry) => (
                       <Box key={entry.id} p={3} bg="#F2F8F5" borderRadius="xl" w="100%">
                         <Text fontSize="sm" color="gray.500">
-                          {new Date(entry.createdAt).toLocaleDateString()}
+                          {new Date(entry.createdAt).toLocaleString()}
+                        </Text>
+                        <Text fontSize="sm" color="gray.600">
+                          {entry.emotion ? `${entry.emotion} • ` : ""}{entry.intensity || 5}/10
                         </Text>
                         <Text noOfLines={3}>{entry.text}</Text>
                       </Box>
@@ -1096,6 +1166,13 @@ export default function TherapistDashboard() {
         );
     }
   };
+
+  useEffect(() => {
+    localStorage.setItem(
+      "mlc_therapist_journal_draft",
+      JSON.stringify(careJournalContent)
+    );
+  }, [careJournalContent]);
 
   useEffect(() => {
     if (isTherapistPreview) return;
