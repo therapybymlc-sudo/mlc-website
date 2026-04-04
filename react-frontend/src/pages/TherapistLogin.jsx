@@ -23,11 +23,16 @@ function TherapistLogin() {
         </Text>
         <SignIn routing="path" path="/login/therapist" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />
         <Text fontSize="sm" color="gray.500">
-          Want to join as a therapist? Submit an application and we’ll review it.
+          Don’t have an account?
         </Text>
-        <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
-          Apply to be a therapist
-        </Button>
+        <HStack spacing={3} flexWrap="wrap" justify="center">
+          <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
+            Apply to be a therapist
+          </Button>
+          <Button as={Link} to="/signup/client" colorScheme="purple" variant="solid">
+            Sign up as a client
+          </Button>
+        </HStack>
       </VStack>
     </Box>
   );

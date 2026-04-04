@@ -212,6 +212,21 @@ export default function MindfulnessAndRelaxation() {
             </Button>
           </VStack>
         </Box>
+
+        <Box mt={16} bg="white" p={8} borderRadius="2xl" boxShadow="md">
+          <VStack spacing={4} textAlign="center">
+            <Heading size="md" fontFamily="'Playfair Display', serif">
+              Interested in mindfulness?
+            </Heading>
+            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              Sign up to access guided mindfulness meditations, calming check‑ins,
+              and a private dashboard you can return to anytime.
+            </Text>
+            <Button as="a" href="/signup/client" colorScheme="teal">
+              Sign up as a client
+            </Button>
+          </VStack>
+        </Box>
       </Container>
     </Box>
   );

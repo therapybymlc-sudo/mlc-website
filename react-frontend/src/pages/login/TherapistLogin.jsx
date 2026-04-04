@@ -21,10 +21,13 @@ export default function TherapistLogin() {
         <Text>Secure access for therapists to manage clients and notes</Text>
         <SignIn routing="path" path="/login/therapist" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />
         <Text fontSize="sm" color="gray.500">
-          Want to join as a therapist? Submit an application and we’ll review it.
+          Don’t have an account?
         </Text>
         <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
           Apply to be a therapist
+        </Button>
+        <Button as={Link} to="/signup/client" colorScheme="purple">
+          Sign up as a client
         </Button>
       </VStack>
     </Box>

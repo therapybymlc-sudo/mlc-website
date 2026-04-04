@@ -252,6 +252,37 @@ export default function Client() {
         </Container>
       </Box>
 
+      {/* CLIENT DASHBOARD CTA */}
+      <Box bg="white" py={{ base: 16, md: 20 }} px={6}>
+        <Container maxW="6xl">
+          <VStack spacing={6} textAlign="center">
+            <Heading
+              fontFamily="'Playfair Display', serif"
+              color="#2E2E2E"
+              fontWeight="600"
+            >
+              Your Client Dashboard
+            </Heading>
+            <Text maxW="2xl" color="#2E2E2E" fontFamily="'Lato', sans-serif">
+              Sign up to access your private space: daily check‑ins, reflections,
+              therapy notes, shared resources, and (if you choose) premium tools
+              that sync across devices.
+            </Text>
+            <HStack spacing={4} flexWrap="wrap" justify="center">
+              <Button as="a" href="/signup/client" bg="#A9CBB7" color="#2E2E2E">
+                Sign up as a client
+              </Button>
+              <Button as="a" href="/client-checkin" variant="outline" colorScheme="teal">
+                Take a quick check‑in
+              </Button>
+              <Button as="a" href="/login/therapist" variant="ghost">
+                Already have an account? Sign in
+              </Button>
+            </HStack>
+          </VStack>
+        </Container>
+      </Box>
+
       {/* RIGHT FIT */}
       <Box bg="#FFFFFF" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">

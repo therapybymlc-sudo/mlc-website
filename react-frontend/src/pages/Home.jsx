@@ -113,7 +113,7 @@ export default function Home() {
             borderRadius="full"
             _hover={{ bg: "#C9A960", color: "white" }}
             as="a"
-            href="/client"
+            href="/client-checkin"
             fontFamily="'Lato', sans-serif"
             fontWeight="500"
             px={8}
@@ -138,6 +138,61 @@ export default function Home() {
           </Button>
         </HStack>
       </MotionBox>
+
+      {/* PORTAL CTA */}
+      <Box bg="#F2F8F5" py={16} px={6}>
+        <Container maxW="6xl">
+          <VStack spacing={8}>
+            <Heading
+              fontFamily="'Playfair Display', serif"
+              color="#2E2E2E"
+              textAlign="center"
+            >
+              Your MLC Portal
+            </Heading>
+            <Text color="#2E2E2E" textAlign="center" maxW="2xl">
+              A gentle, private space for clients — and a structured workspace for therapists.
+              Choose your path below to get started.
+            </Text>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={2}>
+                  Client Dashboard
+                </Heading>
+                <Text color="gray.600" mb={4}>
+                  Daily check‑ins, private journaling, session notes, shared materials,
+                  and premium tools when you’re ready.
+                </Text>
+                <HStack spacing={3} flexWrap="wrap">
+                  <Button as="a" href="/signup/client" colorScheme="teal">
+                    Sign up as a client
+                  </Button>
+                  <Button as="a" href="/client-checkin" variant="outline" colorScheme="teal">
+                    Take a quick check‑in
+                  </Button>
+                </HStack>
+              </Box>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={2}>
+                  Therapist Workspace
+                </Heading>
+                <Text color="gray.600" mb={4}>
+                  Apply to join MLC and access therapist tools, client collaboration,
+                  and a calm workspace designed for your practice.
+                </Text>
+                <HStack spacing={3} flexWrap="wrap">
+                  <Button as="a" href="/therapist-apply" colorScheme="purple">
+                    Apply as a therapist
+                  </Button>
+                  <Button as="a" href="/login/therapist" variant="outline" colorScheme="purple">
+                    Sign in
+                  </Button>
+                </HStack>
+              </Box>
+            </SimpleGrid>
+          </VStack>
+        </Container>
+      </Box>
 
       {/* CLIENT REASSURANCE BUBBLES */}
       <Box bg="white" py={16} px={6}>

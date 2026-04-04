@@ -28,6 +28,12 @@ export default function Footer() {
           <Link href="/book" _hover={{ color: "#A9CBB7" }}>
             Book Now
           </Link>
+          <Link href="/signup/client" _hover={{ color: "#A9CBB7" }}>
+            Client Sign Up
+          </Link>
+          <Link href="/therapist-apply" _hover={{ color: "#A9CBB7" }}>
+            Therapist Apply
+          </Link>
           <Link href="/contactus" _hover={{ color: "#A9CBB7" }}>
             Contact
           </Link>

@@ -195,6 +195,39 @@ export default function Therapists() {
         </Container>
       </Box>
 
+      {/* THERAPIST PORTAL CTA */}
+      <Box bg="white" py={{ base: 16, md: 20 }} px={6}>
+        <Container maxW="6xl">
+          <VStack spacing={6} textAlign="center">
+            <Heading
+              fontFamily="'Playfair Display', serif"
+              color="#2E2E2E"
+              fontWeight="600"
+            >
+              Apply to Join the Therapist Workspace
+            </Heading>
+            <Text
+              fontFamily="'Lato', sans-serif"
+              color="#2E2E2E"
+              maxW="2xl"
+              lineHeight="1.6"
+            >
+              MLC offers a secure workspace for therapists: client collaboration,
+              shared resources, session tools, and a premium studio designed to
+              support your practice.
+            </Text>
+            <HStack spacing={4} flexWrap="wrap" justify="center">
+              <Button as="a" href="/therapist-apply" bg="#A9CBB7" color="#2E2E2E">
+                Apply as a therapist
+              </Button>
+              <Button as="a" href="/login/therapist" variant="outline" colorScheme="teal">
+                Already approved? Sign in
+              </Button>
+            </HStack>
+          </VStack>
+        </Container>
+      </Box>
+
       {/* SUPERVISION */}
       <Box bg="white" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">

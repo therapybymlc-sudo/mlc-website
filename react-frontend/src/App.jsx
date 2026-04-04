@@ -31,6 +31,8 @@ import TrainingPrograms from "./pages/TrainingAndPrograms";
 import Client from "./pages/Client";
 import Therapists from "./pages/Therapists";
 import TherapistApply from "./pages/TherapistApply";
+import ClientSignup from "./pages/ClientSignup";
+import ClientCheckinQuiz from "./pages/ClientCheckinQuiz";
 
 // 🩺 Therapist Dashboard Pages
 import TherapistLogin from "./pages/login/TherapistLogin";
@@ -111,8 +113,10 @@ export default function App() {
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/client" element={<Client />} />
+              <Route path="/client-checkin" element={<ClientCheckinQuiz />} />
               <Route path="/therapists" element={<Therapists />} />
               <Route path="/therapist-apply" element={<TherapistApply />} />
+              <Route path="/signup/client" element={<ClientSignup />} />
 
               {/* 🌸 Service Detail Pages */}
               <Route path="/individual-therapy" element={<IndividualTherapy />} />

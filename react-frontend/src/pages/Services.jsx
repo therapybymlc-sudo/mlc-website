@@ -124,6 +124,29 @@ export default function Services() {
         </Container>
       </Box>
 
+      {/* PORTAL CTA */}
+      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+        <Container maxW="6xl">
+          <VStack spacing={6} textAlign="center">
+            <Heading fontFamily="'Playfair Display', serif" color="#2E2E2E">
+              Access your MLC portal
+            </Heading>
+            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="2xl">
+              Clients can sign up for a private dashboard with check‑ins and tools.
+              Therapists can apply to join our workspace for collaboration and growth.
+            </Text>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="100%">
+              <Button as={Link} to="/signup/client" bg="#A9CBB7" color="#2E2E2E">
+                Sign up as a client
+              </Button>
+              <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
+                Apply as a therapist
+              </Button>
+            </SimpleGrid>
+          </VStack>
+        </Container>
+      </Box>
+
       {/* SERVICES GRID */}
       <Box bg="#56756D" py={24} px={8}>
         <Container maxW="7xl">
