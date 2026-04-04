@@ -23,7 +23,11 @@ export const AuthProvider = ({ children }) => {
   const isClient = !isTherapist;
   const isPremium = premiumPreviewEnabled || isAdmin || roles.includes("premium");
   const previewRole = localStorage.getItem("mlc_role_preview");
-  const isTherapistPreview = previewRole === "therapist" && !isTherapist;
+  const signupRole = localStorage.getItem("mlc_signup_role");
+  const isTherapistPreview =
+    previewRole === "therapist" &&
+    signupRole === "therapist" &&
+    !isTherapist;
 
   useEffect(() => {
     let isMounted = true;

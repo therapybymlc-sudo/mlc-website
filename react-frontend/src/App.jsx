@@ -33,6 +33,7 @@ import Therapists from "./pages/Therapists";
 import TherapistApply from "./pages/TherapistApply";
 import ClientSignup from "./pages/ClientSignup";
 import ClientCheckinQuiz from "./pages/ClientCheckinQuiz";
+import TherapistSignupPreview from "./pages/TherapistSignupPreview";
 
 // 🩺 Therapist Dashboard Pages
 import TherapistLogin from "./pages/login/TherapistLogin";
@@ -117,6 +118,10 @@ export default function App() {
               <Route path="/therapists" element={<Therapists />} />
               <Route path="/therapist-apply" element={<TherapistApply />} />
               <Route path="/signup/client" element={<ClientSignup />} />
+              <Route
+                path="/signup/therapist-preview"
+                element={<TherapistSignupPreview />}
+              />
 
               {/* 🌸 Service Detail Pages */}
               <Route path="/individual-therapy" element={<IndividualTherapy />} />

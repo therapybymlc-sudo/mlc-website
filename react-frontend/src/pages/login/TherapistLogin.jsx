@@ -1,16 +1,9 @@
 import { Box, Heading, VStack, Text, Button } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
 import { SignIn } from "@clerk/clerk-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function TherapistLogin() {
-  const navigate = useNavigate();
-
-  const openTherapistPreview = () => {
-    localStorage.setItem("mlc_role_preview", "therapist");
-    navigate("/dashboard");
-  };
-
   return (
     <Box textAlign="center" mt={20}>
       <Helmet>
@@ -36,8 +29,8 @@ export default function TherapistLogin() {
         <Button as={Link} to="/signup/client" colorScheme="purple">
           Sign up as a client
         </Button>
-        <Button variant="ghost" onClick={openTherapistPreview}>
-          Explore therapist preview
+        <Button as={Link} to="/signup/therapist-preview" variant="ghost">
+          Sign up as a therapist (preview)
         </Button>
       </VStack>
     </Box>
