@@ -29,6 +29,11 @@ import {
   DrawerHeader,
   useDisclosure,
   Select,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
 } from "@chakra-ui/react";
 import { useMemo, useState, useEffect } from "react";
 import {
@@ -50,6 +55,15 @@ const LOCAL_KEYS = {
   profile: "mlc_client_profile",
   checkin: "mlc_client_checkin_last",
   checkinData: "mlc_client_checkin_data",
+  profileCompleted: "mlc_client_profile_completed",
+};
+
+const getLocalDayKey = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const moodOptions = [
@@ -85,6 +99,7 @@ export default function ClientDashboard() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [activeSection, setActiveSection] = useState("overview");
   const [journalText, setJournalText] = useState("");
+  const [timeZones, setTimeZones] = useState([]);
   const [noteText, setNoteText] = useState(
     localStorage.getItem(LOCAL_KEYS.notes) || ""
   );
@@ -103,6 +118,7 @@ export default function ClientDashboard() {
     }
   });
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileImagePreview, setProfileImagePreview] = useState("");
   const [profileDraft, setProfileDraft] = useState({
     name: "",
     pronouns: "",
@@ -113,11 +129,40 @@ export default function ClientDashboard() {
   const [checkinStep, setCheckinStep] = useState(0);
   const [checkinData, setCheckinData] = useState(() => {
     const saved = localStorage.getItem(LOCAL_KEYS.checkinData);
-    if (!saved) return { mood: "", energy: "", stress: "", gratitude: "", note: "" };
+    if (!saved)
+      return {
+        mood: "",
+        energy: "",
+        stress: "",
+        gratitude: "",
+        note: "",
+        sleepQuality: "",
+        bodyFeel: "",
+        worry: "",
+        smallGoal: "",
+        joy: "",
+        learned: "",
+        challenge: "",
+        tomorrow: "",
+      };
     try {
       return JSON.parse(saved);
     } catch {
-      return { mood: "", energy: "", stress: "", gratitude: "", note: "" };
+      return {
+        mood: "",
+        energy: "",
+        stress: "",
+        gratitude: "",
+        note: "",
+        sleepQuality: "",
+        bodyFeel: "",
+        worry: "",
+        smallGoal: "",
+        joy: "",
+        learned: "",
+        challenge: "",
+        tomorrow: "",
+      };
     }
   });
   const [journalEntries, setJournalEntries] = useState([]);
@@ -147,7 +192,21 @@ export default function ClientDashboard() {
       try {
         setCheckinData(JSON.parse(rawCheckin));
       } catch {
-        setCheckinData({ mood: "", energy: "", stress: "", gratitude: "", note: "" });
+        setCheckinData({
+          mood: "",
+          energy: "",
+          stress: "",
+          gratitude: "",
+          note: "",
+          sleepQuality: "",
+          bodyFeel: "",
+          worry: "",
+          smallGoal: "",
+          joy: "",
+          learned: "",
+          challenge: "",
+          tomorrow: "",
+        });
       }
     }
   };
@@ -203,6 +262,14 @@ export default function ClientDashboard() {
           stress: latest.stress || "",
           gratitude: latest.gratitude || "",
           note: latest.notes || "",
+          sleepQuality: "",
+          bodyFeel: "",
+          worry: "",
+          smallGoal: "",
+          joy: "",
+          learned: "",
+          challenge: "",
+          tomorrow: "",
         });
         localStorage.setItem(
           LOCAL_KEYS.checkinData,
@@ -212,11 +279,19 @@ export default function ClientDashboard() {
             stress: latest.stress || "",
             gratitude: latest.gratitude || "",
             note: latest.notes || "",
+            sleepQuality: "",
+            bodyFeel: "",
+            worry: "",
+            smallGoal: "",
+            joy: "",
+            learned: "",
+            challenge: "",
+            tomorrow: "",
           })
         );
         if (latestDate) {
           localStorage.setItem(LOCAL_KEYS.checkin, latestDate);
-          if (latestDate === new Date().toISOString().slice(0, 10)) {
+          if (latestDate === getLocalDayKey()) {
             setShowCheckin(false);
           }
         }
@@ -341,9 +416,17 @@ export default function ClientDashboard() {
   };
 
   const openProfileEditor = () => {
+    const detectedTimezone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "";
     setProfileDraft(
-      profile || { name: "", pronouns: "", timezone: "", avatarUrl: "" }
+      profile || {
+        name: "",
+        pronouns: "",
+        timezone: detectedTimezone,
+        avatarUrl: "",
+      }
     );
+    setProfileImagePreview(profile?.avatarUrl || "");
     setShowProfileModal(true);
   };
 
@@ -354,16 +437,29 @@ export default function ClientDashboard() {
     };
     setProfile(nextProfile);
     localStorage.setItem(LOCAL_KEYS.profile, JSON.stringify(nextProfile));
+    localStorage.setItem(LOCAL_KEYS.profileCompleted, "true");
     setShowProfileModal(false);
+  };
+
+  const handleProfileImage = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      if (!result) return;
+      setProfileImagePreview(result);
+      setProfileDraft((p) => ({ ...p, avatarUrl: result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const checkinSteps = [
     {
-      title: "How are you feeling today?",
+      title: "Morning check‑in",
       body: (
         <VStack align="stretch" spacing={3}>
           <Text color="gray.600">
-            Choose the word that feels most true right now.
+            Start with how you’re arriving today.
           </Text>
           <HStack spacing={2} flexWrap="wrap">
             {moodOptions.map((m) => (
@@ -378,11 +474,29 @@ export default function ClientDashboard() {
               </Button>
             ))}
           </HStack>
+          <Box>
+            <Text fontWeight="medium" mt={3}>
+              Sleep quality
+            </Text>
+            <Select
+              mt={2}
+              value={checkinData.sleepQuality}
+              onChange={(e) =>
+                setCheckinData((p) => ({ ...p, sleepQuality: e.target.value }))
+              }
+              placeholder="Select sleep quality"
+            >
+              <option value="Poor">Poor</option>
+              <option value="Okay">Okay</option>
+              <option value="Good">Good</option>
+              <option value="Great">Great</option>
+            </Select>
+          </Box>
         </VStack>
       ),
     },
     {
-      title: "Energy & stress check",
+      title: "Body & energy",
       body: (
         <VStack align="stretch" spacing={4}>
           <Box>
@@ -396,6 +510,21 @@ export default function ClientDashboard() {
               <option value="Low">Low</option>
               <option value="Medium">Medium</option>
               <option value="High">High</option>
+            </Select>
+          </Box>
+          <Box>
+            <Text fontWeight="medium">How does your body feel?</Text>
+            <Select
+              mt={2}
+              value={checkinData.bodyFeel}
+              onChange={(e) => setCheckinData((p) => ({ ...p, bodyFeel: e.target.value }))}
+              placeholder="Select a body feeling"
+            >
+              <option value="Tense">Tense</option>
+              <option value="Neutral">Neutral</option>
+              <option value="Relaxed">Relaxed</option>
+              <option value="Heavy">Heavy</option>
+              <option value="Light">Light</option>
             </Select>
           </Box>
           <Box>
@@ -429,34 +558,90 @@ export default function ClientDashboard() {
               setCheckinData((p) => ({ ...p, gratitude: e.target.value }))
             }
           />
+          <Textarea
+            placeholder="One worry to let go of (optional)"
+            value={checkinData.worry}
+            onChange={(e) =>
+              setCheckinData((p) => ({ ...p, worry: e.target.value }))
+            }
+          />
+          <Textarea
+            placeholder="One small goal for today (optional)"
+            value={checkinData.smallGoal}
+            onChange={(e) =>
+              setCheckinData((p) => ({ ...p, smallGoal: e.target.value }))
+            }
+          />
         </VStack>
       ),
     },
     {
-      title: "Anything else you want to capture?",
+      title: "Evening reflection",
       body: (
-        <Textarea
-          placeholder="Optional note for yourself..."
-          value={checkinData.note}
-          onChange={(e) => setCheckinData((p) => ({ ...p, note: e.target.value }))}
-        />
+        <VStack align="stretch" spacing={3}>
+          <Textarea
+            placeholder="One thing that brought you joy today"
+            value={checkinData.joy}
+            onChange={(e) =>
+              setCheckinData((p) => ({ ...p, joy: e.target.value }))
+            }
+          />
+          <Textarea
+            placeholder="One thing you learned today"
+            value={checkinData.learned}
+            onChange={(e) =>
+              setCheckinData((p) => ({ ...p, learned: e.target.value }))
+            }
+          />
+          <Textarea
+            placeholder="One challenge you overcame today"
+            value={checkinData.challenge}
+            onChange={(e) =>
+              setCheckinData((p) => ({ ...p, challenge: e.target.value }))
+            }
+          />
+          <Textarea
+            placeholder="A small to‑do for tomorrow"
+            value={checkinData.tomorrow}
+            onChange={(e) =>
+              setCheckinData((p) => ({ ...p, tomorrow: e.target.value }))
+            }
+          />
+          <Textarea
+            placeholder="Anything else you want to capture?"
+            value={checkinData.note}
+            onChange={(e) => setCheckinData((p) => ({ ...p, note: e.target.value }))}
+          />
+        </VStack>
       ),
     },
   ];
 
   const saveCheckin = () => {
     localStorage.setItem(LOCAL_KEYS.checkinData, JSON.stringify(checkinData));
-    localStorage.setItem(LOCAL_KEYS.checkin, new Date().toISOString().slice(0, 10));
+    localStorage.setItem(LOCAL_KEYS.checkin, getLocalDayKey());
     setShowCheckin(false);
     setCheckinStep(0);
     if (isPremium) {
       apiPost("client-checkins/", {
-        checkin_date: new Date().toISOString().slice(0, 10),
+        checkin_date: getLocalDayKey(),
         mood: checkinData.mood,
         energy: checkinData.energy,
         stress: checkinData.stress,
         gratitude: checkinData.gratitude,
-        notes: checkinData.note,
+        notes: [
+          checkinData.note,
+          checkinData.sleepQuality && `Sleep: ${checkinData.sleepQuality}`,
+          checkinData.bodyFeel && `Body: ${checkinData.bodyFeel}`,
+          checkinData.worry && `Worry: ${checkinData.worry}`,
+          checkinData.smallGoal && `Goal: ${checkinData.smallGoal}`,
+          checkinData.joy && `Joy: ${checkinData.joy}`,
+          checkinData.learned && `Learned: ${checkinData.learned}`,
+          checkinData.challenge && `Challenge: ${checkinData.challenge}`,
+          checkinData.tomorrow && `Tomorrow: ${checkinData.tomorrow}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
       }).catch((error) => {
         console.warn("Check-in save failed, stored locally.", error);
       });
@@ -465,13 +650,34 @@ export default function ClientDashboard() {
   };
 
   useEffect(() => {
-    if (!profile) {
+    const detectedTimezone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    const storedCompleted = localStorage.getItem(LOCAL_KEYS.profileCompleted);
+    const storedProfile = localStorage.getItem(LOCAL_KEYS.profile);
+    if (!storedCompleted && !storedProfile) {
+      setProfileDraft((prev) => ({
+        ...prev,
+        timezone: prev.timezone || detectedTimezone,
+      }));
       setShowProfileModal(true);
+    } else if (storedProfile && !storedCompleted) {
+      localStorage.setItem(LOCAL_KEYS.profileCompleted, "true");
     }
-  }, [profile]);
+    if (typeof Intl !== "undefined" && Intl.supportedValuesOf) {
+      setTimeZones(Intl.supportedValuesOf("timeZone"));
+    } else {
+      setTimeZones([
+        "Asia/Kolkata",
+        "Asia/Dubai",
+        "Europe/London",
+        "America/New_York",
+        "America/Los_Angeles",
+      ]);
+    }
+  }, []);
 
   useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalDayKey();
     const last = localStorage.getItem(LOCAL_KEYS.checkin);
     if (last !== today) {
       setShowCheckin(true);
@@ -887,6 +1093,75 @@ export default function ClientDashboard() {
           <Button onClick={() => setShowCheckin(true)} colorScheme="teal">
             Start check‑in
           </Button>
+          <Divider my={6} />
+          <Heading size="sm" mb={3}>
+            How to use your daily check‑in
+          </Heading>
+          <Accordion allowToggle>
+            <AccordionItem>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  Sleep & energy matter
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel color="gray.600">
+                Noticing sleep quality and energy helps you understand how much
+                capacity you have today and prevents over‑commitment or
+                overwhelm.
+              </AccordionPanel>
+            </AccordionItem>
+            <AccordionItem>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  Name what you’re feeling
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel color="gray.600">
+                Pausing to notice your feelings and body sensations builds
+                self‑awareness and makes it easier to respond with care.
+              </AccordionPanel>
+            </AccordionItem>
+            <AccordionItem>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  Letting go & gratitude
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel color="gray.600">
+                Writing down one worry to release and one thing you’re grateful
+                for creates a gentle reset. Sometimes it’s hard to find one, but
+                it’s there if we look beyond the obvious.
+              </AccordionPanel>
+            </AccordionItem>
+            <AccordionItem>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  End‑of‑day reflection
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel color="gray.600">
+                A quick evening check‑in helps you notice wins, learnings, and
+                what you want to carry into tomorrow.
+              </AccordionPanel>
+            </AccordionItem>
+            <AccordionItem>
+              <AccordionButton>
+                <Box flex="1" textAlign="left">
+                  Why this helps over time
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+              <AccordionPanel color="gray.600">
+                Regular check‑ins build emotional regulation, highlight
+                patterns, and support small habit changes that improve your
+                wellbeing.
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
         </Box>
       );
     }
@@ -976,12 +1251,18 @@ export default function ClientDashboard() {
               Edit
             </Button>
           </HStack>
-          <VStack align="start" spacing={2}>
-            <Text><strong>Name:</strong> {profile?.name || "—"}</Text>
-            <Text><strong>Pronouns:</strong> {profile?.pronouns || "—"}</Text>
-            <Text><strong>Timezone:</strong> {profile?.timezone || "—"}</Text>
-            <Text><strong>Avatar URL:</strong> {profile?.avatarUrl || "—"}</Text>
-          </VStack>
+          <HStack align="start" spacing={4}>
+            <Avatar
+              size="lg"
+              name={profile?.name || "Client"}
+              src={profile?.avatarUrl}
+            />
+            <VStack align="start" spacing={2}>
+              <Text><strong>Name:</strong> {profile?.name || "—"}</Text>
+              <Text><strong>Pronouns:</strong> {profile?.pronouns || "—"}</Text>
+              <Text><strong>Timezone:</strong> {profile?.timezone || "—"}</Text>
+            </VStack>
+          </HStack>
         </Box>
       );
     }
@@ -1172,20 +1453,48 @@ export default function ClientDashboard() {
                   setProfileDraft((p) => ({ ...p, pronouns: e.target.value }))
                 }
               />
-              <Input
-                placeholder="Timezone (optional)"
+              <Select
+                placeholder="Select your timezone"
                 value={profileDraft.timezone}
                 onChange={(e) =>
                   setProfileDraft((p) => ({ ...p, timezone: e.target.value }))
                 }
-              />
-              <Input
-                placeholder="Profile photo URL (optional)"
-                value={profileDraft.avatarUrl}
-                onChange={(e) =>
-                  setProfileDraft((p) => ({ ...p, avatarUrl: e.target.value }))
-                }
-              />
+              >
+                {timeZones.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </Select>
+              <HStack align="center" spacing={4}>
+                <Avatar
+                  size="lg"
+                  name={profileDraft.name || "Client"}
+                  src={profileImagePreview || profileDraft.avatarUrl}
+                />
+                <VStack align="start" spacing={2} w="100%">
+                  <Input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={(e) => handleProfileImage(e.target.files?.[0])}
+                  />
+                  <Text fontSize="xs" color="gray.500">
+                    PNG or JPEG only. Image stays on this device unless you upgrade.
+                  </Text>
+                  {profileDraft.avatarUrl ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setProfileImagePreview("");
+                        setProfileDraft((p) => ({ ...p, avatarUrl: "" }));
+                      }}
+                    >
+                      Remove photo
+                    </Button>
+                  ) : null}
+                </VStack>
+              </HStack>
             </VStack>
           </ModalBody>
           <ModalFooter>
