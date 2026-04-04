@@ -40,6 +40,7 @@ import {
 } from "@chakra-ui/icons";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 
 const LOCAL_KEYS = {
   journal: "mlc_client_journal_entries",
@@ -90,15 +91,7 @@ export default function ClientDashboard() {
   const [mood, setMood] = useState(
     localStorage.getItem(LOCAL_KEYS.mood) || "Okay"
   );
-  const [goals, setGoals] = useState(() => {
-    const saved = localStorage.getItem(LOCAL_KEYS.goals);
-    if (!saved) return defaultGoals;
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return defaultGoals;
-    }
-  });
+  const [goals, setGoals] = useState(defaultGoals);
   const [newGoal, setNewGoal] = useState("");
   const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem(LOCAL_KEYS.profile);
@@ -127,28 +120,140 @@ export default function ClientDashboard() {
       return { mood: "", energy: "", stress: "", gratitude: "", note: "" };
     }
   });
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [sharedItems, setSharedItems] = useState([]);
+  const [materials, setMaterials] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const journalEntries = useMemo(() => {
-    const raw = localStorage.getItem(LOCAL_KEYS.journal);
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return [];
+  const hydrateLocal = () => {
+    const rawJournal = localStorage.getItem(LOCAL_KEYS.journal);
+    const rawGoals = localStorage.getItem(LOCAL_KEYS.goals);
+    const rawCheckin = localStorage.getItem(LOCAL_KEYS.checkinData);
+    if (rawJournal) {
+      try {
+        setJournalEntries(JSON.parse(rawJournal));
+      } catch {
+        setJournalEntries([]);
+      }
     }
-  }, []);
+    if (rawGoals) {
+      try {
+        setGoals(JSON.parse(rawGoals));
+      } catch {
+        setGoals(defaultGoals);
+      }
+    }
+    if (rawCheckin) {
+      try {
+        setCheckinData(JSON.parse(rawCheckin));
+      } catch {
+        setCheckinData({ mood: "", energy: "", stress: "", gratitude: "", note: "" });
+      }
+    }
+  };
+
+  const syncFromApi = async () => {
+    setIsSyncing(true);
+    try {
+      const [journals, goalData, checkins, shares] = await Promise.all([
+        apiGet("client-journals/"),
+        apiGet("client-goals/"),
+        apiGet("client-checkins/"),
+        apiGet("material-shares/"),
+      ]);
+
+      const normalizedJournals = (journals || []).map((entry) => ({
+        id: entry.id,
+        text: entry.entry,
+        mood: entry.mood || "Okay",
+        createdAt: entry.created_at,
+      }));
+      setJournalEntries(normalizedJournals);
+      localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(normalizedJournals));
+
+      const normalizedGoals = (goalData || []).map((g) => ({
+        id: g.id,
+        label: g.title,
+        done: g.is_completed,
+      }));
+      setGoals(normalizedGoals.length ? normalizedGoals : defaultGoals);
+      localStorage.setItem(
+        LOCAL_KEYS.goals,
+        JSON.stringify(normalizedGoals.length ? normalizedGoals : defaultGoals)
+      );
+
+      if (Array.isArray(checkins) && checkins.length > 0) {
+        const latest = checkins[0];
+        const latestDate = latest.checkin_date;
+        setCheckinData({
+          mood: latest.mood || "",
+          energy: latest.energy || "",
+          stress: latest.stress || "",
+          gratitude: latest.gratitude || "",
+          note: latest.notes || "",
+        });
+        localStorage.setItem(
+          LOCAL_KEYS.checkinData,
+          JSON.stringify({
+            mood: latest.mood || "",
+            energy: latest.energy || "",
+            stress: latest.stress || "",
+            gratitude: latest.gratitude || "",
+            note: latest.notes || "",
+          })
+        );
+        if (latestDate) {
+          localStorage.setItem(LOCAL_KEYS.checkin, latestDate);
+          if (latestDate === new Date().toISOString().slice(0, 10)) {
+            setShowCheckin(false);
+          }
+        }
+      }
+
+      setSharedItems(shares || []);
+      setMaterials(shares || []);
+    } catch (error) {
+      console.warn("Client dashboard API sync failed, using local cache.", error);
+      hydrateLocal();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const saveJournal = () => {
     if (!journalText.trim()) return;
     const entry = {
+      entry: journalText.trim(),
+      mood,
+      shared_with_therapist: false,
+    };
+    const fallbackEntry = {
       id: Date.now(),
       text: journalText.trim(),
       mood,
       createdAt: new Date().toISOString(),
     };
-    const updated = [entry, ...journalEntries].slice(0, 30);
-    localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(updated));
+    const updatedLocal = [fallbackEntry, ...journalEntries].slice(0, 30);
+    localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(updatedLocal));
+    setJournalEntries(updatedLocal);
     setJournalText("");
+    apiPost("client-journals/", entry)
+      .then((saved) => {
+        const next = [
+          {
+            id: saved.id,
+            text: saved.entry,
+            mood: saved.mood || mood,
+            createdAt: saved.created_at,
+          },
+          ...updatedLocal.filter((e) => e.id !== fallbackEntry.id),
+        ];
+        setJournalEntries(next);
+        localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(next));
+      })
+      .catch((error) => {
+        console.warn("Journal save failed, kept locally.", error);
+      });
     toast({ title: "Saved to your private journal", status: "success" });
   };
 
@@ -168,27 +273,55 @@ export default function ClientDashboard() {
     );
     setGoals(updated);
     localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(updated));
+    const goal = updated.find((g) => g.id === id);
+    if (goal && Number.isFinite(goal.id)) {
+      apiPut(`client-goals/${goal.id}/`, {
+        title: goal.label,
+        is_completed: goal.done,
+      }).catch((error) => {
+        console.warn("Goal update failed, kept locally.", error);
+      });
+    }
   };
 
   const progressValue =
-    (goals.filter((g) => g.done).length / goals.length) * 100;
+    goals.length > 0
+      ? (goals.filter((g) => g.done).length / goals.length) * 100
+      : 0;
 
   const addGoal = () => {
     const trimmed = newGoal.trim();
     if (!trimmed) return;
-    const updated = [
-      { id: Date.now(), label: trimmed, done: false },
-      ...goals,
-    ];
+    const tempGoal = { id: Date.now(), label: trimmed, done: false };
+    const updated = [tempGoal, ...goals];
     setGoals(updated);
     localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(updated));
     setNewGoal("");
+    apiPost("client-goals/", {
+      title: trimmed,
+      is_completed: false,
+      created_by: "client",
+    })
+      .then((saved) => {
+        const next = [
+          { id: saved.id, label: saved.title, done: saved.is_completed },
+          ...updated.filter((g) => g.id !== tempGoal.id),
+        ];
+        setGoals(next);
+        localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(next));
+      })
+      .catch((error) => {
+        console.warn("Goal create failed, kept locally.", error);
+      });
   };
 
   const removeGoal = (id) => {
     const updated = goals.filter((g) => g.id !== id);
     setGoals(updated);
     localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(updated));
+    if (Number.isFinite(id)) {
+      apiDelete(`client-goals/${id}/`).catch(() => {});
+    }
   };
 
   const openProfileEditor = () => {
@@ -300,6 +433,16 @@ export default function ClientDashboard() {
     localStorage.setItem(LOCAL_KEYS.checkin, new Date().toISOString().slice(0, 10));
     setShowCheckin(false);
     setCheckinStep(0);
+    apiPost("client-checkins/", {
+      checkin_date: new Date().toISOString().slice(0, 10),
+      mood: checkinData.mood,
+      energy: checkinData.energy,
+      stress: checkinData.stress,
+      gratitude: checkinData.gratitude,
+      notes: checkinData.note,
+    }).catch((error) => {
+      console.warn("Check-in save failed, stored locally.", error);
+    });
     toast({ title: "Daily check-in saved", status: "success" });
   };
 
@@ -315,6 +458,7 @@ export default function ClientDashboard() {
     if (last !== today) {
       setShowCheckin(true);
     }
+    syncFromApi();
   }, []);
 
   const navItems = [
@@ -437,7 +581,9 @@ export default function ClientDashboard() {
               </Button>
               <Divider my={4} />
               <VStack align="start" spacing={2}>
-                {journalEntries.length === 0 ? (
+                {isSyncing && journalEntries.length === 0 ? (
+                  <Text color="gray.500">Syncing journal…</Text>
+                ) : journalEntries.length === 0 ? (
                   <Text color="gray.500">No journal entries yet.</Text>
                 ) : (
                   journalEntries.slice(0, 3).map((entry) => (
@@ -494,7 +640,17 @@ export default function ClientDashboard() {
                 Files, worksheets, or resources your therapist shares with you.
               </Text>
               <Box p={4} bg="#FBF8F3" borderRadius="xl">
-                <Text color="gray.500">Nothing shared yet.</Text>
+                {sharedItems.length === 0 ? (
+                  <Text color="gray.500">Nothing shared yet.</Text>
+                ) : (
+                  <VStack align="start" spacing={2}>
+                    {sharedItems.slice(0, 4).map((item) => (
+                      <Text key={item.id}>
+                        {item.material_title || "Shared item"}
+                      </Text>
+                    ))}
+                  </VStack>
+                )}
               </Box>
             </Box>
 
@@ -521,7 +677,17 @@ export default function ClientDashboard() {
                 Homework, worksheets, and exercises shared by your therapist.
               </Text>
               <Box p={4} bg="#FBF8F3" borderRadius="xl">
-                <Text color="gray.500">No materials yet.</Text>
+                {materials.length === 0 ? (
+                  <Text color="gray.500">No materials yet.</Text>
+                ) : (
+                  <VStack align="start" spacing={2}>
+                    {materials.slice(0, 4).map((item) => (
+                      <Text key={item.id}>
+                        {item.material_title || "Material"}
+                      </Text>
+                    ))}
+                  </VStack>
+                )}
               </Box>
             </Box>
 
@@ -692,7 +858,17 @@ export default function ClientDashboard() {
             Files, worksheets, or resources your therapist shares with you.
           </Text>
           <Box p={4} bg="#FBF8F3" borderRadius="xl">
-            <Text color="gray.500">Nothing shared yet.</Text>
+            {sharedItems.length === 0 ? (
+              <Text color="gray.500">Nothing shared yet.</Text>
+            ) : (
+              <VStack align="start" spacing={2}>
+                {sharedItems.map((item) => (
+                  <Text key={item.id}>
+                    {item.material_title || "Shared item"}
+                  </Text>
+                ))}
+              </VStack>
+            )}
           </Box>
         </Box>
       );
@@ -704,7 +880,17 @@ export default function ClientDashboard() {
           <Heading size="md" mb={3}>
             Therapist Materials
           </Heading>
-          <Text color="gray.500">No materials yet.</Text>
+          {materials.length === 0 ? (
+            <Text color="gray.500">No materials yet.</Text>
+          ) : (
+            <VStack align="start" spacing={2}>
+              {materials.map((item) => (
+                <Text key={item.id}>
+                  {item.material_title || "Material"}
+                </Text>
+              ))}
+            </VStack>
+          )}
         </Box>
       );
     }

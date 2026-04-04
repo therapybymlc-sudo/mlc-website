@@ -386,21 +386,21 @@ class ClientJournalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientJournal
         fields = "__all__"
-        extra_kwargs = {"therapist": {"read_only": True}}
+        extra_kwargs = {"therapist": {"read_only": True}, "client": {"read_only": True}}
 
 
 class ClientGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientGoal
         fields = "__all__"
-        extra_kwargs = {"therapist": {"read_only": True}}
+        extra_kwargs = {"therapist": {"read_only": True}, "client": {"read_only": True}}
 
 
 class ClientCheckinSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientCheckin
         fields = "__all__"
-        extra_kwargs = {"therapist": {"read_only": True}}
+        extra_kwargs = {"therapist": {"read_only": True}, "client": {"read_only": True}}
 
 
 class TherapistMaterialSerializer(serializers.ModelSerializer):
