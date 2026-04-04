@@ -114,6 +114,48 @@ class ClientProfile(models.Model):
         return self.name
 
 
+class TherapistApplication(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=50)
+    website = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    home_country = models.CharField(max_length=100)
+    home_city = models.CharField(max_length=100)
+    home_postal_code = models.CharField(max_length=50)
+    licensed_countries = models.JSONField(default=list, blank=True)
+    has_private_practice = models.CharField(max_length=20)
+    open_to_in_person = models.CharField(max_length=20)
+    office_space = models.CharField(max_length=100, blank=True, null=True)
+    in_person_country = models.CharField(max_length=100, blank=True, null=True)
+    in_person_street = models.CharField(max_length=255, blank=True, null=True)
+    in_person_city = models.CharField(max_length=100, blank=True, null=True)
+    in_person_state = models.CharField(max_length=100, blank=True, null=True)
+    in_person_postal_code = models.CharField(max_length=50, blank=True, null=True)
+    years_experience = models.CharField(max_length=50)
+    languages = models.JSONField(default=list, blank=True)
+    treat_minors = models.CharField(max_length=20)
+    youngest_age = models.CharField(max_length=50)
+    referral_source = models.CharField(max_length=100)
+    referral_name = models.CharField(max_length=255, blank=True, null=True)
+    resume = models.FileField(upload_to="therapist_applications/resumes/", blank=True, null=True)
+    subscribe = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    review_notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name} ({self.email})"
+
+
 # ===========================
 # 🔹 Appointment & Session Models
 # ===========================

@@ -1,7 +1,9 @@
 from rest_framework import viewsets, status, exceptions
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
 from django.db import transaction
 from django.utils import timezone
@@ -24,6 +26,7 @@ from therapy.models import (
     ClientCheckin,
     TherapistMaterial,
     MaterialShare,
+    TherapistApplication,
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
@@ -42,6 +45,7 @@ from therapy.serializers import (
     ClientCheckinSerializer,
     TherapistMaterialSerializer,
     MaterialShareSerializer,
+    TherapistApplicationSerializer,
 )
 
 
@@ -488,6 +492,24 @@ class MaterialShareViewSet(viewsets.ModelViewSet):
         therapist = _resolve_therapist_from_request(self.request)
         if therapist:
             serializer.save(shared_by=therapist)
+
+
+# ----------------------------
+# Therapist Applications (Public)
+# ----------------------------
+class TherapistApplicationCreateView(APIView):
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request):
+        serializer = TherapistApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            application = serializer.save()
+            return Response(
+                {"id": application.id, "status": application.status},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ----------------------------

@@ -1,6 +1,7 @@
-import { Box, Heading, VStack, Text } from "@chakra-ui/react";
+import { Box, Heading, VStack, Text, Button } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
 import { SignIn } from "@clerk/clerk-react";
+import { Link } from "react-router-dom";
 
 export default function TherapistLogin() {
   return (
@@ -19,6 +20,12 @@ export default function TherapistLogin() {
         <Heading>Therapist Login</Heading>
         <Text>Secure access for therapists to manage clients and notes</Text>
         <SignIn routing="path" path="/login/therapist" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard" />
+        <Text fontSize="sm" color="gray.500">
+          Want to join as a therapist? Submit an application and we’ll review it.
+        </Text>
+        <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
+          Apply to be a therapist
+        </Button>
       </VStack>
     </Box>
   );

@@ -3,6 +3,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import TemplateView
 from django.http import JsonResponse
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -25,6 +27,7 @@ from therapy.views import (
     ClientCheckinViewSet,
     TherapistMaterialViewSet,
     MaterialShareViewSet,
+    TherapistApplicationCreateView,
 )
 
 # ----------------------------
@@ -83,7 +86,11 @@ urlpatterns = [
 
     # REST API
     path("api/", include(router.urls)),
+    path("api/therapist-applications/", TherapistApplicationCreateView.as_view(), name="therapist_applications"),
 
     # Simple health check
     path("healthz", healthz, name="healthz"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

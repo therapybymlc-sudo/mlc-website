@@ -30,6 +30,7 @@ import MindfulnessRelaxation from "./pages/MindfulnessAndRelaxation";
 import TrainingPrograms from "./pages/TrainingAndPrograms";
 import Client from "./pages/Client";
 import Therapists from "./pages/Therapists";
+import TherapistApply from "./pages/TherapistApply";
 
 // 🩺 Therapist Dashboard Pages
 import TherapistLogin from "./pages/login/TherapistLogin";
@@ -111,6 +112,7 @@ export default function App() {
               <Route path="/careers" element={<Careers />} />
               <Route path="/client" element={<Client />} />
               <Route path="/therapists" element={<Therapists />} />
+              <Route path="/therapist-apply" element={<TherapistApply />} />
 
               {/* 🌸 Service Detail Pages */}
               <Route path="/individual-therapy" element={<IndividualTherapy />} />

@@ -17,11 +17,13 @@ from therapy.models import (
     ClientCheckin,
     TherapistMaterial,
     MaterialShare,
+    TherapistApplication,
 )
 
 from .utils import _resolve_therapist_from_request
 from django.utils import timezone
 from rest_framework import serializers
+import json
 
 # ----------------------------
 # Therapist / Client / Appointment
@@ -427,3 +429,41 @@ class MaterialShareSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         extra_kwargs = {"shared_by": {"read_only": True}}
+
+
+class TherapistApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TherapistApplication
+        fields = "__all__"
+
+    def _coerce_list(self, value):
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return parsed
+            except Exception:
+                return [v.strip() for v in value.split(",") if v.strip()]
+        return []
+
+    def validate(self, attrs):
+        licensed = self._coerce_list(attrs.get("licensed_countries"))
+        languages = self._coerce_list(attrs.get("languages"))
+        attrs["licensed_countries"] = licensed
+        attrs["languages"] = languages
+
+        if not licensed:
+            raise serializers.ValidationError(
+                {"licensed_countries": "Select at least one country of licensure."}
+            )
+        if not attrs.get("home_country"):
+            raise serializers.ValidationError({"home_country": "Home country is required."})
+        if not attrs.get("home_city"):
+            raise serializers.ValidationError({"home_city": "Home city is required."})
+        if not attrs.get("home_postal_code"):
+            raise serializers.ValidationError({"home_postal_code": "Postal code is required."})
+        return attrs
