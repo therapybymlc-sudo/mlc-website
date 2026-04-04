@@ -79,6 +79,22 @@ def _resolve_client_from_request(request):
     return ClientProfile.objects.filter(email__iexact=email).first()
 
 
+def _extract_roles_from_auth(request):
+    payload = request.auth or {}
+    meta = payload.get("public_metadata") or payload.get("publicMetadata") or {}
+    roles = meta.get("roles") or payload.get("roles") or []
+    if isinstance(roles, str):
+        roles = [roles]
+    if not roles and meta.get("role"):
+        roles = [meta.get("role")]
+    return [str(r).lower() for r in roles if r]
+
+
+def _is_premium_request(request):
+    roles = _extract_roles_from_auth(request)
+    return any(role in roles for role in ["admin", "premium", "premium_client", "premium_therapist"])
+
+
 # ----------------------------
 # Therapist / Client / Appointment
 # ----------------------------
@@ -350,6 +366,8 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(client_id=client_id)
             return qs.order_by("-created_at")
         if client:
+            if not _is_premium_request(self.request):
+                raise exceptions.PermissionDenied("Premium is required to sync journals.")
             return qs.filter(client=client).order_by("-created_at")
         return ClientJournal.objects.none()
 
@@ -359,6 +377,8 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
         if therapist:
             serializer.save(therapist=therapist)
         elif client:
+            if not _is_premium_request(self.request):
+                raise exceptions.PermissionDenied("Premium is required to sync journals.")
             serializer.save(client=client, therapist=client.therapist)
 
 
@@ -377,6 +397,8 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(client_id=client_id)
             return qs.order_by("-created_at")
         if client:
+            if not _is_premium_request(self.request):
+                raise exceptions.PermissionDenied("Premium is required to sync goals.")
             return qs.filter(client=client).order_by("-created_at")
         return ClientGoal.objects.none()
 
@@ -394,6 +416,8 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
                 raise exceptions.ValidationError({"client": "Valid client is required."})
             serializer.save(therapist=therapist, client=client_obj)
         elif client:
+            if not _is_premium_request(self.request):
+                raise exceptions.PermissionDenied("Premium is required to sync goals.")
             serializer.save(client=client, therapist=client.therapist)
 
 
@@ -412,6 +436,8 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(client_id=client_id)
             return qs.order_by("-created_at")
         if client:
+            if not _is_premium_request(self.request):
+                raise exceptions.PermissionDenied("Premium is required to sync check-ins.")
             return qs.filter(client=client).order_by("-created_at")
         return ClientCheckin.objects.none()
 
@@ -421,6 +447,8 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
         if therapist:
             serializer.save(therapist=therapist)
         elif client:
+            if not _is_premium_request(self.request):
+                raise exceptions.PermissionDenied("Premium is required to sync check-ins.")
             serializer.save(client=client, therapist=client.therapist)
 
 

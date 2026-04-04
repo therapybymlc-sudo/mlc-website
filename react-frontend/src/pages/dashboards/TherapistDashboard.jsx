@@ -48,7 +48,7 @@ import NoteTemplates from "./NoteTemplates"; // ✅ added
 import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 
 export default function TherapistDashboard() {
-  const { user, logout, isAdmin } = useAuth(); // ✅ now using isAdmin from AuthContext
+  const { user, logout, isAdmin, isPremium } = useAuth(); // ✅ now using isAdmin from AuthContext
   const toast = useToast();
   const { isOpen: isSidebarOpen, onOpen: onSidebarOpen, onClose: onSidebarClose } = useDisclosure();
   const [activeTab, setActiveTab] = useState("overview");
@@ -310,6 +310,20 @@ export default function TherapistDashboard() {
             <Text color="gray.600" maxW="2xl">
               Assign goals, share materials, and keep client support in one place.
             </Text>
+            {!isPremium && (
+              <Box
+                w="100%"
+                p={4}
+                borderRadius="xl"
+                bg="#FBF8F3"
+                border="1px solid #F0E5CF"
+              >
+                <Text color="gray.700">
+                  You’re on the free tier. Client Tools work, but syncing client
+                  journaling and check‑ins across devices is Premium.
+                </Text>
+              </Box>
+            )}
 
             <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
               <Heading size="sm" mb={3}>
@@ -559,6 +573,81 @@ export default function TherapistDashboard() {
         );
       case "noteTemplates": // ✅ new tab for Note Templates
         return <NoteTemplates />;
+      case "premium":
+        return (
+          <Box
+            bg="linear-gradient(135deg, #120F1B 0%, #2B223B 60%, #3A2C4A 100%)"
+            color="white"
+            p={{ base: 6, md: 10 }}
+            borderRadius="3xl"
+            boxShadow="2xl"
+          >
+            <VStack align="start" spacing={8}>
+              <HStack justify="space-between" w="100%" flexWrap="wrap">
+                <Box>
+                  <Tag bg="#C9A960" color="black" borderRadius="full" mb={3}>
+                    Therapist Premium
+                  </Tag>
+                  <Heading fontFamily="Playfair Display" size="xl">
+                    The MLC Therapist OS
+                  </Heading>
+                  <Text color="whiteAlpha.700" mt={3} maxW="2xl">
+                    A premium workspace built for therapists who want everything
+                    in one place — client support, shared tools, and a calm practice flow.
+                  </Text>
+                </Box>
+                <Box textAlign={{ base: "left", md: "right" }}>
+                  {isPremium ? (
+                    <Button bg="white" color="black">
+                      Premium Enabled
+                    </Button>
+                  ) : (
+                    <Button bg="#C9A960" color="black">
+                      Upgrade (coming soon)
+                    </Button>
+                  )}
+                  <Text fontSize="sm" color="whiteAlpha.600" mt={2}>
+                    Admin preview enabled for you.
+                  </Text>
+                </Box>
+              </HStack>
+
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
+                {[
+                  {
+                    title: "Client Journey Hub",
+                    text: "Goals, journal prompts, shared materials, and tracking in one view.",
+                  },
+                  {
+                    title: "Assessments & Outcomes",
+                    text: "Short assessments and progress snapshots you can assign anytime.",
+                  },
+                  {
+                    title: "Reminders & Rituals",
+                    text: "Gentle nudges for check‑ins, reflections, and session prep.",
+                  },
+                  {
+                    title: "MLC Library",
+                    text: "Built‑in worksheets, meditations, and therapist tools.",
+                  },
+                ].map((item) => (
+                  <Box
+                    key={item.title}
+                    bg="rgba(255,255,255,0.08)"
+                    p={6}
+                    borderRadius="2xl"
+                    border="1px solid rgba(255,255,255,0.12)"
+                  >
+                    <Heading size="md" mb={2}>
+                      {item.title}
+                    </Heading>
+                    <Text color="whiteAlpha.700">{item.text}</Text>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </VStack>
+          </Box>
+        );
       default:
         return (
           <VStack align="start" spacing={4}>
@@ -873,6 +962,15 @@ export default function TherapistDashboard() {
         active={activeTab === "care"}
         onClick={() => {
           setActiveTab("care");
+          onSidebarClose();
+        }}
+        icon={<ViewIcon />}
+      />
+      <SidebarButton
+        label="Premium Studio"
+        active={activeTab === "premium"}
+        onClick={() => {
+          setActiveTab("premium");
           onSidebarClose();
         }}
         icon={<ViewIcon />}
