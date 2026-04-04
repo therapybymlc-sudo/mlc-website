@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, exceptions
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -384,7 +384,15 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
         therapist = _resolve_therapist_from_request(self.request)
         client = _resolve_client_from_request(self.request)
         if therapist:
-            serializer.save(therapist=therapist)
+            client_id = self.request.data.get("client")
+            client_obj = None
+            if client_id:
+                client_obj = ClientProfile.objects.filter(
+                    id=client_id, therapist=therapist
+                ).first()
+            if not client_obj:
+                raise exceptions.ValidationError({"client": "Valid client is required."})
+            serializer.save(therapist=therapist, client=client_obj)
         elif client:
             serializer.save(client=client, therapist=client.therapist)
 

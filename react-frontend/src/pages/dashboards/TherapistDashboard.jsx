@@ -55,6 +55,17 @@ export default function TherapistDashboard() {
   const [preselectClientId, setPreselectClientId] = useState("");
   const [sessionLinks, setSessionLinks] = useState([]);
   const [newSessionLink, setNewSessionLink] = useState({ name: "", url: "", is_default: false });
+  const [clients, setClients] = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
+  const [materials, setMaterials] = useState([]);
+  const [materialDraft, setMaterialDraft] = useState({
+    title: "",
+    description: "",
+    file_url: "",
+  });
+  const [clientGoals, setClientGoals] = useState([]);
+  const [goalDraft, setGoalDraft] = useState("");
+  const [clientShares, setClientShares] = useState([]);
   const [showCareCheckin, setShowCareCheckin] = useState(false);
   const [careStep, setCareStep] = useState(0);
   const [careCheckin, setCareCheckin] = useState(() => {
@@ -292,6 +303,260 @@ export default function TherapistDashboard() {
             </SimpleGrid>
           </VStack>
         );
+      case "clientTools":
+        return (
+          <VStack align="start" spacing={6}>
+            <Heading fontFamily="Playfair Display">Client Tools & Sharing</Heading>
+            <Text color="gray.600" maxW="2xl">
+              Assign goals, share materials, and keep client support in one place.
+            </Text>
+
+            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
+              <Heading size="sm" mb={3}>
+                Select a client
+              </Heading>
+              <Input
+                list="client-list"
+                placeholder="Start typing a client name..."
+                value={
+                  selectedClientId
+                    ? clients.find((c) => String(c.id) === String(selectedClientId))?.name || ""
+                    : ""
+                }
+                onChange={(e) => {
+                  const match = clients.find(
+                    (c) => c.name.toLowerCase() === e.target.value.toLowerCase()
+                  );
+                  setSelectedClientId(match ? String(match.id) : "");
+                }}
+              />
+              <datalist id="client-list">
+                {clients.map((client) => (
+                  <option key={client.id} value={client.name} />
+                ))}
+              </datalist>
+              {!selectedClientId && (
+                <Text fontSize="sm" color="gray.500" mt={2}>
+                  Select a client to assign goals or share materials.
+                </Text>
+              )}
+            </Box>
+
+            <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="100%">
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={3}>
+                  Assign goals
+                </Heading>
+                <HStack mb={3}>
+                  <Input
+                    placeholder="New client goal..."
+                    value={goalDraft}
+                    onChange={(e) => setGoalDraft(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      if (!selectedClientId) {
+                        toast({ status: "warning", title: "Select a client first" });
+                        return;
+                      }
+                      if (!goalDraft.trim()) return;
+                      try {
+                        const saved = await apiPost("client-goals/", {
+                          client: selectedClientId,
+                          title: goalDraft.trim(),
+                          created_by: "therapist",
+                          is_completed: false,
+                        });
+                        setClientGoals((prev) => [
+                          ...prev,
+                          { id: saved.id, title: saved.title, is_completed: saved.is_completed },
+                        ]);
+                        setGoalDraft("");
+                        toast({ status: "success", title: "Goal assigned" });
+                      } catch (error) {
+                        console.error(error);
+                        toast({ status: "error", title: "Could not assign goal" });
+                      }
+                    }}
+                    colorScheme="green"
+                  >
+                    Add
+                  </Button>
+                </HStack>
+                {clientGoals.length === 0 ? (
+                  <Text color="gray.500">No goals yet.</Text>
+                ) : (
+                  <VStack align="start" spacing={2}>
+                    {clientGoals.map((goal) => (
+                      <HStack key={goal.id} w="100%" justify="space-between">
+                        <Text>
+                          {goal.is_completed ? "✅ " : ""}
+                          {goal.title}
+                        </Text>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const updated = await apiPut(`client-goals/${goal.id}/`, {
+                                title: goal.title,
+                                is_completed: !goal.is_completed,
+                              });
+                              setClientGoals((prev) =>
+                                prev.map((g) =>
+                                  g.id === goal.id ? { ...g, is_completed: updated.is_completed } : g
+                                )
+                              );
+                            } catch (error) {
+                              toast({ status: "error", title: "Update failed" });
+                            }
+                          }}
+                        >
+                          {goal.is_completed ? "Mark active" : "Mark done"}
+                        </Button>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                <Heading size="md" mb={3}>
+                  Share materials
+                </Heading>
+                <VStack align="stretch" spacing={2} mb={4}>
+                  <Input
+                    placeholder="Material title"
+                    value={materialDraft.title}
+                    onChange={(e) =>
+                      setMaterialDraft((p) => ({ ...p, title: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="File URL (optional)"
+                    value={materialDraft.file_url}
+                    onChange={(e) =>
+                      setMaterialDraft((p) => ({ ...p, file_url: e.target.value }))
+                    }
+                  />
+                  <Textarea
+                    placeholder="Short description"
+                    value={materialDraft.description}
+                    onChange={(e) =>
+                      setMaterialDraft((p) => ({ ...p, description: e.target.value }))
+                    }
+                  />
+                  <Button
+                    onClick={async () => {
+                      if (!materialDraft.title.trim()) return;
+                      try {
+                        const saved = await apiPost("materials/", {
+                          title: materialDraft.title.trim(),
+                          description: materialDraft.description,
+                          file_url: materialDraft.file_url,
+                        });
+                        setMaterials((prev) => [saved, ...prev]);
+                        setMaterialDraft({ title: "", description: "", file_url: "" });
+                        toast({ status: "success", title: "Material added" });
+                      } catch (error) {
+                        toast({ status: "error", title: "Could not add material" });
+                      }
+                    }}
+                    colorScheme="purple"
+                  >
+                    Add material
+                  </Button>
+                </VStack>
+
+                {materials.length === 0 ? (
+                  <Text color="gray.500">No materials yet.</Text>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {materials.map((material) => (
+                      <Box key={material.id} p={3} border="1px solid #E2E8F0" borderRadius="xl">
+                        <Text fontWeight="semibold">{material.title}</Text>
+                        {material.description && (
+                          <Text fontSize="sm" color="gray.600">
+                            {material.description}
+                          </Text>
+                        )}
+                        <HStack mt={2} spacing={2}>
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={async () => {
+                              if (!selectedClientId) {
+                                toast({ status: "warning", title: "Select a client first" });
+                                return;
+                              }
+                              try {
+                                await apiPost("material-shares/", {
+                                  material: material.id,
+                                  client: selectedClientId,
+                                  note: "Shared from therapist dashboard",
+                                });
+                                const shares = await apiGet(`material-shares/?client=${selectedClientId}`);
+                                setClientShares(shares || []);
+                                toast({ status: "success", title: "Shared with client" });
+                              } catch (error) {
+                                toast({ status: "error", title: "Share failed" });
+                              }
+                            }}
+                          >
+                            Share to client
+                          </Button>
+                          {material.file_url && (
+                            <Button
+                              as="a"
+                              href={material.file_url}
+                              target="_blank"
+                              size="xs"
+                              variant="ghost"
+                            >
+                              Open file
+                            </Button>
+                          )}
+                        </HStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+            </SimpleGrid>
+
+            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
+              <Heading size="md" mb={3}>
+                Shared with this client
+              </Heading>
+              {clientShares.length === 0 ? (
+                <Text color="gray.500">No materials shared yet.</Text>
+              ) : (
+                <VStack align="start" spacing={2}>
+                  {clientShares.map((share) => (
+                    <HStack key={share.id} w="100%" justify="space-between">
+                      <Text>{share.material_title || "Material"}</Text>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        color="red.500"
+                        onClick={async () => {
+                          try {
+                            await apiDelete(`material-shares/${share.id}/`);
+                            setClientShares((prev) => prev.filter((s) => s.id !== share.id));
+                          } catch (error) {
+                            toast({ status: "error", title: "Remove failed" });
+                          }
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </HStack>
+                  ))}
+                </VStack>
+              )}
+            </Box>
+          </VStack>
+        );
       case "noteTemplates": // ✅ new tab for Note Templates
         return <NoteTemplates />;
       default:
@@ -491,6 +756,58 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("clients/");
+        const data = res.results ?? res;
+        setClients(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Clients load failed", err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("materials/");
+        const data = res.results ?? res;
+        setMaterials(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Materials load failed", err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedClientId) {
+      setClientGoals([]);
+      setClientShares([]);
+      return;
+    }
+    (async () => {
+      try {
+        const [goals, shares] = await Promise.all([
+          apiGet(`client-goals/?client=${selectedClientId}`),
+          apiGet(`material-shares/?client=${selectedClientId}`),
+        ]);
+        setClientGoals(
+          Array.isArray(goals)
+            ? goals.map((g) => ({
+                id: g.id,
+                title: g.title,
+                is_completed: g.is_completed,
+              }))
+            : []
+        );
+        setClientShares(Array.isArray(shares) ? shares : []);
+      } catch (err) {
+        console.error("Client tools load failed", err);
+      }
+    })();
+  }, [selectedClientId]);
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     const clientId = params.get("newAppointmentClientId");
@@ -559,6 +876,15 @@ export default function TherapistDashboard() {
           onSidebarClose();
         }}
         icon={<ViewIcon />}
+      />
+      <SidebarButton
+        label="Client Tools"
+        active={activeTab === "clientTools"}
+        onClick={() => {
+          setActiveTab("clientTools");
+          onSidebarClose();
+        }}
+        icon={<AttachmentIcon />}
       />
 
       {/* ✅ Admin-only Note Templates tab */}
