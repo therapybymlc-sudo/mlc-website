@@ -153,6 +153,18 @@ export default function ClientDashboard() {
   };
 
   const syncFromApi = async () => {
+    if (!isPremium) {
+      try {
+        const shares = await apiGet("material-shares/");
+        setSharedItems(shares || []);
+        setMaterials(shares || []);
+      } catch (error) {
+        console.warn("Shared items fetch failed, using local cache.", error);
+        hydrateLocal();
+      }
+      return;
+    }
+
     setIsSyncing(true);
     try {
       const [journals, goalData, checkins, shares] = await Promise.all([
@@ -237,23 +249,25 @@ export default function ClientDashboard() {
     localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(updatedLocal));
     setJournalEntries(updatedLocal);
     setJournalText("");
-    apiPost("client-journals/", entry)
-      .then((saved) => {
-        const next = [
-          {
-            id: saved.id,
-            text: saved.entry,
-            mood: saved.mood || mood,
-            createdAt: saved.created_at,
-          },
-          ...updatedLocal.filter((e) => e.id !== fallbackEntry.id),
-        ];
-        setJournalEntries(next);
-        localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(next));
-      })
-      .catch((error) => {
-        console.warn("Journal save failed, kept locally.", error);
-      });
+    if (isPremium) {
+      apiPost("client-journals/", entry)
+        .then((saved) => {
+          const next = [
+            {
+              id: saved.id,
+              text: saved.entry,
+              mood: saved.mood || mood,
+              createdAt: saved.created_at,
+            },
+            ...updatedLocal.filter((e) => e.id !== fallbackEntry.id),
+          ];
+          setJournalEntries(next);
+          localStorage.setItem(LOCAL_KEYS.journal, JSON.stringify(next));
+        })
+        .catch((error) => {
+          console.warn("Journal save failed, kept locally.", error);
+        });
+    }
     toast({ title: "Saved to your private journal", status: "success" });
   };
 
@@ -274,7 +288,7 @@ export default function ClientDashboard() {
     setGoals(updated);
     localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(updated));
     const goal = updated.find((g) => g.id === id);
-    if (goal && Number.isFinite(goal.id)) {
+    if (isPremium && goal && Number.isFinite(goal.id)) {
       apiPut(`client-goals/${goal.id}/`, {
         title: goal.label,
         is_completed: goal.done,
@@ -297,29 +311,31 @@ export default function ClientDashboard() {
     setGoals(updated);
     localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(updated));
     setNewGoal("");
-    apiPost("client-goals/", {
-      title: trimmed,
-      is_completed: false,
-      created_by: "client",
-    })
-      .then((saved) => {
-        const next = [
-          { id: saved.id, label: saved.title, done: saved.is_completed },
-          ...updated.filter((g) => g.id !== tempGoal.id),
-        ];
-        setGoals(next);
-        localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(next));
+    if (isPremium) {
+      apiPost("client-goals/", {
+        title: trimmed,
+        is_completed: false,
+        created_by: "client",
       })
-      .catch((error) => {
-        console.warn("Goal create failed, kept locally.", error);
-      });
+        .then((saved) => {
+          const next = [
+            { id: saved.id, label: saved.title, done: saved.is_completed },
+            ...updated.filter((g) => g.id !== tempGoal.id),
+          ];
+          setGoals(next);
+          localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(next));
+        })
+        .catch((error) => {
+          console.warn("Goal create failed, kept locally.", error);
+        });
+    }
   };
 
   const removeGoal = (id) => {
     const updated = goals.filter((g) => g.id !== id);
     setGoals(updated);
     localStorage.setItem(LOCAL_KEYS.goals, JSON.stringify(updated));
-    if (Number.isFinite(id)) {
+    if (isPremium && Number.isFinite(id)) {
       apiDelete(`client-goals/${id}/`).catch(() => {});
     }
   };
@@ -433,16 +449,18 @@ export default function ClientDashboard() {
     localStorage.setItem(LOCAL_KEYS.checkin, new Date().toISOString().slice(0, 10));
     setShowCheckin(false);
     setCheckinStep(0);
-    apiPost("client-checkins/", {
-      checkin_date: new Date().toISOString().slice(0, 10),
-      mood: checkinData.mood,
-      energy: checkinData.energy,
-      stress: checkinData.stress,
-      gratitude: checkinData.gratitude,
-      notes: checkinData.note,
-    }).catch((error) => {
-      console.warn("Check-in save failed, stored locally.", error);
-    });
+    if (isPremium) {
+      apiPost("client-checkins/", {
+        checkin_date: new Date().toISOString().slice(0, 10),
+        mood: checkinData.mood,
+        energy: checkinData.energy,
+        stress: checkinData.stress,
+        gratitude: checkinData.gratitude,
+        notes: checkinData.note,
+      }).catch((error) => {
+        console.warn("Check-in save failed, stored locally.", error);
+      });
+    }
     toast({ title: "Daily check-in saved", status: "success" });
   };
 
@@ -538,6 +556,11 @@ export default function ClientDashboard() {
               <Heading size="md" mb={3}>
                 My Goals
               </Heading>
+              {!isPremium && (
+                <Text fontSize="sm" color="purple.500" mb={2}>
+                  Upgrade to Premium to sync goals across devices.
+                </Text>
+              )}
               <VStack align="start" spacing={2}>
                 {goals.slice(0, 4).map((g) => (
                   <Checkbox
@@ -569,6 +592,11 @@ export default function ClientDashboard() {
               <Text fontSize="sm" color="gray.500" mb={3}>
                 Stored privately on this device unless you choose to share later.
               </Text>
+              {!isPremium && (
+                <Text fontSize="sm" color="purple.500" mb={2}>
+                  Upgrade to Premium to sync your journal across devices.
+                </Text>
+              )}
               <Textarea
                 placeholder="Write what’s on your mind..."
                 value={journalText}
@@ -745,6 +773,11 @@ export default function ClientDashboard() {
           <Heading size="md" mb={3}>
             My Goals
           </Heading>
+          {!isPremium && (
+            <Text fontSize="sm" color="purple.500" mb={2}>
+              Upgrade to Premium to sync goals across devices.
+            </Text>
+          )}
           <HStack mb={3}>
             <Input
               placeholder="Add a new goal..."
@@ -784,6 +817,11 @@ export default function ClientDashboard() {
           <Heading size="md" mb={3}>
             Private Journal
           </Heading>
+          {!isPremium && (
+            <Text fontSize="sm" color="purple.500" mb={2}>
+              Upgrade to Premium to sync your journal across devices.
+            </Text>
+          )}
           <Textarea
             placeholder="Write what’s on your mind..."
             value={journalText}
@@ -841,6 +879,11 @@ export default function ClientDashboard() {
           <Text color="gray.600" mb={4}>
             Take a quiet moment to check in with yourself.
           </Text>
+          {!isPremium && (
+            <Text fontSize="sm" color="purple.500" mb={3}>
+              Upgrade to Premium to sync check‑ins across devices.
+            </Text>
+          )}
           <Button onClick={() => setShowCheckin(true)} colorScheme="teal">
             Start check‑in
           </Button>
