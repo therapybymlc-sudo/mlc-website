@@ -148,7 +148,10 @@ export default function App() {
               <Route
                 path="/dashboard/therapist"
                 element={
-                  <ProtectedRoute allowRoles={["therapist", "admin"]}>
+                  <ProtectedRoute
+                    allowRoles={["therapist", "admin"]}
+                    allowPreviewRole="therapist"
+                  >
                     <TherapistDashboard />
                   </ProtectedRoute>
                 }

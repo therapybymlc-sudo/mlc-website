@@ -31,7 +31,7 @@ import {
   ModalFooter,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   CalendarIcon,
   EditIcon,
@@ -48,8 +48,10 @@ import NoteTemplates from "./NoteTemplates"; // ✅ added
 import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 
 export default function TherapistDashboard() {
-  const { user, logout, isAdmin, isPremium } = useAuth(); // ✅ now using isAdmin from AuthContext
+  const { user, logout, isAdmin, isPremium, isTherapist, isTherapistPreview } =
+    useAuth(); // ✅ now using isAdmin from AuthContext
   const toast = useToast();
+  const navigate = useNavigate();
   const { isOpen: isSidebarOpen, onOpen: onSidebarOpen, onClose: onSidebarClose } = useDisclosure();
   const [activeTab, setActiveTab] = useState("overview");
   const [preselectClientId, setPreselectClientId] = useState("");
@@ -63,6 +65,10 @@ export default function TherapistDashboard() {
     description: "",
     file_url: "",
   });
+  const [previewClients, setPreviewClients] = useState([]);
+  const [previewNote, setPreviewNote] = useState("");
+  const [previewFiles, setPreviewFiles] = useState([]);
+  const [previewClientName, setPreviewClientName] = useState("");
   const [clientGoals, setClientGoals] = useState([]);
   const [goalDraft, setGoalDraft] = useState("");
   const [clientShares, setClientShares] = useState([]);
@@ -207,15 +213,208 @@ export default function TherapistDashboard() {
     toast({ title: "Saved to your private journal", status: "success" });
   };
 
+  const renderLocked = (title, message) => (
+    <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+      <Heading size="md" mb={2}>
+        {title}
+      </Heading>
+      <Text color="gray.600" mb={4}>
+        {message}
+      </Text>
+      <Button as={Link} to="/therapist-apply" colorScheme="purple">
+        Apply to unlock
+      </Button>
+    </Box>
+  );
+
   const renderContent = () => {
+    if (isTherapistPreview) {
+      const allowedPreviewTabs = new Set([
+        "overview",
+        "clients",
+        "notes",
+        "files",
+        "schedule",
+      ]);
+      if (!allowedPreviewTabs.has(activeTab)) {
+        return renderLocked(
+          "Apply to unlock",
+          "This area opens after your application is approved. Apply now to unlock full access."
+        );
+      }
+    }
     switch (activeTab) {
       case "clients":
+        if (isTherapistPreview) {
+          return (
+            <VStack align="start" spacing={6}>
+              <Heading fontFamily="Playfair Display">Clients (Preview)</Heading>
+              <Text color="gray.600">
+                Add a client to preview the workflow. Saving is disabled in preview.
+              </Text>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
+                <HStack spacing={3} flexWrap="wrap">
+                  <Input
+                    placeholder="Client name"
+                    value={previewClientName}
+                    onChange={(e) => setPreviewClientName(e.target.value)}
+                  />
+                  <Button
+                    onClick={() => {
+                      if (!previewClientName.trim()) return;
+                      setPreviewClients((prev) => [
+                        ...prev,
+                        { id: Date.now(), name: previewClientName.trim() },
+                      ]);
+                      setPreviewClientName("");
+                      toast({
+                        status: "info",
+                        title: "Preview only",
+                        description: "Apply to unlock client saving.",
+                      });
+                    }}
+                    colorScheme="teal"
+                  >
+                    Add client (preview)
+                  </Button>
+                </HStack>
+                <Divider my={4} />
+                {previewClients.length === 0 ? (
+                  <Text color="gray.500">No preview clients yet.</Text>
+                ) : (
+                  <VStack align="start" spacing={2}>
+                    {previewClients.map((client) => (
+                      <HStack key={client.id} w="100%" justify="space-between">
+                        <Text>{client.name}</Text>
+                        <Tag colorScheme="purple" borderRadius="full">
+                          Preview
+                        </Tag>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+            </VStack>
+          );
+        }
         return <Clients />;
       case "notes":
+        if (isTherapistPreview) {
+          return (
+            <VStack align="start" spacing={6}>
+              <Heading fontFamily="Playfair Display">Notes (Preview)</Heading>
+              <Text color="gray.600">
+                Draft a single note to see the flow. Saving is disabled in preview.
+              </Text>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
+                <Textarea
+                  placeholder="Session note draft..."
+                  value={previewNote}
+                  onChange={(e) => setPreviewNote(e.target.value)}
+                  minH="160px"
+                />
+                <Button
+                  mt={3}
+                  colorScheme="purple"
+                  onClick={() =>
+                    toast({
+                      status: "info",
+                      title: "Preview only",
+                      description: "Apply to unlock note saving.",
+                    })
+                  }
+                >
+                  Save note (locked)
+                </Button>
+              </Box>
+            </VStack>
+          );
+        }
         return <ClientNotes />;
       case "files":
+        if (isTherapistPreview) {
+          return (
+            <VStack align="start" spacing={6}>
+              <Heading fontFamily="Playfair Display">Client Files (Preview)</Heading>
+              <Text color="gray.600">
+                Add files to preview the flow. Saving is disabled in preview.
+              </Text>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
+                <Input
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setPreviewFiles((prev) => [
+                      ...prev,
+                      { id: Date.now(), name: file.name },
+                    ]);
+                    toast({
+                      status: "info",
+                      title: "Preview only",
+                      description: "Apply to unlock file uploads.",
+                    });
+                  }}
+                />
+                <Divider my={4} />
+                {previewFiles.length === 0 ? (
+                  <Text color="gray.500">No preview files yet.</Text>
+                ) : (
+                  <VStack align="start" spacing={2}>
+                    {previewFiles.map((file) => (
+                      <HStack key={file.id} w="100%" justify="space-between">
+                        <Text>{file.name}</Text>
+                        <Tag colorScheme="purple" borderRadius="full">
+                          Preview
+                        </Tag>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+            </VStack>
+          );
+        }
         return <ClientFiles />;
       case "schedule":
+        if (isTherapistPreview) {
+          return (
+            <VStack align="start" spacing={6}>
+              <Heading fontFamily="Playfair Display">Schedule (Preview)</Heading>
+              <Text color="gray.600">
+                View the scheduler layout. Editing is disabled in preview.
+              </Text>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  {[
+                    { time: "9:00 AM", label: "Available" },
+                    { time: "11:00 AM", label: "Client session" },
+                    { time: "2:00 PM", label: "Available" },
+                    { time: "4:30 PM", label: "Consultation" },
+                  ].map((slot) => (
+                    <Box key={slot.time} p={4} border="1px solid #E2E8F0" borderRadius="xl">
+                      <Text fontWeight="semibold">{slot.time}</Text>
+                      <Text color="gray.500">{slot.label}</Text>
+                    </Box>
+                  ))}
+                </SimpleGrid>
+                <Button
+                  mt={4}
+                  variant="outline"
+                  onClick={() =>
+                    toast({
+                      status: "info",
+                      title: "Preview only",
+                      description: "Apply to unlock scheduling tools.",
+                    })
+                  }
+                >
+                  Open scheduler (locked)
+                </Button>
+              </Box>
+            </VStack>
+          );
+        }
         return (
           <Schedule
             preselectClientId={preselectClientId}
@@ -223,6 +422,12 @@ export default function TherapistDashboard() {
           />
         );
       case "care":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Therapist care",
+            "This space opens after approval so we can support verified therapists."
+          );
+        }
         return (
           <VStack align="start" spacing={6}>
             <Heading fontFamily="Playfair Display">Therapist Care</Heading>
@@ -304,6 +509,12 @@ export default function TherapistDashboard() {
           </VStack>
         );
       case "clientTools":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Client tools & sharing",
+            "Assigning goals and sharing materials unlocks after approval."
+          );
+        }
         return (
           <VStack align="start" spacing={6}>
             <Heading fontFamily="Playfair Display">Client Tools & Sharing</Heading>
@@ -572,8 +783,20 @@ export default function TherapistDashboard() {
           </VStack>
         );
       case "noteTemplates": // ✅ new tab for Note Templates
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Note templates",
+            "Templates unlock after approval to protect clinical integrity."
+          );
+        }
         return <NoteTemplates />;
       case "premium":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Therapist Premium",
+            "Premium tools unlock after approval and activation."
+          );
+        }
         return (
           <Box
             bg="linear-gradient(135deg, #120F1B 0%, #2B223B 60%, #3A2C4A 100%)"
@@ -649,6 +872,68 @@ export default function TherapistDashboard() {
           </Box>
         );
       default:
+        if (isTherapistPreview) {
+          return (
+            <VStack align="start" spacing={6}>
+              <Heading fontFamily="Playfair Display" color="#2E2E2E">
+                Therapist Preview
+              </Heading>
+              <Text color="gray.600" maxW="3xl">
+                Explore the basics — add a client, draft a note, preview files, and
+                view the scheduler layout. Apply to unlock full access.
+              </Text>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
+                <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                  <Heading size="md" mb={2}>
+                    Client preview
+                  </Heading>
+                  <Text color="gray.500" mb={4}>
+                    Add clients locally to test the workflow.
+                  </Text>
+                  <Button onClick={() => setActiveTab("clients")} colorScheme="teal">
+                    Go to Clients
+                  </Button>
+                </Box>
+                <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                  <Heading size="md" mb={2}>
+                    Note preview
+                  </Heading>
+                  <Text color="gray.500" mb={4}>
+                    Draft one note and see how it feels.
+                  </Text>
+                  <Button onClick={() => setActiveTab("notes")} colorScheme="purple">
+                    Go to Notes
+                  </Button>
+                </Box>
+                <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                  <Heading size="md" mb={2}>
+                    File preview
+                  </Heading>
+                  <Text color="gray.500" mb={4}>
+                    Add a file in preview mode.
+                  </Text>
+                  <Button onClick={() => setActiveTab("files")} colorScheme="green">
+                    Go to Files
+                  </Button>
+                </Box>
+                <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+                  <Heading size="md" mb={2}>
+                    Schedule preview
+                  </Heading>
+                  <Text color="gray.500" mb={4}>
+                    View the scheduler layout.
+                  </Text>
+                  <Button onClick={() => setActiveTab("schedule")} colorScheme="orange">
+                    Go to Schedule
+                  </Button>
+                </Box>
+              </SimpleGrid>
+              <Button as={Link} to="/therapist-apply" colorScheme="purple">
+                Apply to unlock full access
+              </Button>
+            </VStack>
+          );
+        }
         return (
           <VStack align="start" spacing={4}>
             <Heading fontFamily="Playfair Display" color="#2E2E2E">
@@ -813,6 +1098,7 @@ export default function TherapistDashboard() {
   };
 
   useEffect(() => {
+    if (isTherapistPreview) return;
     async function testProtected() {
       try {
         const res = await apiGet("../protected/");
@@ -825,6 +1111,7 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    if (isTherapistPreview) return;
     const today = new Date().toISOString().slice(0, 10);
     const last = localStorage.getItem("mlc_therapist_checkin_last");
     if (last !== today) {
@@ -833,6 +1120,7 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    if (isTherapistPreview) return;
     (async () => {
       try {
         const res = await apiGet("session-links/");
@@ -845,6 +1133,7 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    if (isTherapistPreview) return;
     (async () => {
       try {
         const res = await apiGet("clients/");
@@ -857,6 +1146,7 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    if (isTherapistPreview) return;
     (async () => {
       try {
         const res = await apiGet("materials/");
@@ -869,6 +1159,7 @@ export default function TherapistDashboard() {
   }, []);
 
   useEffect(() => {
+    if (isTherapistPreview) return;
     if (!selectedClientId) {
       setClientGoals([]);
       setClientShares([]);
@@ -905,6 +1196,11 @@ export default function TherapistDashboard() {
       setPreselectClientId(String(clientId));
     }
   }, [location.search]);
+
+  const exitPreview = () => {
+    localStorage.removeItem("mlc_role_preview");
+    navigate("/dashboard/client");
+  };
 
   const sidebarContent = (
     <VStack align="start" spacing={5}>
@@ -1000,6 +1296,17 @@ export default function TherapistDashboard() {
 
       <Divider my={4} />
 
+      {isTherapistPreview && (
+        <Button
+          variant="outline"
+          borderRadius="full"
+          w="full"
+          onClick={exitPreview}
+        >
+          Exit preview
+        </Button>
+      )}
+
       <Button
         bg="#A9CBB7"
         color="black"
@@ -1071,6 +1378,24 @@ export default function TherapistDashboard() {
 
       {/* Main Content */}
       <Box flex="1" p={{ base: 4, md: 10 }} overflowY="auto" bg="#F9F9F9">
+        {isTherapistPreview && (
+          <Box
+            mb={6}
+            p={4}
+            borderRadius="2xl"
+            bg="#FBF8F3"
+            border="1px solid #F0E5CF"
+          >
+            <HStack justify="space-between" flexWrap="wrap" spacing={3}>
+              <Text color="gray.700">
+                You’re in Therapist Preview. Apply to unlock full access.
+              </Text>
+              <Button as={Link} to="/therapist-apply" colorScheme="purple" size="sm">
+                Apply now
+              </Button>
+            </HStack>
+          </Box>
+        )}
         {renderContent()}
       </Box>
 

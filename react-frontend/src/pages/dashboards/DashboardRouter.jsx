@@ -3,7 +3,7 @@ import { Center, Spinner } from "@chakra-ui/react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function DashboardRouter() {
-  const { loading, isAuthenticated, isTherapist } = useAuth();
+  const { loading, isAuthenticated, isTherapist, isTherapistPreview } = useAuth();
 
   if (loading) {
     return (
@@ -17,7 +17,7 @@ export default function DashboardRouter() {
     return <Navigate to="/login/therapist" replace />;
   }
 
-  return isTherapist ? (
+  return isTherapist || isTherapistPreview ? (
     <Navigate to="/dashboard/therapist" replace />
   ) : (
     <Navigate to="/dashboard/client" replace />
