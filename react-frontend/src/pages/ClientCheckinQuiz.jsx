@@ -80,10 +80,19 @@ export default function ClientCheckinQuiz() {
             </Text>
           </Box>
 
-          <Progress value={progress} borderRadius="full" colorScheme="teal" />
+          <Progress
+            value={progress}
+            borderRadius="full"
+            colorScheme="teal"
+            h="10px"
+            bg="#E6EFEA"
+          />
 
-          <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="2xl" boxShadow="md">
+          <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" boxShadow="lg">
             <VStack spacing={4} align="stretch">
+              <Text fontSize="sm" color="gray.500">
+                Question {step + 1} of {steps.length}
+              </Text>
               <Heading size="md">{current.title}</Heading>
               <Text color="gray.600">{current.help}</Text>
 
@@ -96,7 +105,22 @@ export default function ClientCheckinQuiz() {
                 >
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                     {current.options.map((option) => (
-                      <Radio key={option} value={option}>
+                      <Radio
+                        key={option}
+                        value={option}
+                        w="100%"
+                        borderWidth="1px"
+                        borderColor={
+                          answers[current.key] === option ? "mlc.green" : "gray.200"
+                        }
+                        bg={
+                          answers[current.key] === option ? "mlc.sageTint" : "white"
+                        }
+                        borderRadius="2xl"
+                        px={4}
+                        py={3}
+                        _hover={{ borderColor: "gray.300" }}
+                      >
                         {option}
                       </Radio>
                     ))}
@@ -140,7 +164,7 @@ export default function ClientCheckinQuiz() {
           </HStack>
 
           {step === steps.length - 1 && (
-            <Box bg="#F2F8F5" p={6} borderRadius="2xl">
+            <Box bg="#F2F8F5" p={6} borderRadius="3xl">
               <Heading size="sm" mb={2}>
                 Next step
               </Heading>

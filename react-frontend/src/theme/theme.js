@@ -21,12 +21,12 @@ const theme = extendTheme({
   },
   radii: {
     none: "0",
-    sm: "8px",
-    md: "12px",
-    lg: "16px",
-    xl: "20px",
-    "2xl": "24px",
-    "3xl": "28px",
+    sm: "10px",
+    md: "16px",
+    lg: "20px",
+    xl: "24px",
+    "2xl": "28px",
+    "3xl": "32px",
     full: "9999px",
   },
   styles: {
@@ -64,38 +64,50 @@ const theme = extendTheme({
           maxW: "90vw",
           w: "90vw",
           maxH: "90vh",
-          borderRadius: "2xl",
+          borderRadius: "3xl",
         },
       },
     },
     Button: {
       baseStyle: {
-        borderRadius: "full",
+        borderRadius: "2xl",
         fontWeight: "medium",
       },
     },
     Input: {
       baseStyle: {
         field: {
-          borderRadius: "lg",
+          borderRadius: "2xl",
+          bg: "white",
+          borderColor: "gray.200",
+          _hover: { borderColor: "gray.300" },
+          _focus: { borderColor: "mlc.green", boxShadow: "0 0 0 1px #A9CBB7" },
         },
       },
     },
     Textarea: {
       baseStyle: {
-        borderRadius: "lg",
+        borderRadius: "2xl",
+        bg: "white",
+        borderColor: "gray.200",
+        _hover: { borderColor: "gray.300" },
+        _focus: { borderColor: "mlc.green", boxShadow: "0 0 0 1px #A9CBB7" },
       },
     },
     Select: {
       baseStyle: {
         field: {
-          borderRadius: "lg",
+          borderRadius: "2xl",
+          bg: "white",
+          borderColor: "gray.200",
+          _hover: { borderColor: "gray.300" },
+          _focus: { borderColor: "mlc.green", boxShadow: "0 0 0 1px #A9CBB7" },
         },
       },
     },
     AccordionButton: {
       baseStyle: {
-        borderRadius: "lg",
+        borderRadius: "2xl",
       },
     },
   },

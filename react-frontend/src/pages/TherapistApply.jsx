@@ -197,75 +197,89 @@ export default function TherapistApply() {
           </Heading>
         </HStack>
         <Text color="gray.600" maxW="2xl" textAlign="center">
-          If you are licensed to practice in the United States and would like to apply
-          for our US‑Therapist position, please reference the “Mental Health Therapist
-          (Contractor)” posting on the Spring Health careers page.
+          Completing this application will give you access to your own therapist
+          dashboard, where you can streamline your entire practice — from caring
+          for and managing your clients to caring for and supporting yourself as
+          a growing therapist within a connected therapy ecosystem.
+        </Text>
+        <Text color="gray.600" maxW="2xl" textAlign="center">
+          If you align with our values and are eligible to practice in India or
+          internationally, we would love to review your application. Please also
+          reference the “Mental Health Therapist” posting on our careers page.
         </Text>
 
-        <Box bg="white" w="100%" borderRadius="2xl" boxShadow="md" p={{ base: 6, md: 10 }}>
+        <Box bg="white" w="100%" borderRadius="3xl" boxShadow="lg" p={{ base: 6, md: 10 }}>
           <form onSubmit={submitApplication}>
-            <VStack spacing={6} align="stretch">
-              <Heading size="md">Personal Info</Heading>
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <VStack spacing={8} align="stretch">
+              <Box bg="#FBF8F3" p={{ base: 5, md: 6 }} borderRadius="2xl">
+                <Heading size="md" mb={4}>
+                  Personal Info
+                </Heading>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  <FormControl isRequired>
+                    <FormLabel>First Name</FormLabel>
+                    <Input value={form.first_name} onChange={handleChange("first_name")} />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Last Name</FormLabel>
+                    <Input value={form.last_name} onChange={handleChange("last_name")} />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Email</FormLabel>
+                    <Input type="email" value={form.email} onChange={handleChange("email")} />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Phone</FormLabel>
+                    <Input value={form.phone} onChange={handleChange("phone")} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Private Practice Website Link</FormLabel>
+                    <Input value={form.website} onChange={handleChange("website")} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>LinkedIn</FormLabel>
+                    <Input value={form.linkedin} onChange={handleChange("linkedin")} />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Home Address (Country/Territory)</FormLabel>
+                    <Select value={form.home_country} onChange={handleChange("home_country")} placeholder="Select">
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Home Address (City)</FormLabel>
+                    <Input value={form.home_city} onChange={handleChange("home_city")} />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Home Address (ZIP/Postal Code)</FormLabel>
+                    <Input value={form.home_postal_code} onChange={handleChange("home_postal_code")} />
+                  </FormControl>
+                </SimpleGrid>
+              </Box>
+
+              <Box bg="#F2F8F5" p={{ base: 5, md: 6 }} borderRadius="2xl">
+                <Heading size="md" mb={4}>
+                  Licensure & Practice
+                </Heading>
                 <FormControl isRequired>
-                  <FormLabel>First Name</FormLabel>
-                  <Input value={form.first_name} onChange={handleChange("first_name")} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Last Name</FormLabel>
-                  <Input value={form.last_name} onChange={handleChange("last_name")} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Email</FormLabel>
-                  <Input type="email" value={form.email} onChange={handleChange("email")} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Phone</FormLabel>
-                  <Input value={form.phone} onChange={handleChange("phone")} />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Private Practice Website Link</FormLabel>
-                  <Input value={form.website} onChange={handleChange("website")} />
-                </FormControl>
-                <FormControl>
-                  <FormLabel>LinkedIn</FormLabel>
-                  <Input value={form.linkedin} onChange={handleChange("linkedin")} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Home Address (Country/Territory)</FormLabel>
-                  <Select value={form.home_country} onChange={handleChange("home_country")} placeholder="Select">
+                  <FormLabel>
+                    What country(s) are you currently licensed/registered to practice in?
+                  </FormLabel>
+                  <Select multiple value={licensedCountries} onChange={handleMulti(setLicensedCountries)} minH="160px">
                     {COUNTRIES.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>
                     ))}
                   </Select>
+                  <FormHelperText>Hold Cmd (Mac) / Ctrl (Windows) to select multiple.</FormHelperText>
                 </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Home Address (City)</FormLabel>
-                  <Input value={form.home_city} onChange={handleChange("home_city")} />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Home Address (ZIP/Postal Code)</FormLabel>
-                  <Input value={form.home_postal_code} onChange={handleChange("home_postal_code")} />
-                </FormControl>
-              </SimpleGrid>
 
-              <FormControl isRequired>
-                <FormLabel>
-                  What country(s) are you currently licensed/registered to practice in?
-                </FormLabel>
-                <Select multiple value={licensedCountries} onChange={handleMulti(setLicensedCountries)} minH="160px">
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </Select>
-                <FormHelperText>Hold Cmd (Mac) / Ctrl (Windows) to select multiple.</FormHelperText>
-              </FormControl>
-
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
                 <FormControl isRequired>
                   <FormLabel>Do you have your own private practice?</FormLabel>
                   <Select value={form.has_private_practice} onChange={handleChange("has_private_practice")} placeholder="Select">
@@ -299,7 +313,7 @@ export default function TherapistApply() {
               </SimpleGrid>
 
               {showInPerson && (
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
                   <FormControl>
                     <FormLabel>In‑person Office Address (Country/Territory)</FormLabel>
                     <Select value={form.in_person_country} onChange={handleChange("in_person_country")} placeholder="Select">
@@ -328,8 +342,13 @@ export default function TherapistApply() {
                   </FormControl>
                 </SimpleGrid>
               )}
+              </Box>
 
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+              <Box bg="#FBF8F3" p={{ base: 5, md: 6 }} borderRadius="2xl">
+                <Heading size="md" mb={4}>
+                  Experience & Languages
+                </Heading>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                 <FormControl isRequired>
                   <FormLabel>How many years of independently licensed clinical experience do you have?</FormLabel>
                   <Select value={form.years_experience} onChange={handleChange("years_experience")} placeholder="Select">
@@ -386,20 +405,25 @@ export default function TherapistApply() {
                   <Input value={form.referral_name} onChange={handleChange("referral_name")} />
                 </FormControl>
               </SimpleGrid>
+              </Box>
 
-              <FormControl isRequired>
-                <FormLabel>Resume</FormLabel>
-                <Input
-                  type="file"
-                  accept="application/pdf,.doc,.docx"
-                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                />
-                <FormHelperText>PDF or DOC/DOCX preferred.</FormHelperText>
-              </FormControl>
-
-              <Checkbox isChecked={form.subscribe} onChange={handleChange("subscribe")}>
-                Subscribe for mental health insights, practice growth tips, resources, and webinar invites.
-              </Checkbox>
+              <Box bg="#F2F8F5" p={{ base: 5, md: 6 }} borderRadius="2xl">
+                <Heading size="md" mb={4}>
+                  Documents & Consent
+                </Heading>
+                <FormControl isRequired>
+                  <FormLabel>Resume</FormLabel>
+                  <Input
+                    type="file"
+                    accept="application/pdf,.doc,.docx"
+                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                  />
+                  <FormHelperText>PDF or DOC/DOCX preferred.</FormHelperText>
+                </FormControl>
+                <Checkbox mt={4} isChecked={form.subscribe} onChange={handleChange("subscribe")}>
+                  Subscribe for mental health insights, practice growth tips, resources, and webinar invites.
+                </Checkbox>
+              </Box>
 
               <Button type="submit" colorScheme="teal" isLoading={isSubmitting}>
                 Submit application

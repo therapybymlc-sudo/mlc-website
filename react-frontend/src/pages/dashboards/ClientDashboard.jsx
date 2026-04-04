@@ -34,6 +34,8 @@ import {
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
 import { useMemo, useState, useEffect } from "react";
 import {
@@ -56,6 +58,7 @@ const LOCAL_KEYS = {
   checkin: "mlc_client_checkin_last",
   checkinData: "mlc_client_checkin_data",
   profileCompleted: "mlc_client_profile_completed",
+  profileDraft: "mlc_client_profile_draft",
 };
 
 const getLocalDayKey = () => {
@@ -430,6 +433,11 @@ export default function ClientDashboard() {
     setShowProfileModal(true);
   };
 
+  const closeProfileModal = () => {
+    localStorage.setItem(LOCAL_KEYS.profileCompleted, "true");
+    setShowProfileModal(false);
+  };
+
   const saveProfile = () => {
     const nextProfile = {
       ...profileDraft,
@@ -649,11 +657,25 @@ export default function ClientDashboard() {
     toast({ title: "Daily check-in saved", status: "success" });
   };
 
+  const skipCheckinForToday = () => {
+    localStorage.setItem(LOCAL_KEYS.checkin, getLocalDayKey());
+    setShowCheckin(false);
+    setCheckinStep(0);
+  };
+
   useEffect(() => {
     const detectedTimezone =
       Intl.DateTimeFormat().resolvedOptions().timeZone || "";
     const storedCompleted = localStorage.getItem(LOCAL_KEYS.profileCompleted);
     const storedProfile = localStorage.getItem(LOCAL_KEYS.profile);
+    const storedDraft = localStorage.getItem(LOCAL_KEYS.profileDraft);
+    if (storedDraft) {
+      try {
+        setProfileDraft(JSON.parse(storedDraft));
+      } catch {
+        localStorage.removeItem(LOCAL_KEYS.profileDraft);
+      }
+    }
     if (!storedCompleted && !storedProfile) {
       setProfileDraft((prev) => ({
         ...prev,
@@ -677,6 +699,10 @@ export default function ClientDashboard() {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem(LOCAL_KEYS.profileDraft, JSON.stringify(profileDraft));
+  }, [profileDraft]);
+
+  useEffect(() => {
     const today = getLocalDayKey();
     const last = localStorage.getItem(LOCAL_KEYS.checkin);
     if (last !== today) {
@@ -684,6 +710,10 @@ export default function ClientDashboard() {
     }
     syncFromApi();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_KEYS.checkinData, JSON.stringify(checkinData));
+  }, [checkinData]);
 
   const navItems = [
     { id: "overview", label: "Dashboard" },
@@ -733,7 +763,7 @@ export default function ClientDashboard() {
           </Box>
 
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <HStack justify="space-between" mb={3}>
                 <Heading size="md">Today’s Mood Check‑in</Heading>
                 <Tag colorScheme="green" borderRadius="full">
@@ -758,7 +788,7 @@ export default function ClientDashboard() {
               </Button>
             </Box>
 
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <Heading size="md" mb={3}>
                 My Goals
               </Heading>
@@ -791,7 +821,7 @@ export default function ClientDashboard() {
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} w="100%">
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <Heading size="md" mb={3}>
                 Private Journal
               </Heading>
@@ -833,7 +863,7 @@ export default function ClientDashboard() {
             </Box>
 
             <VStack spacing={6} align="stretch">
-              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+              <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
                 <Heading size="md" mb={3}>
                   Notes for Next Session
                 </Heading>
@@ -848,7 +878,7 @@ export default function ClientDashboard() {
                 </Button>
               </Box>
 
-              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+              <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
                 <Heading size="md" mb={3}>
                   Grounding Toolkit
                 </Heading>
@@ -865,7 +895,7 @@ export default function ClientDashboard() {
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <HStack justify="space-between" mb={3}>
                 <Heading size="md">Shared With Me</Heading>
                 <StarIcon color="yellow.400" />
@@ -888,7 +918,7 @@ export default function ClientDashboard() {
               </Box>
             </Box>
 
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <HStack justify="space-between" mb={3}>
                 <Heading size="md">My Sessions</Heading>
                 <CalendarIcon color="purple.400" />
@@ -903,7 +933,7 @@ export default function ClientDashboard() {
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <Heading size="md" mb={3}>
                 Therapist Materials
               </Heading>
@@ -925,7 +955,7 @@ export default function ClientDashboard() {
               </Box>
             </Box>
 
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <Heading size="md" mb={3}>
                 Reflection Prompts
               </Heading>
@@ -943,7 +973,7 @@ export default function ClientDashboard() {
           <Box
             w="100%"
             p={{ base: 6, md: 8 }}
-            borderRadius="2xl"
+            borderRadius="3xl"
             bg="linear-gradient(135deg, #161222, #2B223B)"
             color="white"
             boxShadow="2xl"
@@ -975,7 +1005,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "goals") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             My Goals
           </Heading>
@@ -1019,7 +1049,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "journal") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             Private Journal
           </Heading>
@@ -1059,7 +1089,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "notes") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             Notes for Next Session
           </Heading>
@@ -1078,7 +1108,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "checkin") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             Daily Check‑in
           </Heading>
@@ -1168,7 +1198,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "shared") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             Shared With Me
           </Heading>
@@ -1194,7 +1224,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "materials") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             Therapist Materials
           </Heading>
@@ -1215,7 +1245,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "sessions") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             My Sessions
           </Heading>
@@ -1226,7 +1256,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "prompts") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
             Reflection Prompts
           </Heading>
@@ -1244,7 +1274,7 @@ export default function ClientDashboard() {
 
     if (activeSection === "profile") {
       return (
-        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+        <Box bg="white" p={6} borderRadius="3xl" boxShadow="lg">
           <HStack justify="space-between" mb={4}>
             <Heading size="md">My Profile</Heading>
             <Button size="sm" onClick={openProfileEditor}>
@@ -1261,6 +1291,9 @@ export default function ClientDashboard() {
               <Text><strong>Name:</strong> {profile?.name || "—"}</Text>
               <Text><strong>Pronouns:</strong> {profile?.pronouns || "—"}</Text>
               <Text><strong>Timezone:</strong> {profile?.timezone || "—"}</Text>
+              <Text fontSize="sm" color="gray.500">
+                Photo stays on this device unless you upgrade.
+              </Text>
             </VStack>
           </HStack>
         </Box>
@@ -1316,7 +1349,7 @@ export default function ClientDashboard() {
                   key={stat.label}
                   bg="rgba(255,255,255,0.08)"
                   p={4}
-                  borderRadius="2xl"
+                  borderRadius="3xl"
                   border="1px solid rgba(255,255,255,0.12)"
                 >
                   <Text fontSize="sm" color="whiteAlpha.600">
@@ -1328,7 +1361,7 @@ export default function ClientDashboard() {
             </SimpleGrid>
 
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
-              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="3xl">
                 <Heading size="md" mb={2}>
                   Cloud Journal
                 </Heading>
@@ -1339,7 +1372,7 @@ export default function ClientDashboard() {
                   Start syncing
                 </Button>
               </Box>
-              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="3xl">
                 <Heading size="md" mb={2}>
                   Daily Rituals
                 </Heading>
@@ -1350,7 +1383,7 @@ export default function ClientDashboard() {
                   Configure rituals
                 </Button>
               </Box>
-              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="3xl">
                 <Heading size="md" mb={2}>
                   Wellbeing Library
                 </Heading>
@@ -1361,7 +1394,7 @@ export default function ClientDashboard() {
                   Explore library
                 </Button>
               </Box>
-              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="2xl">
+              <Box bg="rgba(255,255,255,0.08)" p={6} borderRadius="3xl">
                 <Heading size="md" mb={2}>
                   Progress Tracker
                 </Heading>
@@ -1433,7 +1466,7 @@ export default function ClientDashboard() {
         </DrawerContent>
       </Drawer>
 
-      <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} size="lg">
+      <Modal isOpen={showProfileModal} onClose={closeProfileModal} size="lg">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Set up your profile</ModalHeader>
@@ -1473,11 +1506,14 @@ export default function ClientDashboard() {
                   src={profileImagePreview || profileDraft.avatarUrl}
                 />
                 <VStack align="start" spacing={2} w="100%">
-                  <Input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    onChange={(e) => handleProfileImage(e.target.files?.[0])}
-                  />
+                  <FormControl>
+                    <FormLabel fontSize="sm">Profile photo (PNG or JPEG)</FormLabel>
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg"
+                      onChange={(e) => handleProfileImage(e.target.files?.[0])}
+                    />
+                  </FormControl>
                   <Text fontSize="xs" color="gray.500">
                     PNG or JPEG only. Image stays on this device unless you upgrade.
                   </Text>
@@ -1498,20 +1534,28 @@ export default function ClientDashboard() {
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="teal" onClick={saveProfile}>
-              Save profile
-            </Button>
+            <HStack spacing={3}>
+              <Button variant="ghost" onClick={closeProfileModal}>
+                Set up later
+              </Button>
+              <Button colorScheme="teal" onClick={saveProfile}>
+                Save profile
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={showCheckin} onClose={() => setShowCheckin(false)} size="lg">
+      <Modal isOpen={showCheckin} onClose={skipCheckinForToday} size="lg">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>{checkinSteps[checkinStep]?.title}</ModalHeader>
           <ModalBody>{checkinSteps[checkinStep]?.body}</ModalBody>
           <ModalFooter>
             <HStack spacing={3}>
+              <Button variant="ghost" onClick={skipCheckinForToday}>
+                Skip for today
+              </Button>
               {checkinStep > 0 && (
                 <Button variant="ghost" onClick={() => setCheckinStep((s) => s - 1)}>
                   Back
