@@ -12,6 +12,11 @@ from therapy.models import (
     ScheduleEvent,
     WaitlistEntry,
     TherapistSessionLink,
+    ClientJournal,
+    ClientGoal,
+    ClientCheckin,
+    TherapistMaterial,
+    MaterialShare,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -372,3 +377,53 @@ class WaitlistEntrySerializer(serializers.ModelSerializer):
             "notes",
             "created_at",
         ]
+
+
+# ----------------------------
+# Client Experience / Premium
+# ----------------------------
+class ClientJournalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientJournal
+        fields = "__all__"
+        extra_kwargs = {"therapist": {"read_only": True}}
+
+
+class ClientGoalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientGoal
+        fields = "__all__"
+        extra_kwargs = {"therapist": {"read_only": True}}
+
+
+class ClientCheckinSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientCheckin
+        fields = "__all__"
+        extra_kwargs = {"therapist": {"read_only": True}}
+
+
+class TherapistMaterialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TherapistMaterial
+        fields = "__all__"
+        extra_kwargs = {"therapist": {"read_only": True}}
+
+
+class MaterialShareSerializer(serializers.ModelSerializer):
+    material_title = serializers.CharField(source="material.title", read_only=True)
+    client_name = serializers.CharField(source="client.name", read_only=True)
+
+    class Meta:
+        model = MaterialShare
+        fields = [
+            "id",
+            "material",
+            "material_title",
+            "client",
+            "client_name",
+            "shared_by",
+            "note",
+            "created_at",
+        ]
+        extra_kwargs = {"shared_by": {"read_only": True}}

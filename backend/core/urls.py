@@ -20,6 +20,11 @@ from therapy.views import (
     EventTypeViewSet,
     WaitlistEntryViewSet,
     TherapistSessionLinkViewSet,
+    ClientJournalViewSet,
+    ClientGoalViewSet,
+    ClientCheckinViewSet,
+    TherapistMaterialViewSet,
+    MaterialShareViewSet,
 )
 
 # ----------------------------
@@ -37,6 +42,11 @@ router.register(r"schedule-events", ScheduleEventViewSet, basename="schedule-eve
 router.register(r"event-types", EventTypeViewSet, basename="event-types")
 router.register(r"waitlist", WaitlistEntryViewSet, basename="waitlist")
 router.register(r"session-links", TherapistSessionLinkViewSet, basename="session-links")
+router.register(r"client-journals", ClientJournalViewSet, basename="client-journals")
+router.register(r"client-goals", ClientGoalViewSet, basename="client-goals")
+router.register(r"client-checkins", ClientCheckinViewSet, basename="client-checkins")
+router.register(r"materials", TherapistMaterialViewSet, basename="materials")
+router.register(r"material-shares", MaterialShareViewSet, basename="material-shares")
 
 # ----------------------------
 # Small utility/test endpoints

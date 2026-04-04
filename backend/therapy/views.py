@@ -19,6 +19,11 @@ from therapy.models import (
     EventType,
     WaitlistEntry,
     TherapistSessionLink,
+    ClientJournal,
+    ClientGoal,
+    ClientCheckin,
+    TherapistMaterial,
+    MaterialShare,
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
@@ -32,6 +37,11 @@ from therapy.serializers import (
     ScheduleEventSerializer,
     WaitlistEntrySerializer,
     TherapistSessionLinkSerializer,
+    ClientJournalSerializer,
+    ClientGoalSerializer,
+    ClientCheckinSerializer,
+    TherapistMaterialSerializer,
+    MaterialShareSerializer,
 )
 
 
@@ -56,6 +66,17 @@ def _resolve_therapist_from_request(request):
         defaults={"name": name},
     )
     return therapist
+
+
+def _resolve_client_from_request(request):
+    """
+    Return the ClientProfile linked to the authenticated user by email.
+    """
+    user = request.user
+    email = getattr(user, "email", None)
+    if not email:
+        return None
+    return ClientProfile.objects.filter(email__iexact=email).first()
 
 
 # ----------------------------
@@ -309,6 +330,128 @@ class WaitlistEntryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request)
         serializer.save(therapist=serializer.validated_data.get("therapist") or therapist)
+
+
+# ----------------------------
+# Client Experience / Premium
+# ----------------------------
+class ClientJournalViewSet(viewsets.ModelViewSet):
+    serializer_class = ClientJournalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        qs = ClientJournal.objects.all()
+        if therapist:
+            qs = qs.filter(client__therapist=therapist)
+            client_id = self.request.query_params.get("client")
+            if client_id:
+                qs = qs.filter(client_id=client_id)
+            return qs.order_by("-created_at")
+        if client:
+            return qs.filter(client=client).order_by("-created_at")
+        return ClientJournal.objects.none()
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        if therapist:
+            serializer.save(therapist=therapist)
+        elif client:
+            serializer.save(client=client, therapist=client.therapist)
+
+
+class ClientGoalViewSet(viewsets.ModelViewSet):
+    serializer_class = ClientGoalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        qs = ClientGoal.objects.all()
+        if therapist:
+            qs = qs.filter(client__therapist=therapist)
+            client_id = self.request.query_params.get("client")
+            if client_id:
+                qs = qs.filter(client_id=client_id)
+            return qs.order_by("-created_at")
+        if client:
+            return qs.filter(client=client).order_by("-created_at")
+        return ClientGoal.objects.none()
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        if therapist:
+            serializer.save(therapist=therapist)
+        elif client:
+            serializer.save(client=client, therapist=client.therapist)
+
+
+class ClientCheckinViewSet(viewsets.ModelViewSet):
+    serializer_class = ClientCheckinSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        qs = ClientCheckin.objects.all()
+        if therapist:
+            qs = qs.filter(client__therapist=therapist)
+            client_id = self.request.query_params.get("client")
+            if client_id:
+                qs = qs.filter(client_id=client_id)
+            return qs.order_by("-created_at")
+        if client:
+            return qs.filter(client=client).order_by("-created_at")
+        return ClientCheckin.objects.none()
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        if therapist:
+            serializer.save(therapist=therapist)
+        elif client:
+            serializer.save(client=client, therapist=client.therapist)
+
+
+class TherapistMaterialViewSet(viewsets.ModelViewSet):
+    serializer_class = TherapistMaterialSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        if therapist:
+            return TherapistMaterial.objects.filter(therapist=therapist).order_by("-created_at")
+        return TherapistMaterial.objects.none()
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        serializer.save(therapist=therapist)
+
+
+class MaterialShareViewSet(viewsets.ModelViewSet):
+    serializer_class = MaterialShareSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        client = _resolve_client_from_request(self.request)
+        if therapist:
+            qs = MaterialShare.objects.filter(client__therapist=therapist)
+            client_id = self.request.query_params.get("client")
+            if client_id:
+                qs = qs.filter(client_id=client_id)
+            return qs.order_by("-created_at")
+        if client:
+            return MaterialShare.objects.filter(client=client).order_by("-created_at")
+        return MaterialShare.objects.none()
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        if therapist:
+            serializer.save(shared_by=therapist)
 
 
 # ----------------------------

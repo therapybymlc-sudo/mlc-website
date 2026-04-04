@@ -8,6 +8,7 @@ from django.utils import timezone
 class TherapistProfile(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
+    is_premium = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name
@@ -107,6 +108,7 @@ class ClientProfile(models.Model):
     therapist = models.ForeignKey(
         TherapistProfile, on_delete=models.CASCADE, related_name="clients"
     )
+    is_premium = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.name
@@ -353,3 +355,113 @@ class WaitlistEntry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.client.name} (wait list)"
+
+
+# ===========================
+# 🔹 Client Experience Models
+# ===========================
+class ClientJournal(models.Model):
+    client = models.ForeignKey(
+        ClientProfile, on_delete=models.CASCADE, related_name="journals"
+    )
+    therapist = models.ForeignKey(
+        TherapistProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="client_journals",
+    )
+    entry = models.TextField()
+    mood = models.CharField(max_length=50, blank=True, null=True)
+    shared_with_therapist = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.client.name} journal ({self.created_at.date()})"
+
+
+class ClientGoal(models.Model):
+    client = models.ForeignKey(
+        ClientProfile, on_delete=models.CASCADE, related_name="goals"
+    )
+    therapist = models.ForeignKey(
+        TherapistProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="client_goals",
+    )
+    title = models.CharField(max_length=255)
+    created_by = models.CharField(
+        max_length=20,
+        choices=[("client", "Client"), ("therapist", "Therapist")],
+        default="client",
+    )
+    progress = models.PositiveIntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
+    due_date = models.DateField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.client.name} goal: {self.title}"
+
+
+class ClientCheckin(models.Model):
+    client = models.ForeignKey(
+        ClientProfile, on_delete=models.CASCADE, related_name="checkins"
+    )
+    therapist = models.ForeignKey(
+        TherapistProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="client_checkins",
+    )
+    checkin_date = models.DateField(default=timezone.now)
+    mood = models.CharField(max_length=50, blank=True, null=True)
+    energy = models.CharField(max_length=50, blank=True, null=True)
+    stress = models.CharField(max_length=50, blank=True, null=True)
+    sleep_hours = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    gratitude = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-checkin_date", "-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.client.name} check-in ({self.checkin_date})"
+
+
+class TherapistMaterial(models.Model):
+    therapist = models.ForeignKey(
+        TherapistProfile, on_delete=models.CASCADE, related_name="materials"
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    file_url = models.URLField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.therapist.name} material: {self.title}"
+
+
+class MaterialShare(models.Model):
+    material = models.ForeignKey(
+        TherapistMaterial, on_delete=models.CASCADE, related_name="shares"
+    )
+    client = models.ForeignKey(
+        ClientProfile, on_delete=models.CASCADE, related_name="material_shares"
+    )
+    shared_by = models.ForeignKey(
+        TherapistProfile, on_delete=models.SET_NULL, null=True, related_name="shares_made"
+    )
+    note = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("material", "client")
+
+    def __str__(self) -> str:
+        return f"{self.material.title} → {self.client.name}"
