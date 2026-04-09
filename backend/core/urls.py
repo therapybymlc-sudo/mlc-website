@@ -73,6 +73,43 @@ def protected_view(request):
         "user": str(request.user),
     })
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def whoami(request):
+    payload = request.auth or {}
+    public_meta = {}
+    if isinstance(payload, dict):
+        public_meta = payload.get("public_metadata") or payload.get("publicMetadata") or {}
+    roles = public_meta.get("roles") if isinstance(public_meta.get("roles"), list) else []
+    if not roles and public_meta.get("role"):
+        roles = [public_meta.get("role")]
+    if isinstance(roles, str):
+        roles = [roles]
+    admin_emails = [
+        e.strip().lower()
+        for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
+        if e.strip()
+    ]
+    admin_user_ids = [
+        uid.strip()
+        for uid in getattr(settings, "ADMIN_USER_IDS", "").split(",")
+        if uid.strip()
+    ]
+    payload_email = payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None
+    payload_sub = payload.get("sub") if isinstance(payload, dict) else None
+    user_email = getattr(request.user, "email", None)
+    return Response({
+        "user": str(request.user),
+        "user_email": user_email,
+        "payload_email": payload_email,
+        "payload_sub": payload_sub,
+        "roles": [str(r).lower() for r in roles if r],
+        "admin_emails": admin_emails,
+        "admin_user_ids": admin_user_ids,
+        "admin_by_email": (payload_email or user_email or "").lower() in admin_emails,
+        "admin_by_user_id": payload_sub in admin_user_ids,
+    })
+
 def healthz(request):
     return JsonResponse({"status": "ok"})
 
@@ -85,6 +122,7 @@ urlpatterns = [
     path("auth-test/", auth_test, name="auth_test"),
     path("auth-login/", auth_login, name="auth_login"),
     path("protected/", protected_view, name="protected"),
+    path("api/whoami/", whoami, name="whoami"),
 
     # REST API
     path("api/", include(router.urls)),
