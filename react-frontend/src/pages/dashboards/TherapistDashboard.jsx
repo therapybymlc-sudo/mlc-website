@@ -52,7 +52,7 @@ import ClientNotes from "./ClientNotes";
 import ClientFiles from "./ClientFiles";
 import Schedule from "./Schedule";
 import NoteTemplates from "./NoteTemplates"; // ✅ added
-import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from "../../api";
 import RichTextEditor from "../../components/RichTextEditor";
 
 export default function TherapistDashboard() {
@@ -68,10 +68,12 @@ export default function TherapistDashboard() {
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState("");
   const [materials, setMaterials] = useState([]);
+  const [libraryMaterials, setLibraryMaterials] = useState([]);
   const [materialDraft, setMaterialDraft] = useState({
     title: "",
     description: "",
     file_url: "",
+    file: null,
   });
   const [previewClients, setPreviewClients] = useState([]);
   const [previewNote, setPreviewNote] = useState("");
@@ -610,26 +612,17 @@ export default function TherapistDashboard() {
               <Heading size="sm" mb={3}>
                 Select a client
               </Heading>
-              <Input
-                list="client-list"
-                placeholder="Start typing a client name..."
-                value={
-                  selectedClientId
-                    ? clients.find((c) => String(c.id) === String(selectedClientId))?.name || ""
-                    : ""
-                }
-                onChange={(e) => {
-                  const match = clients.find(
-                    (c) => c.name.toLowerCase() === e.target.value.toLowerCase()
-                  );
-                  setSelectedClientId(match ? String(match.id) : "");
-                }}
-              />
-              <datalist id="client-list">
+              <Select
+                placeholder="Select a client"
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+              >
                 {clients.map((client) => (
-                  <option key={client.id} value={client.name} />
+                  <option key={client.id} value={String(client.id)}>
+                    {client.name}
+                  </option>
                 ))}
-              </datalist>
+              </Select>
               {!selectedClientId && (
                 <Text fontSize="sm" color="gray.500" mt={2}>
                   Select a client to assign goals or share materials.
@@ -734,6 +727,19 @@ export default function TherapistDashboard() {
                       setMaterialDraft((p) => ({ ...p, file_url: e.target.value }))
                     }
                   />
+                  <FormControl>
+                    <FormLabel fontSize="sm">Upload PDF or document</FormLabel>
+                    <Input
+                      type="file"
+                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                      onChange={(e) =>
+                        setMaterialDraft((p) => ({
+                          ...p,
+                          file: e.target.files?.[0] || null,
+                        }))
+                      }
+                    />
+                  </FormControl>
                   <Textarea
                     placeholder="Short description"
                     value={materialDraft.description}
@@ -745,13 +751,27 @@ export default function TherapistDashboard() {
                     onClick={async () => {
                       if (!materialDraft.title.trim()) return;
                       try {
-                        const saved = await apiPost("materials/", {
-                          title: materialDraft.title.trim(),
-                          description: materialDraft.description,
-                          file_url: materialDraft.file_url,
-                        });
+                        let saved;
+                        if (materialDraft.file) {
+                          const form = new FormData();
+                          form.append("title", materialDraft.title.trim());
+                          if (materialDraft.description) {
+                            form.append("description", materialDraft.description);
+                          }
+                          if (materialDraft.file_url) {
+                            form.append("file_url", materialDraft.file_url);
+                          }
+                          form.append("file", materialDraft.file);
+                          saved = await apiUpload("materials/", form);
+                        } else {
+                          saved = await apiPost("materials/", {
+                            title: materialDraft.title.trim(),
+                            description: materialDraft.description,
+                            file_url: materialDraft.file_url,
+                          });
+                        }
                         setMaterials((prev) => [saved, ...prev]);
-                        setMaterialDraft({ title: "", description: "", file_url: "" });
+                        setMaterialDraft({ title: "", description: "", file_url: "", file: null });
                         toast({ status: "success", title: "Material added" });
                       } catch (error) {
                         toast({ status: "error", title: "Could not add material" });
@@ -774,6 +794,18 @@ export default function TherapistDashboard() {
                           <Text fontSize="sm" color="gray.600">
                             {material.description}
                           </Text>
+                        )}
+                        {(material.file || material.file_url) && (
+                          <Button
+                            as="a"
+                            href={material.file || material.file_url}
+                            target="_blank"
+                            size="xs"
+                            variant="outline"
+                            mt={2}
+                          >
+                            View file
+                          </Button>
                         )}
                         <HStack mt={2} spacing={2}>
                           <Button
@@ -811,6 +843,72 @@ export default function TherapistDashboard() {
                               Open file
                             </Button>
                           )}
+                        </HStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                )}
+
+                <Divider my={6} />
+                <Heading size="sm" mb={2}>
+                  Premium Library
+                </Heading>
+                {!isPremium ? (
+                  <Box p={3} bg="purple.50" borderRadius="xl" border="1px solid #E9D8FD">
+                    <Text fontSize="sm" color="gray.700">
+                      Upgrade to access the shared premium materials library.
+                    </Text>
+                  </Box>
+                ) : libraryMaterials.length === 0 ? (
+                  <Text color="gray.500">No library materials available yet.</Text>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {libraryMaterials.map((material) => (
+                      <Box key={material.id} p={3} border="1px solid #E2E8F0" borderRadius="xl">
+                        <Text fontWeight="semibold">{material.title}</Text>
+                        {material.description && (
+                          <Text fontSize="sm" color="gray.600">
+                            {material.description}
+                          </Text>
+                        )}
+                        {(material.file || material.file_url) && (
+                          <Button
+                            as="a"
+                            href={material.file || material.file_url}
+                            target="_blank"
+                            size="xs"
+                            variant="outline"
+                            mt={2}
+                          >
+                            View file
+                          </Button>
+                        )}
+                        <HStack mt={2} spacing={2}>
+                          <Button
+                            size="xs"
+                            colorScheme="teal"
+                            onClick={async () => {
+                              if (!selectedClientId) {
+                                toast({ status: "warning", title: "Select a client first" });
+                                return;
+                              }
+                              try {
+                                await apiPost("material-shares/", {
+                                  material: material.id,
+                                  client: selectedClientId,
+                                });
+                                const shares = await apiGet(
+                                  `material-shares/?client=${selectedClientId}`
+                                );
+                                setClientShares(shares || []);
+                                toast({ status: "success", title: "Material shared" });
+                              } catch (error) {
+                                toast({ status: "error", title: "Could not share material" });
+                              }
+                            }}
+                          >
+                            Share with client
+                          </Button>
                         </HStack>
                       </Box>
                     ))}
@@ -1228,7 +1326,9 @@ export default function TherapistDashboard() {
       try {
         const res = await apiGet("materials/");
         const data = res.results ?? res;
-        setMaterials(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setMaterials(list.filter((m) => !m.is_library));
+        setLibraryMaterials(list.filter((m) => m.is_library));
       } catch (err) {
         console.error("Materials load failed", err);
       }

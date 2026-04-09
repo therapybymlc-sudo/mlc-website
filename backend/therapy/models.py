@@ -483,6 +483,9 @@ class TherapistMaterial(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     file_url = models.URLField(blank=True, null=True)
+    file = models.FileField(upload_to="therapist_materials/", blank=True, null=True)
+    is_library = models.BooleanField(default=False)
+    is_premium_only = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
@@ -507,3 +510,25 @@ class MaterialShare(models.Model):
 
     def __str__(self) -> str:
         return f"{self.material.title} → {self.client.name}"
+
+
+# ===========================
+# 🔹 Public Website Content
+# ===========================
+class TeamMember(models.Model):
+    name = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    photo_url = models.URLField(blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    specialties = models.TextField(blank=True, null=True)
+    sort_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self) -> str:
+        return self.name

@@ -4,10 +4,28 @@ import {
   Heading,
   Text,
   VStack,
+  SimpleGrid,
+  Image,
 } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { apiGet } from "../api";
 
 export default function MeetTheTeam() {
+  const [team, setTeam] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("team-members/");
+        const data = res.results ?? res;
+        setTeam(Array.isArray(data) ? data : []);
+      } catch {
+        setTeam([]);
+      }
+    })();
+  }, []);
+
   return (
     <Box>
       <Helmet>
@@ -47,35 +65,76 @@ export default function MeetTheTeam() {
         </Container>
       </Box>
 
-      {/* TEAM PROFILES COMING SOON */}
+      {/* TEAM PROFILES */}
       <Box bg="#E8ECE8" py={24}>
         <Container maxW="6xl">
-          <Box
-            bg="white"
-            borderRadius="2xl"
-            boxShadow="md"
-            p={{ base: 8, md: 12 }}
-            textAlign="center"
-          >
-            <Heading
-              fontFamily="'Playfair Display', serif"
-              fontWeight="600"
-              color="#2E2E2E"
-              mb={4}
+          {team.length === 0 ? (
+            <Box
+              bg="white"
+              borderRadius="2xl"
+              boxShadow="md"
+              p={{ base: 8, md: 12 }}
+              textAlign="center"
             >
-              Team Profiles Coming Soon
-            </Heading>
-            <Text
-              fontFamily="'Lato', sans-serif"
-              color="#2E2E2E"
-              maxW="3xl"
-              mx="auto"
-              lineHeight="1.8"
-            >
-              We’re finalizing our team profiles to share the clinicians, supervisors,
-              and operations leaders behind MLC. Please check back shortly.
-            </Text>
-          </Box>
+              <Heading
+                fontFamily="'Playfair Display', serif"
+                fontWeight="600"
+                color="#2E2E2E"
+                mb={4}
+              >
+                Team Profiles Coming Soon
+              </Heading>
+              <Text
+                fontFamily="'Lato', sans-serif"
+                color="#2E2E2E"
+                maxW="3xl"
+                mx="auto"
+                lineHeight="1.8"
+              >
+                We’re finalizing our team profiles to share the clinicians, supervisors,
+                and operations leaders behind MLC. Please check back shortly.
+              </Text>
+            </Box>
+          ) : (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
+              {team.map((member) => (
+                <Box
+                  key={member.id}
+                  bg="white"
+                  borderRadius="2xl"
+                  boxShadow="md"
+                  p={6}
+                >
+                  {member.photo_url && (
+                    <Image
+                      src={member.photo_url}
+                      alt={member.name}
+                      borderRadius="xl"
+                      mb={4}
+                    />
+                  )}
+                  <Heading size="md" fontFamily="'Playfair Display', serif">
+                    {member.name}
+                  </Heading>
+                  {member.title && (
+                    <Text color="#56756D" fontWeight="semibold" mb={2}>
+                      {member.title}
+                    </Text>
+                  )}
+                  {member.bio && (
+                    <Text fontSize="sm" color="#2E2E2E" lineHeight="1.7">
+                      {member.bio}
+                    </Text>
+                  )}
+                  {member.specialties && (
+                    <Text fontSize="sm" color="#2E2E2E" mt={3}>
+                      {member.specialties}
+                    </Text>
+                  )}
+                </Box>
+              ))}
+            </SimpleGrid>
+          )}
         </Container>
       </Box>
 

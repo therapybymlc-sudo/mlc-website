@@ -13,8 +13,18 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+let tokenGetter = null;
+export const setTokenGetter = (getter) => {
+  tokenGetter = getter;
+};
+
 // Attach token automatically
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  if (tokenGetter) {
+    const token = await tokenGetter();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  }
   const token = localStorage.getItem("access_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -44,7 +54,7 @@ export async function apiDelete(path) {
 }
 
 export async function apiUpload(path, formData) {
-  const token = localStorage.getItem("access_token");
+  const token = tokenGetter ? await tokenGetter() : localStorage.getItem("access_token");
   const url = `${API_BASE}/${path.replace(/^\/+/, "")}`;
   const res = await fetch(url, {
     method: "POST",

@@ -18,6 +18,7 @@ from therapy.models import (
     TherapistMaterial,
     MaterialShare,
     TherapistApplication,
+    TeamMember,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -440,7 +441,13 @@ class TherapistApplicationSerializer(serializers.ModelSerializer):
         if value is None:
             return []
         if isinstance(value, list):
-            return value
+        return value
+
+
+class TeamMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamMember
+        fields = "__all__"
         if isinstance(value, str):
             try:
                 parsed = json.loads(value)

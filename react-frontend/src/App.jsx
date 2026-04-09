@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import MeetTheTeam from "./pages/MeetTheTeam";
+import AdminDashboard from "./pages/AdminDashboard";
 import BookNow from "./pages/BookNow";
 import ContactUs from "./pages/ContactUs";
 import Careers from "./pages/Careers";
@@ -110,6 +111,7 @@ export default function App() {
               <Route path="/about" element={<About />} />
               <Route path="/services" element={<Services />} />
               <Route path="/meettheteam" element={<MeetTheTeam />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/book" element={<BookNow />} />
               <Route path="/contactus" element={<ContactUs />} />
               <Route path="/careers" element={<Careers />} />

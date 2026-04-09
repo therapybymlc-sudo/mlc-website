@@ -253,7 +253,7 @@ export default function Clients() {
   };
 
   const buildDateOfBirth = () => {
-    if (!dobDay || !dobMonth || !dobYear) return "";
+    if (!dobDay || !dobMonth || !dobYear) return null;
     const mm = String(dobMonth).padStart(2, "0");
     const dd = String(dobDay).padStart(2, "0");
     return `${dobYear}-${mm}-${dd}`;
@@ -276,7 +276,7 @@ export default function Clients() {
       const payload = {
         ...newClient,
         name: `${firstName} ${lastName}`.trim(),
-        date_of_birth: dob || "",
+        date_of_birth: dob,
       };
       await apiPost("/clients/", payload);
       setNewClient(initialClient);
@@ -312,6 +312,7 @@ export default function Clients() {
       const payload = {
         ...editClient,
         name: `${firstName} ${lastName}`.trim(),
+        date_of_birth: editClient.date_of_birth || null,
       };
       await apiPut(`/clients/${selectedClientId}/`, payload);
       const refreshed = await apiGet(`/clients/${selectedClientId}/`);

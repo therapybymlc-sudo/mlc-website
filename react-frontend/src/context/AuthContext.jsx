@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo } from "react";
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/clerk-react";
-import api from "../api";
+import api, { setTokenGetter } from "../api";
 
 const AuthContext = createContext(null);
 
@@ -61,6 +61,17 @@ export const AuthProvider = ({ children }) => {
     return () => {
       isMounted = false;
     };
+  }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setTokenGetter(null);
+      return;
+    }
+    setTokenGetter(() =>
+      getToken(tokenTemplate ? { template: tokenTemplate } : undefined)
+    );
   }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
 
   const login = () =>

@@ -61,6 +61,7 @@ const LOCAL_KEYS = {
   goals: "mlc_client_goals",
   profile: "mlc_client_profile",
   checkin: "mlc_client_checkin_last",
+  checkinPrompt: "mlc_client_checkin_prompt_last",
   checkinData: "mlc_client_checkin_data",
   checkinHistory: "mlc_client_checkin_history",
   profileCompleted: "mlc_client_profile_completed",
@@ -860,9 +861,10 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     const today = getLocalDayKey();
-    const last = localStorage.getItem(LOCAL_KEYS.checkin);
-    if (last !== today) {
+    const lastPrompt = localStorage.getItem(LOCAL_KEYS.checkinPrompt);
+    if (lastPrompt !== today) {
       setShowCheckin(true);
+      localStorage.setItem(LOCAL_KEYS.checkinPrompt, today);
     }
     syncFromApi();
   }, []);

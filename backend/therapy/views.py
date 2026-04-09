@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
-from django.db import transaction
+from django.db import transaction, models
 from django.utils import timezone
 
 from therapy.models import (
@@ -27,6 +27,7 @@ from therapy.models import (
     TherapistMaterial,
     MaterialShare,
     TherapistApplication,
+    TeamMember,
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
@@ -46,6 +47,7 @@ from therapy.serializers import (
     TherapistMaterialSerializer,
     MaterialShareSerializer,
     TherapistApplicationSerializer,
+    TeamMemberSerializer,
 )
 
 
@@ -99,13 +101,25 @@ def _is_premium_request(request):
     return any(role in roles for role in ["admin", "premium", "premium_client", "premium_therapist"])
 
 
+def _require_admin(request):
+    roles = _extract_roles_from_auth(request)
+    if "admin" not in roles:
+        raise exceptions.PermissionDenied("Admin access required.")
+
+
 # ----------------------------
 # Therapist / Client / Appointment
 # ----------------------------
 class TherapistProfileViewSet(viewsets.ModelViewSet):
-    queryset = TherapistProfile.objects.all()
     serializer_class = TherapistProfileSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        roles = _extract_roles_from_auth(self.request)
+        if "admin" in roles:
+            return TherapistProfile.objects.all()
+        return TherapistProfile.objects.filter(id=therapist.id)
 
 
 class TherapistSessionLinkViewSet(viewsets.ModelViewSet):
@@ -459,16 +473,24 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
 class TherapistMaterialViewSet(viewsets.ModelViewSet):
     serializer_class = TherapistMaterialSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         therapist = _resolve_therapist_from_request(self.request)
-        if therapist:
-            return TherapistMaterial.objects.filter(therapist=therapist).order_by("-created_at")
-        return TherapistMaterial.objects.none()
+        if not therapist:
+            return TherapistMaterial.objects.none()
+        roles = _extract_roles_from_auth(self.request)
+        if "admin" in roles:
+            return TherapistMaterial.objects.all().order_by("-created_at")
+        if _is_premium_request(self.request):
+            return TherapistMaterial.objects.filter(
+                models.Q(therapist=therapist) | models.Q(is_library=True)
+            ).order_by("-created_at")
+        return TherapistMaterial.objects.filter(therapist=therapist).order_by("-created_at")
 
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request)
-        serializer.save(therapist=therapist)
+        serializer.save(therapist=therapist, is_library=False, is_premium_only=False)
 
 
 class MaterialShareViewSet(viewsets.ModelViewSet):
@@ -493,6 +515,29 @@ class MaterialShareViewSet(viewsets.ModelViewSet):
         if therapist:
             serializer.save(shared_by=therapist)
 
+
+class TeamMemberViewSet(viewsets.ModelViewSet):
+    serializer_class = TeamMemberSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return TeamMember.objects.filter(is_active=True).order_by("sort_order", "name")
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
 
 # ----------------------------
 # Therapist Applications (Public)
