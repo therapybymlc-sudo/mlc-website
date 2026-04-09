@@ -119,6 +119,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL", "")
 CLERK_ISSUER = os.getenv("CLERK_ISSUER", "")
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "")
+ADMIN_USER_IDS = os.getenv("ADMIN_USER_IDS", "")
 
 # ==========================
 # Django REST Framework

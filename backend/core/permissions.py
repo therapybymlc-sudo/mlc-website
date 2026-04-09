@@ -21,9 +21,16 @@ def get_roles_from_request(request):
         for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
         if e.strip()
     ]
+    admin_user_ids = [
+        uid.strip()
+        for uid in getattr(settings, "ADMIN_USER_IDS", "").split(",")
+        if uid.strip()
+    ]
     payload_email = None
     if isinstance(payload, dict):
         payload_email = payload.get("email") or payload.get("email_address")
+        if payload.get("sub") in admin_user_ids:
+            roles = list(roles) + ["admin"]
     email = getattr(getattr(request, "user", None), "email", None) or payload_email
     if email and email.lower() in admin_emails:
         roles = list(roles) + ["admin"]
