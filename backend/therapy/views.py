@@ -100,7 +100,10 @@ def _extract_roles_from_auth(request):
         for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
         if e.strip()
     ]
-    email = getattr(getattr(request, "user", None), "email", None)
+    payload_email = None
+    if isinstance(payload, dict):
+        payload_email = payload.get("email") or payload.get("email_address")
+    email = getattr(getattr(request, "user", None), "email", None) or payload_email
     if email and email.lower() in admin_emails and "admin" not in roles:
         roles = list(roles) + ["admin"]
     return [str(r).lower() for r in roles if r]
