@@ -441,13 +441,7 @@ class TherapistApplicationSerializer(serializers.ModelSerializer):
         if value is None:
             return []
         if isinstance(value, list):
-        return value
-
-
-class TeamMemberSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TeamMember
-        fields = "__all__"
+            return value
         if isinstance(value, str):
             try:
                 parsed = json.loads(value)
@@ -474,3 +468,9 @@ class TeamMemberSerializer(serializers.ModelSerializer):
         if not attrs.get("home_postal_code"):
             raise serializers.ValidationError({"home_postal_code": "Postal code is required."})
         return attrs
+
+
+class TeamMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TeamMember
+        fields = "__all__"
