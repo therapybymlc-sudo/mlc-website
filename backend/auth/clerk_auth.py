@@ -45,10 +45,13 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 raise exceptions.AuthenticationFailed("Token missing subject")
 
             User = get_user_model()
-            user, _ = User.objects.get_or_create(
+            user, created = User.objects.get_or_create(
                 username=username,
                 defaults={"email": email or f"{username}@example.invalid"},
             )
+            if email and (created or not user.email or user.email.endswith("@example.invalid")):
+                user.email = email
+                user.save(update_fields=["email"])
 
             return (user, payload)
 
