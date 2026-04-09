@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from django.conf import settings
 
 def get_roles_from_request(request):
     """
@@ -15,6 +16,14 @@ def get_roles_from_request(request):
         roles = payload.get("public_metadata", {}).get("roles")
     if not roles:
         roles = []
+    admin_emails = [
+        e.strip().lower()
+        for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
+        if e.strip()
+    ]
+    email = getattr(getattr(request, "user", None), "email", None)
+    if email and email.lower() in admin_emails:
+        roles = list(roles) + ["admin"]
     return set(roles)
 
 

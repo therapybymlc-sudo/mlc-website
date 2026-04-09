@@ -7,6 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
 from django.db import transaction, models
 from django.utils import timezone
+from django.conf import settings
 
 from therapy.models import (
     ScheduleEvent,
@@ -93,6 +94,15 @@ def _extract_roles_from_auth(request):
         roles = [roles]
     if not roles and meta.get("role"):
         roles = [meta.get("role")]
+    # Fallback: allow explicit admin emails via env
+    admin_emails = [
+        e.strip().lower()
+        for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
+        if e.strip()
+    ]
+    email = getattr(getattr(request, "user", None), "email", None)
+    if email and email.lower() in admin_emails and "admin" not in roles:
+        roles = list(roles) + ["admin"]
     return [str(r).lower() for r in roles if r]
 
 
