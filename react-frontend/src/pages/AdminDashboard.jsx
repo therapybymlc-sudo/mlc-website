@@ -11,6 +11,7 @@ import {
   Text,
   Textarea,
   Image,
+  Select,
   VStack,
   HStack,
   Divider,
@@ -41,6 +42,68 @@ const emptyService = {
   cta_link: "",
   sort_order: 0,
   is_active: true,
+};
+
+const defaultHomeDraft = {
+  hero: {
+    title: "MLC Therapy",
+    tagline: "A space to feel, to heal, to become.",
+    paragraph_one:
+      "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.",
+    paragraph_two:
+      "At MLC Therapy, we offer thoughtful online therapy across India in spaces designed to help you feel heard, supported, and respected.",
+    primary_label: "I'm Looking for Therapy",
+    primary_link: "/client-checkin",
+    secondary_label: "I'm a Therapist",
+    secondary_link: "/therapists",
+    background_image: "/hero-bg.jpg",
+    logo_url: "/logo_tra.png",
+  },
+  portal: {
+    title: "Your MLC Portal",
+    body:
+      "A gentle, private space for clients — and a structured workspace for therapists. Choose your path below to get started.",
+    client_title: "Client Dashboard",
+    client_body:
+      "Daily check‑ins, private journaling, session notes, shared materials, and premium tools when you’re ready.",
+    client_primary_label: "Sign up as a client",
+    client_primary_link: "/signup/client",
+    client_secondary_label: "Take a quick check‑in",
+    client_secondary_link: "/client-checkin",
+    therapist_title: "Therapist Workspace",
+    therapist_body:
+      "Apply to join MLC and access therapist tools, client collaboration, and a calm workspace designed for your practice.",
+    therapist_primary_label: "Apply as a therapist",
+    therapist_primary_link: "/therapist-apply",
+    therapist_secondary_label: "Sign in",
+    therapist_secondary_link: "/login/therapist",
+  },
+  bubbles: [
+    {
+      icon: "users",
+      title: "A Space Where You Can Speak Freely",
+      body:
+        "Therapy here is a place where you can talk about what’s on your mind without feeling judged.",
+    },
+    {
+      icon: "compass",
+      title: "Thoughtful Guidance",
+      body:
+        "Your therapist works with you to understand what you're experiencing and how to move forward.",
+    },
+    {
+      icon: "check",
+      title: "Finding the Right Fit",
+      body:
+        "Your first few sessions help you decide whether the therapist feels like the right fit for you. You are always free to choose what feels best for you.",
+    },
+    {
+      icon: "feather",
+      title: "Move at Your Own Pace",
+      body:
+        "There is no pressure to rush therapy. The process always respects your comfort and readiness.",
+    },
+  ],
 };
 
 function RichTextEditor({ value, onChange }) {
@@ -129,6 +192,8 @@ export default function AdminDashboard() {
   const [services, setServices] = useState([]);
   const [serviceDraft, setServiceDraft] = useState(emptyService);
   const [editingServiceId, setEditingServiceId] = useState(null);
+  const [homeDraft, setHomeDraft] = useState(defaultHomeDraft);
+  const [homeId, setHomeId] = useState(null);
 
   const fetchMembers = async () => {
     try {
@@ -150,10 +215,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchHomeContent = async () => {
+    try {
+      const res = await apiGet("home-content/");
+      const data = res.results ?? res;
+      if (Array.isArray(data) && data.length > 0) {
+        setHomeId(data[0].id);
+        setHomeDraft({
+          hero: { ...defaultHomeDraft.hero, ...(data[0].hero || {}) },
+          portal: { ...defaultHomeDraft.portal, ...(data[0].portal || {}) },
+          bubbles: Array.isArray(data[0].bubbles) ? data[0].bubbles : defaultHomeDraft.bubbles,
+        });
+      }
+    } catch {
+      setHomeDraft(defaultHomeDraft);
+      setHomeId(null);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
       fetchMembers();
       fetchServices();
+      fetchHomeContent();
     }
   }, [isAuthenticated, isAdmin]);
 
@@ -586,10 +670,413 @@ export default function AdminDashboard() {
           )}
         </Box>
 
-        <Divider my={10} />
-        <Text color="gray.500">
-          Next: Services + Pages editor (we can add after team).
-        </Text>
+        <Divider my={12} />
+
+        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+          <Heading size="md" mb={4}>
+            Home Page Editor
+          </Heading>
+
+          <Heading size="sm" mb={3}>
+            Hero
+          </Heading>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
+            <FormControl>
+              <FormLabel>Title</FormLabel>
+              <Input
+                value={homeDraft.hero.title}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, title: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Tagline</FormLabel>
+              <Input
+                value={homeDraft.hero.tagline}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, tagline: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Paragraph 1</FormLabel>
+              <RichTextEditor
+                value={homeDraft.hero.paragraph_one}
+                onChange={(value) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, paragraph_one: value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Paragraph 2</FormLabel>
+              <RichTextEditor
+                value={homeDraft.hero.paragraph_two}
+                onChange={(value) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, paragraph_two: value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Primary button label</FormLabel>
+              <Input
+                value={homeDraft.hero.primary_label}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, primary_label: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Primary button link</FormLabel>
+              <Input
+                value={homeDraft.hero.primary_link}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, primary_link: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Secondary button label</FormLabel>
+              <Input
+                value={homeDraft.hero.secondary_label}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, secondary_label: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Secondary button link</FormLabel>
+              <Input
+                value={homeDraft.hero.secondary_link}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, secondary_link: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Background image URL</FormLabel>
+              <Input
+                value={homeDraft.hero.background_image}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, background_image: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Logo URL</FormLabel>
+              <Input
+                value={homeDraft.hero.logo_url}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    hero: { ...p.hero, logo_url: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+          </SimpleGrid>
+
+          <Heading size="sm" mb={3}>
+            Portal CTA
+          </Heading>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Section title</FormLabel>
+              <Input
+                value={homeDraft.portal.title}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, title: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Section body</FormLabel>
+              <RichTextEditor
+                value={homeDraft.portal.body}
+                onChange={(value) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, body: value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Client card title</FormLabel>
+              <Input
+                value={homeDraft.portal.client_title}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, client_title: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Therapist card title</FormLabel>
+              <Input
+                value={homeDraft.portal.therapist_title}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, therapist_title: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Client card body</FormLabel>
+              <RichTextEditor
+                value={homeDraft.portal.client_body}
+                onChange={(value) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, client_body: value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Therapist card body</FormLabel>
+              <RichTextEditor
+                value={homeDraft.portal.therapist_body}
+                onChange={(value) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, therapist_body: value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Client primary label</FormLabel>
+              <Input
+                value={homeDraft.portal.client_primary_label}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, client_primary_label: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Client primary link</FormLabel>
+              <Input
+                value={homeDraft.portal.client_primary_link}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, client_primary_link: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Client secondary label</FormLabel>
+              <Input
+                value={homeDraft.portal.client_secondary_label}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, client_secondary_label: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Client secondary link</FormLabel>
+              <Input
+                value={homeDraft.portal.client_secondary_link}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, client_secondary_link: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Therapist primary label</FormLabel>
+              <Input
+                value={homeDraft.portal.therapist_primary_label}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, therapist_primary_label: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Therapist primary link</FormLabel>
+              <Input
+                value={homeDraft.portal.therapist_primary_link}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, therapist_primary_link: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Therapist secondary label</FormLabel>
+              <Input
+                value={homeDraft.portal.therapist_secondary_label}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, therapist_secondary_label: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Therapist secondary link</FormLabel>
+              <Input
+                value={homeDraft.portal.therapist_secondary_link}
+                onChange={(e) =>
+                  setHomeDraft((p) => ({
+                    ...p,
+                    portal: { ...p.portal, therapist_secondary_link: e.target.value },
+                  }))
+                }
+              />
+            </FormControl>
+          </SimpleGrid>
+
+          <Heading size="sm" mb={3}>
+            Reassurance Bubbles
+          </Heading>
+          <VStack align="stretch" spacing={4} mb={6}>
+            {homeDraft.bubbles.map((bubble, idx) => (
+              <Box key={`${bubble.title}-${idx}`} p={4} border="1px solid #E2E8F0" borderRadius="xl">
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                  <FormControl>
+                    <FormLabel>Icon</FormLabel>
+                    <Select
+                      value={bubble.icon}
+                      onChange={(e) => {
+                        const next = [...homeDraft.bubbles];
+                        next[idx] = { ...next[idx], icon: e.target.value };
+                        setHomeDraft((p) => ({ ...p, bubbles: next }));
+                      }}
+                    >
+                      <option value="users">Users</option>
+                      <option value="compass">Compass</option>
+                      <option value="check">Check</option>
+                      <option value="feather">Feather</option>
+                    </Select>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Title</FormLabel>
+                    <Input
+                      value={bubble.title}
+                      onChange={(e) => {
+                        const next = [...homeDraft.bubbles];
+                        next[idx] = { ...next[idx], title: e.target.value };
+                        setHomeDraft((p) => ({ ...p, bubbles: next }));
+                      }}
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Body</FormLabel>
+                    <RichTextEditor
+                      value={bubble.body}
+                      onChange={(value) => {
+                        const next = [...homeDraft.bubbles];
+                        next[idx] = { ...next[idx], body: value };
+                        setHomeDraft((p) => ({ ...p, bubbles: next }));
+                      }}
+                    />
+                  </FormControl>
+                </SimpleGrid>
+                <HStack mt={3} justify="flex-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorScheme="red"
+                    onClick={() => {
+                      const next = homeDraft.bubbles.filter((_, i) => i !== idx);
+                      setHomeDraft((p) => ({ ...p, bubbles: next }));
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </HStack>
+              </Box>
+            ))}
+          </VStack>
+          <Button
+            size="sm"
+            variant="outline"
+            mb={6}
+            onClick={() =>
+              setHomeDraft((p) => ({
+                ...p,
+                bubbles: [
+                  ...p.bubbles,
+                  { icon: "users", title: "New bubble", body: "" },
+                ],
+              }))
+            }
+          >
+            Add bubble
+          </Button>
+
+          <HStack spacing={3}>
+            <Button
+              colorScheme="teal"
+              onClick={async () => {
+                try {
+                  if (homeId) {
+                    await apiPut(`home-content/${homeId}/`, homeDraft);
+                  } else {
+                    const res = await apiPost("home-content/", homeDraft);
+                    setHomeId(res?.id || null);
+                  }
+                  toast({ status: "success", title: "Home content saved" });
+                } catch {
+                  toast({ status: "error", title: "Save failed" });
+                }
+              }}
+            >
+              Save home page
+            </Button>
+          </HStack>
+        </Box>
       </Container>
     </Box>
   );

@@ -20,6 +20,7 @@ from therapy.models import (
     TherapistApplication,
     TeamMember,
     Service,
+    HomeContent,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -480,4 +481,10 @@ class TeamMemberSerializer(serializers.ModelSerializer):
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
+        fields = "__all__"
+
+
+class HomeContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HomeContent
         fields = "__all__"

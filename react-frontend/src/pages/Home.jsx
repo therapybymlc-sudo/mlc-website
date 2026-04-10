@@ -19,10 +19,101 @@ import { motion } from "framer-motion";
 import theme from "../theme/theme";
 import { Helmet } from "react-helmet-async";
 import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { apiGet } from "../api";
 
 const MotionBox = motion(Box);
 
+const fallbackHome = {
+  hero: {
+    title: "MLC Therapy",
+    tagline: "A space to feel, to heal, to become.",
+    paragraph_one:
+      "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.",
+    paragraph_two:
+      "At MLC Therapy, we offer thoughtful online therapy across India in spaces designed to help you feel heard, supported, and respected.",
+    primary_label: "I'm Looking for Therapy",
+    primary_link: "/client-checkin",
+    secondary_label: "I'm a Therapist",
+    secondary_link: "/therapists",
+    background_image: "/hero-bg.jpg",
+    logo_url: "/logo_tra.png",
+  },
+  portal: {
+    title: "Your MLC Portal",
+    body:
+      "A gentle, private space for clients — and a structured workspace for therapists. Choose your path below to get started.",
+    client_title: "Client Dashboard",
+    client_body:
+      "Daily check‑ins, private journaling, session notes, shared materials, and premium tools when you’re ready.",
+    client_primary_label: "Sign up as a client",
+    client_primary_link: "/signup/client",
+    client_secondary_label: "Take a quick check‑in",
+    client_secondary_link: "/client-checkin",
+    therapist_title: "Therapist Workspace",
+    therapist_body:
+      "Apply to join MLC and access therapist tools, client collaboration, and a calm workspace designed for your practice.",
+    therapist_primary_label: "Apply as a therapist",
+    therapist_primary_link: "/therapist-apply",
+    therapist_secondary_label: "Sign in",
+    therapist_secondary_link: "/login/therapist",
+  },
+  bubbles: [
+    {
+      icon: "users",
+      title: "A Space Where You Can Speak Freely",
+      body:
+        "Therapy here is a place where you can talk about what’s on your mind without feeling judged.",
+    },
+    {
+      icon: "compass",
+      title: "Thoughtful Guidance",
+      body:
+        "Your therapist works with you to understand what you're experiencing and how to move forward.",
+    },
+    {
+      icon: "check",
+      title: "Finding the Right Fit",
+      body:
+        "Your first few sessions help you decide whether the therapist feels like the right fit for you. You are always free to choose what feels best for you.",
+    },
+    {
+      icon: "feather",
+      title: "Move at Your Own Pace",
+      body:
+        "There is no pressure to rush therapy. The process always respects your comfort and readiness.",
+    },
+  ],
+};
+
+const iconMap = {
+  users: FiUsers,
+  compass: FiCompass,
+  check: FiCheckCircle,
+  feather: FiFeather,
+};
+
 export default function Home() {
+  const [homeContent, setHomeContent] = useState(fallbackHome);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("home-content/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          setHomeContent({
+            hero: { ...fallbackHome.hero, ...(data[0].hero || {}) },
+            portal: { ...fallbackHome.portal, ...(data[0].portal || {}) },
+            bubbles: Array.isArray(data[0].bubbles) ? data[0].bubbles : fallbackHome.bubbles,
+          });
+        }
+      } catch {
+        setHomeContent(fallbackHome);
+      }
+    })();
+  }, []);
+
   return (
     <>
       <Helmet>
@@ -40,7 +131,7 @@ export default function Home() {
       </Helmet>
       {/* HERO SECTION */}
       <MotionBox
-        bgImage="url('/hero-bg.jpg')"
+        bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
         bgSize="cover"
         bgPosition={{ base: "top", md: "center" }}
         minH={{ base: "100svh", md: "100vh" }}
@@ -56,7 +147,7 @@ export default function Home() {
         transition={{ duration: 1.2 }}
       >
         <Image
-          src="/logo_tra.png"
+          src={homeContent.hero.logo_url || "/logo_tra.png"}
           alt="MLC Therapy Logo"
           boxSize={{ base: "120px", sm: "140px", md: "160px" }}
           mb={4}
@@ -69,7 +160,7 @@ export default function Home() {
           fontWeight="600"
           letterSpacing="-0.5px"
         >
-          MLC Therapy
+          {homeContent.hero.title}
         </Heading>
         <Text
           mt={3}
@@ -78,7 +169,7 @@ export default function Home() {
           fontFamily="'Lato', sans-serif"
           fontStyle="italic"
         >
-          A space to feel, to heal, to become.
+          {homeContent.hero.tagline}
         </Text>
         <Text
           mt={2}
@@ -86,20 +177,16 @@ export default function Home() {
           fontFamily="'Lato', sans-serif"
           fontSize="md"
           maxW="lg"
-        >
-          Therapy is a space where you can slow down, speak openly, and begin to
-          understand what you're going through.
-        </Text>
+          dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_one || "" }}
+        />
         <Text
           mt={2}
           color="gray.700"
           fontFamily="'Lato', sans-serif"
           fontSize="md"
           maxW="xl"
-        >
-          At MLC Therapy, we offer thoughtful online therapy across India in
-          spaces designed to help you feel heard, supported, and respected.
-        </Text>
+          dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_two || "" }}
+        />
         <HStack
           mt={6}
           spacing={4}
@@ -113,13 +200,13 @@ export default function Home() {
             borderRadius="full"
             _hover={{ bg: "#C9A960", color: "white" }}
             as="a"
-            href="/client-checkin"
+            href={homeContent.hero.primary_link}
             fontFamily="'Lato', sans-serif"
             fontWeight="500"
             px={8}
             boxShadow="md"
           >
-            I'm Looking for Therapy
+            {homeContent.hero.primary_label}
           </Button>
           <Button
             size="lg"
@@ -128,13 +215,13 @@ export default function Home() {
             borderRadius="full"
             _hover={{ bg: "#56756D", color: "white" }}
             as="a"
-            href="/therapists"
+            href={homeContent.hero.secondary_link}
             fontFamily="'Lato', sans-serif"
             fontWeight="500"
             px={8}
             boxShadow="md"
           >
-            I'm a Therapist
+            {homeContent.hero.secondary_label}
           </Button>
         </HStack>
       </MotionBox>
@@ -148,44 +235,58 @@ export default function Home() {
               color="#2E2E2E"
               textAlign="center"
             >
-              Your MLC Portal
+              {homeContent.portal.title}
             </Heading>
-            <Text color="#2E2E2E" textAlign="center" maxW="2xl">
-              A gentle, private space for clients — and a structured workspace for therapists.
-              Choose your path below to get started.
-            </Text>
+            <Text
+              color="#2E2E2E"
+              textAlign="center"
+              maxW="2xl"
+              dangerouslySetInnerHTML={{ __html: homeContent.portal.body || "" }}
+            />
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
               <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
                 <Heading size="md" mb={2}>
-                  Client Dashboard
+                  {homeContent.portal.client_title}
                 </Heading>
-                <Text color="gray.600" mb={4}>
-                  Daily check‑ins, private journaling, session notes, shared materials,
-                  and premium tools when you’re ready.
-                </Text>
+                <Text
+                  color="gray.600"
+                  mb={4}
+                  dangerouslySetInnerHTML={{ __html: homeContent.portal.client_body || "" }}
+                />
                 <HStack spacing={3} flexWrap="wrap">
-                  <Button as="a" href="/signup/client" colorScheme="teal">
-                    Sign up as a client
+                  <Button as="a" href={homeContent.portal.client_primary_link} colorScheme="teal">
+                    {homeContent.portal.client_primary_label}
                   </Button>
-                  <Button as="a" href="/client-checkin" variant="outline" colorScheme="teal">
-                    Take a quick check‑in
+                  <Button
+                    as="a"
+                    href={homeContent.portal.client_secondary_link}
+                    variant="outline"
+                    colorScheme="teal"
+                  >
+                    {homeContent.portal.client_secondary_label}
                   </Button>
                 </HStack>
               </Box>
               <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
                 <Heading size="md" mb={2}>
-                  Therapist Workspace
+                  {homeContent.portal.therapist_title}
                 </Heading>
-                <Text color="gray.600" mb={4}>
-                  Apply to join MLC and access therapist tools, client collaboration,
-                  and a calm workspace designed for your practice.
-                </Text>
+                <Text
+                  color="gray.600"
+                  mb={4}
+                  dangerouslySetInnerHTML={{ __html: homeContent.portal.therapist_body || "" }}
+                />
                 <HStack spacing={3} flexWrap="wrap">
-                  <Button as="a" href="/therapist-apply" colorScheme="purple">
-                    Apply as a therapist
+                  <Button as="a" href={homeContent.portal.therapist_primary_link} colorScheme="purple">
+                    {homeContent.portal.therapist_primary_label}
                   </Button>
-                  <Button as="a" href="/login/therapist" variant="outline" colorScheme="purple">
-                    Sign in
+                  <Button
+                    as="a"
+                    href={homeContent.portal.therapist_secondary_link}
+                    variant="outline"
+                    colorScheme="purple"
+                  >
+                    {homeContent.portal.therapist_secondary_label}
                   </Button>
                 </HStack>
               </Box>
@@ -198,30 +299,11 @@ export default function Home() {
       <Box bg="white" py={16} px={6}>
         <Container maxW="6xl">
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
-            {[
-              {
-                icon: FiUsers,
-                title: "A Space Where You Can Speak Freely",
-                body: "Therapy here is a place where you can talk about what’s on your mind without feeling judged.",
-              },
-              {
-                icon: FiCompass,
-                title: "Thoughtful Guidance",
-                body: "Your therapist works with you to understand what you're experiencing and how to move forward.",
-              },
-              {
-                icon: FiCheckCircle,
-                title: "Finding the Right Fit",
-                body: "Your first few sessions help you decide whether the therapist feels like the right fit for you. You are always free to choose what feels best for you.",
-              },
-              {
-                icon: FiFeather,
-                title: "Move at Your Own Pace",
-                body: "There is no pressure to rush therapy. The process always respects your comfort and readiness.",
-              },
-            ].map((item) => (
+            {homeContent.bubbles.map((item, index) => {
+              const BubbleIcon = iconMap[item.icon] || FiUsers;
+              return (
               <Box
-                key={item.title}
+                key={`${item.title}-${index}`}
                 bg="#F9F9F9"
                 borderRadius="2xl"
                 p={6}
@@ -229,7 +311,7 @@ export default function Home() {
                 border="1px solid"
                 borderColor="blackAlpha.100"
               >
-                <Icon as={item.icon} boxSize={7} color="#56756D" mb={3} />
+                <Icon as={BubbleIcon} boxSize={7} color="#56756D" mb={3} />
                 <Heading
                   size="sm"
                   mb={2}
@@ -238,11 +320,14 @@ export default function Home() {
                 >
                   {item.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" fontSize="sm">
-                  {item.body}
-                </Text>
+                <Text
+                  fontFamily="'Lato', sans-serif"
+                  color="#2E2E2E"
+                  fontSize="sm"
+                  dangerouslySetInnerHTML={{ __html: item.body || "" }}
+                />
               </Box>
-            ))}
+            )})}
           </SimpleGrid>
         </Container>
       </Box>

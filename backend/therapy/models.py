@@ -551,3 +551,13 @@ class Service(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class HomeContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    portal = models.JSONField(default=dict, blank=True)
+    bubbles = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Home Content"
