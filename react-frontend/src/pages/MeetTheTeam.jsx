@@ -6,6 +6,8 @@ import {
   VStack,
   SimpleGrid,
   Image,
+  Button,
+  HStack,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
@@ -13,6 +15,7 @@ import { apiGet } from "../api";
 
 export default function MeetTheTeam() {
   const [team, setTeam] = useState([]);
+  const [activeMember, setActiveMember] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -104,6 +107,10 @@ export default function MeetTheTeam() {
                   borderRadius="2xl"
                   boxShadow="md"
                   p={6}
+                  cursor="pointer"
+                  transition="transform 0.2s ease, box-shadow 0.2s ease"
+                  _hover={{ transform: "translateY(-4px)", boxShadow: "lg" }}
+                  onClick={() => setActiveMember(member)}
                 >
                   {member.photo_url && (
                     <Image
@@ -121,16 +128,9 @@ export default function MeetTheTeam() {
                       {member.title}
                     </Text>
                   )}
-                  {member.bio && (
-                    <Text fontSize="sm" color="#2E2E2E" lineHeight="1.7">
-                      {member.bio}
-                    </Text>
-                  )}
-                  {member.specialties && (
-                    <Text fontSize="sm" color="#2E2E2E" mt={3}>
-                      {member.specialties}
-                    </Text>
-                  )}
+                  <Text fontSize="sm" color="#56756D">
+                    Tap to view full profile
+                  </Text>
                 </Box>
               ))}
             </SimpleGrid>
@@ -162,6 +162,82 @@ export default function MeetTheTeam() {
           </Text>
         </Container>
       </Box>
+
+      {activeMember ? (
+        <Box
+          position="fixed"
+          inset={0}
+          bg="rgba(15, 16, 20, 0.45)"
+          backdropFilter="blur(6px)"
+          zIndex={9999}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          px={4}
+          onClick={() => setActiveMember(null)}
+        >
+          <Box
+            bg="white"
+            borderRadius="2xl"
+            boxShadow="xl"
+            maxW="680px"
+            w="100%"
+            p={{ base: 6, md: 8 }}
+            transform="translateY(-6px)"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {activeMember.photo_url && (
+              <Image
+                src={activeMember.photo_url}
+                alt={activeMember.name}
+                borderRadius="xl"
+                mb={5}
+                maxH="320px"
+                w="100%"
+                objectFit="cover"
+              />
+            )}
+            <Heading size="lg" fontFamily="'Playfair Display', serif" mb={2}>
+              {activeMember.name}
+            </Heading>
+            {activeMember.title && (
+              <Text color="#56756D" fontWeight="semibold" mb={4}>
+                {activeMember.title}
+              </Text>
+            )}
+            {activeMember.bio && (
+              <Text
+                fontSize="sm"
+                color="#2E2E2E"
+                lineHeight="1.7"
+                sx={{
+                  "ul, ol": { paddingLeft: "1.1rem", marginTop: "0.5rem" },
+                  li: { marginBottom: "0.25rem" },
+                }}
+                dangerouslySetInnerHTML={{ __html: activeMember.bio }}
+              />
+            )}
+            {activeMember.specialties && (
+              <Text fontSize="sm" color="#2E2E2E" mt={4}>
+                {activeMember.specialties}
+              </Text>
+            )}
+            <HStack mt={6} justify="space-between">
+              <Button variant="ghost" onClick={() => setActiveMember(null)}>
+                Close
+              </Button>
+              <Button
+                colorScheme="teal"
+                onClick={() => {
+                  window.location.href = "/book";
+                }}
+              >
+                Book a session now
+              </Button>
+            </HStack>
+          </Box>
+        </Box>
+      ) : null}
     </Box>
   );
 }

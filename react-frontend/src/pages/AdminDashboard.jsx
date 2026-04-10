@@ -10,12 +10,14 @@ import {
   Switch,
   Text,
   Textarea,
+  Image,
   VStack,
   HStack,
   Divider,
   useToast,
+  FormHelperText,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "../api";
 
@@ -29,6 +31,83 @@ const emptyMember = {
   sort_order: 0,
   is_active: true,
 };
+
+function RichTextEditor({ value, onChange }) {
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (editorRef.current.innerHTML !== (value || "")) {
+      editorRef.current.innerHTML = value || "";
+    }
+  }, [value]);
+
+  const applyCommand = (command, arg = null) => {
+    document.execCommand(command, false, arg);
+    editorRef.current?.focus();
+    onChange(editorRef.current?.innerHTML || "");
+  };
+
+  return (
+    <VStack align="stretch" spacing={2}>
+      <HStack spacing={2} wrap="wrap">
+        <Button size="sm" variant="outline" onClick={() => applyCommand("bold")}
+          >Bold</Button>
+        <Button size="sm" variant="outline" onClick={() => applyCommand("italic")}
+          >Italic</Button>
+        <Button size="sm" variant="outline" onClick={() => applyCommand("underline")}
+          >Underline</Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => applyCommand("insertUnorderedList")}
+        >
+          Bullets
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => applyCommand("insertOrderedList")}
+        >
+          Numbers
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => applyCommand("removeFormat")}
+        >
+          Clear
+        </Button>
+      </HStack>
+      <Box
+        border="1px solid #E2E8F0"
+        borderRadius="lg"
+        px={4}
+        py={3}
+        bg="white"
+        minH="140px"
+        _focusWithin={{ borderColor: "#5FA093", boxShadow: "0 0 0 1px #5FA093" }}
+      >
+        <Box
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={(e) => onChange(e.currentTarget.innerHTML)}
+          minH="100px"
+          fontSize="sm"
+          color="#2E2E2E"
+          sx={{
+            "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
+            li: { marginBottom: "0.25rem" },
+          }}
+        />
+      </Box>
+      <FormHelperText color="gray.500">
+        Basic formatting supported (bold, italic, underline, bullets).
+      </FormHelperText>
+    </VStack>
+  );
+}
 
 export default function AdminDashboard() {
   const { isAuthenticated, isAdmin, login, loading } = useAuth();
@@ -123,6 +202,22 @@ export default function AdminDashboard() {
                 value={draft.photo_url}
                 onChange={(e) => setDraft((p) => ({ ...p, photo_url: e.target.value }))}
               />
+              <FormHelperText color="gray.500">
+                Use a direct image URL (ends with .jpg/.png). Share the file
+                publicly before pasting the link.
+              </FormHelperText>
+              {draft.photo_url ? (
+                <Box mt={3} borderRadius="lg" overflow="hidden" border="1px solid #E2E8F0">
+                  <Image
+                    src={draft.photo_url}
+                    alt="Team member preview"
+                    maxH="180px"
+                    w="100%"
+                    objectFit="cover"
+                    fallbackSrc="https://mlchealth.in/founder_portrait_new.jpg"
+                  />
+                </Box>
+              ) : null}
             </FormControl>
             <FormControl>
               <FormLabel>Specialties (comma‑separated)</FormLabel>
@@ -143,10 +238,9 @@ export default function AdminDashboard() {
             </FormControl>
             <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
               <FormLabel>Bio</FormLabel>
-              <Textarea
-                rows={4}
+              <RichTextEditor
                 value={draft.bio}
-                onChange={(e) => setDraft((p) => ({ ...p, bio: e.target.value }))}
+                onChange={(value) => setDraft((p) => ({ ...p, bio: value }))}
               />
             </FormControl>
             <FormControl display="flex" alignItems="center">
