@@ -532,3 +532,22 @@ class TeamMember(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Service(models.Model):
+    title = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    image_url = models.URLField(blank=True, null=True)
+    cta_label = models.CharField(max_length=100, blank=True, null=True)
+    cta_link = models.CharField(max_length=255, blank=True, null=True)
+    sort_order = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "title"]
+
+    def __str__(self) -> str:
+        return self.title

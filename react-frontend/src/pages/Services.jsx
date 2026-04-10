@@ -15,8 +15,10 @@ import {
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import { useEffect, useState } from "react";
+import { apiGet } from "../api";
 
-const services = [
+const fallbackServices = [
   {
     title: "Individual Therapy",
     subtitle: "Personalized care for your unique story.",
@@ -66,6 +68,22 @@ const programs = [
 ];
 
 export default function Services() {
+  const [services, setServices] = useState(fallbackServices);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("services/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          setServices(data);
+        }
+      } catch {
+        setServices(fallbackServices);
+      }
+    })();
+  }, []);
+
   return (
     <Box>
       <Helmet>
@@ -163,8 +181,8 @@ export default function Services() {
             {services.map((service) => (
               <Box
                 as={Link}
-                to={service.link}
-                key={service.title}
+                to={service.cta_link || service.link || "/services"}
+                key={service.id || service.title}
                 bg="white"
                 borderRadius="2xl"
                 boxShadow="lg"
@@ -177,7 +195,7 @@ export default function Services() {
                 }}
               >
                 <Image
-                  src={service.img}
+                  src={service.image_url || service.img}
                   alt={service.title}
                   borderRadius="xl"
                   mb={5}
@@ -202,9 +220,14 @@ export default function Services() {
                   color="#555"
                   fontFamily="'Lato', sans-serif"
                   lineHeight="1.7"
-                >
-                  {service.desc}
-                </Text>
+                  sx={{
+                    "ul, ol": { paddingLeft: "1.1rem", marginTop: "0.5rem" },
+                    li: { marginBottom: "0.25rem" },
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: service.description || service.desc || "",
+                  }}
+                />
               </Box>
             ))}
           </SimpleGrid>

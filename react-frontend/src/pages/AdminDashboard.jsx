@@ -32,6 +32,17 @@ const emptyMember = {
   is_active: true,
 };
 
+const emptyService = {
+  title: "",
+  subtitle: "",
+  description: "",
+  image_url: "",
+  cta_label: "",
+  cta_link: "",
+  sort_order: 0,
+  is_active: true,
+};
+
 function RichTextEditor({ value, onChange }) {
   const editorRef = useRef(null);
 
@@ -115,6 +126,9 @@ export default function AdminDashboard() {
   const [members, setMembers] = useState([]);
   const [draft, setDraft] = useState(emptyMember);
   const [editingId, setEditingId] = useState(null);
+  const [services, setServices] = useState([]);
+  const [serviceDraft, setServiceDraft] = useState(emptyService);
+  const [editingServiceId, setEditingServiceId] = useState(null);
 
   const fetchMembers = async () => {
     try {
@@ -126,8 +140,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+      const res = await apiGet("services/");
+      const data = res.results ?? res;
+      setServices(Array.isArray(data) ? data : []);
+    } catch (err) {
+      toast({ status: "error", title: "Failed to load services" });
+    }
+  };
+
   useEffect(() => {
-    if (isAuthenticated && isAdmin) fetchMembers();
+    if (isAuthenticated && isAdmin) {
+      fetchMembers();
+      fetchServices();
+    }
   }, [isAuthenticated, isAdmin]);
 
   if (loading) {
@@ -339,6 +366,211 @@ export default function AdminDashboard() {
                           try {
                             await apiDelete(`team-members/${member.id}/`);
                             await fetchMembers();
+                          } catch {
+                            toast({ status: "error", title: "Delete failed" });
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    </HStack>
+                  </HStack>
+                </Box>
+              ))}
+            </VStack>
+          )}
+        </Box>
+
+        <Divider my={12} />
+
+        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" mb={10}>
+          <Heading size="md" mb={4}>
+            {editingServiceId ? "Edit service" : "Add service"}
+          </Heading>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <FormControl isRequired>
+              <FormLabel>Title</FormLabel>
+              <Input
+                value={serviceDraft.title}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({ ...p, title: e.target.value }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Subtitle</FormLabel>
+              <Input
+                value={serviceDraft.subtitle}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({ ...p, subtitle: e.target.value }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Image URL</FormLabel>
+              <Input
+                value={serviceDraft.image_url}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({ ...p, image_url: e.target.value }))
+                }
+              />
+              <FormHelperText color="gray.500">
+                Use a direct image URL (ends with .jpg/.png).
+              </FormHelperText>
+              {serviceDraft.image_url ? (
+                <Box mt={3} borderRadius="lg" overflow="hidden" border="1px solid #E2E8F0">
+                  <Image
+                    src={serviceDraft.image_url}
+                    alt="Service preview"
+                    maxH="180px"
+                    w="100%"
+                    objectFit="cover"
+                    fallbackSrc="https://mlchealth.in/service1_new.jpg"
+                  />
+                </Box>
+              ) : null}
+            </FormControl>
+            <FormControl>
+              <FormLabel>CTA label</FormLabel>
+              <Input
+                value={serviceDraft.cta_label}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({ ...p, cta_label: e.target.value }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>CTA link</FormLabel>
+              <Input
+                value={serviceDraft.cta_link}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({ ...p, cta_link: e.target.value }))
+                }
+              />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Sort order</FormLabel>
+              <Input
+                type="number"
+                value={serviceDraft.sort_order}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({
+                    ...p,
+                    sort_order: Number(e.target.value) || 0,
+                  }))
+                }
+              />
+            </FormControl>
+            <FormControl gridColumn={{ base: "auto", md: "1 / -1" }}>
+              <FormLabel>Description</FormLabel>
+              <RichTextEditor
+                value={serviceDraft.description}
+                onChange={(value) =>
+                  setServiceDraft((p) => ({ ...p, description: value }))
+                }
+              />
+            </FormControl>
+            <FormControl display="flex" alignItems="center">
+              <FormLabel mb="0">Active</FormLabel>
+              <Switch
+                isChecked={serviceDraft.is_active}
+                onChange={(e) =>
+                  setServiceDraft((p) => ({ ...p, is_active: e.target.checked }))
+                }
+              />
+            </FormControl>
+          </SimpleGrid>
+          <HStack mt={6} spacing={3}>
+            <Button
+              colorScheme="teal"
+              onClick={async () => {
+                if (!serviceDraft.title.trim()) {
+                  toast({ status: "warning", title: "Title is required" });
+                  return;
+                }
+                try {
+                  if (editingServiceId) {
+                    await apiPut(`services/${editingServiceId}/`, serviceDraft);
+                  } else {
+                    await apiPost("services/", serviceDraft);
+                  }
+                  setServiceDraft(emptyService);
+                  setEditingServiceId(null);
+                  await fetchServices();
+                  toast({ status: "success", title: "Saved" });
+                } catch {
+                  toast({ status: "error", title: "Save failed" });
+                }
+              }}
+            >
+              {editingServiceId ? "Update service" : "Add service"}
+            </Button>
+            {editingServiceId && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingServiceId(null);
+                  setServiceDraft(emptyService);
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+          </HStack>
+        </Box>
+
+        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
+          <Heading size="md" mb={4}>
+            Services
+          </Heading>
+          {services.length === 0 ? (
+            <Text color="gray.500">No services added yet.</Text>
+          ) : (
+            <VStack align="stretch" spacing={4}>
+              {services.map((service) => (
+                <Box key={service.id} p={4} border="1px solid #E2E8F0" borderRadius="xl">
+                  <HStack justify="space-between" align="start">
+                    <Box>
+                      <Heading size="sm">{service.title}</Heading>
+                      {service.subtitle && (
+                        <Text color="#56756D" fontWeight="semibold" mb={1}>
+                          {service.subtitle}
+                        </Text>
+                      )}
+                      {service.cta_link && (
+                        <Text fontSize="sm" color="gray.600">
+                          {service.cta_label ? `${service.cta_label}: ` : ""}{service.cta_link}
+                        </Text>
+                      )}
+                    </Box>
+                    <HStack>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setEditingServiceId(service.id);
+                          setServiceDraft({
+                            title: service.title || "",
+                            subtitle: service.subtitle || "",
+                            description: service.description || "",
+                            image_url: service.image_url || "",
+                            cta_label: service.cta_label || "",
+                            cta_link: service.cta_link || "",
+                            sort_order: service.sort_order || 0,
+                            is_active: service.is_active ?? true,
+                          });
+                        }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="red"
+                        onClick={async () => {
+                          if (!window.confirm("Delete this service?")) return;
+                          try {
+                            await apiDelete(`services/${service.id}/`);
+                            await fetchServices();
                           } catch {
                             toast({ status: "error", title: "Delete failed" });
                           }

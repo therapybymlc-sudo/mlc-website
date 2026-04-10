@@ -19,6 +19,7 @@ from therapy.models import (
     MaterialShare,
     TherapistApplication,
     TeamMember,
+    Service,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -473,4 +474,10 @@ class TherapistApplicationSerializer(serializers.ModelSerializer):
 class TeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamMember
+        fields = "__all__"
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
         fields = "__all__"

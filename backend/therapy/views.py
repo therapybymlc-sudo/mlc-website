@@ -29,6 +29,7 @@ from therapy.models import (
     MaterialShare,
     TherapistApplication,
     TeamMember,
+    Service,
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
@@ -49,6 +50,7 @@ from therapy.serializers import (
     MaterialShareSerializer,
     TherapistApplicationSerializer,
     TeamMemberSerializer,
+    ServiceSerializer,
 )
 
 
@@ -542,6 +544,30 @@ class TeamMemberViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TeamMember.objects.filter(is_active=True).order_by("sort_order", "name")
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class ServiceViewSet(viewsets.ModelViewSet):
+    serializer_class = ServiceSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Service.objects.filter(is_active=True).order_by("sort_order", "title")
 
     def create(self, request, *args, **kwargs):
         _require_admin(request)

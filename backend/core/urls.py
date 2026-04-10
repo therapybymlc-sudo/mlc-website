@@ -29,6 +29,7 @@ from therapy.views import (
     MaterialShareViewSet,
     TherapistApplicationCreateView,
     TeamMemberViewSet,
+    ServiceViewSet,
 )
 
 # ----------------------------
@@ -52,6 +53,7 @@ router.register(r"client-checkins", ClientCheckinViewSet, basename="client-check
 router.register(r"materials", TherapistMaterialViewSet, basename="materials")
 router.register(r"material-shares", MaterialShareViewSet, basename="material-shares")
 router.register(r"team-members", TeamMemberViewSet, basename="team-members")
+router.register(r"services", ServiceViewSet, basename="services")
 
 # ----------------------------
 # Small utility/test endpoints
