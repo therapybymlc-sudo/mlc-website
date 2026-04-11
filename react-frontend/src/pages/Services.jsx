@@ -18,6 +18,86 @@ import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
 import { apiGet } from "../api";
 
+const defaultServicesContent = {
+  hero: {
+    title: "Holistic Therapy for Every Stage of Your Journey",
+    body_one:
+      "<p>At MLC Health & Wellness Centre, we understand that healing is not linear, and that every individual, couple, and family experiences growth differently. Our online therapy services across India are designed to meet you where you are, blending empathy, structure, and internationally aligned standards of care.</p>",
+    body_two:
+      "<p>Whether you seek therapy for personal growth, relational healing, adolescent support, or professional supervision, our approach remains grounded in compassion, collaboration, and evidence‑informed clinical practice.</p>",
+    coverage_line:
+      "<p>We provide secure online therapy across Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, Kolkata, Ahmedabad and other major cities in India.</p>",
+  },
+  portal: {
+    title: "Access your MLC portal",
+    body:
+      "<p>Clients can sign up for a private dashboard with check‑ins and tools. Therapists can apply to join our workspace for collaboration and growth.</p>",
+    client_label: "Sign up as a client",
+    client_link: "/signup/client",
+    therapist_label: "Apply as a therapist",
+    therapist_link: "/therapist-apply",
+  },
+  services: {
+    title: "Our Core Services",
+  },
+  programs: {
+    title: "Specialized Programs & Initiatives",
+    cards: [
+      {
+        title: "Therapist Supervision & Mentorship",
+        body:
+          "Structured guidance for early-career therapists and interns to strengthen ethical decision-making, case formulation, and self-awareness in practice.",
+        link: "/supervision",
+      },
+      {
+        title: "Mindfulness & Relaxation Sessions",
+        body:
+          "Guided mindfulness, grounding, and relaxation programs to help individuals manage stress, anxiety, and restore calm.",
+        link: "/mindfulness-relaxation",
+      },
+      {
+        title: "Workshops & Training Programs",
+        body:
+          "Skill-based programs such as Therapist 101, Anxiety & Stress Management, and Anger Regulation — for both therapists and the community.",
+        link: "/training-programs",
+      },
+    ],
+  },
+  approach: {
+    title: "Our Therapeutic Approach",
+    body:
+      "<p>Our therapists combine evidence‑informed frameworks with a humanistic and relational perspective. We tailor every session to your needs, using approaches such as Cognitive Behavioral Therapy (CBT), Mindfulness‑Based Interventions, Relational Therapy, and Emotion‑Focused methods. We value clarity, emotional depth, relational safety, high clinical standards, and ethical integrity in every interaction.</p>",
+  },
+  faq: {
+    title: "Frequently Asked Questions",
+    items: [
+      {
+        q: "How long does therapy usually last?",
+        a: "Therapy duration varies depending on your goals and circumstances. Some clients find clarity in a few sessions, while others benefit from ongoing support. Your therapist will collaborate with you to decide what feels right.",
+      },
+      {
+        q: "What can I expect in my first session?",
+        a: "The first session focuses on understanding your background, goals, and what brings you to therapy. It’s a space for conversation and trust-building, helping your therapist tailor future sessions to your comfort and needs.",
+      },
+      {
+        q: "Are online sessions available?",
+        a: "Yes, we offer secure, HIPAA-compliant online sessions so you can access therapy from wherever you are, with the same privacy and care as in-person sessions.",
+      },
+    ],
+  },
+  cta: {
+    title: "Ready to Begin Your Journey?",
+    button_label: "Book a Session",
+    button_link: "/book",
+  },
+};
+
+const richTextStyles = {
+  "p + p": { marginTop: "0.75rem" },
+  "ul, ol": { paddingLeft: "1.1rem", marginTop: "0.5rem" },
+  li: { marginBottom: "0.25rem" },
+};
+
 const fallbackServices = [
   {
     title: "Individual Therapy",
@@ -49,26 +129,10 @@ const fallbackServices = [
   },
 ];
 
-const programs = [
-  {
-    title: "Therapist Supervision & Mentorship",
-    desc: "Structured guidance for early-career therapists and interns to strengthen ethical decision-making, case formulation, and self-awareness in practice.",
-    link: "/supervision",
-  },
-  {
-    title: "Mindfulness & Relaxation Sessions",
-    desc: "Guided mindfulness, grounding, and relaxation programs to help individuals manage stress, anxiety, and restore calm.",
-    link: "/mindfulness-relaxation",
-  },
-  {
-    title: "Workshops & Training Programs",
-    desc: "Skill-based programs such as Therapist 101, Anxiety & Stress Management, and Anger Regulation — for both therapists and the community.",
-    link: "/training-programs",
-  },
-];
-
 export default function Services() {
   const [services, setServices] = useState(fallbackServices);
+  const [content, setContent] = useState(defaultServicesContent);
+  const [contentLoading, setContentLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -82,6 +146,45 @@ export default function Services() {
         setServices(fallbackServices);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      setContentLoading(true);
+      try {
+        const res = await apiGet("services-content/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          const entry = data[0];
+          setContent({
+            hero: { ...defaultServicesContent.hero, ...(entry.hero || {}) },
+            portal: { ...defaultServicesContent.portal, ...(entry.portal || {}) },
+            services: { ...defaultServicesContent.services, ...(entry.services || {}) },
+            programs: {
+              ...defaultServicesContent.programs,
+              ...(entry.programs || {}),
+              cards: Array.isArray(entry.programs?.cards)
+                ? entry.programs.cards
+                : defaultServicesContent.programs.cards,
+            },
+            approach: { ...defaultServicesContent.approach, ...(entry.approach || {}) },
+            faq: {
+              ...defaultServicesContent.faq,
+              ...(entry.faq || {}),
+              items: Array.isArray(entry.faq?.items)
+                ? entry.faq.items
+                : defaultServicesContent.faq.items,
+            },
+            cta: { ...defaultServicesContent.cta, ...(entry.cta || {}) },
+          });
+        }
+      } catch {
+        setContent(defaultServicesContent);
+      } finally {
+        setContentLoading(false);
+      }
+    };
+    fetchContent();
   }, []);
 
   return (
@@ -108,36 +211,40 @@ export default function Services() {
               color="#2E2E2E"
               fontSize={{ base: "2xl", md: "3xl" }}
             >
-              Holistic Therapy for Every Stage of Your Journey
+              {content.hero.title}
             </Heading>
-            <Text
+            <Box
               maxW="3xl"
               color="#2E2E2E"
               fontFamily="'Lato', sans-serif"
               fontSize="lg"
               lineHeight="1.8"
-            >
-              At MLC Health & Wellness Centre, we understand that healing is not
-              linear, and that every individual, couple, and family experiences
-              growth differently. Our online therapy services across India are
-              designed to meet you where you are, blending empathy, structure,
-              and internationally aligned standards of care. Whether you seek
-              therapy for personal growth, relational healing, adolescent
-              support, or professional supervision, our approach remains grounded
-              in compassion, collaboration, and evidence-informed clinical
-              practice.
-            </Text>
-            <Text
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.hero.body_one }}
+            />
+            <Box
+              maxW="3xl"
+              color="#2E2E2E"
+              fontFamily="'Lato', sans-serif"
+              fontSize="lg"
+              lineHeight="1.8"
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.hero.body_two }}
+            />
+            <Box
               maxW="3xl"
               color="#2E2E2E"
               fontFamily="'Lato', sans-serif"
               fontSize="md"
               lineHeight="1.8"
-            >
-              We provide secure online therapy across Mumbai, Delhi, Bangalore,
-              Hyderabad, Chennai, Pune, Kolkata, Ahmedabad and other major cities
-              in India.
-            </Text>
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.hero.coverage_line }}
+            />
+            {contentLoading && (
+              <Text fontSize="sm" color="#56756D">
+                Refreshing content…
+              </Text>
+            )}
           </VStack>
         </Container>
       </Box>
@@ -147,18 +254,31 @@ export default function Services() {
         <Container maxW="6xl">
           <VStack spacing={6} textAlign="center">
             <Heading fontFamily="'Playfair Display', serif" color="#2E2E2E">
-              Access your MLC portal
+              {content.portal.title}
             </Heading>
-            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="2xl">
-              Clients can sign up for a private dashboard with check‑ins and tools.
-              Therapists can apply to join our workspace for collaboration and growth.
-            </Text>
+            <Box
+              fontFamily="'Lato', sans-serif"
+              color="#2E2E2E"
+              maxW="2xl"
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.portal.body }}
+            />
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="100%">
-              <Button as={Link} to="/signup/client" bg="#A9CBB7" color="#2E2E2E">
-                Sign up as a client
+              <Button
+                as={Link}
+                to={content.portal.client_link}
+                bg="#A9CBB7"
+                color="#2E2E2E"
+              >
+                {content.portal.client_label}
               </Button>
-              <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
-                Apply as a therapist
+              <Button
+                as={Link}
+                to={content.portal.therapist_link}
+                variant="outline"
+                colorScheme="teal"
+              >
+                {content.portal.therapist_label}
               </Button>
             </SimpleGrid>
           </VStack>
@@ -175,7 +295,7 @@ export default function Services() {
             textAlign="center"
             fontWeight="600"
           >
-            Our Core Services
+            {content.services.title}
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={10}>
             {services.map((service) => (
@@ -243,10 +363,10 @@ export default function Services() {
             fontWeight="600"
             mb={10}
           >
-            Specialized Programs & Initiatives
+            {content.programs.title}
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
-            {programs.map((p) => (
+            {content.programs.cards.map((p) => (
               <Box
                 as={Link}
                 to={p.link}
@@ -273,7 +393,7 @@ export default function Services() {
                   fontSize="sm"
                   lineHeight="1.7"
                 >
-                  {p.desc}
+                  {p.body}
                 </Text>
               </Box>
             ))}
@@ -290,23 +410,17 @@ export default function Services() {
             mb={6}
             fontWeight="600"
           >
-            Our Therapeutic Approach
+            {content.approach.title}
           </Heading>
-          <Text
+          <Box
             maxW="3xl"
             mx="auto"
             color="#2E2E2E"
             fontFamily="'Lato', sans-serif"
             lineHeight="1.8"
-          >
-            Our therapists combine evidence-informed frameworks with a humanistic
-            and relational perspective. We tailor every session to your needs,
-            using approaches such as Cognitive Behavioral Therapy (CBT),
-            Mindfulness-Based Interventions, Relational Therapy, and
-            Emotion-Focused methods. We value clarity, emotional depth,
-            relational safety, high clinical standards, and ethical integrity in
-            every interaction.
-          </Text>
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.approach.body }}
+          />
         </Container>
       </Box>
 
@@ -320,23 +434,10 @@ export default function Services() {
             textAlign="center"
             fontWeight="600"
           >
-            Frequently Asked Questions
+            {content.faq.title}
           </Heading>
           <Accordion allowToggle maxW="4xl" mx="auto">
-            {[
-              {
-                q: "How long does therapy usually last?",
-                a: "Therapy duration varies depending on your goals and circumstances. Some clients find clarity in a few sessions, while others benefit from ongoing support. Your therapist will collaborate with you to decide what feels right.",
-              },
-              {
-                q: "What can I expect in my first session?",
-                a: "The first session focuses on understanding your background, goals, and what brings you to therapy. It’s a space for conversation and trust-building, helping your therapist tailor future sessions to your comfort and needs.",
-              },
-              {
-                q: "Are online sessions available?",
-                a: "Yes, we offer secure, HIPAA-compliant online sessions so you can access therapy from wherever you are, with the same privacy and care as in-person sessions.",
-              },
-            ].map((item, i) => (
+            {content.faq.items.map((item, i) => (
               <AccordionItem key={i} border="none">
                 <AccordionButton _expanded={{ bg: "#A9CBB7", color: "black" }}>
                   <Box
@@ -368,7 +469,7 @@ export default function Services() {
             mb={6}
             letterSpacing="-0.5px"
           >
-            Ready to Begin Your Journey?
+            {content.cta.title}
           </Heading>
           <Button
             bg="white"
@@ -380,10 +481,10 @@ export default function Services() {
             fontWeight="500"
             _hover={{ bg: "#C9A960", color: "white" }}
             as="a"
-            href="/book"
+            href={content.cta.button_link}
             boxShadow="md"
           >
-            Book a Session
+            {content.cta.button_label}
           </Button>
         </Container>
       </Box>

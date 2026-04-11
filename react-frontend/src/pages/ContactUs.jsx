@@ -15,7 +15,7 @@ import {
   SimpleGrid,
   Icon,
 } from "@chakra-ui/react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import emailjs from "@emailjs/browser";
 import {
   EMAIL_SERVICE_ID,
@@ -24,10 +24,73 @@ import {
 } from "../emailConfig";
 import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
+import { apiGet } from "../api";
+
+const defaultContactContent = {
+  hero: {
+    title: "We’d Love to Hear from You",
+    body:
+      "<p>Whether you’re reaching out about online therapy, professional collaborations, therapist supervision, or joining our team, we’re here to listen. Every message is reviewed and responded to personally by our coordination team.</p>",
+    email_label: "Email",
+    email: "therapy@mlchealth.in",
+    subtext:
+      "<p>Operating remotely across India including Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, Kolkata and other major cities.</p><p>Virtual therapy sessions available internationally via secure platforms.</p>",
+    image_url: "/contact-illustration.jpg",
+  },
+  form: {
+    title: "Contact Us",
+    button_label: "Send Message",
+    message_placeholder: "How can we help you?",
+  },
+  quote: {
+    text: "“Every connection begins with a conversation. We’re listening.”",
+  },
+  hours: {
+    title: "Our Office Hours & Response Policy",
+    items: [
+      "Monday to Friday — 10:00 AM to 9:00 PM IST",
+      "Responses within 2 to 4 business days.",
+      "Virtual consultations available worldwide.",
+    ],
+  },
+  closing: {
+    title: "Your Message is Safe with Us",
+    body:
+      "<p>All communications are received securely and handled with strict confidentiality. We respond personally to every inquiry because at MLC Health & Wellness Centre, healing begins with being heard.</p>",
+  },
+};
+
+const richTextStyles = {
+  "p + p": { marginTop: "0.75rem" },
+  "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
+  li: { marginBottom: "0.35rem" },
+};
 
 export default function ContactUs() {
   const form = useRef();
   const toast = useToast();
+  const [content, setContent] = useState(defaultContactContent);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("contact-content/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          const entry = data[0];
+          setContent({
+            hero: { ...defaultContactContent.hero, ...(entry.hero || {}) },
+            form: { ...defaultContactContent.form, ...(entry.form || {}) },
+            quote: { ...defaultContactContent.quote, ...(entry.quote || {}) },
+            hours: { ...defaultContactContent.hours, ...(entry.hours || {}) },
+            closing: { ...defaultContactContent.closing, ...(entry.closing || {}) },
+          });
+        }
+      } catch {
+        setContent(defaultContactContent);
+      }
+    })();
+  }, []);
 
   const sendEmail = (e) => {
     e.preventDefault();
@@ -82,38 +145,35 @@ export default function ContactUs() {
                 fontWeight="600"
                 color="#2E2E2E"
               >
-                We’d Love to Hear from You
+                {content.hero.title}
               </Heading>
-              <Text
+              <Box
                 fontFamily="'Lato', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 maxW="3xl"
-              >
-                Whether you’re reaching out about online therapy, professional
-                collaborations, therapist supervision, or joining our team, we’re
-                here to listen. Every message is reviewed and responded to
-                personally by our coordination team.
-              </Text>
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: content.hero.body }}
+              />
               <Text
                 fontFamily="'Lato', sans-serif"
                 color="#2E2E2E"
                 fontWeight="500"
               >
-                📧 Email: <strong>therapy@mlchealth.in</strong>
+                📧 {content.hero.email_label}: <strong>{content.hero.email}</strong>
               </Text>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" fontSize="sm">
-                🌍 Operating remotely across India including Mumbai, Delhi,
-                Bangalore, Hyderabad, Chennai, Pune, Kolkata and other major
-                cities.
-                <br />Virtual therapy sessions available internationally via secure
-                platforms.
-              </Text>
+              <Box
+                fontFamily="'Lato', sans-serif"
+                color="#2E2E2E"
+                fontSize="sm"
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: content.hero.subtext }}
+              />
             </VStack>
 
             {/* IMAGE SIDE */}
             <Image
-              src="/contact-illustration.jpg"
+              src={content.hero.image_url || "/contact-illustration.jpg"}
               alt="Serene communication illustration"
               borderRadius="2xl"
               boxShadow="md"
@@ -144,7 +204,7 @@ export default function ContactUs() {
                 fontFamily="'Playfair Display', serif"
                 color="#2E2E2E"
               >
-                Contact Us
+                {content.form.title}
               </Heading>
 
               <FormField label="Full Name" name="full_name" isRequired />
@@ -156,7 +216,7 @@ export default function ContactUs() {
                 </FormLabel>
                 <Textarea
                   name="message"
-                  placeholder="How can we help you?"
+                  placeholder={content.form.message_placeholder}
                   borderColor="gray.300"
                   bg="white"
                   borderRadius="lg"
@@ -179,7 +239,7 @@ export default function ContactUs() {
                 color="white"
                 _hover={{ bg: "#C9A960", color: "white" }}
               >
-                Send Message
+                {content.form.button_label}
               </Button>
             </Box>
 
@@ -192,7 +252,7 @@ export default function ContactUs() {
                 color="#2E2E2E"
                 lineHeight="1.6"
               >
-                “Every connection begins with a conversation. We’re listening.”
+                {content.quote.text}
               </Text>
 
               <Box bg="#E8ECE8" p={8} borderRadius="2xl" w="100%">
@@ -203,27 +263,21 @@ export default function ContactUs() {
                   mb={4}
                   color="#2E2E2E"
                 >
-                  Our Office Hours & Response Policy
+                  {content.hours.title}
                 </Heading>
                 <VStack align="start" spacing={3}>
-                  <HStack spacing={3}>
-                    <Icon as={FaClock} color="#56756D" />
-                    <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                      Monday to Friday — 10:00 AM to 9:00 PM IST
-                    </Text>
-                  </HStack>
-                  <HStack spacing={3}>
-                    <Icon as={FaEnvelope} color="#56756D" />
-                    <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                      Responses within 2 to 4 business days.
-                    </Text>
-                  </HStack>
-                  <HStack spacing={3}>
-                    <Icon as={FaGlobe} color="#56756D" />
-                    <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                      Virtual consultations available worldwide.
-                    </Text>
-                  </HStack>
+                  {(content.hours.items || []).map((item, idx) => {
+                    const icons = [FaClock, FaEnvelope, FaGlobe];
+                    const ItemIcon = icons[idx] || FaClock;
+                    return (
+                      <HStack spacing={3} key={`hours-${idx}`}>
+                        <Icon as={ItemIcon} color="#56756D" />
+                        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                          {item}
+                        </Text>
+                      </HStack>
+                    );
+                  })}
                 </VStack>
               </Box>
             </VStack>
@@ -246,19 +300,17 @@ export default function ContactUs() {
             fontWeight="600"
             mb={4}
           >
-            Your Message is Safe with Us
+            {content.closing.title}
           </Heading>
-          <Text
+          <Box
             fontFamily="'Lato', sans-serif"
             fontSize="md"
             maxW="3xl"
             mx="auto"
             lineHeight="1.8"
-          >
-            All communications are received securely and handled with strict
-            confidentiality. We respond personally to every inquiry because at
-            MLC Health & Wellness Centre, healing begins with being heard.
-          </Text>
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.closing.body }}
+          />
         </Container>
       </Box>
     </Box>

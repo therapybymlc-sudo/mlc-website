@@ -561,3 +561,88 @@ class HomeContent(models.Model):
 
     def __str__(self) -> str:
         return "Home Content"
+
+
+class AboutContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    why = models.JSONField(default=dict, blank=True)
+    pillars = models.JSONField(default=list, blank=True)
+    message = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "About Content"
+
+
+class TherapistsContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    why = models.JSONField(default=dict, blank=True)
+    supervision = models.JSONField(default=dict, blank=True)
+    learning = models.JSONField(default=dict, blank=True)
+    work = models.JSONField(default=dict, blank=True)
+    values = models.JSONField(default=dict, blank=True)
+    cta = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Therapists Content"
+
+
+class ServicesContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    portal = models.JSONField(default=dict, blank=True)
+    services = models.JSONField(default=dict, blank=True)
+    programs = models.JSONField(default=dict, blank=True)
+    approach = models.JSONField(default=dict, blank=True)
+    faq = models.JSONField(default=dict, blank=True)
+    cta = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Services Content"
+
+
+class ContactContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    form = models.JSONField(default=dict, blank=True)
+    quote = models.JSONField(default=dict, blank=True)
+    hours = models.JSONField(default=dict, blank=True)
+    closing = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Contact Content"
+
+
+class TrainingProgramsContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    programs = models.JSONField(default=dict, blank=True)
+    faq = models.JSONField(default=dict, blank=True)
+    cta = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Training Programs Content"
+
+
+class CareersContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    why = models.JSONField(default=dict, blank=True)
+    openings = models.JSONField(default=dict, blank=True)
+    opportunities = models.JSONField(default=dict, blank=True)
+    form = models.JSONField(default=dict, blank=True)
+    footer = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Careers Content"
+
+
+class TherapistApplyContent(models.Model):
+    hero = models.JSONField(default=dict, blank=True)
+    sections = models.JSONField(default=dict, blank=True)
+    form = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return "Therapist Apply Content"

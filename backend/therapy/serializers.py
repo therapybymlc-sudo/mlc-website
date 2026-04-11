@@ -21,6 +21,13 @@ from therapy.models import (
     TeamMember,
     Service,
     HomeContent,
+    AboutContent,
+    TherapistsContent,
+    ServicesContent,
+    ContactContent,
+    TrainingProgramsContent,
+    CareersContent,
+    TherapistApplyContent,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -487,4 +494,46 @@ class ServiceSerializer(serializers.ModelSerializer):
 class HomeContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = HomeContent
+        fields = "__all__"
+
+
+class AboutContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AboutContent
+        fields = "__all__"
+
+
+class TherapistsContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TherapistsContent
+        fields = "__all__"
+
+
+class ServicesContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServicesContent
+        fields = "__all__"
+
+
+class ContactContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactContent
+        fields = "__all__"
+
+
+class TrainingProgramsContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainingProgramsContent
+        fields = "__all__"
+
+
+class CareersContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CareersContent
+        fields = "__all__"
+
+
+class TherapistApplyContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TherapistApplyContent
         fields = "__all__"

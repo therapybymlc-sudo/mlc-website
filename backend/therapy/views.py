@@ -31,6 +31,13 @@ from therapy.models import (
     TeamMember,
     Service,
     HomeContent,
+    AboutContent,
+    TherapistsContent,
+    ServicesContent,
+    ContactContent,
+    TrainingProgramsContent,
+    CareersContent,
+    TherapistApplyContent,
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
@@ -53,6 +60,13 @@ from therapy.serializers import (
     TeamMemberSerializer,
     ServiceSerializer,
     HomeContentSerializer,
+    AboutContentSerializer,
+    TherapistsContentSerializer,
+    ServicesContentSerializer,
+    ContactContentSerializer,
+    TrainingProgramsContentSerializer,
+    CareersContentSerializer,
+    TherapistApplyContentSerializer,
 )
 
 
@@ -594,6 +608,174 @@ class HomeContentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return HomeContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class AboutContentViewSet(viewsets.ModelViewSet):
+    serializer_class = AboutContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return AboutContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class TherapistsContentViewSet(viewsets.ModelViewSet):
+    serializer_class = TherapistsContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return TherapistsContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class ServicesContentViewSet(viewsets.ModelViewSet):
+    serializer_class = ServicesContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return ServicesContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class ContactContentViewSet(viewsets.ModelViewSet):
+    serializer_class = ContactContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return ContactContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class TrainingProgramsContentViewSet(viewsets.ModelViewSet):
+    serializer_class = TrainingProgramsContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return TrainingProgramsContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class CareersContentViewSet(viewsets.ModelViewSet):
+    serializer_class = CareersContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return CareersContent.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        _require_admin(request)
+        return super().destroy(request, *args, **kwargs)
+
+
+class TherapistApplyContentViewSet(viewsets.ModelViewSet):
+    serializer_class = TherapistApplyContentSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return TherapistApplyContent.objects.all()
 
     def create(self, request, *args, **kwargs):
         _require_admin(request)

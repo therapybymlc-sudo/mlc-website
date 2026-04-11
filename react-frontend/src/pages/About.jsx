@@ -8,8 +8,78 @@ import {
   Button,
 } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
+import { useEffect, useState } from "react";
+import { apiGet } from "../api";
+
+const defaultAboutContent = {
+  hero: {
+    title: "Our Approach to Care",
+    body:
+      "<p>At MLC Therapy, we believe that sustainable systems create deeper healing. Our philosophy is rooted in three pillars: clinical clarity, relational depth, and ethical accountability. When care is structured and therapists are supported, clients receive consistent, high-quality therapy they can trust.</p>",
+    cta_label: "Meet the Team",
+    cta_link: "/meettheteam",
+    image_url: "/approach_new.jpg",
+  },
+  why: {
+    title: "Why We Started MLC Therapy",
+    body:
+      "<p>MLC Therapy was born from witnessing systemic gaps in mental health care. Talented therapists were burning out, and clients were receiving inconsistent support. We envisioned a model that protects both clinical integrity and therapist sustainability, ensuring that client care never suffers.</p>",
+  },
+  pillars: [
+    {
+      title: "Clinical Clarity",
+      body:
+        "<p>Every therapist at MLC works from a defined therapeutic orientation. We do not blend methods without intention. Your work is guided by formulation, not improvisation.</p>",
+    },
+    {
+      title: "Relational Depth",
+      body:
+        "<p>We prioritise attuned presence. Therapy is not mechanical. It is relational, safe, and human.</p>",
+    },
+    {
+      title: "Ethical &amp; Professional Standards",
+      body:
+        "<p>Supervision, documentation, and structured review processes ensure that your care remains aligned with international standards of mental health practice.</p>",
+    },
+  ],
+  message: {
+    title: "The Message Behind MLC",
+    body:
+      "<p><strong>MLC</strong> stands for <strong>Mentis, Lumine et Corpus</strong>, Latin for Mind, Light, and Body. This name captures our belief that healing is holistic, integrating mental, emotional, and physical well-being.</p><p>Every service we offer, from therapy and supervision to education, reflects that interconnected philosophy. We stand for integrity in care, safety in practice, and growth that holds space for both clients and clinicians.</p>",
+    image_url: "/about_illustration_new.jpg",
+  },
+};
+
+const richTextStyles = {
+  "p + p": { marginTop: "0.75rem" },
+  "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
+  li: { marginBottom: "0.35rem" },
+};
 
 export default function About() {
+  const [content, setContent] = useState(defaultAboutContent);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const res = await apiGet("about-content/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          const entry = data[0];
+          setContent({
+            hero: { ...defaultAboutContent.hero, ...(entry.hero || {}) },
+            why: { ...defaultAboutContent.why, ...(entry.why || {}) },
+            pillars: Array.isArray(entry.pillars) ? entry.pillars : defaultAboutContent.pillars,
+            message: { ...defaultAboutContent.message, ...(entry.message || {}) },
+          });
+        }
+      } catch {
+        setContent(defaultAboutContent);
+      }
+    };
+    fetchContent();
+  }, []);
+
   return (
     <Box bg="#F6F6F4">
       <Helmet>
@@ -37,19 +107,16 @@ export default function About() {
                 fontWeight="600"
                 fontSize={{ base: "2xl", md: "3xl" }}
               >
-                Our Approach to Care
+                {content.hero.title}
               </Heading>
-              <Text
+              <Box
                 fontFamily="'Lato', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
-              >
-                At MLC Therapy, we believe that sustainable systems create deeper healing.
-                Our philosophy is rooted in three pillars: clinical clarity, relational depth,
-                and ethical accountability. When care is structured and therapists are supported,
-                clients receive consistent, high-quality therapy they can trust.
-              </Text>
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: content.hero.body }}
+              />
 
               <Button
                 mt={8}
@@ -58,18 +125,18 @@ export default function About() {
                 color="white"
                 _hover={{ bg: "#C9A960", color: "white" }}
                 as="a"
-                href="/team"
+                href={content.hero.cta_link || "/meettheteam"}
                 fontFamily="'Lato', sans-serif"
                 fontWeight="500"
                 px={8}
                 py={5}
                 boxShadow="md"
               >
-                Meet the Team
+                {content.hero.cta_label || "Meet the Team"}
               </Button>
             </Box>
             <Image
-              src="/approach_new.jpg"
+              src={content.hero.image_url || "/approach_new.jpg"}
               alt="Therapy room at MLC"
               borderRadius="2xl"
               boxShadow="xl"
@@ -88,21 +155,18 @@ export default function About() {
             color="#2E2E2E"
             fontWeight="600"
           >
-            Why We Started MLC Therapy
+            {content.why.title}
           </Heading>
-          <Text
+          <Box
             color="#2E2E2E"
             fontFamily="'Lato', sans-serif"
             fontSize="lg"
             lineHeight="1.8"
             maxW="3xl"
             mx="auto"
-          >
-            MLC Therapy was born from witnessing systemic gaps in mental health care.
-            Talented therapists were burning out, and clients were receiving inconsistent
-            support. We envisioned a model that protects both clinical integrity and
-            therapist sustainability, ensuring that client care never suffers.
-          </Text>
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.why.body }}
+          />
         </Container>
       </Box>
 
@@ -119,34 +183,19 @@ export default function About() {
             Our Three Pillars of Care
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            <Box bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-              <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
-                Clinical Clarity
-              </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                Every therapist at MLC works from a defined therapeutic orientation. We do not
-                blend methods without intention. Your work is guided by formulation, not
-                improvisation.
-              </Text>
-            </Box>
-            <Box bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-              <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
-                Relational Depth
-              </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                We prioritise attuned presence. Therapy is not mechanical. It is relational,
-                safe, and human.
-              </Text>
-            </Box>
-            <Box bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-              <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
-                Ethical &amp; Professional Standards
-              </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                Supervision, documentation, and structured review processes ensure that your care
-                remains aligned with international standards of mental health practice.
-              </Text>
-            </Box>
+            {content.pillars.map((pillar) => (
+              <Box key={pillar.title} bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
+                <Heading size="md" mb={2} fontFamily="'Playfair Display', serif">
+                  {pillar.title}
+                </Heading>
+                <Box
+                  fontFamily="'Lato', sans-serif"
+                  color="#2E2E2E"
+                  sx={richTextStyles}
+                  dangerouslySetInnerHTML={{ __html: pillar.body }}
+                />
+              </Box>
+            ))}
           </SimpleGrid>
         </Container>
       </Box>
@@ -166,30 +215,19 @@ export default function About() {
                 color="#2E2E2E"
                 fontWeight="600"
               >
-                The Message Behind MLC
+                {content.message.title}
               </Heading>
-              <Text
+              <Box
                 fontFamily="'Lato', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
-              >
-                “MLC” stands for{" "}
-                <strong>Mentis, Lumine et Corpus</strong>, Latin for Mind, Light,
-                and Body. This name captures our belief that healing is holistic,
-                integrating mental, emotional, and physical well-being. We see
-                therapy as a journey that illuminates the mind, nurtures the
-                spirit, and honors the body.
-                <br />
-                <br />
-                Every service we offer, from therapy and supervision to
-                education, reflects that interconnected philosophy. We stand for
-                integrity in care, safety in practice, and growth that holds
-                space for both clients and clinicians.
-              </Text>
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: content.message.body }}
+              />
             </Box>
             <Image
-              src="/about_illustration_new.jpg"
+              src={content.message.image_url || "/about_illustration_new.jpg"}
               alt="Abstract botanical illustration"
               borderRadius="2xl"
               boxShadow="xl"

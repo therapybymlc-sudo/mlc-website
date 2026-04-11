@@ -16,7 +16,7 @@ import {
   Radio,
   useToast,
 } from "@chakra-ui/react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import emailjs from "@emailjs/browser";
 import {
   EMAIL_SERVICE_ID,
@@ -24,10 +24,143 @@ import {
   EMAIL_PUBLIC_KEY,
 } from "../emailConfig";
 import { Helmet } from "react-helmet-async";
+import { apiGet } from "../api";
+
+const defaultCareersContent = {
+  hero: {
+    title: "Join Our Team of Dedicated Therapists",
+    body:
+      "<p>At MLC Health & Wellness Centre, we are building a space that values both clients and clinicians. We seek professionals who believe in collaboration, ethical standards, structured care, and sustainable growth. Healing that holds the healer is not a slogan. It is our foundation.</p>",
+    image_url: "/careers1.jpg",
+  },
+  why: {
+    title: "Why Work With MLC Health & Wellness Centre",
+    body:
+      "<p>We invest in therapist wellbeing, ethical practice, and community. Our systems are designed to support clinicians so they can do their best work.</p>",
+    items: [
+      {
+        title: "Therapist-First Model",
+        body:
+          "<p>A structured system that protects boundaries and ensures sustainable caseloads. Ethical care begins with supported clinicians.</p>",
+      },
+      {
+        title: "Clinical Supervision & Mentorship",
+        body:
+          "<p>Guided spaces for case reflection, ethical consultation, and professional development. Growth through structured mentorship, not micromanagement.</p>",
+      },
+      {
+        title: "Flexible Work Options",
+        body:
+          "<p>Remote and hybrid opportunities across India that respect your time, geography, and lifestyle while maintaining high clinical standards.</p>",
+      },
+      {
+        title: "Meaningful Collaboration",
+        body:
+          "<p>Join a growing network of professionals committed to raising the standards of therapy in India through clarity, ethics, and relational depth.</p>",
+      },
+    ],
+  },
+  openings: {
+    title: "Current Openings",
+    subtitle:
+      "<p>We’re growing thoughtfully. Explore the roles below and apply if one feels aligned.</p>",
+    apply_label: "Apply to this role",
+    cards: [
+      {
+        title: "Clinical Therapist (Online)",
+        location: "Remote · India",
+        type: "Contract",
+        summary:
+          "<p>Provide online therapy within our structured and supportive system.</p>",
+        details:
+          "<p><strong>Responsibilities:</strong></p><ul><li>Deliver client‑centered sessions</li><li>Maintain timely documentation</li><li>Participate in supervision</li></ul><p><strong>Requirements:</strong> Licensed clinician with experience in individual therapy.</p>",
+      },
+    ],
+  },
+  opportunities: {
+    title: "Opportunities at MLC",
+    cards: [
+      {
+        title: "Therapist Positions",
+        body:
+          "<p>Flexible, structured, and ethically aligned roles for professionals who value balance and meaningful client work.</p>",
+      },
+      {
+        title: "Supervisor Network",
+        body:
+          "<p>Mentor and guide therapists through reflective supervision and structured case consultation.</p>",
+      },
+      {
+        title: "Internships",
+        body:
+          "<p>Hands-on exposure, guided mentorship, and meaningful learning within a structured clinical framework.</p>",
+      },
+    ],
+  },
+  form: {
+    title: "Apply Now",
+    subtitle:
+      "<p>Share your details and we’ll reach out with next steps. We review every application with care.</p>",
+    name_label: "Full name",
+    email_label: "Email address",
+    phone_label: "Phone number",
+    role_label: "Position applying for",
+    resume_label: "Link to CV or LinkedIn Profile",
+    resume_hint: "Paste your CV or LinkedIn link",
+    message_label: "Cover Letter",
+    submit_label: "Send Application",
+    success_title: "Application Sent!",
+    success_body: "Thank you for applying, we’ll get back to you soon 🌿",
+  },
+  footer: {
+    title: "A Space That Holds the Healer Too",
+    body:
+      "<p>MLC Health & Wellness Centre was built on the belief that sustainability and empathy are inseparable. Join a team redefining what it means to care for others and for ourselves.</p>",
+    cta_label: "Email us at therapy@mlchealth.in",
+    cta_link: "mailto:therapy@mlchealth.in",
+  },
+};
+
+const richTextStyles = {
+  "p + p": { marginTop: "0.75rem" },
+  "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
+  li: { marginBottom: "0.35rem" },
+};
 
 export default function Careers() {
   const form = useRef();
   const toast = useToast();
+  const [content, setContent] = useState(defaultCareersContent);
+  const [activeOpening, setActiveOpening] = useState(null);
+  const applySectionRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await apiGet("careers-content/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          const entry = data[0];
+          setContent({
+            hero: { ...defaultCareersContent.hero, ...(entry.hero || {}) },
+            why: { ...defaultCareersContent.why, ...(entry.why || {}) },
+            openings: {
+              ...defaultCareersContent.openings,
+              ...(entry.openings || {}),
+            },
+            opportunities: {
+              ...defaultCareersContent.opportunities,
+              ...(entry.opportunities || {}),
+            },
+            form: { ...defaultCareersContent.form, ...(entry.form || {}) },
+            footer: { ...defaultCareersContent.footer, ...(entry.footer || {}) },
+          });
+        }
+      } catch {
+        setContent(defaultCareersContent);
+      }
+    })();
+  }, []);
 
   const sendEmail = (e) => {
     e.preventDefault();
@@ -35,8 +168,8 @@ export default function Careers() {
       .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, form.current, EMAIL_PUBLIC_KEY)
       .then(() => {
         toast({
-          title: "Application Sent!",
-          description: "Thank you for applying, we’ll get back to you soon 🌿",
+          title: content.form.success_title || "Application Sent!",
+          description: content.form.success_body || "Thank you for applying, we’ll get back to you soon 🌿",
           status: "success",
           duration: 5000,
           isClosable: true,
@@ -54,6 +187,10 @@ export default function Careers() {
       });
   };
 
+  const scrollToApply = () => {
+    applySectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <Box>
       <Helmet>
@@ -65,8 +202,14 @@ export default function Careers() {
           name="description"
           content="Join MLC Health & Wellness Centre’s growing therapist network. We offer structured online therapy roles, supervision opportunities, and internships across India with ethical practice, mentorship, and sustainable workloads."
         />
-              <meta property="og:image" content="https://mlchealth.in/careers1.jpg" />
-        <meta name="twitter:image" content="https://mlchealth.in/careers1.jpg" />
+        <meta
+          property="og:image"
+          content={content.hero.image_url || "https://mlchealth.in/careers1.jpg"}
+        />
+        <meta
+          name="twitter:image"
+          content={content.hero.image_url || "https://mlchealth.in/careers1.jpg"}
+        />
       </Helmet>
       {/* HERO SECTION */}
       <Box bgGradient="linear(to-b, #F6F6F4, #E8ECE8)" py={24} px={8}>
@@ -83,24 +226,20 @@ export default function Careers() {
                 color="#2E2E2E"
                 fontWeight="600"
               >
-                Join Our Team of Dedicated Therapists
+                {content.hero.title}
               </Heading>
-              <Text
+              <Box
                 fontFamily="'Lato', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
-              >
-                At MLC Health & Wellness Centre, we are building a space that
-                values both clients and clinicians. We seek professionals who
-                believe in collaboration, ethical standards, structured care, and
-                sustainable growth. Healing that holds the healer is not a slogan.
-                It is our foundation.
-              </Text>
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: content.hero.body || "" }}
+              />
             </Box>
             <Image
-              src="/careers1.jpg"
-              alt="Calm therapy room"
+              src={content.hero.image_url || "/careers1.jpg"}
+              alt={content.hero.title || "Calm therapy room"}
               borderRadius="2xl"
               boxShadow="md"
               maxW="400px"
@@ -115,32 +254,26 @@ export default function Careers() {
           <Heading
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
-            mb={12}
+            mb={6}
             fontWeight="600"
           >
-            Why Work With MLC Health & Wellness Centre
+            {content.why.title}
           </Heading>
+          <Box
+            fontFamily="'Lato', sans-serif"
+            color="#2E2E2E"
+            lineHeight="1.8"
+            fontSize="md"
+            maxW="3xl"
+            mx="auto"
+            mb={12}
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.why.body || "" }}
+          />
           <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={10}>
-            {[
-              {
-                title: "Therapist-First Model",
-                desc: "A structured system that protects boundaries and ensures sustainable caseloads. Ethical care begins with supported clinicians.",
-              },
-              {
-                title: "Clinical Supervision & Mentorship",
-                desc: "Guided spaces for case reflection, ethical consultation, and professional development. Growth through structured mentorship, not micromanagement.",
-              },
-              {
-                title: "Flexible Work Options",
-                desc: "Remote and hybrid opportunities across India that respect your time, geography, and lifestyle while maintaining high clinical standards.",
-              },
-              {
-                title: "Meaningful Collaboration",
-                desc: "Join a growing network of professionals committed to raising the standards of therapy in India through clarity, ethics, and relational depth.",
-              },
-            ].map((item) => (
+            {(content.why.items || []).map((item, index) => (
               <Box
-                key={item.title}
+                key={`${item.title}-${index}`}
                 bg="white"
                 borderRadius="2xl"
                 p={8}
@@ -156,14 +289,14 @@ export default function Careers() {
                 >
                   {item.title}
                 </Heading>
-                <Text
+                <Box
                   fontFamily="'Lato', sans-serif"
                   color="#2E2E2E"
                   lineHeight="1.7"
                   fontSize="sm"
-                >
-                  {item.desc}
-                </Text>
+                  sx={richTextStyles}
+                  dangerouslySetInnerHTML={{ __html: item.body || "" }}
+                />
               </Box>
             ))}
           </SimpleGrid>
@@ -179,37 +312,106 @@ export default function Careers() {
             mb={10}
             fontWeight="600"
           >
-            Opportunities at MLC
+            {content.opportunities.title}
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            <PositionCard
-              title="Therapist Positions"
-              desc="Flexible, structured, and ethically aligned roles for professionals who value balance and meaningful client work."
-            />
-            <PositionCard
-              title="Supervisor Network"
-              desc="Mentor and guide therapists through reflective supervision and structured case consultation."
-            />
-            <PositionCard
-              title="Internships"
-              desc="Hands-on exposure, guided mentorship, and meaningful learning within a structured clinical framework."
-            />
+            {(content.opportunities.cards || []).map((card, index) => (
+              <PositionCard
+                key={`${card.title}-${index}`}
+                title={card.title}
+                body={card.body}
+              />
+            ))}
+          </SimpleGrid>
+        </Container>
+      </Box>
+
+      {/* OPENINGS SECTION */}
+      <Box bg="white" py={24} px={8}>
+        <Container maxW="7xl" textAlign="center">
+          <Heading
+            fontFamily="'Playfair Display', serif"
+            color="#2E2E2E"
+            mb={4}
+            fontWeight="600"
+          >
+            {content.openings.title}
+          </Heading>
+          <Box
+            maxW="3xl"
+            mx="auto"
+            mb={12}
+            color="#2E2E2E"
+            fontFamily="'Lato', sans-serif"
+            lineHeight="1.8"
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.openings.subtitle || "" }}
+          />
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
+            {(content.openings.cards || []).map((opening, index) => (
+              <Box
+                key={`${opening.title}-${index}`}
+                bg="#F8F8F4"
+                borderRadius="2xl"
+                p={6}
+                boxShadow="md"
+                cursor="pointer"
+                transition="all 0.3s ease"
+                _hover={{ transform: "translateY(-4px)", boxShadow: "lg" }}
+                onClick={() => setActiveOpening(opening)}
+              >
+                <Heading
+                  size="md"
+                  mb={3}
+                  fontFamily="'Playfair Display', serif"
+                  color="#2E2E2E"
+                >
+                  {opening.title}
+                </Heading>
+                <HStack spacing={2} justify="center" flexWrap="wrap">
+                  {opening.location ? (
+                    <Text fontSize="sm" color="#56756D">
+                      {opening.location}
+                    </Text>
+                  ) : null}
+                  {opening.type ? (
+                    <Text fontSize="sm" color="#56756D">
+                      · {opening.type}
+                    </Text>
+                  ) : null}
+                </HStack>
+                <Text mt={4} fontSize="sm" color="#56756D">
+                  Tap to view details
+                </Text>
+              </Box>
+            ))}
           </SimpleGrid>
         </Container>
       </Box>
 
       {/* APPLICATION FORM */}
-      <Box bg="#E8ECE8" py={24} px={8}>
+      <Box bg="#E8ECE8" py={24} px={8} ref={applySectionRef} id="careers-apply">
         <Container maxW="5xl">
           <Heading
             textAlign="center"
-            mb={10}
+            mb={4}
             fontFamily="'Playfair Display', serif"
             fontWeight="600"
             color="#2E2E2E"
           >
-            Apply Now
+            {content.form.title}
           </Heading>
+          <Box
+            textAlign="center"
+            fontFamily="'Lato', sans-serif"
+            color="#2E2E2E"
+            lineHeight="1.8"
+            maxW="3xl"
+            mx="auto"
+            mb={10}
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.form.subtitle || "" }}
+          />
 
           <Box
             as="form"
@@ -222,10 +424,15 @@ export default function Careers() {
           >
             <input type="hidden" name="form_type" value="Careers Form" />
 
-            <SimpleField label="Full name" name="full_name" isRequired />
-            <SimpleField label="Email address" name="email" type="email" isRequired />
+            <SimpleField label={content.form.name_label} name="full_name" isRequired />
             <SimpleField
-              label="Position applying for"
+              label={content.form.email_label}
+              name="email"
+              type="email"
+              isRequired
+            />
+            <SimpleField
+              label={content.form.role_label}
               name="position"
               placeholder="Therapist / Supervisor / Intern"
             />
@@ -242,10 +449,10 @@ export default function Careers() {
               </RadioGroup>
             </FormControl>
 
-            <SimpleField label="Phone Number" name="phone" type="tel" />
+            <SimpleField label={content.form.phone_label} name="phone" type="tel" />
             <FormControl mb={4}>
               <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
-                Cover Letter
+                {content.form.message_label}
               </FormLabel>
               <Textarea
                 name="message"
@@ -259,9 +466,9 @@ export default function Careers() {
               />
             </FormControl>
             <SimpleField
-              label="Link to CV or LinkedIn Profile"
+              label={content.form.resume_label}
               name="link"
-              placeholder="Paste your CV or LinkedIn link"
+              placeholder={content.form.resume_hint}
             />
 
             <Button
@@ -276,7 +483,7 @@ export default function Careers() {
               fontWeight="500"
               _hover={{ bg: "#C9A960", color: "white" }}
             >
-              Send Application
+              {content.form.submit_label}
             </Button>
           </Box>
 
@@ -286,13 +493,13 @@ export default function Careers() {
             </Text>
             <Button
               as="a"
-              href="mailto:therapy@mlchealth.in"
+              href={content.footer.cta_link}
               variant="outline"
               borderColor="#C9A960"
               _hover={{ bg: "#C9A960", color: "white" }}
               borderRadius="full"
             >
-              Email us at therapy@mlchealth.in
+              {content.footer.cta_label}
             </Button>
           </Box>
         </Container>
@@ -306,21 +513,98 @@ export default function Careers() {
             fontWeight="600"
             mb={6}
           >
-            A Space That Holds the Healer Too
+            {content.footer.title}
           </Heading>
-          <Text
+          <Box
             fontFamily="'Lato', sans-serif"
             fontSize="md"
             maxW="3xl"
             mx="auto"
             lineHeight="1.8"
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.footer.body || "" }}
+          />
+          <Button
+            as="a"
+            href={content.footer.cta_link}
+            mt={8}
+            bg="white"
+            color="#2E2E2E"
+            borderRadius="full"
+            px={8}
+            py={6}
+            fontFamily="'Lato', sans-serif"
+            _hover={{ bg: "#F2F2F0" }}
           >
-            MLC Health & Wellness Centre was built on the belief that
-            sustainability and empathy are inseparable. Join a team redefining
-            what it means to care for others and for ourselves.
-          </Text>
+            {content.footer.cta_label}
+          </Button>
         </Container>
       </Box>
+
+      {activeOpening ? (
+        <Box
+          position="fixed"
+          inset={0}
+          bg="rgba(15, 16, 20, 0.45)"
+          backdropFilter="blur(6px)"
+          zIndex={9999}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          px={4}
+          onClick={() => setActiveOpening(null)}
+        >
+          <Box
+            bg="white"
+            borderRadius="2xl"
+            boxShadow="xl"
+            maxW="680px"
+            w="100%"
+            p={{ base: 6, md: 8 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Heading size="lg" fontFamily="'Playfair Display', serif" mb={2}>
+              {activeOpening.title}
+            </Heading>
+            <Text color="#56756D" mb={4}>
+              {[activeOpening.location, activeOpening.type].filter(Boolean).join(" · ")}
+            </Text>
+            {activeOpening.summary ? (
+              <Box
+                fontFamily="'Lato', sans-serif"
+                color="#2E2E2E"
+                lineHeight="1.7"
+                mb={4}
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: activeOpening.summary }}
+              />
+            ) : null}
+            {activeOpening.details ? (
+              <Box
+                fontFamily="'Lato', sans-serif"
+                color="#2E2E2E"
+                lineHeight="1.7"
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: activeOpening.details }}
+              />
+            ) : null}
+            <HStack mt={6} justify="space-between">
+              <Button variant="ghost" onClick={() => setActiveOpening(null)}>
+                Close
+              </Button>
+              <Button
+                colorScheme="teal"
+                onClick={() => {
+                  setActiveOpening(null);
+                  scrollToApply();
+                }}
+              >
+                {content.openings.apply_label || "Apply to this role"}
+              </Button>
+            </HStack>
+          </Box>
+        </Box>
+      ) : null}
     </Box>
   );
 }
@@ -346,7 +630,7 @@ function SimpleField({ label, name, type = "text", isRequired = false, placehold
   );
 }
 
-function PositionCard({ title, desc }) {
+function PositionCard({ title, body }) {
   return (
     <Box
       bg="white"
@@ -365,13 +649,13 @@ function PositionCard({ title, desc }) {
       >
         {title}
       </Heading>
-      <Text
+      <Box
         fontFamily="'Lato', sans-serif"
         color="#2E2E2E"
         lineHeight="1.7"
-      >
-        {desc}
-      </Text>
+        sx={richTextStyles}
+        dangerouslySetInnerHTML={{ __html: body || "" }}
+      />
     </Box>
   );
 }

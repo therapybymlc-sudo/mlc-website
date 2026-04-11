@@ -31,6 +31,13 @@ from therapy.views import (
     TeamMemberViewSet,
     ServiceViewSet,
     HomeContentViewSet,
+    AboutContentViewSet,
+    TherapistsContentViewSet,
+    ServicesContentViewSet,
+    ContactContentViewSet,
+    TrainingProgramsContentViewSet,
+    CareersContentViewSet,
+    TherapistApplyContentViewSet,
 )
 
 # ----------------------------
@@ -56,6 +63,13 @@ router.register(r"material-shares", MaterialShareViewSet, basename="material-sha
 router.register(r"team-members", TeamMemberViewSet, basename="team-members")
 router.register(r"services", ServiceViewSet, basename="services")
 router.register(r"home-content", HomeContentViewSet, basename="home-content")
+router.register(r"about-content", AboutContentViewSet, basename="about-content")
+router.register(r"therapists-content", TherapistsContentViewSet, basename="therapists-content")
+router.register(r"services-content", ServicesContentViewSet, basename="services-content")
+router.register(r"contact-content", ContactContentViewSet, basename="contact-content")
+router.register(r"training-programs-content", TrainingProgramsContentViewSet, basename="training-programs-content")
+router.register(r"careers-content", CareersContentViewSet, basename="careers-content")
+router.register(r"therapist-apply-content", TherapistApplyContentViewSet, basename="therapist-apply-content")
 
 # ----------------------------
 # Small utility/test endpoints

@@ -10,6 +10,8 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
+import { useEffect, useMemo, useState } from "react";
+import { apiGet } from "../api";
 import {
   FiUsers,
   FiCompass,
@@ -21,7 +23,255 @@ import {
   FiUserCheck,
 } from "react-icons/fi";
 
+const defaultTherapistsContent = {
+  hero: {
+    title: "For Therapists",
+    body_one:
+      "<p>MLC Therapy is building a space for therapists who want to practice with clarity, ethical grounding, and professional support.</p>",
+    body_two:
+      "<p>Whether you are an early-career clinician, a therapist building your practice, or someone looking for reflective supervision, we are creating spaces where therapists can grow thoughtfully.</p>",
+    primary_label: "Explore Supervision",
+    primary_link: "/supervision",
+    secondary_label: "Join the MLC Community",
+    secondary_link: "/careers",
+  },
+  why: {
+    title: "Why We Built MLC",
+    body:
+      "<p>Many therapists in India enter the field with deep passion for helping others but quickly encounter burnout, isolation, and lack of clinical support. MLC Therapy was created to address these gaps by building a space where therapists can practice ethically, sustainably, and with community.</p>",
+    cards: [
+      {
+        icon: "users",
+        title: "Supervision & Reflective Practice",
+        body:
+          "Regular supervision spaces designed to help therapists deepen their clinical thinking and develop confidence in their work.",
+        cta_label: "Learn More",
+        cta_link: "/supervision",
+      },
+      {
+        icon: "layers",
+        title: "Therapist Community",
+        body:
+          "A growing network of therapists who value reflective practice and professional dialogue.",
+      },
+      {
+        icon: "compass",
+        title: "Sustainable Practice",
+        body:
+          "MLC aims to support therapists in building meaningful and sustainable careers in mental health.",
+      },
+    ],
+  },
+  apply: {
+    title: "Apply to Join the Therapist Workspace",
+    body:
+      "<p>MLC offers a secure workspace for therapists: client collaboration, shared resources, session tools, and a premium studio designed to support your practice.</p>",
+    primary_label: "Apply as a therapist",
+    primary_link: "/therapist-apply",
+    secondary_label: "Already approved? Sign in",
+    secondary_link: "/login/therapist",
+  },
+  supervision: {
+    title: "MLC Supervision Cohorts",
+    body:
+      "<p>Our supervision cohorts provide structured spaces for therapists to reflect on their clinical work, explore their therapeutic identity, and strengthen their practice.</p>",
+    cards: [
+      {
+        icon: "users",
+        title: "Group Supervision",
+        body:
+          "Small group supervision cohorts designed to encourage reflective dialogue and clinical growth.",
+        cta_label: "Learn About Supervision",
+        cta_link: "/supervision",
+      },
+      {
+        icon: "usercheck",
+        title: "Individual Supervision",
+        body:
+          "One-on-one supervision sessions for therapists seeking deeper clinical reflection.",
+        cta_label: "Explore Supervision Options",
+        cta_link: "/supervision",
+      },
+    ],
+  },
+  learning: {
+    title: "Learning and Development",
+    cards: [
+      {
+        icon: "book",
+        title: "Internships",
+        body:
+          "Structured internship programs for psychology students interested in reflective clinical practice.",
+        cta_label: "View Internship Program",
+        cta_link: "/training-programs",
+      },
+      {
+        icon: "award",
+        title: "Professional Workshops",
+        body: "Workshops designed to deepen therapeutic thinking and professional growth.",
+        cta_label: "View Workshops",
+        cta_link: "/workshops",
+      },
+    ],
+  },
+  work: {
+    title: "Work With MLC",
+    body:
+      "<p>We are always interested in connecting with therapists who value reflective practice and ethical care.</p>",
+    cards: [
+      {
+        icon: "briefcase",
+        title: "Join Our Therapist Network",
+        body: "Opportunities to collaborate with MLC as a therapist.",
+        cta_label: "View Opportunities",
+        cta_link: "/careers",
+      },
+      {
+        icon: "message",
+        title: "Clinical Collaboration",
+        body:
+          "MLC aims to build partnerships with therapists and professionals who share our values.",
+        cta_label: "Contact Us",
+        cta_link: "/contactus",
+      },
+    ],
+  },
+  values: {
+    title: "Our Approach to Practice",
+    bubbles: [
+      {
+        title: "Ethical Practice",
+        body:
+          "Our work is grounded in clear ethical frameworks and professional responsibility.",
+      },
+      {
+        title: "Reflective Therapists",
+        body: "We encourage therapists to continually reflect on their work and their growth.",
+      },
+      {
+        title: "Thoughtful Care",
+        body: "We believe good therapy requires depth, attention, and care.",
+      },
+    ],
+  },
+  cta: {
+    title: "Interested in being part of MLC?",
+    button_label: "Connect With Us",
+    button_link: "/careers",
+  },
+};
+
+const iconMap = {
+  users: FiUsers,
+  compass: FiCompass,
+  briefcase: FiBriefcase,
+  message: FiMessageCircle,
+  award: FiAward,
+  book: FiBookOpen,
+  layers: FiLayers,
+  usercheck: FiUserCheck,
+};
+
+const richTextStyles = {
+  "p + p": { marginTop: "0.75rem" },
+  "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
+  li: { marginBottom: "0.35rem" },
+};
+
 export default function Therapists() {
+  const [content, setContent] = useState(defaultTherapistsContent);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const res = await apiGet("therapists-content/");
+        const data = res.results ?? res;
+        if (Array.isArray(data) && data.length > 0) {
+          const entry = data[0];
+          setContent({
+            hero: { ...defaultTherapistsContent.hero, ...(entry.hero || {}) },
+            why: {
+              ...defaultTherapistsContent.why,
+              ...(entry.why || {}),
+              cards: Array.isArray(entry.why?.cards)
+                ? entry.why.cards
+                : defaultTherapistsContent.why.cards,
+            },
+            apply: { ...defaultTherapistsContent.apply, ...(entry.apply || {}) },
+            supervision: {
+              ...defaultTherapistsContent.supervision,
+              ...(entry.supervision || {}),
+              cards: Array.isArray(entry.supervision?.cards)
+                ? entry.supervision.cards
+                : defaultTherapistsContent.supervision.cards,
+            },
+            learning: {
+              ...defaultTherapistsContent.learning,
+              ...(entry.learning || {}),
+              cards: Array.isArray(entry.learning?.cards)
+                ? entry.learning.cards
+                : defaultTherapistsContent.learning.cards,
+            },
+            work: {
+              ...defaultTherapistsContent.work,
+              ...(entry.work || {}),
+              cards: Array.isArray(entry.work?.cards)
+                ? entry.work.cards
+                : defaultTherapistsContent.work.cards,
+            },
+            values: {
+              ...defaultTherapistsContent.values,
+              ...(entry.values || {}),
+              bubbles: Array.isArray(entry.values?.bubbles)
+                ? entry.values.bubbles
+                : defaultTherapistsContent.values.bubbles,
+            },
+            cta: { ...defaultTherapistsContent.cta, ...(entry.cta || {}) },
+          });
+        }
+      } catch {
+        setContent(defaultTherapistsContent);
+      }
+    };
+    fetchContent();
+  }, []);
+
+  const mappedWhyCards = useMemo(
+    () =>
+      content.why.cards.map((card) => ({
+        ...card,
+        icon: iconMap[card.icon] || FiUsers,
+      })),
+    [content.why.cards]
+  );
+
+  const mappedSupervisionCards = useMemo(
+    () =>
+      content.supervision.cards.map((card) => ({
+        ...card,
+        icon: iconMap[card.icon] || FiUsers,
+      })),
+    [content.supervision.cards]
+  );
+
+  const mappedLearningCards = useMemo(
+    () =>
+      content.learning.cards.map((card) => ({
+        ...card,
+        icon: iconMap[card.icon] || FiBookOpen,
+      })),
+    [content.learning.cards]
+  );
+
+  const mappedWorkCards = useMemo(
+    () =>
+      content.work.cards.map((card) => ({
+        ...card,
+        icon: iconMap[card.icon] || FiBriefcase,
+      })),
+    [content.work.cards]
+  );
+
   return (
     <Box bg="#F9F9F9">
       <Helmet>
@@ -44,29 +294,26 @@ export default function Therapists() {
               color="#2E2E2E"
               fontWeight="600"
             >
-              For Therapists
+              {content.hero.title}
             </Heading>
-            <Text
+            <Box
               fontFamily="'Lato', sans-serif"
               color="#2E2E2E"
               fontSize={{ base: "md", md: "lg" }}
               maxW="2xl"
               lineHeight="1.6"
-            >
-              MLC Therapy is building a space for therapists who want to practice
-              with clarity, ethical grounding, and professional support.
-            </Text>
-            <Text
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.hero.body_one }}
+            />
+            <Box
               fontFamily="'Lato', sans-serif"
               color="#2E2E2E"
               fontSize={{ base: "md", md: "lg" }}
               maxW="2xl"
               lineHeight="1.6"
-            >
-              Whether you are an early-career clinician, a therapist building your
-              practice, or someone looking for reflective supervision, we are
-              creating spaces where therapists can grow thoughtfully.
-            </Text>
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.hero.body_two }}
+            />
             <HStack spacing={4} flexWrap="wrap" justify="center">
               <Button
                 bg="#A9CBB7"
@@ -76,11 +323,11 @@ export default function Therapists() {
                 py={6}
                 _hover={{ bg: "#97BFA9" }}
                 as="a"
-                href="/supervision"
+                href={content.hero.primary_link}
                 fontFamily="'Lato', sans-serif"
                 fontWeight="600"
               >
-                Explore Supervision
+                {content.hero.primary_label}
               </Button>
               <Button
                 bg="transparent"
@@ -91,11 +338,11 @@ export default function Therapists() {
                 py={6}
                 _hover={{ bg: "#FBF8F3" }}
                 as="a"
-                href="/careers"
+                href={content.hero.secondary_link}
                 fontFamily="'Lato', sans-serif"
                 fontWeight="600"
               >
-                Join the MLC Community
+                {content.hero.secondary_label}
               </Button>
             </HStack>
           </VStack>
@@ -112,9 +359,9 @@ export default function Therapists() {
             mb={6}
             fontWeight="600"
           >
-            Why We Built MLC
+            {content.why.title}
           </Heading>
-          <Text
+          <Box
             fontFamily="'Lato', sans-serif"
             color="#2E2E2E"
             textAlign="center"
@@ -122,35 +369,13 @@ export default function Therapists() {
             mx="auto"
             mb={10}
             lineHeight="1.6"
-          >
-            Many therapists in India enter the field with deep passion for helping
-            others but quickly encounter burnout, isolation, and lack of clinical
-            support. MLC Therapy was created to address these gaps by building a
-            space where therapists can practice ethically, sustainably, and with
-            community.
-          </Text>
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.why.body }}
+          />
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-            {[
-              {
-                icon: FiUsers,
-                title: "Supervision & Reflective Practice",
-                body: "Regular supervision spaces designed to help therapists deepen their clinical thinking and develop confidence in their work.",
-                link: "/supervision",
-                cta: "Learn More",
-              },
-              {
-                icon: FiLayers,
-                title: "Therapist Community",
-                body: "A growing network of therapists who value reflective practice and professional dialogue.",
-              },
-              {
-                icon: FiCompass,
-                title: "Sustainable Practice",
-                body: "MLC aims to support therapists in building meaningful and sustainable careers in mental health.",
-              },
-            ].map((card) => (
+            {mappedWhyCards.map((card) => (
               <Box
-                key={card.title}
+                key={`${card.title}-${card.body}`}
                 bg="white"
                 borderRadius="20px"
                 p={7}
@@ -173,7 +398,7 @@ export default function Therapists() {
                 <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
-                {card.link && (
+                {card.cta_link && card.cta_label && (
                   <Button
                     mt={4}
                     size="sm"
@@ -182,11 +407,11 @@ export default function Therapists() {
                     borderRadius="12px"
                     _hover={{ bg: "#97BFA9" }}
                     as="a"
-                    href={card.link}
+                    href={card.cta_link}
                     fontFamily="'Lato', sans-serif"
                     fontWeight="600"
                   >
-                    {card.cta}
+                    {card.cta_label}
                   </Button>
                 )}
               </Box>
@@ -204,25 +429,37 @@ export default function Therapists() {
               color="#2E2E2E"
               fontWeight="600"
             >
-              Apply to Join the Therapist Workspace
+              {content.apply.title}
             </Heading>
-            <Text
+            <Box
               fontFamily="'Lato', sans-serif"
               color="#2E2E2E"
               maxW="2xl"
               lineHeight="1.6"
-            >
-              MLC offers a secure workspace for therapists: client collaboration,
-              shared resources, session tools, and a premium studio designed to
-              support your practice.
-            </Text>
+              sx={richTextStyles}
+              dangerouslySetInnerHTML={{ __html: content.apply.body }}
+            />
             <HStack spacing={4} flexWrap="wrap" justify="center">
-              <Button as="a" href="/therapist-apply" bg="#A9CBB7" color="#2E2E2E">
-                Apply as a therapist
-              </Button>
-              <Button as="a" href="/login/therapist" variant="outline" colorScheme="teal">
-                Already approved? Sign in
-              </Button>
+              {content.apply.primary_label && (
+                <Button
+                  as="a"
+                  href={content.apply.primary_link}
+                  bg="#A9CBB7"
+                  color="#2E2E2E"
+                >
+                  {content.apply.primary_label}
+                </Button>
+              )}
+              {content.apply.secondary_label && (
+                <Button
+                  as="a"
+                  href={content.apply.secondary_link}
+                  variant="outline"
+                  colorScheme="teal"
+                >
+                  {content.apply.secondary_label}
+                </Button>
+              )}
             </HStack>
           </VStack>
         </Container>
@@ -238,9 +475,9 @@ export default function Therapists() {
             mb={10}
             fontWeight="600"
           >
-            MLC Supervision Cohorts
+            {content.supervision.title}
           </Heading>
-          <Text
+          <Box
             fontFamily="'Lato', sans-serif"
             color="#2E2E2E"
             textAlign="center"
@@ -248,26 +485,11 @@ export default function Therapists() {
             mx="auto"
             mb={10}
             lineHeight="1.6"
-          >
-            Our supervision cohorts provide structured spaces for therapists to
-            reflect on their clinical work, explore their therapeutic identity,
-            and strengthen their practice.
-          </Text>
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.supervision.body }}
+          />
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-            {[
-              {
-                icon: FiUsers,
-                title: "Group Supervision",
-                body: "Small group supervision cohorts designed to encourage reflective dialogue and clinical growth.",
-                cta: "Learn About Supervision",
-              },
-              {
-                icon: FiUserCheck,
-                title: "Individual Supervision",
-                body: "One-on-one supervision sessions for therapists seeking deeper clinical reflection.",
-                cta: "Explore Supervision Options",
-              },
-            ].map((card) => (
+            {mappedSupervisionCards.map((card) => (
               <Box
                 key={card.title}
                 bg="#FBF8F3"
@@ -291,20 +513,22 @@ export default function Therapists() {
                   <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
                     {card.body}
                   </Text>
-                  <Button
-                    mt={4}
-                    size="sm"
-                    bg="#A9CBB7"
-                    color="#2E2E2E"
-                    borderRadius="12px"
-                    _hover={{ bg: "#97BFA9" }}
-                    as="a"
-                    href="/supervision"
-                    fontFamily="'Lato', sans-serif"
-                    fontWeight="600"
-                  >
-                    {card.cta}
-                  </Button>
+                  {card.cta_label && card.cta_link && (
+                    <Button
+                      mt={4}
+                      size="sm"
+                      bg="#A9CBB7"
+                      color="#2E2E2E"
+                      borderRadius="12px"
+                      _hover={{ bg: "#97BFA9" }}
+                      as="a"
+                      href={card.cta_link}
+                      fontFamily="'Lato', sans-serif"
+                      fontWeight="600"
+                    >
+                      {card.cta_label}
+                    </Button>
+                  )}
                 </Box>
               </Box>
             ))}
@@ -322,25 +546,10 @@ export default function Therapists() {
             mb={10}
             fontWeight="600"
           >
-            Learning and Development
+            {content.learning.title}
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-            {[
-              {
-                icon: FiBookOpen,
-                title: "Internships",
-                body: "Structured internship programs for psychology students interested in reflective clinical practice.",
-                cta: "View Internship Program",
-                link: "/training-programs",
-              },
-              {
-                icon: FiAward,
-                title: "Professional Workshops",
-                body: "Workshops designed to deepen therapeutic thinking and professional growth.",
-                cta: "View Workshops",
-                link: "/workshops",
-              },
-            ].map((card) => (
+            {mappedLearningCards.map((card) => (
               <Box
                 key={card.title}
                 bg="white"
@@ -365,20 +574,22 @@ export default function Therapists() {
                 <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
-                <Button
-                  mt={4}
-                  size="sm"
-                  bg="#A9CBB7"
-                  color="#2E2E2E"
-                  borderRadius="12px"
-                  _hover={{ bg: "#97BFA9" }}
-                  as="a"
-                  href={card.link}
-                  fontFamily="'Lato', sans-serif"
-                  fontWeight="600"
-                >
-                  {card.cta}
-                </Button>
+                {card.cta_label && card.cta_link && (
+                  <Button
+                    mt={4}
+                    size="sm"
+                    bg="#A9CBB7"
+                    color="#2E2E2E"
+                    borderRadius="12px"
+                    _hover={{ bg: "#97BFA9" }}
+                    as="a"
+                    href={card.cta_link}
+                    fontFamily="'Lato', sans-serif"
+                    fontWeight="600"
+                  >
+                    {card.cta_label}
+                  </Button>
+                )}
               </Box>
             ))}
           </SimpleGrid>
@@ -395,9 +606,9 @@ export default function Therapists() {
             mb={8}
             fontWeight="600"
           >
-            Work With MLC
+            {content.work.title}
           </Heading>
-          <Text
+          <Box
             fontFamily="'Lato', sans-serif"
             color="#2E2E2E"
             textAlign="center"
@@ -405,27 +616,11 @@ export default function Therapists() {
             mx="auto"
             mb={10}
             lineHeight="1.6"
-          >
-            We are always interested in connecting with therapists who value
-            reflective practice and ethical care.
-          </Text>
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.work.body }}
+          />
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-            {[
-              {
-                icon: FiBriefcase,
-                title: "Join Our Therapist Network",
-                body: "Opportunities to collaborate with MLC as a therapist.",
-                cta: "View Opportunities",
-                link: "/careers",
-              },
-              {
-                icon: FiMessageCircle,
-                title: "Clinical Collaboration",
-                body: "MLC aims to build partnerships with therapists and professionals who share our values.",
-                cta: "Contact Us",
-                link: "/contactus",
-              },
-            ].map((card) => (
+            {mappedWorkCards.map((card) => (
               <Box
                 key={card.title}
                 bg="#FBF8F3"
@@ -445,20 +640,22 @@ export default function Therapists() {
                 <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
-                <Button
-                  mt={4}
-                  size="sm"
-                  bg="#A9CBB7"
-                  color="#2E2E2E"
-                  borderRadius="12px"
-                  _hover={{ bg: "#97BFA9" }}
-                  as="a"
-                  href={card.link}
-                  fontFamily="'Lato', sans-serif"
-                  fontWeight="600"
-                >
-                  {card.cta}
-                </Button>
+                {card.cta_label && card.cta_link && (
+                  <Button
+                    mt={4}
+                    size="sm"
+                    bg="#A9CBB7"
+                    color="#2E2E2E"
+                    borderRadius="12px"
+                    _hover={{ bg: "#97BFA9" }}
+                    as="a"
+                    href={card.cta_link}
+                    fontFamily="'Lato', sans-serif"
+                    fontWeight="600"
+                  >
+                    {card.cta_label}
+                  </Button>
+                )}
               </Box>
             ))}
           </SimpleGrid>
@@ -475,23 +672,10 @@ export default function Therapists() {
             mb={10}
             fontWeight="600"
           >
-            Our Approach to Practice
+            {content.values.title}
           </Heading>
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-            {[
-              {
-                title: "Ethical Practice",
-                body: "Our work is grounded in clear ethical frameworks and professional responsibility.",
-              },
-              {
-                title: "Reflective Therapists",
-                body: "We encourage therapists to continually reflect on their work and their growth.",
-              },
-              {
-                title: "Thoughtful Care",
-                body: "We believe good therapy requires depth, attention, and care.",
-              },
-            ].map((bubble) => (
+            {content.values.bubbles.map((bubble) => (
               <Box
                 key={bubble.title}
                 bg="white"
@@ -526,7 +710,7 @@ export default function Therapists() {
             mb={4}
             fontWeight="600"
           >
-            Interested in being part of MLC?
+            {content.cta.title}
           </Heading>
           <Button
             bg="white"
@@ -536,11 +720,11 @@ export default function Therapists() {
             py={6}
             _hover={{ bg: "#FBF8F3" }}
             as="a"
-            href="/careers"
+            href={content.cta.button_link}
             fontFamily="'Lato', sans-serif"
             fontWeight="600"
           >
-            Connect With Us
+            {content.cta.button_label}
           </Button>
         </Container>
       </Box>
