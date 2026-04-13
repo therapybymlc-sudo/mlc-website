@@ -50,9 +50,14 @@ import { useAuth } from "../../context/AuthContext";
 import Clients from "./Clients";
 import ClientNotes from "./ClientNotes";
 import ClientFiles from "./ClientFiles";
-import Schedule from "./Schedule";
+import TherapistScheduleOverview from "./scheduling/TherapistScheduleOverview";
+import TherapistAvailability from "./scheduling/TherapistAvailability";
+import TherapistBookingRequests from "./scheduling/TherapistBookingRequests";
+import TherapistAppointments from "./scheduling/TherapistAppointments";
+import TherapistResources from "./resources/TherapistResources";
+import SchedulingNotifications from "./notifications/SchedulingNotifications";
 import NoteTemplates from "./NoteTemplates"; // ✅ added
-import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from "../../api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 import RichTextEditor from "../../components/RichTextEditor";
 
 export default function TherapistDashboard() {
@@ -67,21 +72,12 @@ export default function TherapistDashboard() {
   const [newSessionLink, setNewSessionLink] = useState({ name: "", url: "", is_default: false });
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [materials, setMaterials] = useState([]);
-  const [libraryMaterials, setLibraryMaterials] = useState([]);
-  const [materialDraft, setMaterialDraft] = useState({
-    title: "",
-    description: "",
-    file_url: "",
-    file: null,
-  });
   const [previewClients, setPreviewClients] = useState([]);
   const [previewNote, setPreviewNote] = useState("");
   const [previewFiles, setPreviewFiles] = useState([]);
   const [previewClientName, setPreviewClientName] = useState("");
   const [clientGoals, setClientGoals] = useState([]);
   const [goalDraft, setGoalDraft] = useState("");
-  const [clientShares, setClientShares] = useState([]);
   const [showCareCheckin, setShowCareCheckin] = useState(false);
   const [careStep, setCareStep] = useState(0);
   const [careCheckin, setCareCheckin] = useState(() => {
@@ -450,11 +446,46 @@ export default function TherapistDashboard() {
           );
         }
         return (
-          <Schedule
-            preselectClientId={preselectClientId}
-            onPreselectConsumed={() => setPreselectClientId("")}
+          <TherapistScheduleOverview
+            onNavigate={(tab) => {
+              setActiveTab(tab);
+            }}
           />
         );
+      case "availability":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Availability",
+            "Availability tools unlock after your application is approved."
+          );
+        }
+        return <TherapistAvailability />;
+      case "bookingRequests":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Booking requests",
+            "Request management unlocks after your application is approved."
+          );
+        }
+        return <TherapistBookingRequests />;
+      case "appointments":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Appointments",
+            "Appointment management unlocks after your application is approved."
+          );
+        }
+        return <TherapistAppointments />;
+      case "resources":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Resources",
+            "Resource sharing unlocks after your application is approved."
+          );
+        }
+        return <TherapistResources />;
+      case "notifications":
+        return <SchedulingNotifications />;
       case "care":
         if (isTherapistPreview) {
           return renderLocked(
@@ -584,14 +615,14 @@ export default function TherapistDashboard() {
         if (isTherapistPreview) {
           return renderLocked(
             "Client tools & sharing",
-            "Assigning goals and sharing materials unlocks after approval."
+            "Assigning goals and sharing resources unlocks after approval."
           );
         }
         return (
           <VStack align="start" spacing={6}>
             <Heading fontFamily="Playfair Display">Client Tools & Sharing</Heading>
             <Text color="gray.600" maxW="2xl">
-              Assign goals, share materials, and keep client support in one place.
+              Assign goals, share resources, and keep client support in one place.
             </Text>
             {!isPremium && (
               <Box
@@ -625,7 +656,7 @@ export default function TherapistDashboard() {
               </Select>
               {!selectedClientId && (
                 <Text fontSize="sm" color="gray.500" mt={2}>
-                  Select a client to assign goals or share materials.
+                  Select a client to assign goals or share resources.
                 </Text>
               )}
             </Box>
@@ -710,244 +741,21 @@ export default function TherapistDashboard() {
 
               <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
                 <Heading size="md" mb={3}>
-                  Share materials
+                  Resources
                 </Heading>
-                <VStack align="stretch" spacing={2} mb={4}>
-                  <Input
-                    placeholder="Material title"
-                    value={materialDraft.title}
-                    onChange={(e) =>
-                      setMaterialDraft((p) => ({ ...p, title: e.target.value }))
-                    }
-                  />
-                  <Input
-                    placeholder="File URL (optional)"
-                    value={materialDraft.file_url}
-                    onChange={(e) =>
-                      setMaterialDraft((p) => ({ ...p, file_url: e.target.value }))
-                    }
-                  />
-                  <FormControl>
-                    <FormLabel fontSize="sm">Upload PDF or document</FormLabel>
-                    <Input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                      onChange={(e) =>
-                        setMaterialDraft((p) => ({
-                          ...p,
-                          file: e.target.files?.[0] || null,
-                        }))
-                      }
-                    />
-                  </FormControl>
-                  <Textarea
-                    placeholder="Short description"
-                    value={materialDraft.description}
-                    onChange={(e) =>
-                      setMaterialDraft((p) => ({ ...p, description: e.target.value }))
-                    }
-                  />
-                  <Button
-                    onClick={async () => {
-                      if (!materialDraft.title.trim()) return;
-                      try {
-                        let saved;
-                        if (materialDraft.file) {
-                          const form = new FormData();
-                          form.append("title", materialDraft.title.trim());
-                          if (materialDraft.description) {
-                            form.append("description", materialDraft.description);
-                          }
-                          if (materialDraft.file_url) {
-                            form.append("file_url", materialDraft.file_url);
-                          }
-                          form.append("file", materialDraft.file);
-                          saved = await apiUpload("materials/", form);
-                        } else {
-                          saved = await apiPost("materials/", {
-                            title: materialDraft.title.trim(),
-                            description: materialDraft.description,
-                            file_url: materialDraft.file_url,
-                          });
-                        }
-                        setMaterials((prev) => [saved, ...prev]);
-                        setMaterialDraft({ title: "", description: "", file_url: "", file: null });
-                        toast({ status: "success", title: "Material added" });
-                      } catch (error) {
-                        toast({ status: "error", title: "Could not add material" });
-                      }
-                    }}
-                    colorScheme="purple"
-                  >
-                    Add material
-                  </Button>
-                </VStack>
-
-                {materials.length === 0 ? (
-                  <Text color="gray.500">No materials yet.</Text>
-                ) : (
-                  <VStack align="stretch" spacing={3}>
-                    {materials.map((material) => (
-                      <Box key={material.id} p={3} border="1px solid #E2E8F0" borderRadius="xl">
-                        <Text fontWeight="semibold">{material.title}</Text>
-                        {material.description && (
-                          <Text fontSize="sm" color="gray.600">
-                            {material.description}
-                          </Text>
-                        )}
-                        {(material.file || material.file_url) && (
-                          <Button
-                            as="a"
-                            href={material.file || material.file_url}
-                            target="_blank"
-                            size="xs"
-                            variant="outline"
-                            mt={2}
-                          >
-                            View file
-                          </Button>
-                        )}
-                        <HStack mt={2} spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            onClick={async () => {
-                              if (!selectedClientId) {
-                                toast({ status: "warning", title: "Select a client first" });
-                                return;
-                              }
-                              try {
-                                await apiPost("material-shares/", {
-                                  material: material.id,
-                                  client: selectedClientId,
-                                  note: "Shared from therapist dashboard",
-                                });
-                                const shares = await apiGet(`material-shares/?client=${selectedClientId}`);
-                                setClientShares(shares || []);
-                                toast({ status: "success", title: "Shared with client" });
-                              } catch (error) {
-                                toast({ status: "error", title: "Share failed" });
-                              }
-                            }}
-                          >
-                            Share to client
-                          </Button>
-                          {material.file_url && (
-                            <Button
-                              as="a"
-                              href={material.file_url}
-                              target="_blank"
-                              size="xs"
-                              variant="ghost"
-                            >
-                              Open file
-                            </Button>
-                          )}
-                        </HStack>
-                      </Box>
-                    ))}
-                  </VStack>
-                )}
-
-                <Divider my={6} />
-                <Heading size="sm" mb={2}>
-                  Premium Library
-                </Heading>
-                {!isPremium ? (
-                  <Box p={3} bg="purple.50" borderRadius="xl" border="1px solid #E9D8FD">
-                    <Text fontSize="sm" color="gray.700">
-                      Upgrade to access the shared premium materials library.
-                    </Text>
-                  </Box>
-                ) : libraryMaterials.length === 0 ? (
-                  <Text color="gray.500">No library materials available yet.</Text>
-                ) : (
-                  <VStack align="stretch" spacing={3}>
-                    {libraryMaterials.map((material) => (
-                      <Box key={material.id} p={3} border="1px solid #E2E8F0" borderRadius="xl">
-                        <Text fontWeight="semibold">{material.title}</Text>
-                        {material.description && (
-                          <Text fontSize="sm" color="gray.600">
-                            {material.description}
-                          </Text>
-                        )}
-                        {(material.file || material.file_url) && (
-                          <Button
-                            as="a"
-                            href={material.file || material.file_url}
-                            target="_blank"
-                            size="xs"
-                            variant="outline"
-                            mt={2}
-                          >
-                            View file
-                          </Button>
-                        )}
-                        <HStack mt={2} spacing={2}>
-                          <Button
-                            size="xs"
-                            colorScheme="teal"
-                            onClick={async () => {
-                              if (!selectedClientId) {
-                                toast({ status: "warning", title: "Select a client first" });
-                                return;
-                              }
-                              try {
-                                await apiPost("material-shares/", {
-                                  material: material.id,
-                                  client: selectedClientId,
-                                });
-                                const shares = await apiGet(
-                                  `material-shares/?client=${selectedClientId}`
-                                );
-                                setClientShares(shares || []);
-                                toast({ status: "success", title: "Material shared" });
-                              } catch (error) {
-                                toast({ status: "error", title: "Could not share material" });
-                              }
-                            }}
-                          >
-                            Share with client
-                          </Button>
-                        </HStack>
-                      </Box>
-                    ))}
-                  </VStack>
-                )}
+                <Text color="gray.600" mb={4}>
+                  Create reusable resources and assign them to clients from the
+                  Resources workspace.
+                </Text>
+                <Button
+                  borderRadius="full"
+                  colorScheme="purple"
+                  onClick={() => setActiveTab("resources")}
+                >
+                  Open resources
+                </Button>
               </Box>
             </SimpleGrid>
-
-            <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" w="100%">
-              <Heading size="md" mb={3}>
-                Shared with this client
-              </Heading>
-              {clientShares.length === 0 ? (
-                <Text color="gray.500">No materials shared yet.</Text>
-              ) : (
-                <VStack align="start" spacing={2}>
-                  {clientShares.map((share) => (
-                    <HStack key={share.id} w="100%" justify="space-between">
-                      <Text>{share.material_title || "Material"}</Text>
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        color="red.500"
-                        onClick={async () => {
-                          try {
-                            await apiDelete(`material-shares/${share.id}/`);
-                            setClientShares((prev) => prev.filter((s) => s.id !== share.id));
-                          } catch (error) {
-                            toast({ status: "error", title: "Remove failed" });
-                          }
-                        }}
-                      >
-                        Remove
-                      </Button>
-                    </HStack>
-                  ))}
-                </VStack>
-              )}
-            </Box>
           </VStack>
         );
       case "noteTemplates": // ✅ new tab for Note Templates
@@ -1007,7 +815,7 @@ export default function TherapistDashboard() {
                 {[
                   {
                     title: "Client Journey Hub",
-                    text: "Goals, journal prompts, shared materials, and tracking in one view.",
+                    text: "Goals, journal prompts, shared resources, and tracking in one view.",
                   },
                   {
                     title: "Assessments & Outcomes",
@@ -1322,32 +1130,13 @@ export default function TherapistDashboard() {
 
   useEffect(() => {
     if (isTherapistPreview) return;
-    (async () => {
-      try {
-        const res = await apiGet("materials/");
-        const data = res.results ?? res;
-        const list = Array.isArray(data) ? data : [];
-        setMaterials(list.filter((m) => !m.is_library));
-        setLibraryMaterials(list.filter((m) => m.is_library));
-      } catch (err) {
-        console.error("Materials load failed", err);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (isTherapistPreview) return;
     if (!selectedClientId) {
       setClientGoals([]);
-      setClientShares([]);
       return;
     }
     (async () => {
       try {
-        const [goals, shares] = await Promise.all([
-          apiGet(`client-goals/?client=${selectedClientId}`),
-          apiGet(`material-shares/?client=${selectedClientId}`),
-        ]);
+        const goals = await apiGet(`client-goals/?client=${selectedClientId}`);
         setClientGoals(
           Array.isArray(goals)
             ? goals.map((g) => ({
@@ -1357,7 +1146,6 @@ export default function TherapistDashboard() {
               }))
             : []
         );
-        setClientShares(Array.isArray(shares) ? shares : []);
       } catch (err) {
         console.error("Client tools load failed", err);
       }
@@ -1422,13 +1210,58 @@ export default function TherapistDashboard() {
         icon={<AttachmentIcon />}
       />
       <SidebarButton
-        label="Schedule"
+        label="Schedule Overview"
         active={activeTab === "schedule"}
         onClick={() => {
           setActiveTab("schedule");
           onSidebarClose();
         }}
         icon={<CalendarIcon />}
+      />
+      <SidebarButton
+        label="Availability"
+        active={activeTab === "availability"}
+        onClick={() => {
+          setActiveTab("availability");
+          onSidebarClose();
+        }}
+        icon={<CalendarIcon />}
+      />
+      <SidebarButton
+        label="Booking Requests"
+        active={activeTab === "bookingRequests"}
+        onClick={() => {
+          setActiveTab("bookingRequests");
+          onSidebarClose();
+        }}
+        icon={<CalendarIcon />}
+      />
+      <SidebarButton
+        label="Appointments"
+        active={activeTab === "appointments"}
+        onClick={() => {
+          setActiveTab("appointments");
+          onSidebarClose();
+        }}
+        icon={<CalendarIcon />}
+      />
+      <SidebarButton
+        label="Resources"
+        active={activeTab === "resources"}
+        onClick={() => {
+          setActiveTab("resources");
+          onSidebarClose();
+        }}
+        icon={<AttachmentIcon />}
+      />
+      <SidebarButton
+        label="Notifications"
+        active={activeTab === "notifications"}
+        onClick={() => {
+          setActiveTab("notifications");
+          onSidebarClose();
+        }}
+        icon={<ViewIcon />}
       />
       <SidebarButton
         label="Therapist Care"

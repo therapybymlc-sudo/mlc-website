@@ -8,6 +8,9 @@ from therapy.models import (
     NoteField,
     Note,
     ClientFile,
+    AvailabilitySlot,
+    BookingRequest,
+    TherapeuticRelationship,
     EventType,
     ScheduleEvent,
     WaitlistEntry,
@@ -17,7 +20,10 @@ from therapy.models import (
     ClientCheckin,
     TherapistMaterial,
     MaterialShare,
+    Resource,
+    SharedResourceAssignment,
     TherapistApplication,
+    Notification,
     TeamMember,
     Service,
     HomeContent,
@@ -67,12 +73,286 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    client = ClientProfileSerializer(read_only=True)
-    therapist = TherapistProfileSerializer(read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = Appointment
-        fields = "__all__"
+        fields = [
+            "id",
+            "client",
+            "therapist",
+            "booking_request",
+            "availability_slot",
+            "start_time",
+            "end_time",
+            "status",
+            "status_label",
+            "created_at",
+            "updated_at",
+            "cancelled_at",
+            "completed_at",
+        ]
+        read_only_fields = [
+            "status_label",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class AvailabilitySlotSerializer(serializers.ModelSerializer):
+    therapist_display_name = serializers.CharField(source="therapist.name", read_only=True)
+    duration_minutes = serializers.IntegerField(read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = AvailabilitySlot
+        fields = [
+            "id",
+            "therapist",
+            "therapist_display_name",
+            "start_time",
+            "end_time",
+            "status",
+            "status_label",
+            "visible_to_clients",
+            "duration_minutes",
+        ]
+        read_only_fields = [
+            "therapist_display_name",
+            "duration_minutes",
+            "status_label",
+        ]
+        extra_kwargs = {
+            "therapist": {"read_only": True},
+        }
+
+    def validate(self, attrs):
+        therapist = attrs.get("therapist") or self.context.get("therapist")
+        start_time = attrs.get("start_time", getattr(self.instance, "start_time", None))
+        end_time = attrs.get("end_time", getattr(self.instance, "end_time", None))
+        status = attrs.get("status", getattr(self.instance, "status", AvailabilitySlot.Status.OPEN))
+
+        if start_time and end_time and end_time <= start_time:
+            raise serializers.ValidationError({"end_time": "End time must be after start time."})
+
+        if therapist and start_time and end_time:
+            overlap_statuses = [
+                AvailabilitySlot.Status.OPEN,
+                AvailabilitySlot.Status.HELD,
+                AvailabilitySlot.Status.BOOKED,
+                AvailabilitySlot.Status.BLOCKED,
+            ]
+            overlapping = AvailabilitySlot.objects.filter(
+                therapist=therapist,
+                status__in=overlap_statuses,
+                start_time__lt=end_time,
+                end_time__gt=start_time,
+            )
+            if self.instance:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            if overlapping.exists():
+                raise serializers.ValidationError("This availability overlaps an existing active slot.")
+
+        attrs["status"] = status
+        return attrs
+
+
+class AvailabilitySlotPublicSerializer(serializers.ModelSerializer):
+    therapist_display_name = serializers.CharField(source="therapist.name", read_only=True)
+    duration_minutes = serializers.IntegerField(read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = AvailabilitySlot
+        fields = [
+            "id",
+            "therapist",
+            "therapist_display_name",
+            "start_time",
+            "end_time",
+            "duration_minutes",
+            "status_label",
+        ]
+        read_only_fields = fields
+
+
+class BookingRequestSerializer(serializers.ModelSerializer):
+    therapist_display_name = serializers.SerializerMethodField()
+    client_display_name = serializers.SerializerMethodField()
+    slot_start_time = serializers.SerializerMethodField()
+    slot_end_time = serializers.SerializerMethodField()
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = BookingRequest
+        fields = [
+            "id",
+            "client",
+            "therapist",
+            "availability_slot",
+            "status",
+            "status_label",
+            "message_from_client",
+            "therapist_response_note",
+            "created_at",
+            "updated_at",
+            "responded_at",
+            "therapist_display_name",
+            "client_display_name",
+            "slot_start_time",
+            "slot_end_time",
+        ]
+        read_only_fields = [
+            "status_label",
+            "created_at",
+            "updated_at",
+            "responded_at",
+            "therapist_display_name",
+            "client_display_name",
+            "slot_start_time",
+            "slot_end_time",
+        ]
+
+    def get_therapist_display_name(self, obj):
+        return getattr(obj.therapist, "name", None) or getattr(obj.therapist, "email", "")
+
+    def get_client_display_name(self, obj):
+        client = obj.client
+        return (
+            client.preferred_first_name
+            or client.first_name
+            or client.name
+            or client.email
+            or ""
+        )
+
+    def get_slot_start_time(self, obj):
+        if obj.availability_slot_id:
+            return obj.availability_slot.start_time
+        return None
+
+    def get_slot_end_time(self, obj):
+        if obj.availability_slot_id:
+            return obj.availability_slot.end_time
+        return None
+
+
+class BookingRequestCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BookingRequest
+        fields = [
+            "id",
+            "client",
+            "therapist",
+            "availability_slot",
+            "message_from_client",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        slot = attrs.get("availability_slot")
+        therapist = attrs.get("therapist")
+        client = attrs.get("client")
+
+        if not slot:
+            raise serializers.ValidationError({"availability_slot": "Availability slot is required."})
+
+        if slot.start_time and slot.start_time <= timezone.now():
+            raise serializers.ValidationError({"availability_slot": "Slot must be in the future."})
+
+        if not slot.can_be_requested:
+            raise serializers.ValidationError({"availability_slot": "This slot is not available for booking."})
+
+        if therapist and slot.therapist_id != therapist.id:
+            raise serializers.ValidationError({"therapist": "Therapist must match the slot therapist."})
+
+        if therapist is None:
+            attrs["therapist"] = slot.therapist
+
+        if not client:
+            raise serializers.ValidationError({"client": "Client is required."})
+
+        if BookingRequest.objects.filter(
+            availability_slot=slot,
+            status__in=[BookingRequest.Status.PENDING, BookingRequest.Status.CONFIRMED],
+        ).exists():
+            raise serializers.ValidationError({"availability_slot": "This slot already has an active request."})
+
+        return attrs
+
+
+class BookingRequestActionSerializer(serializers.Serializer):
+    ACTION_CONFIRM = "confirm"
+    ACTION_DECLINE = "decline"
+    ACTION_CANCEL_CLIENT = "cancel_by_client"
+    ACTION_CANCEL_THERAPIST = "cancel_by_therapist"
+
+    action = serializers.ChoiceField(
+        choices=[
+            ACTION_CONFIRM,
+            ACTION_DECLINE,
+            ACTION_CANCEL_CLIENT,
+            ACTION_CANCEL_THERAPIST,
+        ]
+    )
+    therapist_response_note = serializers.CharField(required=False, allow_blank=True)
+    message_from_client = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        booking_request = self.instance or self.context.get("booking_request")
+        if not booking_request:
+            raise serializers.ValidationError("Booking request is required for this action.")
+
+        action = attrs.get("action")
+        if action == self.ACTION_CONFIRM and not booking_request.can_be_confirmed:
+            raise serializers.ValidationError("This booking request cannot be confirmed.")
+        if action == self.ACTION_DECLINE and not booking_request.can_be_declined:
+            raise serializers.ValidationError("This booking request cannot be declined.")
+        if action == self.ACTION_CANCEL_CLIENT and not booking_request.can_be_cancelled_by_client:
+            raise serializers.ValidationError("This booking request cannot be cancelled by client.")
+        if action == self.ACTION_CANCEL_THERAPIST and not booking_request.can_be_cancelled_by_therapist:
+            raise serializers.ValidationError("This booking request cannot be cancelled by therapist.")
+
+        return attrs
+
+    def save(self, **kwargs):
+        booking_request = self.instance or self.context.get("booking_request")
+        action = self.validated_data["action"]
+
+        if action == self.ACTION_CONFIRM:
+            return booking_request.confirm(confirmed_by=kwargs.get("user"))
+        if action == self.ACTION_DECLINE:
+            return booking_request.decline(
+                therapist_note=self.validated_data.get("therapist_response_note", "")
+            )
+        if action == self.ACTION_CANCEL_CLIENT:
+            return booking_request.cancel_by_client(
+                reason=self.validated_data.get("message_from_client", "")
+            )
+        if action == self.ACTION_CANCEL_THERAPIST:
+            return booking_request.cancel_by_therapist(
+                reason=self.validated_data.get("therapist_response_note", "")
+            )
+        return booking_request
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "type",
+            "title",
+            "body",
+            "is_read",
+            "action_url",
+            "created_at",
+            "read_at",
+        ]
+        read_only_fields = [
+            "created_at",
+            "read_at",
+        ]
 
 
 class SessionRecordSerializer(serializers.ModelSerializer):
@@ -441,6 +721,163 @@ class MaterialShareSerializer(serializers.ModelSerializer):
         extra_kwargs = {"shared_by": {"read_only": True}}
 
 
+class ResourceSerializer(serializers.ModelSerializer):
+    therapist_name = serializers.CharField(source="therapist.name", read_only=True)
+    resource_type_label = serializers.CharField(source="get_resource_type_display", read_only=True)
+
+    class Meta:
+        model = Resource
+        fields = [
+            "id",
+            "therapist",
+            "therapist_name",
+            "title",
+            "description",
+            "resource_type",
+            "resource_type_label",
+            "file",
+            "url",
+            "text_content",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "therapist",
+            "therapist_name",
+            "resource_type_label",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ResourceCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = [
+            "id",
+            "title",
+            "description",
+            "resource_type",
+            "file",
+            "url",
+            "text_content",
+            "is_active",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        resource_type = attrs.get("resource_type", getattr(self.instance, "resource_type", None))
+        file = attrs.get("file", getattr(self.instance, "file", None))
+        url = attrs.get("url", getattr(self.instance, "url", None))
+        text_content = attrs.get("text_content", getattr(self.instance, "text_content", None))
+
+        if resource_type == Resource.ResourceType.FILE:
+            if not file:
+                raise serializers.ValidationError({"file": "A file is required for file resources."})
+            if url or text_content:
+                raise serializers.ValidationError("File resources cannot include link or text content.")
+        elif resource_type == Resource.ResourceType.LINK:
+            if not url:
+                raise serializers.ValidationError({"url": "A URL is required for link resources."})
+            if file or text_content:
+                raise serializers.ValidationError("Link resources cannot include file or text content.")
+        elif resource_type == Resource.ResourceType.TEXT:
+            if not text_content:
+                raise serializers.ValidationError({"text_content": "Text content is required for text resources."})
+            if file or url:
+                raise serializers.ValidationError("Text resources cannot include file or link content.")
+        return attrs
+
+
+class SharedResourceAssignmentSerializer(serializers.ModelSerializer):
+    resource_title = serializers.CharField(source="resource.title", read_only=True)
+    resource_type = serializers.CharField(source="resource.resource_type", read_only=True)
+    resource_type_label = serializers.CharField(source="resource.get_resource_type_display", read_only=True)
+    resource_url = serializers.CharField(source="resource.url", read_only=True)
+    resource_file = serializers.FileField(source="resource.file", read_only=True)
+    resource_text_content = serializers.CharField(source="resource.text_content", read_only=True)
+    assigned_by_name = serializers.CharField(source="assigned_by.name", read_only=True)
+    assigned_to_name = serializers.CharField(source="assigned_to.name", read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = SharedResourceAssignment
+        fields = [
+            "id",
+            "therapeutic_relationship",
+            "resource",
+            "resource_title",
+            "resource_type",
+            "resource_type_label",
+            "resource_url",
+            "resource_file",
+            "resource_text_content",
+            "assigned_by",
+            "assigned_by_name",
+            "assigned_to",
+            "assigned_to_name",
+            "therapist_note",
+            "status",
+            "status_label",
+            "assigned_at",
+            "viewed_at",
+            "completed_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "therapeutic_relationship",
+            "assigned_by",
+            "assigned_by_name",
+            "assigned_to_name",
+            "status_label",
+            "assigned_at",
+            "viewed_at",
+            "completed_at",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class SharedResourceAssignmentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SharedResourceAssignment
+        fields = [
+            "resource",
+            "assigned_to",
+            "therapist_note",
+        ]
+
+    def validate(self, attrs):
+        therapist = self.context.get("therapist")
+        if not therapist:
+            raise serializers.ValidationError("Therapist profile required.")
+
+        resource = attrs.get("resource")
+        if resource and resource.therapist_id != therapist.id:
+            raise serializers.ValidationError({"resource": "Resource must belong to the therapist."})
+        if resource and not resource.is_active:
+            raise serializers.ValidationError({"resource": "Resource must be active to assign."})
+
+        client = attrs.get("assigned_to")
+        if not client:
+            raise serializers.ValidationError({"assigned_to": "Client is required."})
+
+        relationship = TherapeuticRelationship.objects.filter(
+            therapist=therapist,
+            client=client,
+            status=TherapeuticRelationship.Status.ACTIVE,
+        ).first()
+        if not relationship:
+            raise serializers.ValidationError(
+                {"assigned_to": "An active therapeutic relationship is required to assign resources."}
+            )
+
+        attrs["therapeutic_relationship"] = relationship
+        return attrs
+
+
 class TherapistApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = TherapistApplication
@@ -483,6 +920,14 @@ class TeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamMember
         fields = "__all__"
+
+
+class TherapistDirectorySerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    title = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    photo_url = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    specialties = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class ServiceSerializer(serializers.ModelSerializer):

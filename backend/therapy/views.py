@@ -5,15 +5,19 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
-from django.db import transaction, models
+from django.db import transaction, models, IntegrityError
 from django.utils import timezone
 from django.conf import settings
+from datetime import timedelta
 
 from therapy.models import (
     ScheduleEvent,
     TherapistProfile,
     ClientProfile,
     Appointment,
+    AvailabilitySlot,
+    BookingRequest,
+    Notification,
     SessionRecord,
     NoteTemplate,
     NoteField,
@@ -27,7 +31,10 @@ from therapy.models import (
     ClientCheckin,
     TherapistMaterial,
     MaterialShare,
+    Resource,
+    SharedResourceAssignment,
     TherapistApplication,
+    TherapeuticRelationship,
     TeamMember,
     Service,
     HomeContent,
@@ -43,6 +50,11 @@ from therapy.serializers import (
     TherapistProfileSerializer,
     ClientProfileSerializer,
     AppointmentSerializer,
+    AvailabilitySlotSerializer,
+    AvailabilitySlotPublicSerializer,
+    BookingRequestSerializer,
+    BookingRequestCreateSerializer,
+    NotificationSerializer,
     SessionRecordSerializer,
     NoteTemplateSerializer,
     NoteSerializer,
@@ -56,8 +68,13 @@ from therapy.serializers import (
     ClientCheckinSerializer,
     TherapistMaterialSerializer,
     MaterialShareSerializer,
+    ResourceSerializer,
+    ResourceCreateUpdateSerializer,
+    SharedResourceAssignmentSerializer,
+    SharedResourceAssignmentCreateSerializer,
     TherapistApplicationSerializer,
     TeamMemberSerializer,
+    TherapistDirectorySerializer,
     ServiceSerializer,
     HomeContentSerializer,
     AboutContentSerializer,
@@ -68,40 +85,132 @@ from therapy.serializers import (
     CareersContentSerializer,
     TherapistApplyContentSerializer,
 )
+from therapy.permissions import (
+    IsTherapistOwnerOfSlot,
+    IsClientOwnerOfBookingRequest,
+    IsTherapistOwnerOfBookingRequest,
+    IsTherapistOwnerOfBookingRequestAction,
+    IsClientOwnerOfAppointment,
+    IsTherapistOwnerOfAppointment,
+    IsNotificationRecipient,
+    IsTherapistOwnerOfResource,
+    IsTherapistOwnerOfResourceAssignment,
+    IsClientOwnerOfResourceAssignment,
+)
+from therapy.services.booking_requests import (
+    confirm_booking_request,
+    decline_booking_request,
+    cancel_pending_by_client,
+    cancel_pending_by_therapist,
+)
+from therapy.services.resources import assign_resource_to_client
+from therapy.notifications import get_scheduling_action_url
+
+def _profile_required_response(profile_type: str):
+    return Response(
+        {
+            "detail": f"{profile_type.title()} profile required to use scheduling.",
+            "code": "profile_missing",
+            "profile_type": profile_type,
+        },
+        status=status.HTTP_403_FORBIDDEN,
+    )
+from therapy.services.appointments import cancel_appointment
+from django.core.exceptions import ValidationError
 
 
 # ----------------------------
 # Helper
 # ----------------------------
-def _resolve_therapist_from_request(request):
+def _resolve_therapist_from_request(request, allow_create=False):
     """
     Return the TherapistProfile linked to the authenticated user.
-    Creates one if missing (stable behavior for first-time logins).
+    Optionally creates one for therapists/admins when missing.
     """
-    user = request.user
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return None
+
+    # Prefer explicit linkage
+    therapist_profile = getattr(user, "therapist_profile", None)
+    if therapist_profile:
+        return therapist_profile
+
     email = getattr(user, "email", None)
-    name = getattr(user, "username", None) or getattr(user, "get_full_name", lambda: "")() or "Unnamed Therapist"
+    therapist = None
+    if email:
+        therapist = TherapistProfile.objects.filter(email__iexact=email).first()
+        if therapist and therapist.user_id != user.id:
+            therapist.user = user
+            therapist.save(update_fields=["user"])
 
-    if not email:
-        # fallback if user has no email
-        email = f"therapist_{user.pk or 'nouser'}@local"
+    if therapist:
+        return therapist
 
-    therapist, _ = TherapistProfile.objects.get_or_create(
-        email=email,
-        defaults={"name": name},
+    if not allow_create:
+        return None
+
+    roles = _extract_roles_from_auth(request)
+    if not any(role in roles for role in ["therapist", "premium_therapist", "admin"]):
+        return None
+
+    name = (
+        getattr(user, "get_full_name", lambda: "")().strip()
+        or getattr(user, "username", None)
+        or "Unnamed Therapist"
     )
-    return therapist
+    email = email or f"therapist_{user.pk or 'nouser'}@local"
+    return TherapistProfile.objects.create(user=user, name=name, email=email)
 
 
 def _resolve_client_from_request(request):
     """
-    Return the ClientProfile linked to the authenticated user by email.
+    Return the ClientProfile linked to the authenticated user.
     """
-    user = request.user
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return None
+
+    client_profile = getattr(user, "client_profile", None)
+    if client_profile:
+        return client_profile
+
     email = getattr(user, "email", None)
     if not email:
         return None
-    return ClientProfile.objects.filter(email__iexact=email).first()
+    client = ClientProfile.objects.filter(email__iexact=email).first()
+    if client and client.user_id != user.id:
+        client.user = user
+        client.save(update_fields=["user"])
+    return client
+
+
+def _active_client_ids_for_therapist(therapist):
+    if not therapist:
+        return ClientProfile.objects.none().values_list("id", flat=True)
+    rels = TherapeuticRelationship.objects.filter(
+        therapist=therapist, status=TherapeuticRelationship.Status.ACTIVE
+    ).values_list("client_id", flat=True)
+    if rels.exists():
+        return rels
+    return ClientProfile.objects.filter(therapist=therapist).values_list("id", flat=True)
+
+
+def _ensure_relationship(therapist, client, make_primary=False):
+    if not therapist or not client:
+        return None
+    relationship, created = TherapeuticRelationship.objects.get_or_create(
+        therapist=therapist,
+        client=client,
+        defaults={
+            "status": TherapeuticRelationship.Status.ACTIVE,
+            "is_primary": bool(make_primary),
+        },
+    )
+    if not created and make_primary and not relationship.is_primary:
+        relationship.is_primary = True
+        relationship.save(update_fields=["is_primary", "updated_at"])
+    return relationship
 
 
 def _extract_roles_from_auth(request):
@@ -153,7 +262,7 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         roles = _extract_roles_from_auth(self.request)
         if "admin" in roles:
             return TherapistProfile.objects.all()
@@ -165,11 +274,11 @@ class TherapistSessionLinkViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         return TherapistSessionLink.objects.filter(therapist=therapist)
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         serializer.save(therapist=therapist)
 
 
@@ -178,31 +287,400 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
-        return ClientProfile.objects.filter(therapist=therapist).order_by("name")
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
+        client_ids = _active_client_ids_for_therapist(therapist)
+        return ClientProfile.objects.filter(id__in=client_ids).order_by("name")
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
-        serializer.save(therapist=therapist)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
+        client = serializer.save(therapist=therapist)
+        _ensure_relationship(therapist, client, make_primary=True)
 
 
-class AppointmentViewSet(viewsets.ModelViewSet):
+class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AppointmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsTherapistOwnerOfAppointment]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
         qs = Appointment.objects.filter(therapist=therapist).order_by("-date")
         client_id = self.request.query_params.get("client")
         if client_id:
             qs = qs.filter(client_id=client_id)
         return qs
 
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsTherapistOwnerOfAppointment])
+    def cancel(self, request, pk=None):
+        appointment = self.get_object()
+        reason = request.data.get("cancellation_reason", "")
+        reopen_slot = request.data.get("reopen_slot", True)
+        try:
+            appointment = cancel_appointment(
+                appointment,
+                cancelled_by=request.user,
+                reason=reason,
+                reopen_slot=bool(reopen_slot),
+            )
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(AppointmentSerializer(appointment).data)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsTherapistOwnerOfAppointment])
+    def mark_completed(self, request, pk=None):
+        appointment = self.get_object()
+        if not appointment.can_mark_completed:
+            return Response(
+                {"detail": "This appointment cannot be marked completed yet."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        appointment.status = Appointment.Status.COMPLETED
+        appointment.completed_at = timezone.now()
+        appointment.save(update_fields=["status", "completed_at", "updated_at"])
+        return Response(AppointmentSerializer(appointment).data)
+
+
+class AvailabilitySlotViewSet(viewsets.ModelViewSet):
+    serializer_class = AvailabilitySlotSerializer
+    permission_classes = [IsAuthenticated, IsTherapistOwnerOfSlot]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return AvailabilitySlot.objects.none()
+        return AvailabilitySlot.objects.filter(therapist=therapist).order_by("start_time")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["therapist"] = _resolve_therapist_from_request(self.request, allow_create=False)
+        return context
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            raise exceptions.PermissionDenied("Therapist profile required.")
+        slot = serializer.save(therapist=therapist)
+        slot.full_clean()
+        slot.save()
+
+    def perform_update(self, serializer):
+        slot = self.get_object()
+        if slot.status == AvailabilitySlot.Status.BOOKED:
+            immutable_fields = {"start_time", "end_time", "status"}
+            if any(field in serializer.validated_data for field in immutable_fields):
+                raise exceptions.ValidationError(
+                    {"detail": "Booked slots cannot be edited."}
+                )
+        updated = serializer.save()
+        updated.full_clean()
+        updated.save()
+
+    def destroy(self, request, *args, **kwargs):
+        slot = self.get_object()
+        if not slot.can_be_deleted:
+            raise exceptions.ValidationError(
+                {"detail": "This slot cannot be deleted."}
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"])
+    def block(self, request, pk=None):
+        slot = self.get_object()
+        if slot.status == AvailabilitySlot.Status.BOOKED:
+            raise exceptions.ValidationError({"detail": "Booked slots cannot be blocked."})
+        slot.status = AvailabilitySlot.Status.BLOCKED
+        slot.save(update_fields=["status", "updated_at"])
+        return Response(self.get_serializer(slot).data)
+
+    @action(detail=True, methods=["post"])
+    def unblock(self, request, pk=None):
+        slot = self.get_object()
+        if slot.status == AvailabilitySlot.Status.BOOKED:
+            raise exceptions.ValidationError({"detail": "Booked slots cannot be unblocked."})
+        if slot.start_time and slot.start_time <= timezone.now():
+            slot.status = AvailabilitySlot.Status.EXPIRED
+        else:
+            slot.status = AvailabilitySlot.Status.OPEN
+        slot.save(update_fields=["status", "updated_at"])
+        return Response(self.get_serializer(slot).data)
+
+
+class AvailabilitySlotPublicView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        client = _resolve_client_from_request(request)
+        if not client:
+            return _profile_required_response("client")
+
+        therapist_id = (
+            request.query_params.get("therapist")
+            or request.query_params.get("therapist_id")
+        )
+        if not therapist_id:
+            return Response(
+                {"detail": "therapist query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        slots = AvailabilitySlot.objects.filter(
+            therapist_id=therapist_id,
+            status=AvailabilitySlot.Status.OPEN,
+            visible_to_clients=True,
+            start_time__gt=timezone.now(),
+        ).order_by("start_time")
+
+        serializer = AvailabilitySlotPublicSerializer(slots, many=True)
+        return Response(serializer.data)
+
+
+class PublicTherapistDirectoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        client = _resolve_client_from_request(request)
+        if not client:
+            return _profile_required_response("client")
+
+        team_members = TeamMember.objects.filter(
+            is_active=True,
+            email__isnull=False,
+        ).exclude(email="")
+
+        emails = [m.email.lower() for m in team_members if m.email]
+        profiles = TherapistProfile.objects.filter(email__in=emails)
+        profile_by_email = {p.email.lower(): p for p in profiles}
+
+        payload = []
+        for member in team_members:
+            profile = profile_by_email.get(member.email.lower())
+            if not profile:
+                continue
+            payload.append(
+                {
+                    "id": profile.id,
+                    "name": member.name or profile.name,
+                    "title": member.title,
+                    "photo_url": member.photo_url,
+                    "specialties": member.specialties,
+                }
+            )
+
+        serializer = TherapistDirectorySerializer(payload, many=True)
+        return Response(serializer.data)
+
+
+class BookingRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = BookingRequestSerializer
+    permission_classes = [IsAuthenticated, IsClientOwnerOfBookingRequest]
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        client = _resolve_client_from_request(self.request)
+        if not client:
+            return BookingRequest.objects.none()
+        return BookingRequest.objects.filter(client=client).select_related(
+            "therapist", "availability_slot"
+        ).order_by("-created_at")
+
+    def create(self, request, *args, **kwargs):
+        client = _resolve_client_from_request(request)
+        if not client:
+            raise exceptions.PermissionDenied("Client profile required.")
+
+        data = request.data.copy()
+        data["client"] = client.id
+
+        serializer = BookingRequestCreateSerializer(data=data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            slot = AvailabilitySlot.objects.select_for_update().get(
+                pk=serializer.validated_data["availability_slot"].id
+            )
+
+            if slot.status != AvailabilitySlot.Status.OPEN or not slot.visible_to_clients:
+                return Response(
+                    {"detail": "This slot is not available for booking."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if slot.start_time <= timezone.now():
+                return Response(
+                    {"detail": "This slot is no longer available."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            therapist = serializer.validated_data.get("therapist") or slot.therapist
+            if slot.therapist_id != therapist.id:
+                return Response(
+                    {"detail": "Therapist must match the slot therapist."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            hold_minutes = int(getattr(settings, "BOOKING_REQUEST_HOLD_MINUTES", 15))
+            held_until = timezone.now() + timedelta(minutes=hold_minutes) if hold_minutes > 0 else None
+
+            try:
+                booking_request = BookingRequest.objects.create(
+                    client=client,
+                    therapist=therapist,
+                    availability_slot=slot,
+                    status=BookingRequest.Status.PENDING,
+                    message_from_client=serializer.validated_data.get("message_from_client", ""),
+                    expires_at=held_until,
+                )
+            except IntegrityError:
+                return Response(
+                    {"detail": "This slot already has an active request."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            slot.status = AvailabilitySlot.Status.HELD
+            slot.held_until = held_until
+            slot.save(update_fields=["status", "held_until", "updated_at"])
+
+        if getattr(therapist, "user", None):
+            booking_request._create_notification(
+                recipient=therapist.user,
+                notification_type=Notification.Type.BOOKING_REQUEST_CREATED,
+                title="New booking request",
+                body="A client requested a session slot.",
+                action_url=get_scheduling_action_url(
+                    Notification.Type.BOOKING_REQUEST_CREATED,
+                    recipient=therapist.user,
+                ),
+            )
+
+        output = BookingRequestSerializer(booking_request)
+        return Response(output.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsClientOwnerOfBookingRequest])
+    def cancel(self, request, pk=None):
+        booking_request = self.get_object()
+        reason = request.data.get("message_from_client", "")
+        try:
+            booking_request = cancel_pending_by_client(booking_request, reason=reason)
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(BookingRequestSerializer(booking_request).data)
+
+
+class TherapistBookingRequestViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = BookingRequestSerializer
+    permission_classes = [IsAuthenticated, IsTherapistOwnerOfBookingRequest]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return BookingRequest.objects.none()
+        return BookingRequest.objects.filter(therapist=therapist).select_related(
+            "client", "availability_slot"
+        )
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsTherapistOwnerOfBookingRequestAction])
+    def confirm(self, request, pk=None):
+        booking_request = self.get_object()
+        try:
+            booking_request = confirm_booking_request(booking_request, acting_user=request.user)
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(BookingRequestSerializer(booking_request).data)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsTherapistOwnerOfBookingRequestAction])
+    def decline(self, request, pk=None):
+        booking_request = self.get_object()
+        therapist_note = request.data.get("therapist_response_note", "")
+        try:
+            booking_request = decline_booking_request(booking_request, therapist_note=therapist_note)
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(BookingRequestSerializer(booking_request).data)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsTherapistOwnerOfBookingRequestAction])
+    def cancel(self, request, pk=None):
+        booking_request = self.get_object()
+        reason = request.data.get("therapist_response_note", "")
+        try:
+            booking_request = cancel_pending_by_therapist(booking_request, reason=reason)
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(BookingRequestSerializer(booking_request).data)
+
 
 class SessionRecordViewSet(viewsets.ModelViewSet):
     queryset = SessionRecord.objects.all()
     serializer_class = SessionRecordSerializer
     permission_classes = [IsAuthenticated]
+
+
+class ClientAppointmentViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = AppointmentSerializer
+    permission_classes = [IsAuthenticated, IsClientOwnerOfAppointment]
+
+    def get_queryset(self):
+        client = _resolve_client_from_request(self.request)
+        if not client:
+            return Appointment.objects.none()
+        return Appointment.objects.filter(client=client).order_by("start_time")
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsClientOwnerOfAppointment])
+    def cancel(self, request, pk=None):
+        allow_client_cancel = getattr(settings, "ALLOW_CLIENT_APPOINTMENT_CANCEL", False)
+        if not allow_client_cancel:
+            raise exceptions.PermissionDenied("Client appointment cancellation is not enabled.")
+        appointment = self.get_object()
+        reason = request.data.get("cancellation_reason", "")
+        reopen_slot = request.data.get("reopen_slot", True)
+        try:
+            appointment = cancel_appointment(
+                appointment,
+                cancelled_by=request.user,
+                reason=reason,
+                reopen_slot=bool(reopen_slot),
+            )
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(AppointmentSerializer(appointment).data)
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated, IsNotificationRecipient]
+
+    scheduling_types = {
+        Notification.Type.BOOKING_REQUEST_CREATED,
+        Notification.Type.BOOKING_REQUEST_CONFIRMED,
+        Notification.Type.BOOKING_REQUEST_DECLINED,
+        Notification.Type.BOOKING_REQUEST_CANCELLED,
+        Notification.Type.BOOKING_REQUEST_EXPIRED,
+        Notification.Type.APPOINTMENT_SCHEDULED,
+        Notification.Type.APPOINTMENT_CANCELLED,
+        Notification.Type.APPOINTMENT_COMPLETED,
+        Notification.Type.APPOINTMENT_RESCHEDULED,
+        Notification.Type.RESOURCE_ASSIGNED,
+    }
+
+    def get_queryset(self):
+        queryset = Notification.objects.filter(
+            recipient_user_profile=self.request.user,
+            type__in=self.scheduling_types,
+        ).order_by("-created_at")
+
+        is_read = self.request.query_params.get("is_read")
+        if is_read is not None:
+            normalized = str(is_read).lower()
+            if normalized in {"true", "1", "yes"}:
+                queryset = queryset.filter(is_read=True)
+            elif normalized in {"false", "0", "no"}:
+                queryset = queryset.filter(is_read=False)
+
+        return queryset
+
+    @action(detail=True, methods=["post"])
+    def mark_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.mark_as_read()
+        return Response(self.get_serializer(notification).data)
 
 
 # ----------------------------
@@ -355,8 +833,9 @@ class ClientFileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
-        qs = ClientFile.objects.filter(client__therapist=therapist).order_by("-uploaded_at")
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
+        client_ids = _active_client_ids_for_therapist(therapist)
+        qs = ClientFile.objects.filter(client_id__in=client_ids).order_by("-uploaded_at")
         client_id = self.request.query_params.get("client")
         if client_id:
             qs = qs.filter(client_id=client_id)
@@ -383,7 +862,7 @@ class ScheduleEventViewSet(viewsets.ModelViewSet):
         therapist_id = self.request.query_params.get("therapist")
         if therapist_id:
             return ScheduleEvent.objects.filter(therapist_id=therapist_id).order_by("-start_time")
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         if therapist:
             return ScheduleEvent.objects.filter(therapist=therapist).order_by("-start_time")
         return ScheduleEvent.objects.none()
@@ -394,13 +873,14 @@ class WaitlistEntryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
+        client_ids = _active_client_ids_for_therapist(therapist)
         return WaitlistEntry.objects.filter(
-            client__therapist=therapist
+            client_id__in=client_ids
         ).order_by("-created_at")
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         serializer.save(therapist=serializer.validated_data.get("therapist") or therapist)
 
 
@@ -412,11 +892,12 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         qs = ClientJournal.objects.all()
         if therapist:
-            qs = qs.filter(client__therapist=therapist)
+            client_ids = _active_client_ids_for_therapist(therapist)
+            qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
                 qs = qs.filter(client_id=client_id)
@@ -428,7 +909,7 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
         return ClientJournal.objects.none()
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         if therapist:
             serializer.save(therapist=therapist)
@@ -443,11 +924,12 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         qs = ClientGoal.objects.all()
         if therapist:
-            qs = qs.filter(client__therapist=therapist)
+            client_ids = _active_client_ids_for_therapist(therapist)
+            qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
                 qs = qs.filter(client_id=client_id)
@@ -459,7 +941,7 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
         return ClientGoal.objects.none()
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         if therapist:
             client_id = self.request.data.get("client")
@@ -482,11 +964,12 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         qs = ClientCheckin.objects.all()
         if therapist:
-            qs = qs.filter(client__therapist=therapist)
+            client_ids = _active_client_ids_for_therapist(therapist)
+            qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
                 qs = qs.filter(client_id=client_id)
@@ -498,7 +981,7 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
         return ClientCheckin.objects.none()
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         if therapist:
             serializer.save(therapist=therapist)
@@ -514,7 +997,7 @@ class TherapistMaterialViewSet(viewsets.ModelViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         if not therapist:
             return TherapistMaterial.objects.none()
         roles = _extract_roles_from_auth(self.request)
@@ -527,7 +1010,7 @@ class TherapistMaterialViewSet(viewsets.ModelViewSet):
         return TherapistMaterial.objects.filter(therapist=therapist).order_by("-created_at")
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         serializer.save(therapist=therapist, is_library=False, is_premium_only=False)
 
 
@@ -536,10 +1019,11 @@ class MaterialShareViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
         if therapist:
-            qs = MaterialShare.objects.filter(client__therapist=therapist)
+            client_ids = _active_client_ids_for_therapist(therapist)
+            qs = MaterialShare.objects.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
                 qs = qs.filter(client_id=client_id)
@@ -549,9 +1033,125 @@ class MaterialShareViewSet(viewsets.ModelViewSet):
         return MaterialShare.objects.none()
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         if therapist:
             serializer.save(shared_by=therapist)
+
+
+class ResourceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsTherapistOwnerOfResource]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return Resource.objects.none()
+        return Resource.objects.filter(therapist=therapist).order_by("-created_at")
+
+    def get_serializer_class(self):
+        if self.action in {"create", "update", "partial_update"}:
+            return ResourceCreateUpdateSerializer
+        return ResourceSerializer
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            raise exceptions.PermissionDenied("Therapist profile required.")
+        resource = serializer.save(therapist=therapist)
+        try:
+            resource.full_clean()
+        except ValidationError as exc:
+            raise exceptions.ValidationError(exc.message_dict or {"detail": exc.message})
+        resource.save()
+
+    def perform_update(self, serializer):
+        resource = serializer.save()
+        try:
+            resource.full_clean()
+        except ValidationError as exc:
+            raise exceptions.ValidationError(exc.message_dict or {"detail": exc.message})
+        resource.save()
+
+    def destroy(self, request, *args, **kwargs):
+        resource = self.get_object()
+        if resource.assignments.exists():
+            raise exceptions.ValidationError(
+                {"detail": "Resources with assignments cannot be deleted."}
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"])
+    def deactivate(self, request, pk=None):
+        resource = self.get_object()
+        resource.is_active = False
+        resource.save(update_fields=["is_active", "updated_at"])
+        return Response(ResourceSerializer(resource).data)
+
+
+class SharedResourceAssignmentViewSet(viewsets.ModelViewSet):
+    serializer_class = SharedResourceAssignmentSerializer
+    permission_classes = [IsAuthenticated, IsTherapistOwnerOfResourceAssignment]
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return SharedResourceAssignment.objects.none()
+        qs = SharedResourceAssignment.objects.filter(assigned_by=therapist).select_related(
+            "resource", "assigned_to", "therapeutic_relationship"
+        )
+        client_id = self.request.query_params.get("client")
+        if client_id:
+            qs = qs.filter(assigned_to_id=client_id)
+        return qs.order_by("-assigned_at")
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return SharedResourceAssignmentCreateSerializer
+        return SharedResourceAssignmentSerializer
+
+    def create(self, request, *args, **kwargs):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            raise exceptions.PermissionDenied("Therapist profile required.")
+        serializer = SharedResourceAssignmentCreateSerializer(
+            data=request.data,
+            context={"therapist": therapist},
+        )
+        serializer.is_valid(raise_exception=True)
+        assignment = assign_resource_to_client(
+            therapist=therapist,
+            client=serializer.validated_data["assigned_to"],
+            resource=serializer.validated_data["resource"],
+            therapist_note=serializer.validated_data.get("therapist_note", ""),
+        )
+        output = SharedResourceAssignmentSerializer(assignment)
+        return Response(output.data, status=status.HTTP_201_CREATED)
+
+
+class ClientResourceAssignmentViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = SharedResourceAssignmentSerializer
+    permission_classes = [IsAuthenticated, IsClientOwnerOfResourceAssignment]
+
+    def get_queryset(self):
+        client = _resolve_client_from_request(self.request)
+        if not client:
+            return SharedResourceAssignment.objects.none()
+        return SharedResourceAssignment.objects.filter(assigned_to=client).select_related(
+            "resource", "assigned_by"
+        ).order_by("-assigned_at")
+
+    @action(detail=True, methods=["post"])
+    def mark_viewed(self, request, pk=None):
+        assignment = self.get_object()
+        assignment.mark_viewed()
+        return Response(self.get_serializer(assignment).data)
+
+    @action(detail=True, methods=["post"])
+    def mark_completed(self, request, pk=None):
+        assignment = self.get_object()
+        assignment.mark_completed()
+        return Response(self.get_serializer(assignment).data)
 
 
 class TeamMemberViewSet(viewsets.ModelViewSet):

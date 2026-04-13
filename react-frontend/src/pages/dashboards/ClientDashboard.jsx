@@ -49,10 +49,15 @@ import {
   HamburgerIcon,
   EditIcon,
 } from "@chakra-ui/icons";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 import RichTextEditor from "../../components/RichTextEditor";
+import ClientBooking from "./scheduling/ClientBooking";
+import ClientBookingRequests from "./scheduling/ClientBookingRequests";
+import ClientAppointmentsBoard from "./scheduling/ClientAppointmentsBoard";
+import ClientResources from "./resources/ClientResources";
+import SchedulingNotifications from "./notifications/SchedulingNotifications";
 
 const LOCAL_KEYS = {
   journal: "mlc_client_journal_entries",
@@ -125,6 +130,7 @@ export default function ClientDashboard() {
   const toast = useToast();
   const { logout, isPremium } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState("overview");
   const [journalContent, setJournalContent] = useState(() => {
     const draft = localStorage.getItem(LOCAL_KEYS.journalDraft);
@@ -216,7 +222,6 @@ export default function ClientDashboard() {
   const [journalEntries, setJournalEntries] = useState([]);
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [sharedItems, setSharedItems] = useState([]);
-  const [materials, setMaterials] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const hydrateLocal = () => {
@@ -283,9 +288,8 @@ export default function ClientDashboard() {
     if (!isPremium) {
       hydrateLocal();
       try {
-        const shares = await apiGet("material-shares/");
+        const shares = await apiGet("client-resource-assignments/");
         setSharedItems(shares || []);
-        setMaterials(shares || []);
       } catch (error) {
         console.warn("Shared items fetch failed, using local cache.", error);
         hydrateLocal();
@@ -299,7 +303,7 @@ export default function ClientDashboard() {
         apiGet("client-journals/"),
         apiGet("client-goals/"),
         apiGet("client-checkins/"),
-        apiGet("material-shares/"),
+        apiGet("client-resource-assignments/"),
       ]);
 
       const normalizedJournals = (journals || []).map((entry) => ({
@@ -383,7 +387,6 @@ export default function ClientDashboard() {
       }
 
       setSharedItems(shares || []);
-      setMaterials(shares || []);
     } catch (error) {
       console.warn("Client dashboard API sync failed, using local cache.", error);
       hydrateLocal();
@@ -870,18 +873,28 @@ export default function ClientDashboard() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get("section");
+    if (section) {
+      setActiveSection(section);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
     localStorage.setItem(LOCAL_KEYS.checkinData, JSON.stringify(checkinData));
   }, [checkinData]);
 
   const navItems = [
     { id: "overview", label: "Dashboard" },
+    { id: "book", label: "Book a Session" },
+    { id: "bookingRequests", label: "Booking Requests" },
+    { id: "sessions", label: "My Sessions" },
+    { id: "notifications", label: "Notifications" },
     { id: "checkin", label: "Daily Check‑in" },
     { id: "journal", label: "Private Journal" },
     { id: "notes", label: "Notes for Session" },
     { id: "goals", label: "My Goals" },
-    { id: "shared", label: "Shared With Me" },
-    { id: "materials", label: "Therapist Materials" },
-    { id: "sessions", label: "My Sessions" },
+    { id: "resources", label: "Resources" },
     { id: "prompts", label: "Reflection Prompts" },
     { id: "premium", label: "Premium Studio" },
     { id: "profile", label: "My Profile" },
@@ -1104,11 +1117,11 @@ export default function ClientDashboard() {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
             <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <HStack justify="space-between" mb={3}>
-                <Heading size="md">Shared With Me</Heading>
+                <Heading size="md">Resources</Heading>
                 <StarIcon color="yellow.400" />
               </HStack>
               <Text color="gray.500" mb={4}>
-                Files, worksheets, or resources your therapist shares with you.
+                Resources your therapist has shared with you.
               </Text>
               <Box p={4} bg="#FBF8F3" borderRadius="xl">
                 {sharedItems.length === 0 ? (
@@ -1117,7 +1130,7 @@ export default function ClientDashboard() {
                   <VStack align="start" spacing={2}>
                     {sharedItems.slice(0, 4).map((item) => (
                       <Text key={item.id}>
-                        {item.material_title || "Shared item"}
+                        {item.resource_title || "Shared resource"}
                       </Text>
                     ))}
                   </VStack>
@@ -1141,28 +1154,6 @@ export default function ClientDashboard() {
           </SimpleGrid>
 
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} w="100%">
-            <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
-              <Heading size="md" mb={3}>
-                Therapist Materials
-              </Heading>
-              <Text color="gray.500" mb={4}>
-                Homework, worksheets, and exercises shared by your therapist.
-              </Text>
-              <Box p={4} bg="#FBF8F3" borderRadius="xl">
-                {materials.length === 0 ? (
-                  <Text color="gray.500">No materials yet.</Text>
-                ) : (
-                  <VStack align="start" spacing={2}>
-                    {materials.slice(0, 4).map((item) => (
-                      <Text key={item.id}>
-                        {item.material_title || "Material"}
-                      </Text>
-                    ))}
-                  </VStack>
-                )}
-              </Box>
-            </Box>
-
             <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
               <Heading size="md" mb={3}>
                 Reflection Prompts
@@ -1483,74 +1474,24 @@ export default function ClientDashboard() {
       );
     }
 
-    if (activeSection === "shared") {
-      return (
-        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
-          <Heading size="md" mb={3}>
-            Shared With Me
-          </Heading>
-          <Text color="gray.500" mb={4}>
-            Files, worksheets, or resources your therapist shares with you.
-          </Text>
-          <Box p={4} bg="#FBF8F3" borderRadius="xl">
-            {sharedItems.length === 0 ? (
-              <Text color="gray.500">Nothing shared yet.</Text>
-            ) : (
-              <VStack align="start" spacing={2}>
-                {sharedItems.map((item) => (
-                  <Text key={item.id}>
-                    {item.material_title || "Shared item"}
-                  </Text>
-                ))}
-              </VStack>
-            )}
-          </Box>
-        </Box>
-      );
+    if (activeSection === "resources") {
+      return <ClientResources />;
     }
 
-    if (activeSection === "materials") {
-      return (
-        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
-          <Heading size="md" mb={3}>
-            Therapist Materials
-          </Heading>
-          {materials.length === 0 ? (
-            <Text color="gray.500">No materials yet.</Text>
-          ) : (
-            <VStack align="start" spacing={2}>
-              {materials.map((item) => (
-                <Text key={item.id}>
-                  {item.material_title || "Material"}
-                </Text>
-              ))}
-            </VStack>
-          )}
-        </Box>
-      );
+    if (activeSection === "book") {
+      return <ClientBooking />;
+    }
+
+    if (activeSection === "bookingRequests") {
+      return <ClientBookingRequests />;
     }
 
     if (activeSection === "sessions") {
-      return (
-        <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
-          <Heading size="md" mb={3}>
-            My Sessions
-          </Heading>
-          <Text color="gray.500" mb={4}>
-            Your session schedule and invoices will appear here.
-          </Text>
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-            <Box p={4} bg="#F2F8F5" borderRadius="xl">
-              <Text fontWeight="semibold">Upcoming sessions</Text>
-              <Text color="gray.500">No sessions scheduled yet.</Text>
-            </Box>
-            <Box p={4} bg="#FBF8F3" borderRadius="xl">
-              <Text fontWeight="semibold">Invoices & receipts</Text>
-              <Text color="gray.500">No invoices shared yet.</Text>
-            </Box>
-          </SimpleGrid>
-        </Box>
-      );
+      return <ClientAppointmentsBoard />;
+    }
+
+    if (activeSection === "notifications") {
+      return <SchedulingNotifications />;
     }
 
     if (activeSection === "prompts") {

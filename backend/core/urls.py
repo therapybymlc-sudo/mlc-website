@@ -14,6 +14,11 @@ from therapy.views import (
     TherapistProfileViewSet,
     ClientProfileViewSet,
     AppointmentViewSet,
+    AvailabilitySlotViewSet,
+    BookingRequestViewSet,
+    TherapistBookingRequestViewSet,
+    ClientAppointmentViewSet,
+    NotificationViewSet,
     SessionRecordViewSet,
     NoteViewSet,
     NoteTemplateViewSet,
@@ -27,6 +32,9 @@ from therapy.views import (
     ClientCheckinViewSet,
     TherapistMaterialViewSet,
     MaterialShareViewSet,
+    ResourceViewSet,
+    SharedResourceAssignmentViewSet,
+    ClientResourceAssignmentViewSet,
     TherapistApplicationCreateView,
     TeamMemberViewSet,
     ServiceViewSet,
@@ -38,6 +46,8 @@ from therapy.views import (
     TrainingProgramsContentViewSet,
     CareersContentViewSet,
     TherapistApplyContentViewSet,
+    AvailabilitySlotPublicView,
+    PublicTherapistDirectoryView,
 )
 
 # ----------------------------
@@ -47,6 +57,11 @@ router = DefaultRouter()
 router.register(r"therapists", TherapistProfileViewSet, basename="therapists")
 router.register(r"clients", ClientProfileViewSet, basename="clients")
 router.register(r"appointments", AppointmentViewSet, basename="appointments")
+router.register(r"availability-slots", AvailabilitySlotViewSet, basename="availability-slots")
+router.register(r"booking-requests", BookingRequestViewSet, basename="booking-requests")
+router.register(r"therapist-booking-requests", TherapistBookingRequestViewSet, basename="therapist-booking-requests")
+router.register(r"client-appointments", ClientAppointmentViewSet, basename="client-appointments")
+router.register(r"notifications", NotificationViewSet, basename="notifications")
 router.register(r"sessions", SessionRecordViewSet, basename="sessions")
 router.register(r"notes", NoteViewSet, basename="notes")
 router.register(r"note-templates", NoteTemplateViewSet, basename="note-templates")
@@ -60,6 +75,9 @@ router.register(r"client-goals", ClientGoalViewSet, basename="client-goals")
 router.register(r"client-checkins", ClientCheckinViewSet, basename="client-checkins")
 router.register(r"materials", TherapistMaterialViewSet, basename="materials")
 router.register(r"material-shares", MaterialShareViewSet, basename="material-shares")
+router.register(r"resources", ResourceViewSet, basename="resources")
+router.register(r"resource-assignments", SharedResourceAssignmentViewSet, basename="resource-assignments")
+router.register(r"client-resource-assignments", ClientResourceAssignmentViewSet, basename="client-resource-assignments")
 router.register(r"team-members", TeamMemberViewSet, basename="team-members")
 router.register(r"services", ServiceViewSet, basename="services")
 router.register(r"home-content", HomeContentViewSet, basename="home-content")
@@ -77,6 +95,8 @@ router.register(r"therapist-apply-content", TherapistApplyContentViewSet, basena
 @api_view(["GET"])
 def auth_test(request):
     return Response({"message": "Clerk test route working."})
+
+
 
 @api_view(["GET"])
 def auth_login(request):
@@ -141,6 +161,8 @@ urlpatterns = [
     path("auth-login/", auth_login, name="auth_login"),
     path("protected/", protected_view, name="protected"),
     path("api/whoami/", whoami, name="whoami"),
+    path("api/availability-slots/public/", AvailabilitySlotPublicView.as_view(), name="availability-slots-public"),
+    path("api/therapists/public/", PublicTherapistDirectoryView.as_view(), name="therapists-public"),
 
     # REST API
     path("api/", include(router.urls)),

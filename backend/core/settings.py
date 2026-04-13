@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 import dj_database_url
 
@@ -84,6 +85,37 @@ else:
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
+
+# ==========================
+# Test DB overrides (env-driven)
+# ==========================
+IS_TESTING = any(arg in {"test", "pytest"} for arg in sys.argv) or os.getenv("DJANGO_TESTING") == "True"
+USE_SQLITE_TESTS = os.getenv("DJANGO_TEST_SQLITE") == "True"
+
+if IS_TESTING and USE_SQLITE_TESTS:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.getenv("SQLITE_TEST_PATH", ":memory:"),
+        }
+    }
+elif IS_TESTING:
+    test_url = os.getenv("DATABASE_URL_TEST")
+    if test_url:
+        DATABASES = {"default": dj_database_url.parse(test_url, conn_max_age=0)}
+    else:
+        overrides = {
+            "NAME": os.getenv("DB_NAME_TEST"),
+            "USER": os.getenv("DB_USER_TEST"),
+            "PASSWORD": os.getenv("DB_PASSWORD_TEST"),
+            "HOST": os.getenv("DB_HOST_TEST"),
+            "PORT": os.getenv("DB_PORT_TEST"),
+        }
+        DATABASES["default"] = {**DATABASES["default"], **{k: v for k, v in overrides.items() if v}}
+
+    test_name = os.getenv("DB_NAME_TEST")
+    if test_name:
+        DATABASES["default"]["TEST"] = {"NAME": test_name}
 
 # ==========================
 # Password Validation
