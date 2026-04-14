@@ -74,7 +74,7 @@ export default function TherapistAvailability() {
   };
 
   useEffect(() => {
-    loadSlots();
+    loadSlotsAndProfile();
   }, []);
 
   const filteredSlots = useMemo(() => {
@@ -101,7 +101,7 @@ export default function TherapistAvailability() {
       } else {
         await schedulingApi.createAvailabilitySlot(payload);
       }
-      await loadSlots();
+      await loadSlotsAndProfile();
       resetForm();
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to save availability slot."));
@@ -120,7 +120,7 @@ export default function TherapistAvailability() {
   const handleDelete = async (slotId) => {
     try {
       await schedulingApi.deleteAvailabilitySlot(slotId);
-      await loadSlots();
+      await loadSlotsAndProfile();
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to delete slot."));
     }
@@ -133,7 +133,7 @@ export default function TherapistAvailability() {
       } else {
         await schedulingApi.blockAvailabilitySlot(slot.id);
       }
-      await loadSlots();
+      await loadSlotsAndProfile();
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to update slot."));
     }
@@ -144,7 +144,7 @@ export default function TherapistAvailability() {
   }
 
   if (error) {
-    return <ScheduleErrorState description={error} onRetry={loadSlots} />;
+    return <ScheduleErrorState description={error} onRetry={loadSlotsAndProfile} />;
   }
 
   return (
