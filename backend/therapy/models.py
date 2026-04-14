@@ -132,7 +132,7 @@ class ClientProfile(models.Model):
     termination_notes = models.TextField(blank=True, null=True)
 
     therapist = models.ForeignKey(
-        TherapistProfile, on_delete=models.CASCADE, related_name="clients"
+        TherapistProfile, on_delete=models.CASCADE, related_name="clients", null=True, blank=True
     )
     is_premium = models.BooleanField(default=False)
 

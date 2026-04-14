@@ -61,9 +61,19 @@ def _resolve_client_from_request(request):
             return None
 
         client = ClientProfile.objects.filter(email__iexact=email).first()
-        if client and client.user_id != auth_user.id:
-            client.user = auth_user
-            client.save(update_fields=["user"])
+        if client:
+            if client.user_id != auth_user.id:
+                client.user = auth_user
+                client.save(update_fields=["user"])
+            return client
+            
+        display_name = getattr(auth_user, "get_full_name", lambda: "")() or getattr(auth_user, "username", "Unknown")
+        safe_email = email or f"client_{auth_user.pk or 'nouser'}@local"
+        client = ClientProfile.objects.create(
+            user=auth_user,
+            name=display_name,
+            email=safe_email,
+        )
         return client
     except Exception as e:
         print("⚠️ Client resolution failed:", e)
