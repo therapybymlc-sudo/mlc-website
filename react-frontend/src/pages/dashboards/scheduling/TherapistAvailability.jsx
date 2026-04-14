@@ -20,6 +20,7 @@ import ScheduleLoadingState from "../../../components/scheduling/ScheduleLoading
 import ScheduleErrorState from "../../../components/scheduling/ScheduleErrorState";
 import ScheduleActionBar from "../../../components/scheduling/ScheduleActionBar";
 import { getSchedulingErrorMessage } from "../../../utils/schedulingErrors";
+import BusinessHoursForm from "../../../components/scheduling/BusinessHoursForm";
 
 const toLocalInputValue = (value) => {
   if (!value) return "";
@@ -46,11 +47,23 @@ export default function TherapistAvailability() {
     end_time: "",
     visible_to_clients: true,
   });
+  const [profile, setProfile] = useState(null);
 
-  const loadSlots = async () => {
+  const loadSlotsAndProfile = async () => {
     try {
       setLoading(true);
       setError("");
+      
+      try {
+        const { apiGet } = await import("../../../api");
+        const profs = await apiGet("therapists/");
+        if (profs && profs.length > 0) {
+          setProfile(profs[0]);
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+      
       const data = await schedulingApi.listAvailabilitySlots();
       setSlots(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -138,12 +151,19 @@ export default function TherapistAvailability() {
     <VStack align="stretch" spacing={6} w="100%">
       <SchedulePageHeader
         title="Availability"
-        subtitle="Add and manage your future slots in a simple list."
+        subtitle="Manage your standard business hours and specific availabilities."
       />
 
       <ScheduleSectionCard
-        title={editingSlot ? "Edit slot" : "Add a new slot"}
-        subtitle="Keep only the windows you’re open to receive requests."
+        title="Weekly Business Hours"
+        subtitle="Set defaults. Your slots will auto-generate for the next 30 days."
+      >
+        <BusinessHoursForm profile={profile} onSlotsGenerated={loadSlotsAndProfile} />
+      </ScheduleSectionCard>
+
+      <ScheduleSectionCard
+        title={editingSlot ? "Edit slot" : "Add a manual override slot"}
+        subtitle="Keep specific time windows open (or manage single events)."
       >
         <form onSubmit={handleSubmit}>
           <VStack align="stretch" spacing={4}>

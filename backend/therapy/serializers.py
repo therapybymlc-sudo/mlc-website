@@ -63,6 +63,8 @@ class TherapistSessionLinkSerializer(serializers.ModelSerializer):
 
 class ClientProfileSerializer(serializers.ModelSerializer):
     therapist = TherapistProfileSerializer(read_only=True)
+    has_active_relationship = serializers.BooleanField(read_only=True)
+    is_first_session_eligible = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = ClientProfile
@@ -194,6 +196,7 @@ class BookingRequestSerializer(serializers.ModelSerializer):
             "status_label",
             "message_from_client",
             "therapist_response_note",
+            "is_first_session_free",
             "created_at",
             "updated_at",
             "responded_at",
@@ -246,6 +249,7 @@ class BookingRequestCreateSerializer(serializers.ModelSerializer):
             "therapist",
             "availability_slot",
             "message_from_client",
+            "is_first_session_free",
         ]
         read_only_fields = ["id"]
 

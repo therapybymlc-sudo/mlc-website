@@ -434,7 +434,27 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
 
   const resources = therapists
     .filter((t) => selectedTherapists.includes(String(t.id)))
-    .map((t) => ({ id: String(t.id), title: t.name }));
+    .map((t) => {
+      let businessHours;
+      if (t.business_hours && Object.keys(t.business_hours).length > 0) {
+        businessHours = [];
+        Object.keys(t.business_hours).forEach(day => {
+          const dayOfWeek = parseInt(day, 10);
+          t.business_hours[day].forEach(block => {
+            businessHours.push({
+              daysOfWeek: [dayOfWeek],
+              startTime: block.startTime,
+              endTime: block.endTime
+            });
+          });
+        });
+      }
+      return { 
+        id: String(t.id), 
+        title: t.name,
+        ...(businessHours && businessHours.length > 0 ? { businessHours } : {})
+      };
+    });
   const hasResources = resources.length > 0;
 
   /* ===============================

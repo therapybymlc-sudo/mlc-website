@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
+  Checkbox,
   HStack,
   Input,
   SimpleGrid,
   Text,
   Textarea,
   VStack,
+  useToast,
 } from "@chakra-ui/react";
 import { schedulingApi } from "../../../api/scheduling";
 import SchedulePageHeader from "../../../components/scheduling/SchedulePageHeader";
@@ -27,6 +29,9 @@ export default function ClientBooking() {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isFirstSessionFree, setIsFirstSessionFree] = useState(false);
+  const [needsTermination, setNeedsTermination] = useState(false);
+  const toast = useToast();
 
   const loadTherapists = async () => {
     try {
@@ -74,16 +79,50 @@ export default function ClientBooking() {
     if (!selectedTherapist || !selectedSlot) return;
     try {
       setLoading(true);
+      setError("");
+      setNeedsTermination(false);
       await schedulingApi.createBookingRequest({
         therapist: selectedTherapist.id,
         availability_slot: selectedSlot.id,
         message_from_client: message || undefined,
+        is_first_session_free: isFirstSessionFree,
       });
       setSelectedSlot(null);
       setMessage("");
+      setIsFirstSessionFree(false);
+      toast({
+        title: "Request Sent",
+        description: "Your booking request has been submitted.",
+        status: "success",
+        duration: 4000,
+      });
       await loadSlots(selectedTherapist.id);
     } catch (err) {
-      setError(getSchedulingErrorMessage(err, "Unable to submit booking request."));
+      const errMsg = err?.response?.data?.detail || err?.message || "";
+      if (typeof errMsg === "string" && errMsg.toLowerCase().includes("terminate")) {
+        setNeedsTermination(true);
+        setError("You must terminate your existing therapeutic relationship before booking with a new therapist.");
+      } else {
+        setError(getSchedulingErrorMessage(err, "Unable to submit booking request."));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTerminateRelationship = async () => {
+    try {
+      setLoading(true);
+      await schedulingApi.terminateRelationship();
+      setNeedsTermination(false);
+      setError("");
+      toast({
+        title: "Relationship terminated",
+        description: "You may now book with a new therapist.",
+        status: "success",
+      });
+    } catch (err) {
+      setError(getSchedulingErrorMessage(err, "Failed to terminate relationship."));
     } finally {
       setLoading(false);
     }
@@ -205,10 +244,22 @@ export default function ClientBooking() {
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
                 />
+                <Checkbox
+                  isChecked={isFirstSessionFree}
+                  onChange={(e) => setIsFirstSessionFree(e.target.checked)}
+                >
+                  Request one-time 30-min Free First Session
+                </Checkbox>
                 <ScheduleActionBar>
-                  <Button colorScheme="teal" borderRadius="full" onClick={handleSubmit}>
-                    Submit booking request
-                  </Button>
+                  {needsTermination ? (
+                    <Button colorScheme="red" borderRadius="full" onClick={handleTerminateRelationship} isLoading={loading}>
+                      Terminate Current Relationship
+                    </Button>
+                  ) : (
+                    <Button colorScheme="teal" borderRadius="full" onClick={handleSubmit} isLoading={loading}>
+                      Submit booking request
+                    </Button>
+                  )}
                   <Button variant="ghost" borderRadius="full" onClick={() => setSelectedSlot(null)}>
                     Choose a different slot
                   </Button>

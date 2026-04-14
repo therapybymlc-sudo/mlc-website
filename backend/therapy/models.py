@@ -22,6 +22,11 @@ class TherapistProfile(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     is_premium = models.BooleanField(default=False)
+    business_hours = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Stores repeating availability. Example: {'1': [{'startTime': '09:00', 'endTime': '17:00'}]}"
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -130,6 +135,16 @@ class ClientProfile(models.Model):
         TherapistProfile, on_delete=models.CASCADE, related_name="clients"
     )
     is_premium = models.BooleanField(default=False)
+
+    @property
+    def has_active_relationship(self):
+        return self.relationships.filter(status="active").exists()
+
+    @property
+    def is_first_session_eligible(self):
+        has_appointments = apps.get_model("therapy", "Appointment").objects.filter(client=self).exists()
+        has_requests = apps.get_model("therapy", "BookingRequest").objects.filter(client=self).exists()
+        return not has_appointments and not has_requests
 
     def __str__(self) -> str:
         return self.name
@@ -447,6 +462,10 @@ class BookingRequest(models.Model):
         blank=True,
         help_text="Optional response note from the therapist.",
     )
+    is_first_session_free = models.BooleanField(
+        default=False,
+        help_text="Whether this booking request exercises the client's first 30-min free session."
+    )
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
     responded_at = models.DateTimeField(null=True, blank=True)
@@ -605,9 +624,10 @@ class BookingRequest(models.Model):
                     "therapist": self.therapist,
                     "availability_slot": slot,
                     "start_time": slot.start_time,
-                    "end_time": slot.end_time,
+                    "end_time": slot.start_time + timezone.timedelta(minutes=30) if self.is_first_session_free else slot.end_time,
                     "date": slot.start_time,
                     "status": Appointment.Status.SCHEDULED,
+                    "is_first_session_free": self.is_first_session_free,
                 },
             )
             if not created:
@@ -763,6 +783,10 @@ class Appointment(models.Model):
     )
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
+    is_first_session_free = models.BooleanField(
+        default=False,
+        help_text="True if this appointment is a 30-min free session."
+    )
 
     class Status(models.TextChoices):
         SCHEDULED = "scheduled", "Scheduled"
@@ -1132,6 +1156,16 @@ class ScheduleEvent(models.Model):
         if self.event_type and (not self.color or self.color == "#A9CBB7"):
             self.color = self.event_type.color
         super().save(*args, **kwargs)
+        
+        # Block any overlapping availability slots so clients cannot book them
+        overlapping_slots = AvailabilitySlot.objects.filter(
+            therapist=self.therapist,
+            status__in=[AvailabilitySlot.Status.OPEN, AvailabilitySlot.Status.HELD],
+            start_time__lt=self.end_time,
+            end_time__gt=self.start_time
+        )
+        if overlapping_slots.exists():
+            overlapping_slots.update(status=AvailabilitySlot.Status.BLOCKED)
 
     def __str__(self) -> str:
         return f"{self.title} ({self.therapist.name})"

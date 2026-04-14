@@ -48,6 +48,7 @@ from therapy.views import (
     TherapistApplyContentViewSet,
     AvailabilitySlotPublicView,
     PublicTherapistDirectoryView,
+    terminate_relationship,
 )
 
 # ----------------------------
@@ -163,6 +164,7 @@ urlpatterns = [
     path("api/whoami/", whoami, name="whoami"),
     path("api/availability-slots/public/", AvailabilitySlotPublicView.as_view(), name="availability-slots-public"),
     path("api/therapists/public/", PublicTherapistDirectoryView.as_view(), name="therapists-public"),
+    path("api/clients/terminate_relationship/", terminate_relationship, name="terminate-relationship"),
 
     # REST API
     path("api/", include(router.urls)),

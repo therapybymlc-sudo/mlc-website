@@ -403,6 +403,82 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
         slot.save(update_fields=["status", "updated_at"])
         return Response(self.get_serializer(slot).data)
 
+    @action(detail=False, methods=["post"])
+    def generate_bulk(self, request):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return Response({"detail": "Therapist profile required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        business_hours = therapist.business_hours
+        if not business_hours:
+            return Response({"detail": "No business hours configured in profile."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        start_date_str = request.data.get("start_date")
+        end_date_str = request.data.get("end_date")
+        if not start_date_str or not end_date_str:
+            return Response({"detail": "start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from datetime import datetime, timedelta
+        try:
+            start_dt = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_dt = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        created_slots = 0
+        current_dt = start_dt
+        while current_dt <= end_dt:
+            weekday = current_dt.isoweekday() # 1=Mon, 7=Sun
+            day_str = str(weekday % 7) # 0=Sun, 1=Mon...
+            
+            day_slots = business_hours.get(day_str, [])
+            for block in day_slots:
+                start_str = block.get("startTime")
+                end_str = block.get("endTime")
+                if not start_str or not end_str:
+                    continue
+                
+                try:
+                    slot_start_time = datetime.strptime(f"{current_dt} {start_str}", "%Y-%m-%d %H:%M")
+                    slot_end_time = datetime.strptime(f"{current_dt} {end_str}", "%Y-%m-%d %H:%M")
+                    slot_start_time = timezone.make_aware(slot_start_time)
+                    slot_end_time = timezone.make_aware(slot_end_time)
+                except ValueError:
+                    continue
+                
+                curr_slot_start = slot_start_time
+                while curr_slot_start + timedelta(hours=1) <= slot_end_time:
+                    curr_slot_end = curr_slot_start + timedelta(hours=1)
+                    
+                    overlap = AvailabilitySlot.objects.filter(
+                        therapist=therapist,
+                        status__in=[AvailabilitySlot.Status.OPEN, AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.BLOCKED],
+                        start_time__lt=curr_slot_end,
+                        end_time__gt=curr_slot_start
+                    )
+                    
+                    overlap_events = ScheduleEvent.objects.filter(
+                        therapist=therapist,
+                        start_time__lt=curr_slot_end,
+                        end_time__gt=curr_slot_start
+                    )
+                    
+                    if not overlap.exists() and not overlap_events.exists():
+                        AvailabilitySlot.objects.create(
+                            therapist=therapist,
+                            start_time=curr_slot_start,
+                            end_time=curr_slot_end,
+                            status=AvailabilitySlot.Status.OPEN,
+                            visible_to_clients=True
+                        )
+                        created_slots += 1
+                    
+                    curr_slot_start += timedelta(hours=1)
+            
+            current_dt += timedelta(days=1)
+            
+        return Response({"detail": f"Generated {created_slots} open slots."})
+
 
 class AvailabilitySlotPublicView(APIView):
     permission_classes = [IsAuthenticated]
@@ -422,11 +498,13 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        one_month_from_now = timezone.now() + timezone.timedelta(days=30)
         slots = AvailabilitySlot.objects.filter(
             therapist_id=therapist_id,
             status=AvailabilitySlot.Status.OPEN,
             visible_to_clients=True,
             start_time__gt=timezone.now(),
+            start_time__lte=one_month_from_now,
         ).order_by("start_time")
 
         serializer = AvailabilitySlotPublicSerializer(slots, many=True)
@@ -493,10 +571,27 @@ class BookingRequestViewSet(viewsets.ModelViewSet):
         serializer = BookingRequestCreateSerializer(data=data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
+        is_first_session_free = serializer.validated_data.get("is_first_session_free", False)
+
         with transaction.atomic():
             slot = AvailabilitySlot.objects.select_for_update().get(
                 pk=serializer.validated_data["availability_slot"].id
             )
+
+            therapist = serializer.validated_data.get("therapist") or slot.therapist
+
+            active_rel = client.relationships.filter(status="active").first()
+            if active_rel and active_rel.therapist_id != therapist.id:
+                return Response(
+                    {"detail": "You must terminate your existing therapeutic relationship before booking with a new therapist."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if is_first_session_free and not client.is_first_session_eligible:
+                return Response(
+                    {"detail": "You are not eligible for a free first session."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             if slot.status != AvailabilitySlot.Status.OPEN or not slot.visible_to_clients:
                 return Response(
@@ -528,6 +623,7 @@ class BookingRequestViewSet(viewsets.ModelViewSet):
                     status=BookingRequest.Status.PENDING,
                     message_from_client=serializer.validated_data.get("message_from_client", ""),
                     expires_at=held_until,
+                    is_first_session_free=is_first_session_free,
                 )
             except IntegrityError:
                 return Response(
@@ -1422,6 +1518,25 @@ def me(request):
         "email": getattr(request.user, "email", "No email found"),
     }
     return Response(user_data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def terminate_relationship(request):
+    client = _resolve_client_from_request(request)
+    if not client:
+        return Response({"detail": "Client profile required."}, status=status.HTTP_403_FORBIDDEN)
+    
+    active_rels = client.relationships.filter(status="active")
+    if not active_rels.exists():
+        return Response({"detail": "No active therapeutic relationship found."}, status=status.HTTP_400_BAD_REQUEST)
+        
+    for rel in active_rels:
+        rel.status = "ended" # TherapeuticRelationship.Status.ENDED
+        rel.ended_at = timezone.now()
+        rel.save(update_fields=["status", "ended_at", "updated_at"])
+        
+    return Response({"detail": "Therapeutic relationship terminated successfully."})
 
 
 class FrontendAppView(TemplateView):

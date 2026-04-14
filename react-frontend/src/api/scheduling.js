@@ -19,6 +19,9 @@ export const schedulingApi = {
   unblockAvailabilitySlot(id) {
     return apiPost(`availability-slots/${id}/unblock/`, {});
   },
+  generateAvailabilitySlotsBulk(payload) {
+    return apiPost(`availability-slots/generate_bulk/`, payload);
+  },
   listTherapistBookingRequests() {
     return apiGet("therapist-booking-requests/");
   },
@@ -59,5 +62,14 @@ export const schedulingApi = {
   },
   markNotificationRead(id) {
     return apiPost(`notifications/${id}/mark_read/`, {});
+  },
+  terminateRelationship() {
+    return apiPost(`clients/terminate_relationship/`, {});
+  },
+  getTherapistProfile(id) {
+    return apiGet(`therapists/${id}/`);
+  },
+  updateTherapistProfile(id, payload) {
+    return apiPut(`therapists/${id}/`, payload);
   },
 };
