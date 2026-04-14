@@ -37,7 +37,7 @@ import {
   DrawerHeader,
   DrawerBody,
 } from "@chakra-ui/react";
-import { AddIcon, ChevronLeftIcon, ChevronRightIcon, SettingsIcon, HamburgerIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronLeftIcon, ChevronRightIcon, SettingsIcon, HamburgerIcon, EditIcon, AttachmentIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
 import { apiGet, apiPost, apiPut } from "../../api";
 
