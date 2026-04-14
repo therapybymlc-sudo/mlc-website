@@ -26,9 +26,27 @@ def get_current_client_profile(user):
     if not user or not user.is_authenticated:
         return None
     try:
-        return user.client_profile
+        if hasattr(user, "client_profile"):
+            return user.client_profile
     except ClientProfile.DoesNotExist:
-        return None
+        pass
+
+    email = getattr(user, "email", None)
+    client = ClientProfile.objects.filter(email__iexact=email).first() if email else None
+    if client:
+        if client.user_id != user.id:
+            client.user = user
+            client.save(update_fields=["user"])
+        return client
+        
+    display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
+    safe_email = email or f"client_{user.pk or 'nouser'}@local"
+    client = ClientProfile.objects.create(
+        user=user,
+        name=display_name,
+        email=safe_email,
+    )
+    return client
 
 
 def is_request_owned_by_therapist(user, booking_request: BookingRequest):

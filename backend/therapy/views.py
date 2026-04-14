@@ -176,12 +176,20 @@ def _resolve_client_from_request(request):
         return client_profile
 
     email = getattr(user, "email", None)
-    if not email:
-        return None
-    client = ClientProfile.objects.filter(email__iexact=email).first()
-    if client and client.user_id != user.id:
-        client.user = user
-        client.save(update_fields=["user"])
+    client = ClientProfile.objects.filter(email__iexact=email).first() if email else None
+    if client:
+        if client.user_id != user.id:
+            client.user = user
+            client.save(update_fields=["user"])
+        return client
+        
+    display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
+    safe_email = email or f"client_{user.pk or 'nouser'}@local"
+    client = ClientProfile.objects.create(
+        user=user,
+        name=display_name,
+        email=safe_email,
+    )
     return client
 
 
