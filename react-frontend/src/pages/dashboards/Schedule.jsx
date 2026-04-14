@@ -899,14 +899,14 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       </Drawer>
 
       {/* ✨ Create Appointment Modal */}
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="md" isCentered>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="lg" isCentered>
         <ModalOverlay />
-        <ModalContent maxW="520px" maxH="85vh" overflow="hidden">
-          <ModalHeader bg="#0A7BA1" color="white">
+        <ModalContent maxW="540px" maxH="85vh" overflow="hidden" borderRadius="xl">
+          <ModalHeader bg="#0A7BA1" color="white" py={5}>
             New appointment
           </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody overflowY="auto">
+          <ModalCloseButton color="white" mt={2} />
+          <ModalBody overflowY="auto" pt={6} pb={8}>
             <VStack spacing={4} align="stretch">
               <FormControl isRequired>
                 <FormLabel>Practitioner</FormLabel>
@@ -1149,94 +1149,147 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       </Modal>
 
       {/* 📌 Appointment Details Modal */}
-      <Modal isOpen={isEventOpen} onClose={() => setIsEventOpen(false)} size="lg" isCentered>
+      <Modal isOpen={isEventOpen} onClose={() => setIsEventOpen(false)} size="2xl" isCentered>
         <ModalOverlay />
-        <ModalContent maxW="720px" maxH="85vh" overflow="hidden">
-          <ModalHeader bg="#0A7BA1" color="white">
-            {selectedEvent?.extendedProps?.event_type_name || selectedEvent?.title || "Appointment"}
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody overflowY="auto" px={6} py={5}>
+        <ModalContent maxW="720px" maxH="85vh" overflow="hidden" borderRadius="xl">
+          <Box bg="#0A7BA1" color="white" p={{ base: 5, md: 8 }} position="relative">
+            <ModalCloseButton color="white" mt={2} />
+            <Heading size="lg" mb={2} pr={8} lineHeight="1.3">
+              {selectedEvent?.extendedProps?.event_type_name || selectedEvent?.title || "Appointment"}
+            </Heading>
+            <Text fontWeight="semibold" fontSize="md" mb={1}>
+              {selectedEvent?.extendedProps?.therapist_name || "Practitioner"}
+            </Text>
+            <Text fontSize="md" mb={5} color="whiteAlpha.900">
+              {selectedEvent ? new Date(selectedEvent.startStr).toLocaleString("en-US", {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+              }) : ""} at {selectedEvent ? new Date(selectedEvent.startStr).toLocaleTimeString("en-US", {
+                hour: 'numeric', minute: '2-digit'
+              }) : ""} for {selectedEvent && selectedEvent.endStr ? Math.round((new Date(selectedEvent.endStr) - new Date(selectedEvent.startStr)) / 60000) : 60} minutes
+            </Text>
+            <Button
+              leftIcon={<span style={{ fontWeight: 'bold' }}>🎥</span>}
+              bg="#D14D72"
+              color="white"
+              _hover={{ bg: "#B83D60" }}
+              size="md"
+              borderRadius="md"
+              px={6}
+              onClick={() => {
+                const link = getSessionLinkForTherapist(
+                  selectedEvent?.extendedProps?.therapist || selectedEvent?.getResources?.()?.[0]?.id
+                );
+                if (!link?.url) {
+                  toast({ status: "warning", title: "No session link set for this therapist" });
+                  return;
+                }
+                window.open(link.url, "_blank");
+              }}
+            >
+              Join video call
+            </Button>
+          </Box>
+          <ModalBody overflowY="auto" px={{ base: 5, md: 8 }} py={6} bg="white">
             {selectedEvent && (
-              <VStack align="stretch" spacing={4}>
-                <Box>
-                  <Text fontWeight="semibold">{selectedEvent.extendedProps?.therapist_name || "Practitioner"}</Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {new Date(selectedEvent.startStr).toLocaleString()} — {new Date(selectedEvent.endStr).toLocaleTimeString()}
-                  </Text>
-                </Box>
-
-                <HStack spacing={3} flexWrap="wrap">
-                  <Button
-                    size="sm"
-                    variant={eventDraft.attendance_status === "arrived" ? "solid" : "outline"}
-                    colorScheme={eventDraft.attendance_status === "arrived" ? "green" : "gray"}
-                    onClick={() =>
-                      setEventDraft((prev) => ({
-                        ...prev,
-                        attendance_status: prev.attendance_status === "arrived" ? "" : "arrived",
-                      }))
-                    }
-                  >
-                    Arrived
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={eventDraft.attendance_status === "did_not_arrive" ? "solid" : "outline"}
-                    colorScheme={eventDraft.attendance_status === "did_not_arrive" ? "red" : "gray"}
-                    onClick={() =>
-                      setEventDraft((prev) => ({
-                        ...prev,
-                        attendance_status: prev.attendance_status === "did_not_arrive" ? "" : "did_not_arrive",
-                      }))
-                    }
-                  >
-                    Did not arrive
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      navigate(
-                        selectedEvent.extendedProps?.client
-                          ? `/dashboard/therapist?tab=notes&noteClientId=${selectedEvent.extendedProps.client}&newNote=1`
-                          : "/dashboard/therapist?tab=notes&newNote=1"
-                      )
-                    }
-                  >
-                    Add treatment note
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const link = getSessionLinkForTherapist(
-                        selectedEvent.extendedProps?.therapist || selectedEvent.getResources?.()?.[0]?.id
-                      );
-                      if (!link?.url) {
-                        toast({ status: "warning", title: "No session link set for this therapist" });
-                        return;
-                      }
-                      navigator.clipboard?.writeText(link.url);
-                      toast({ status: "success", title: "Session link copied" });
-                    }}
-                  >
-                    Copy video invite link
-                  </Button>
-                </HStack>
-
+              <VStack align="stretch" spacing={6}>
                 {!eventEditMode ? (
-                  <>
-                    <Box bg="gray.50" borderRadius="md" p={3}>
-                      <Text fontWeight="semibold">{selectedEvent.extendedProps?.client_name || "Client"}</Text>
-                      <Text fontSize="sm" color="gray.600">
-                        {selectedEvent.extendedProps?.event_type_name || "Session"}
-                      </Text>
-                      {selectedEvent.extendedProps?.notes && (
-                        <Text mt={2} fontSize="sm">{selectedEvent.extendedProps.notes}</Text>
-                      )}
-                    </Box>
-                  </>
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} alignItems="start">
+                    {/* LEFT COLUMN: Patient Info */}
+                    <VStack align="stretch" spacing={5}>
+                      <Box>
+                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Patient</Text>
+                        <Text fontWeight="medium" color="gray.800">
+                          {selectedEvent.extendedProps?.client_name || "Client"}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Case</Text>
+                        <Text fontSize="sm" color="gray.600">None</Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Next appointment</Text>
+                        <Text fontSize="sm" color="gray.600">Not scheduled</Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Forms</Text>
+                        <Text fontSize="sm" color="gray.600">None</Text>
+                      </Box>
+                    </VStack>
+
+                    {/* RIGHT COLUMN: Actions */}
+                    <VStack align="stretch" spacing={3}>
+                      <Button
+                        size="md"
+                        w="100%"
+                        justifyContent="flex-start"
+                        variant={eventDraft.attendance_status === "arrived" ? "solid" : "outline"}
+                        borderColor="gray.300"
+                        colorScheme={eventDraft.attendance_status === "arrived" ? "green" : "gray"}
+                        onClick={() =>
+                          setEventDraft((prev) => ({
+                            ...prev,
+                            attendance_status: prev.attendance_status === "arrived" ? "" : "arrived",
+                          }))
+                        }
+                      >
+                        Arrived
+                      </Button>
+                      <Button
+                        size="md"
+                        w="100%"
+                        justifyContent="flex-start"
+                        variant={eventDraft.attendance_status === "did_not_arrive" ? "solid" : "outline"}
+                        borderColor="gray.300"
+                        colorScheme={eventDraft.attendance_status === "did_not_arrive" ? "red" : "gray"}
+                        onClick={() =>
+                          setEventDraft((prev) => ({
+                            ...prev,
+                            attendance_status: prev.attendance_status === "did_not_arrive" ? "" : "did_not_arrive",
+                          }))
+                        }
+                      >
+                        Did not arrive
+                      </Button>
+                      <Button
+                        size="md"
+                        w="100%"
+                        justifyContent="space-between"
+                        variant="outline"
+                        borderColor="gray.300"
+                        rightIcon={<EditIcon color="#0A7BA1" />}
+                        onClick={() =>
+                          navigate(
+                            selectedEvent.extendedProps?.client
+                              ? `/dashboard/therapist?tab=notes&noteClientId=${selectedEvent.extendedProps.client}&newNote=1`
+                              : "/dashboard/therapist?tab=notes&newNote=1"
+                          )
+                        }
+                      >
+                        Add treatment note
+                      </Button>
+                      <Button
+                        size="md"
+                        w="100%"
+                        justifyContent="space-between"
+                        variant="outline"
+                        borderColor="gray.300"
+                        rightIcon={<AttachmentIcon color="#0A7BA1" />}
+                        onClick={() => {
+                          const link = getSessionLinkForTherapist(
+                            selectedEvent.extendedProps?.therapist || selectedEvent.getResources?.()?.[0]?.id
+                          );
+                          if (!link?.url) {
+                            toast({ status: "warning", title: "No session link set for this therapist" });
+                            return;
+                          }
+                          navigator.clipboard?.writeText(link.url);
+                          toast({ status: "success", title: "Session link copied" });
+                        }}
+                      >
+                        Copy video invite link
+                      </Button>
+                    </VStack>
+                  </SimpleGrid>
                 ) : (
                   <VStack spacing={4} align="stretch">
                     <FormControl>
@@ -1317,34 +1370,48 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                     </FormControl>
                   </VStack>
                 )}
+                {!eventEditMode && (
+                  <Box border="1px solid #E2E8F0" borderRadius="md" p={3} minH="80px" mt={4}>
+                     <HStack align="flex-start" spacing={3}>
+                       <Text color="gray.400" fontSize="lg">⚬</Text>
+                       <Text fontSize="sm" color="gray.700" whiteSpace="pre-wrap">
+                         {selectedEvent.extendedProps?.notes || "No notes"}
+                       </Text>
+                     </HStack>
+                  </Box>
+                )}
               </VStack>
             )}
           </ModalBody>
-          <ModalFooter bg="gray.50">
-            <HStack spacing={3}>
-              <Button variant="outline" onClick={() => setIsEventOpen(false)}>
-                Close
-              </Button>
+          <ModalFooter bg="#3E2C48" color="white" borderBottomRadius="xl" justifyContent="space-between">
+            <HStack spacing={4}>
+              {!eventEditMode && (
+                <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => handleSave()}>
+                  + Book another
+                </Button>
+              )}
               {!eventEditMode ? (
                 <>
-                  <Button variant="outline" onClick={() => setEventEditMode(true)}>
+                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => setEventEditMode(true)}>
+                    Reschedule
+                  </Button>
+                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => setEventEditMode(true)}>
                     Edit
                   </Button>
-                  <Button variant="outline" onClick={() => setEventEditMode(true)}>
-                    Reschedule
+                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }}>
+                    Cancel
                   </Button>
                 </>
               ) : (
-                <Button colorScheme="teal" onClick={handleUpdateEvent}>
+                <Button colorScheme="teal" size="sm" onClick={handleUpdateEvent}>
                   Save changes
                 </Button>
               )}
-              <Button variant="outline" colorScheme="red">
-                Cancel
-              </Button>
-              <Button variant="ghost" color="gray.500">
-                Archive
-              </Button>
+            </HStack>
+            <HStack>
+               <Button variant="link" color="whiteAlpha.800" fontWeight="medium" fontSize="sm" leftIcon={<AttachmentIcon />}>
+                 Archive
+               </Button>
             </HStack>
           </ModalFooter>
         </ModalContent>

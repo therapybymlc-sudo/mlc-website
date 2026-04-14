@@ -51,6 +51,7 @@ import Clients from "./Clients";
 import ClientNotes from "./ClientNotes";
 import ClientFiles from "./ClientFiles";
 import TherapistScheduleOverview from "./scheduling/TherapistScheduleOverview";
+import Schedule from "./Schedule";
 import TherapistAvailability from "./scheduling/TherapistAvailability";
 import TherapistBookingRequests from "./scheduling/TherapistBookingRequests";
 import TherapistAppointments from "./scheduling/TherapistAppointments";
@@ -443,6 +444,14 @@ export default function TherapistDashboard() {
                 </Button>
               </Box>
             </VStack>
+          );
+        }
+        return <Schedule />;
+      case "scheduleOverview":
+        if (isTherapistPreview) {
+          return renderLocked(
+            "Schedule Overview",
+            "Schedule Overview unlocks after your application is approved."
           );
         }
         return (
@@ -1210,10 +1219,19 @@ export default function TherapistDashboard() {
         icon={<AttachmentIcon />}
       />
       <SidebarButton
-        label="Schedule Overview"
+        label="Calendar"
         active={activeTab === "schedule"}
         onClick={() => {
           setActiveTab("schedule");
+          onSidebarClose();
+        }}
+        icon={<CalendarIcon />}
+      />
+      <SidebarButton
+        label="Schedule Overview"
+        active={activeTab === "scheduleOverview"}
+        onClick={() => {
+          setActiveTab("scheduleOverview");
           onSidebarClose();
         }}
         icon={<CalendarIcon />}
