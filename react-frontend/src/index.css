@@ -67,3 +67,49 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ========================================================
+   FullCalendar MLC Overrides
+   ======================================================== */
+.fc {
+  font-family: 'Lato', sans-serif !important;
+  --fc-border-color: #E2E8F0;
+  --fc-button-text-color: #2E2E2E;
+  --fc-button-bg-color: #F9F9F9;
+  --fc-button-border-color: #E2E8F0;
+  --fc-button-hover-bg-color: #E9F2ED;
+  --fc-button-hover-border-color: #A9CBB7;
+  --fc-button-active-bg-color: #A9CBB7;
+  --fc-button-active-border-color: #A9CBB7;
+  --fc-today-bg-color: #F6F3EF;
+}
+.fc-toolbar-title {
+  font-family: 'Playfair Display', serif !important;
+  color: #2E2E2E !important;
+  font-size: 1.5rem !important;
+}
+.fc-event {
+  border-radius: 6px !important;
+  border: none !important;
+  padding: 2px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.fc-non-business {
+  background-color: #F1F5F9 !important;
+  opacity: 0.8 !important;
+}
+.fc-timegrid-slot {
+  background-color: #FFFFFF;
+}
+.fc .fc-col-header-cell-cushion {
+  color: #2E2E2E;
+  font-weight: 600;
+  padding: 8px !important;
+}
+.fc-timegrid-axis-cushion {
+  color: #718096 !important;
+  font-size: 0.85rem;
+}
+.fc-v-event .fc-event-main {
+  color: #2E2E2E !important;
+}

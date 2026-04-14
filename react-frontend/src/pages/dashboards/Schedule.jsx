@@ -288,10 +288,40 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   /* ===============================
      🔹 Event CRUD
   =============================== */
-  const handleSelect = (info) => {
+  const handleSelect = async (info) => {
     const start = info.start ? new Date(info.start) : null;
     const end = info.end ? new Date(info.end) : null;
     const autoEnd = start ? new Date(start.getTime() + 60 * 60 * 1000) : null;
+
+    if (isReschedulingEventId && reschedulingEventData) {
+      if (window.confirm("Reschedule appointment to this time?")) {
+        try {
+          const fallbackTherapist = reschedulingEventData.extendedProps?.therapist || reschedulingEventData.getResources?.()?.[0]?.id || therapists[0]?.id;
+          await apiPut(`/schedule-events/${isReschedulingEventId}/`, {
+            title: reschedulingEventData.title || "Appointment",
+            therapist: Number(fallbackTherapist),
+            client: reschedulingEventData.extendedProps?.client ? Number(reschedulingEventData.extendedProps.client) : null,
+            event_type: reschedulingEventData.extendedProps?.event_type ? Number(reschedulingEventData.extendedProps.event_type) : null,
+            start_time: toLocalInputValue(start) || info.startStr,
+            end_time: toLocalInputValue(end || autoEnd) || info.endStr,
+            notes: reschedulingEventData.extendedProps?.notes || "",
+            attendance_status: reschedulingEventData.extendedProps?.attendance_status || null,
+          });
+          toast({ status: "success", title: "Appointment rescheduled" });
+          setIsReschedulingEventId(null);
+          setReschedulingEventData(null);
+          fetchEvents();
+        } catch (e) {
+          console.error(e);
+          toast({ status: "error", title: "Couldn't reschedule appointment" });
+        }
+      } else {
+        setIsReschedulingEventId(null);
+        setReschedulingEventData(null);
+      }
+      return;
+    }
+
     setNewEvent({
       title: "",
       therapist: String(
@@ -352,6 +382,8 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   };
 
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isReschedulingEventId, setIsReschedulingEventId] = useState(null);
+  const [reschedulingEventData, setReschedulingEventData] = useState(null);
   const [isEventOpen, setIsEventOpen] = useState(false);
   const [eventEditMode, setEventEditMode] = useState(false);
   const [eventDraft, setEventDraft] = useState({
@@ -415,6 +447,22 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
     } catch (e) {
       console.error(e);
       toast({ status: "error", title: "Couldn't update appointment" });
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!selectedEvent) return;
+    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    try {
+      const { apiDelete } = await import("../../api");
+      await apiDelete(`/schedule-events/${selectedEvent.id}/`);
+      toast({ status: "success", title: "Appointment canceled" });
+      setIsEventOpen(false);
+      setSelectedEvent(null);
+      fetchEvents();
+    } catch (e) {
+      console.error(e);
+      toast({ status: "error", title: "Couldn't cancel appointment" });
     }
   };
 
@@ -658,9 +706,9 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
             {waitlistItems.length}
           </Badge>
         }
-        bg="#0A7BA1"
-        color="white"
-        _hover={{ bg: "#096A8B" }}
+        bg="#A9CBB7"
+        color="#2E2E2E"
+        _hover={{ bg: "#8FB6A0" }}
         onClick={() => setIsWaitlistOpen(true)}
       >
         Wait list
@@ -902,10 +950,10 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="lg" isCentered>
         <ModalOverlay />
         <ModalContent maxW="540px" maxH="85vh" overflow="hidden" borderRadius="xl">
-          <ModalHeader bg="#0A7BA1" color="white" py={5}>
+          <ModalHeader bg="#A9CBB7" color="#2E2E2E" py={5}>
             New appointment
           </ModalHeader>
-          <ModalCloseButton color="white" mt={2} />
+          <ModalCloseButton color="#2E2E2E" mt={2} />
           <ModalBody overflowY="auto" pt={6} pb={8}>
             <VStack spacing={4} align="stretch">
               <FormControl isRequired>
@@ -1133,9 +1181,9 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
 
           <ModalFooter>
             <Button
-              bg="#D14D72"
+              bg="#C9A960"
               color="white"
-              _hover={{ bg: "#B83D60" }}
+              _hover={{ bg: "#B89B55" }}
               mr={3}
               onClick={handleSave}
             >
@@ -1152,15 +1200,15 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       <Modal isOpen={isEventOpen} onClose={() => setIsEventOpen(false)} size="2xl" isCentered>
         <ModalOverlay />
         <ModalContent maxW="720px" maxH="85vh" overflow="hidden" borderRadius="xl">
-          <Box bg="#0A7BA1" color="white" p={{ base: 5, md: 8 }} position="relative">
-            <ModalCloseButton color="white" mt={2} />
+          <Box bg="#A9CBB7" color="#2E2E2E" p={{ base: 5, md: 8 }} position="relative">
+            <ModalCloseButton color="#2E2E2E" mt={2} />
             <Heading size="lg" mb={2} pr={8} lineHeight="1.3">
               {selectedEvent?.extendedProps?.event_type_name || selectedEvent?.title || "Appointment"}
             </Heading>
             <Text fontWeight="semibold" fontSize="md" mb={1}>
               {selectedEvent?.extendedProps?.therapist_name || "Practitioner"}
             </Text>
-            <Text fontSize="md" mb={5} color="whiteAlpha.900">
+            <Text fontSize="md" mb={5} color="blackAlpha.800">
               {selectedEvent ? new Date(selectedEvent.startStr).toLocaleString("en-US", {
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
               }) : ""} at {selectedEvent ? new Date(selectedEvent.startStr).toLocaleTimeString("en-US", {
@@ -1169,9 +1217,9 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
             </Text>
             <Button
               leftIcon={<span style={{ fontWeight: 'bold' }}>🎥</span>}
-              bg="#D14D72"
+              bg="#C9A960"
               color="white"
-              _hover={{ bg: "#B83D60" }}
+              _hover={{ bg: "#B89B55" }}
               size="md"
               borderRadius="md"
               px={6}
@@ -1197,21 +1245,21 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                     {/* LEFT COLUMN: Patient Info */}
                     <VStack align="stretch" spacing={5}>
                       <Box>
-                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Patient</Text>
+                        <Text fontSize="sm" color="#2E2E2E" fontWeight="semibold" mb={1}>Patient</Text>
                         <Text fontWeight="medium" color="gray.800">
                           {selectedEvent.extendedProps?.client_name || "Client"}
                         </Text>
                       </Box>
                       <Box>
-                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Case</Text>
+                        <Text fontSize="sm" color="#2E2E2E" fontWeight="semibold" mb={1}>Case</Text>
                         <Text fontSize="sm" color="gray.600">None</Text>
                       </Box>
                       <Box>
-                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Next appointment</Text>
+                        <Text fontSize="sm" color="#2E2E2E" fontWeight="semibold" mb={1}>Next appointment</Text>
                         <Text fontSize="sm" color="gray.600">Not scheduled</Text>
                       </Box>
                       <Box>
-                        <Text fontSize="sm" color="#0A7BA1" fontWeight="semibold" mb={1}>Forms</Text>
+                        <Text fontSize="sm" color="#2E2E2E" fontWeight="semibold" mb={1}>Forms</Text>
                         <Text fontSize="sm" color="gray.600">None</Text>
                       </Box>
                     </VStack>
@@ -1256,7 +1304,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                         justifyContent="space-between"
                         variant="outline"
                         borderColor="gray.300"
-                        rightIcon={<EditIcon color="#0A7BA1" />}
+                        rightIcon={<EditIcon color="#A9CBB7" />}
                         onClick={() =>
                           navigate(
                             selectedEvent.extendedProps?.client
@@ -1273,7 +1321,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                         justifyContent="space-between"
                         variant="outline"
                         borderColor="gray.300"
-                        rightIcon={<AttachmentIcon color="#0A7BA1" />}
+                        rightIcon={<AttachmentIcon color="#A9CBB7" />}
                         onClick={() => {
                           const link = getSessionLinkForTherapist(
                             selectedEvent.extendedProps?.therapist || selectedEvent.getResources?.()?.[0]?.id
@@ -1383,7 +1431,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               </VStack>
             )}
           </ModalBody>
-          <ModalFooter bg="#3E2C48" color="white" borderBottomRadius="xl" justifyContent="space-between">
+          <ModalFooter bg="#2E2E2E" color="white" borderBottomRadius="xl" justifyContent="space-between">
             <HStack spacing={4}>
               {!eventEditMode && (
                 <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => handleSave()}>
@@ -1392,13 +1440,24 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               )}
               {!eventEditMode ? (
                 <>
-                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => setEventEditMode(true)}>
+                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => {
+                    setIsReschedulingEventId(selectedEvent.id);
+                    setReschedulingEventData(selectedEvent);
+                    setIsEventOpen(false);
+                    toast({
+                      title: "Reschedule mode",
+                      description: "Click an empty slot on the calendar to reschedule this appointment.",
+                      status: "info",
+                      duration: 6000,
+                      isClosable: true,
+                    });
+                  }}>
                     Reschedule
                   </Button>
                   <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={() => setEventEditMode(true)}>
                     Edit
                   </Button>
-                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }}>
+                  <Button variant="link" color="white" fontWeight="medium" fontSize="sm" _hover={{ color: "gray.200" }} onClick={handleDeleteEvent}>
                     Cancel
                   </Button>
                 </>
@@ -1470,13 +1529,13 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       <Modal isOpen={isWaitlistOpen} onClose={() => setIsWaitlistOpen(false)} size="xl" isCentered>
         <ModalOverlay />
         <ModalContent maxW="760px" maxH="85vh" overflow="hidden">
-          <ModalHeader bg="#0A7BA1" color="white">
+          <ModalHeader bg="#A9CBB7" color="#2E2E2E">
             <HStack justify="space-between">
               <Text>Wait list</Text>
               <Button
                 size="sm"
                 bg="white"
-                color="#0A7BA1"
+                color="#A9CBB7"
                 _hover={{ bg: "gray.100" }}
                 onClick={() => setWaitlistFormOpen((prev) => !prev)}
               >
@@ -1484,7 +1543,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               </Button>
             </HStack>
           </ModalHeader>
-          <ModalCloseButton color="white" />
+          <ModalCloseButton color="#2E2E2E" />
           <ModalBody overflowY="auto">
             {waitlistFormOpen && (
               <Box border="1px solid #E2E8F0" borderRadius="md" p={4} mb={6}>
@@ -1552,7 +1611,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                   <Button variant="ghost" onClick={() => setWaitlistFormOpen(false)}>
                     Cancel
                   </Button>
-                  <Button bg="#0A7BA1" color="white" _hover={{ bg: "#096A8B" }} onClick={handleAddWaitlist}>
+                  <Button bg="#C9A960" color="white" _hover={{ bg: "#B89B55" }} onClick={handleAddWaitlist}>
                     Save to wait list
                   </Button>
                 </HStack>
