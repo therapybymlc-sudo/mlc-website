@@ -276,6 +276,10 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             return TherapistProfile.objects.all()
         return TherapistProfile.objects.filter(id=therapist.id)
 
+    def update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return super().update(request, *args, **kwargs)
+
 
 class TherapistSessionLinkViewSet(viewsets.ModelViewSet):
     serializer_class = TherapistSessionLinkSerializer
@@ -1549,3 +1553,28 @@ def terminate_relationship(request):
 
 class FrontendAppView(TemplateView):
     template_name = "index.html"
+
+class OnboardUserRoleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        role = request.data.get("role")
+        user = request.user
+        
+        if not role or role not in ["client", "therapist"]:
+            return Response({"detail": "Invalid or missing role. Must be 'client' or 'therapist'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Ensure the user doesn't already have the requested profile
+        if role == "client":
+            if getattr(user, "client_profile", None):
+                return Response({"detail": "Client profile already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            _resolve_client_from_request(request) # This will create one if it doesn't exist
+            return Response({"detail": "Client profile created successfully."})
+            
+        elif role == "therapist":
+            if getattr(user, "therapist_profile", None):
+                return Response({"detail": "Therapist profile already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            name = getattr(user, "get_full_name", lambda: "")().strip() or getattr(user, "username", "Unnamed Therapist")
+            email = getattr(user, "email", None) or f"therapist_{user.pk}@local"
+            TherapistProfile.objects.create(user=user, name=name, email=email, is_verified=False)
+            return Response({"detail": "Therapist profile created successfully and pending verification."})

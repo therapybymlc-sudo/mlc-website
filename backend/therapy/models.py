@@ -27,6 +27,10 @@ class TherapistProfile(models.Model):
         blank=True,
         help_text="Stores repeating availability. Example: {'1': [{'startTime': '09:00', 'endTime': '17:00'}]}"
     )
+    is_verified = models.BooleanField(default=False)
+    bio = models.TextField(blank=True, null=True)
+    profile_image_url = models.URLField(blank=True, null=True)
+    specialties = models.JSONField(default=list, blank=True)
 
     def __str__(self) -> str:
         return self.name

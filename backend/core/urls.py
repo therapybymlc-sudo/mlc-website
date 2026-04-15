@@ -49,6 +49,7 @@ from therapy.views import (
     AvailabilitySlotPublicView,
     PublicTherapistDirectoryView,
     terminate_relationship,
+    OnboardUserRoleView,
 )
 
 # ----------------------------
@@ -160,6 +161,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth-test/", auth_test, name="auth_test"),
     path("auth-login/", auth_login, name="auth_login"),
+    path("api/onboard/", OnboardUserRoleView.as_view(), name="onboard_role"),
     path("protected/", protected_view, name="protected"),
     path("api/whoami/", whoami, name="whoami"),
     path("api/availability-slots/public/", AvailabilitySlotPublicView.as_view(), name="availability-slots-public"),

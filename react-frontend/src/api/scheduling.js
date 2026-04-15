@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiDelete } from "../api";
+import { apiGet, apiPost, apiPatch, apiDelete } from "../api";
 
 export const schedulingApi = {
   listAvailabilitySlots() {
@@ -8,7 +8,7 @@ export const schedulingApi = {
     return apiPost("availability-slots/", payload);
   },
   updateAvailabilitySlot(id, payload) {
-    return apiPut(`availability-slots/${id}/`, payload);
+    return apiPatch(`availability-slots/${id}/`, payload);
   },
   deleteAvailabilitySlot(id) {
     return apiDelete(`availability-slots/${id}/`);
@@ -70,6 +70,6 @@ export const schedulingApi = {
     return apiGet(`therapists/${id}/`);
   },
   updateTherapistProfile(id, payload) {
-    return apiPut(`therapists/${id}/`, payload);
+    return apiPatch(`therapists/${id}/`, payload);
   },
 };

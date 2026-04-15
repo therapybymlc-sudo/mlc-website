@@ -58,11 +58,22 @@ import TherapistAppointments from "./scheduling/TherapistAppointments";
 import TherapistResources from "./resources/TherapistResources";
 import SchedulingNotifications from "./notifications/SchedulingNotifications";
 import NoteTemplates from "./NoteTemplates"; // ✅ added
+import TherapistProfileSettings from "./TherapistProfileSettings";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
 import RichTextEditor from "../../components/RichTextEditor";
 
 export default function TherapistDashboard() {
-  const { user, logout, isAdmin, isPremium, isTherapist, isTherapistPreview } =
+  const {
+    user,
+    logout,
+    isAdmin,
+    isPremium,
+    isTherapist,
+    isTherapistPreview,
+    isVerifiedTherapist,
+    isTherapistPremium,
+    therapistProfile,
+  } =
     useAuth(); // ✅ now using isAdmin from AuthContext
   const toast = useToast();
   const navigate = useNavigate();
@@ -258,6 +269,9 @@ export default function TherapistDashboard() {
     </Box>
   );
 
+  const requiresVerification = !isAdmin && !isVerifiedTherapist;
+  const requiresPremium = !isAdmin && !isTherapistPremium;
+
   const renderContent = () => {
     if (isTherapistPreview) {
       const allowedPreviewTabs = new Set([
@@ -276,6 +290,9 @@ export default function TherapistDashboard() {
     }
     switch (activeTab) {
       case "clients":
+        if (requiresVerification) {
+          return <UnverifiedOverlay />;
+        }
         if (isTherapistPreview) {
           return (
             <VStack align="start" spacing={6}>
@@ -486,6 +503,12 @@ export default function TherapistDashboard() {
         }
         return <TherapistAppointments />;
       case "resources":
+        if (requiresVerification) {
+          return <UnverifiedOverlay />;
+        }
+        if (requiresPremium) {
+          return <PremiumOverlay />;
+        }
         if (isTherapistPreview) {
           return renderLocked(
             "Resources",
@@ -621,6 +644,12 @@ export default function TherapistDashboard() {
           </VStack>
         );
       case "clientTools":
+        if (requiresVerification) {
+          return <UnverifiedOverlay />;
+        }
+        if (requiresPremium) {
+          return <PremiumOverlay />;
+        }
         if (isTherapistPreview) {
           return renderLocked(
             "Client tools & sharing",
@@ -775,6 +804,8 @@ export default function TherapistDashboard() {
           );
         }
         return <NoteTemplates />;
+      case "profileSettings":
+        return <TherapistProfileSettings />;
       case "premium":
         if (isTherapistPreview) {
           return renderLocked(
@@ -1308,6 +1339,15 @@ export default function TherapistDashboard() {
         }}
         icon={<AttachmentIcon />}
       />
+      <SidebarButton
+        label="Profile Settings"
+        active={activeTab === "profileSettings"}
+        onClick={() => {
+          setActiveTab("profileSettings");
+          onSidebarClose();
+        }}
+        icon={<EditIcon />}
+      />
 
       {/* ✅ Admin-only Note Templates tab */}
       {isAdmin && (
@@ -1424,6 +1464,24 @@ export default function TherapistDashboard() {
             </HStack>
           </Box>
         )}
+        {!isTherapistPreview && therapistProfile && requiresVerification && (
+          <Box
+            mb={6}
+            p={4}
+            borderRadius="2xl"
+            bg="#FFF7F7"
+            border="1px solid #FED7D7"
+          >
+            <HStack justify="space-between" flexWrap="wrap" spacing={3}>
+              <Text color="gray.700">
+                Your therapist account is pending verification.
+              </Text>
+              <Button as={Link} to="/therapist-apply" colorScheme="red" size="sm">
+                Complete verification
+              </Button>
+            </HStack>
+          </Box>
+        )}
         {renderContent()}
       </Box>
 
@@ -1472,5 +1530,37 @@ function SidebarButton({ label, active, onClick, icon }) {
     >
       {label}
     </Button>
+  );
+}
+
+function UnverifiedOverlay() {
+  return (
+    <Box bg="white" p={8} borderRadius="2xl" boxShadow="md" textAlign="center">
+      <Heading size="md" mb={3}>
+        Verification required
+      </Heading>
+      <Text color="gray.600" mb={5}>
+        Unlock by becoming a verified provider with MLC.
+      </Text>
+      <Button as={Link} to="/therapist-apply" colorScheme="purple">
+        Go to therapist application
+      </Button>
+    </Box>
+  );
+}
+
+function PremiumOverlay() {
+  return (
+    <Box bg="white" p={8} borderRadius="2xl" boxShadow="md" textAlign="center">
+      <Heading size="md" mb={3}>
+        Premium required
+      </Heading>
+      <Text color="gray.600" mb={5}>
+        This feature is available on premium therapist subscriptions.
+      </Text>
+      <Button colorScheme="purple" isDisabled>
+        Upgrade coming soon
+      </Button>
+    </Box>
   );
 }

@@ -503,6 +503,13 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
         ...(businessHours && businessHours.length > 0 ? { businessHours } : {})
       };
     });
+  const computedBusinessHours = resources.reduce((acc, r) => {
+    if (r.businessHours) {
+      return [...acc, ...r.businessHours];
+    }
+    return acc;
+  }, []);
+
   const hasResources = resources.length > 0;
 
   /* ===============================
@@ -894,6 +901,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                 }}
                 selectable
                 select={handleSelect}
+                businessHours={computedBusinessHours.length > 0 ? computedBusinessHours : undefined}
                 events={filteredEvents}
                 eventClick={handleEventClick}
                 datesSet={(arg) => {

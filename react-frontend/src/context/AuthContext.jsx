@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/clerk-react";
 import api, { setTokenGetter } from "../api";
 
@@ -28,6 +28,30 @@ export const AuthProvider = ({ children }) => {
     previewRole === "therapist" &&
     signupRole === "therapist" &&
     !isTherapist;
+  const [therapistProfile, setTherapistProfile] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadTherapistProfile = async () => {
+      if (!isLoaded || !isSignedIn) {
+        if (mounted) setTherapistProfile(null);
+        return;
+      }
+      try {
+        const res = await api.get("therapists/");
+        const list = Array.isArray(res.data) ? res.data : res.data?.results || [];
+        if (mounted) {
+          setTherapistProfile(list[0] || null);
+        }
+      } catch {
+        if (mounted) setTherapistProfile(null);
+      }
+    };
+    loadTherapistProfile();
+    return () => {
+      mounted = false;
+    };
+  }, [isLoaded, isSignedIn, roles.join(",")]);
 
   useEffect(() => {
     let isMounted = true;
@@ -100,6 +124,9 @@ export const AuthProvider = ({ children }) => {
         isTherapist,
         isClient,
         isPremium,
+        therapistProfile,
+        isVerifiedTherapist: !!therapistProfile?.is_verified,
+        isTherapistPremium: !!therapistProfile?.is_premium,
         isTherapistPreview,
         previewRole,
         clerk,

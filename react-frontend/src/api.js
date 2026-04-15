@@ -48,6 +48,11 @@ export async function apiPut(path, body) {
   return res.data;
 }
 
+export async function apiPatch(path, body) {
+  const res = await api.patch(path.replace(/^\/+/, ""), body);
+  return res.data;
+}
+
 export async function apiDelete(path) {
   const res = await api.delete(path.replace(/^\/+/, ""));
   return res.status === 204 || res.status === 200;
