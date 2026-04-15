@@ -66,7 +66,7 @@ export default function Navbar() {
                 to="/dashboard"
                 size="sm"
                 variant="ghost"
-                fontWeight="medium"
+                fontWeight="600"
                 borderRadius="full"
               >
                 Your Dashboard
@@ -83,7 +83,7 @@ export default function Navbar() {
                 to="/login"
                 size="sm"
                 variant="ghost"
-                fontWeight="medium"
+                fontWeight="600"
                 borderRadius="full"
               >
                 Sign in
@@ -132,7 +132,7 @@ export default function Navbar() {
               as={Link}
               key={link.label}
               to={link.href}
-              fontWeight="500"
+              fontWeight="600"
               fontFamily="'Inter', sans-serif"
               fontSize="clamp(0.9375rem, 0.9rem + 0.15vw, 1rem)"
               letterSpacing="0.2px"

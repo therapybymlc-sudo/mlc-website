@@ -138,20 +138,21 @@ export default function Home() {
         minH={{ base: "100svh", md: "100vh" }}
         display="flex"
         alignItems="center"
-        justifyContent="flex-start"
-        textAlign="left"
-        px={{ base: 6, md: 12, lg: 24 }}
+        justifyContent="center"
+        textAlign="center"
+        px={6}
         py={10}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
       >
-        <Box className="hero-content" maxW="3xl">
+        <Box className="hero-content" maxW="4xl">
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
-            boxSize={{ base: "100px", sm: "120px" }}
+            boxSize={{ base: "100px", sm: "120px", md: "140px" }}
             mb={6}
+            mx="auto"
           />
           <Heading
             as="h1"
@@ -188,6 +189,7 @@ export default function Home() {
             mt={8}
             spacing={4}
             flexWrap="wrap"
+            justify="center"
           >
             <Button
               size="lg"
@@ -446,7 +448,7 @@ export default function Home() {
               </Heading>
               <Text
                 mb={4}
-                color="#555"
+                fontWeight="600"
                 fontFamily="'Inter', sans-serif"
                 fontSize="md"
               >
