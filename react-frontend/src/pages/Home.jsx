@@ -131,99 +131,95 @@ export default function Home() {
       </Helmet>
       {/* HERO SECTION */}
       <MotionBox
+        className="hero-container"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
         bgSize="cover"
         bgPosition={{ base: "top", md: "center" }}
         minH={{ base: "100svh", md: "100vh" }}
         display="flex"
         alignItems="center"
-        justifyContent="center"
-        flexDir="column"
-        textAlign="center"
-        px={6}
+        justifyContent="flex-start"
+        textAlign="left"
+        px={{ base: 6, md: 12, lg: 24 }}
         py={10}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
       >
-        <Image
-          src={homeContent.hero.logo_url || "/logo_tra.png"}
-          alt="MLC Therapy Logo"
-          boxSize={{ base: "120px", sm: "140px", md: "160px" }}
-          mb={4}
-          maxW="80vw"
-        />
-        <Heading
-          fontSize={{ base: "3xl", md: "4xl" }}
-          color="#2E2E2E"
-          fontFamily="'Playfair Display', serif"
-          fontWeight="600"
-          letterSpacing="-0.5px"
-        >
-          {homeContent.hero.title}
-        </Heading>
-        <Text
-          mt={3}
-          fontSize="lg"
-          color="#56756D"
-          fontFamily="'Inter', sans-serif"
-          fontStyle="italic"
-        >
-          {homeContent.hero.tagline}
-        </Text>
-        <Text
-          mt={2}
-          color="gray.700"
-          fontFamily="'Inter', sans-serif"
-          fontSize="md"
-          maxW="lg"
-          dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_one || "" }}
-        />
-        <Text
-          mt={2}
-          color="gray.700"
-          fontFamily="'Inter', sans-serif"
-          fontSize="md"
-          maxW="xl"
-          dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_two || "" }}
-        />
-        <HStack
-          mt={6}
-          spacing={4}
-          flexWrap="wrap"
-          justify="center"
-        >
-          <Button
-            size="lg"
-            bg="#56756D"
-            color="white"
-            borderRadius="full"
-            _hover={{ bg: "#C9A960", color: "white" }}
-            as="a"
-            href={homeContent.hero.primary_link}
+        <Box className="hero-content" maxW="3xl">
+          <Image
+            src={homeContent.hero.logo_url || "/logo_tra.png"}
+            alt="MLC Therapy Logo"
+            boxSize={{ base: "100px", sm: "120px" }}
+            mb={6}
+          />
+          <Heading
+            as="h1"
+            className="hero-title"
+          >
+            {homeContent.hero.title}
+          </Heading>
+          <Text
+            mt={4}
+            fontSize="xl"
+            color="#56756D"
             fontFamily="'Inter', sans-serif"
             fontWeight="500"
-            px={8}
-            boxShadow="md"
           >
-            {homeContent.hero.primary_label}
-          </Button>
-          <Button
-            size="lg"
-            bg="#C9A960"
-            color="white"
-            borderRadius="full"
-            _hover={{ bg: "#56756D", color: "white" }}
-            as="a"
-            href={homeContent.hero.secondary_link}
+            {homeContent.hero.tagline}
+          </Text>
+          <Text
+            mt={4}
+            color="rgba(46, 46, 46, 0.9)"
             fontFamily="'Inter', sans-serif"
-            fontWeight="500"
-            px={8}
-            boxShadow="md"
+            fontSize="lg"
+            lineHeight="1.7"
+            dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_one || "" }}
+          />
+          <Text
+            mt={2}
+            color="rgba(46, 46, 46, 0.9)"
+            fontFamily="'Inter', sans-serif"
+            fontSize="lg"
+            lineHeight="1.7"
+            dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_two || "" }}
+          />
+          <HStack
+            mt={8}
+            spacing={4}
+            flexWrap="wrap"
           >
-            {homeContent.hero.secondary_label}
-          </Button>
-        </HStack>
+            <Button
+              size="lg"
+              bg="#56756D"
+              color="white"
+              borderRadius="full"
+              _hover={{ bg: "#C9A960", color: "white" }}
+              as="a"
+              href={homeContent.hero.primary_link}
+              fontWeight="500"
+              px={10}
+              py={7}
+            >
+              {homeContent.hero.primary_label}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              borderColor="#C9A960"
+              color="#C9A960"
+              borderRadius="full"
+              _hover={{ bg: "#C9A960", color: "white" }}
+              as="a"
+              href={homeContent.hero.secondary_link}
+              fontWeight="500"
+              px={10}
+              py={7}
+            >
+              {homeContent.hero.secondary_label}
+            </Button>
+          </HStack>
+        </Box>
       </MotionBox>
 
       {/* PORTAL CTA */}
@@ -231,7 +227,9 @@ export default function Home() {
         <Container maxW="6xl">
           <VStack spacing={8}>
             <Heading
+              as="h2"
               fontFamily="'Playfair Display', serif"
+              fontWeight="500"
               color="#2E2E2E"
               textAlign="center"
             >
@@ -315,7 +313,6 @@ export default function Home() {
                 <Heading
                   size="sm"
                   mb={2}
-                  fontFamily="'Playfair Display', serif"
                   color="#2E2E2E"
                 >
                   {item.title}
@@ -341,11 +338,12 @@ export default function Home() {
         >
           <Box>
             <Heading
+              as="h2"
               fontFamily="'Playfair Display', serif"
               color="#2E2E2E"
               mb={4}
               lineHeight="1.3"
-              fontWeight="600"
+              fontWeight="500"
             >
               Where Healing Meets Compassion
             </Heading>
@@ -391,11 +389,11 @@ export default function Home() {
       {/* SERVICES SECTION */}
       <Box bg="#F6F6F4" py={20} textAlign="center" px={6}>
         <Heading
+          as="h2"
           fontFamily="'Playfair Display', serif"
           color="#2E2E2E"
           mb={12}
-          fontSize={{ base: "2xl", md: "3xl" }}
-          fontWeight="600"
+          fontWeight="500"
         >
           Our Services
         </Heading>
@@ -442,7 +440,6 @@ export default function Home() {
                 size="md"
                 mb={2}
                 color="#2E2E2E"
-                fontFamily="'Playfair Display', serif"
                 fontWeight="600"
               >
                 {s.title}
@@ -484,11 +481,12 @@ export default function Home() {
       <Box bg="white" py={20} px={6}>
         <Container maxW="6xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             mb={8}
             textAlign="center"
-            fontWeight="600"
+            fontWeight="500"
           >
             Common Questions About Starting Therapy
           </Heading>

@@ -33,17 +33,17 @@ const theme = extendTheme({
     normal: 400,
     medium: 500,
     semibold: 600,
-    bold: 700,
   },
   colors: {
     mlc: {
       gold: "#C9A960",
       green: "#A9CBB7",
       black: "#2E2E2E",
+      blackSoft: "rgba(46, 46, 46, 0.9)",
       white: "#F9F9F9",
       grey: "#B5B5B5",
-      sageTint: "#E9F2ED", // light green tint for subtle section backgrounds
-      beige: "#F6F3EF", // optional soft beige for gradients or cards
+      sageTint: "#E9F2ED",
+      beige: "#F6F3EF",
     },
   },
   gradients: {
@@ -67,8 +67,9 @@ const theme = extendTheme({
       },
       body: {
         bg: "mlc.white",
-        color: "mlc.black",
+        color: "mlc.blackSoft",
         fontFamily: "body",
+        fontWeight: "normal",
         overflowX: "hidden",
       },
       "img, svg, video, canvas": {

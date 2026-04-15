@@ -35,9 +35,9 @@ export default function Navbar() {
 
   return (
     <Box
-      bg="white"
+      bg="rgba(255, 255, 255, 0.85)"
+      backdropFilter="blur(6px)"
       px={{ base: 4, md: 8, lg: 10 }}
-      py={3}
       boxShadow="sm"
       position="sticky"
       top="0"
@@ -45,7 +45,7 @@ export default function Navbar() {
       w="100%"
     >
       <Flex
-        alignItems={{ base: "flex-start", md: "center" }}
+        alignItems="center"
         justifyContent="space-between"
         flexWrap="wrap"
         gap={{ base: 3, md: 4 }}
@@ -56,6 +56,7 @@ export default function Navbar() {
           alignItems="center"
           flexShrink={0}
           maxW={{ base: "100%", md: "auto" }}
+          py={3}
         >
           {isAuthenticated ? (
             <HStack spacing={2}>
@@ -98,10 +99,11 @@ export default function Navbar() {
             />
             <Box lineHeight="1.1" whiteSpace={{ base: "normal", md: "nowrap" }} minW={0}>
               <Text
-                fontFamily="'Playfair Display', serif"
-                fontWeight="semibold"
+                fontFamily="'Inter', sans-serif"
+                fontWeight="600"
                 fontSize={{ base: "sm", sm: "md", md: "lg" }}
                 color="#2E2E2E"
+                letterSpacing="-0.2px"
               >
                 MLC Health & Wellness Centre
               </Text>
@@ -118,9 +120,8 @@ export default function Navbar() {
           </HStack>
         </HStack>
 
-        {/* 💻 Desktop Menu */}
         <HStack
-          spacing={{ base: 4, lg: 8 }}
+          spacing={{ base: 4, md: 8 }}
           flexWrap="wrap"
           justify="flex-end"
           display={{ base: "none", md: "flex" }}
@@ -131,12 +132,17 @@ export default function Navbar() {
               as={Link}
               key={link.label}
               to={link.href}
-              fontWeight="medium"
+              fontWeight="500"
               fontFamily="'Inter', sans-serif"
-              color="#2E2E2E"
-              _hover={{ color: "#C9A960" }}
-              transition="color 0.2s ease"
+              fontSize="clamp(0.9375rem, 0.9rem + 0.15vw, 1rem)"
+              letterSpacing="0.2px"
+              color="rgba(46, 46, 46, 0.9)"
+              _hover={{ color: "#A9CBB7", textDecoration: "none" }}
+              transition="color 200ms ease"
               whiteSpace="nowrap"
+              py={4}
+              display="inline-flex"
+              alignItems="center"
             >
               {link.label}
             </ChakraLink>

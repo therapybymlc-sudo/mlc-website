@@ -289,10 +289,11 @@ export default function Therapists() {
         <Container maxW="6xl">
           <VStack spacing={6} textAlign="center">
             <Heading
+              as="h1"
               fontFamily="'Playfair Display', serif"
-              fontSize={{ base: "2xl", md: "4xl" }}
+              fontSize="clamp(2.5rem, 5vw, 4rem)"
               color="#2E2E2E"
-              fontWeight="600"
+              fontWeight="500"
             >
               {content.hero.title}
             </Heading>
@@ -353,11 +354,12 @@ export default function Therapists() {
       <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             textAlign="center"
             mb={6}
-            fontWeight="600"
+            fontWeight="500"
           >
             {content.why.title}
           </Heading>
@@ -389,7 +391,6 @@ export default function Therapists() {
                 <Icon as={card.icon} boxSize={7} color="#A9CBB7" mb={3} />
                 <Heading
                   size="md"
-                  fontFamily="'Playfair Display', serif"
                   color="#2E2E2E"
                   mb={2}
                 >
@@ -425,9 +426,10 @@ export default function Therapists() {
         <Container maxW="6xl">
           <VStack spacing={6} textAlign="center">
             <Heading
+              as="h2"
               fontFamily="'Playfair Display', serif"
               color="#2E2E2E"
-              fontWeight="600"
+              fontWeight="500"
             >
               {content.apply.title}
             </Heading>
@@ -469,11 +471,12 @@ export default function Therapists() {
       <Box bg="white" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             textAlign="center"
             mb={10}
-            fontWeight="600"
+            fontWeight="500"
           >
             {content.supervision.title}
           </Heading>
@@ -504,7 +507,6 @@ export default function Therapists() {
                 <Box>
                   <Heading
                     size="md"
-                    fontFamily="'Playfair Display', serif"
                     color="#2E2E2E"
                     mb={2}
                   >
@@ -540,11 +542,12 @@ export default function Therapists() {
       <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             textAlign="center"
             mb={10}
-            fontWeight="600"
+            fontWeight="500"
           >
             {content.learning.title}
           </Heading>
@@ -565,7 +568,6 @@ export default function Therapists() {
                 <Icon as={card.icon} boxSize={7} color="#A9CBB7" mb={3} />
                 <Heading
                   size="md"
-                  fontFamily="'Playfair Display', serif"
                   color="#2E2E2E"
                   mb={2}
                 >
@@ -600,11 +602,12 @@ export default function Therapists() {
       <Box bg="white" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             textAlign="center"
             mb={8}
-            fontWeight="600"
+            fontWeight="500"
           >
             {content.work.title}
           </Heading>
@@ -631,7 +634,6 @@ export default function Therapists() {
                 <Icon as={card.icon} boxSize={7} color="#A9CBB7" mb={3} />
                 <Heading
                   size="md"
-                  fontFamily="'Playfair Display', serif"
                   color="#2E2E2E"
                   mb={2}
                 >
@@ -666,11 +668,12 @@ export default function Therapists() {
       <Box bg="#FBF8F3" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             textAlign="center"
             mb={10}
-            fontWeight="600"
+            fontWeight="500"
           >
             {content.values.title}
           </Heading>
@@ -686,7 +689,6 @@ export default function Therapists() {
               >
                 <Heading
                   size="md"
-                  fontFamily="'Playfair Display', serif"
                   color="#2E2E2E"
                   mb={2}
                 >
@@ -705,10 +707,11 @@ export default function Therapists() {
       <Box bg="#A9CBB7" py={{ base: 16, md: 20 }} px={6} textAlign="center">
         <Container maxW="4xl">
           <Heading
+            as="h2"
             fontFamily="'Playfair Display', serif"
             color="#2E2E2E"
             mb={4}
-            fontWeight="600"
+            fontWeight="500"
           >
             {content.cta.title}
           </Heading>
