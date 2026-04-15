@@ -83,7 +83,7 @@ export default function ClientCheckinQuiz() {
           <Progress
             value={progress}
             borderRadius="full"
-            colorScheme="teal"
+            bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
             h="10px"
             bg="#E6EFEA"
           />
@@ -151,20 +151,20 @@ export default function ClientCheckinQuiz() {
             </Button>
             {step < steps.length - 1 ? (
               <Button
-                colorScheme="teal"
+                bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
                 onClick={() => setStep((s) => Math.min(steps.length - 1, s + 1))}
               >
                 Next
               </Button>
             ) : (
-              <Button as={Link} to="/signup/client" colorScheme="teal">
+              <Button as={Link} to="/signup/client" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}>
                 See my dashboard options
               </Button>
             )}
           </HStack>
 
           {step === steps.length - 1 && (
-            <Box bg="#F2F8F5" p={6} borderRadius="3xl">
+            <Box bg="#E9F2ED" p={6} borderRadius="3xl">
               <Heading size="sm" mb={2}>
                 Next step
               </Heading>

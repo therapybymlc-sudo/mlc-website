@@ -966,7 +966,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <Box bg="#F6F6F4" py={12}>
+    <Box bg="#F9F9F9" py={12}>
       <Container maxW="6xl">
         <Heading mb={8}>
           Admin Dashboard

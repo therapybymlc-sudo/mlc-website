@@ -26,10 +26,10 @@ function TherapistLogin() {
           Don’t have an account?
         </Text>
         <HStack spacing={3} flexWrap="wrap" justify="center">
-          <Button as={Link} to="/therapist-apply" variant="outline" colorScheme="teal">
+          <Button as={Link} to="/therapist-apply" variant="outline" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}>
             Apply to be a therapist
           </Button>
-          <Button as={Link} to="/signup/client" colorScheme="purple" variant="solid">
+          <Button as={Link} to="/signup/client" bg="#C9A960" color="white" _hover={{ bg: "#56756D", color: "white" }} variant="solid">
             Sign up as a client
           </Button>
         </HStack>

@@ -41,7 +41,7 @@ export default function MeetTheTeam() {
         <meta name="twitter:image" content="https://mlchealth.in/founder_portrait_new.jpg" />
       </Helmet>
       {/* HERO SECTION */}
-      <Box bg="#F6F6F4" py={24}>
+      <Box bg="#F9F9F9" py={24}>
         <Container maxW="7xl">
           <VStack spacing={6} textAlign="center" mb={10}>
             <Heading
@@ -69,7 +69,7 @@ export default function MeetTheTeam() {
       </Box>
 
       {/* TEAM PROFILES */}
-      <Box bg="#E8ECE8" py={24}>
+      <Box bg="#E9F2ED" py={24}>
         <Container maxW="6xl">
           {team.length === 0 ? (
             <Box
@@ -227,7 +227,7 @@ export default function MeetTheTeam() {
                 Close
               </Button>
               <Button
-                colorScheme="teal"
+                bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
                 onClick={() => {
                   window.location.href = "/book";
                 }}

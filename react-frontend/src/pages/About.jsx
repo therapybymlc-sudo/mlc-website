@@ -81,7 +81,7 @@ export default function About() {
   }, []);
 
   return (
-    <Box bg="#F6F6F4">
+    <Box bg="#F9F9F9">
       <Helmet>
         <title>MLC Therapy | Our Approach to Structured & Ethical Mental Health Care in India</title>
         <meta
@@ -92,7 +92,7 @@ export default function About() {
         <meta name="twitter:image" content="https://mlchealth.in/about_illustration_new.jpg" />
       </Helmet>
       {/* HERO / INTRO */}
-      <Box py={24} px={8} bg="#F6F6F4">
+      <Box py={24} px={8} bg="#F9F9F9">
         <Container maxW="6xl">
           <SimpleGrid
             columns={{ base: 1, md: 2 }}
@@ -147,7 +147,7 @@ export default function About() {
       </Box>
 
       {/* WHY WE STARTED */}
-      <Box bg="#E8ECE8" py={24} px={8}>
+      <Box bg="#E9F2ED" py={24} px={8}>
         <Container maxW="5xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -238,7 +238,7 @@ export default function About() {
       </Box>
 
       {/* FOUNDER MESSAGE */}
-      <Box bg="#E8ECE8" py={24} px={8}>
+      <Box bg="#E9F2ED" py={24} px={8}>
         <Container maxW="6xl">
           <SimpleGrid
             columns={{ base: 1, md: 2 }}

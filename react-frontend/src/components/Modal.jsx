@@ -46,7 +46,7 @@ export default function ModalWrapper({
           <Button variant="ghost" onClick={onClose}>
             {cancelLabel}
           </Button>
-          <Button colorScheme="green" onClick={onSubmit}>
+          <Button bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }} onClick={onSubmit}>
             {submitLabel}
           </Button>
         </ModalFooter>

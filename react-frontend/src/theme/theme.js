@@ -81,10 +81,14 @@ const theme = extendTheme({
       },
       a: {
         transition: "all 0.3s ease",
-        _hover: { color: "mlc.gold" },
       },
       button: {
         transition: "all 0.3s ease",
+      },
+      // Smooth global link color
+      "a:not([class])": {
+        color: "mlc.black",
+        _hover: { color: "mlc.gold" },
       },
     },
   },

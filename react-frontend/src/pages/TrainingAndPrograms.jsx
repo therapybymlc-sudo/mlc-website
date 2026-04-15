@@ -107,7 +107,7 @@ export default function TrainingAndPrograms() {
   }, []);
 
   return (
-    <Box bg="#F6F6F4" py={20}>
+    <Box bg="#F9F9F9" py={20}>
       <Helmet>
         <title>
           Therapy Training & Programs in India | MLC Health & Wellness Centre

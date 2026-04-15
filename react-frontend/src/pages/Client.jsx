@@ -186,7 +186,7 @@ export default function Client() {
       </Box>
 
       {/* WHAT HAPPENS */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -272,7 +272,7 @@ export default function Client() {
               <Button as="a" href="/signup/client" bg="#A9CBB7" color="#2E2E2E">
                 Sign up as a client
               </Button>
-              <Button as="a" href="/client-checkin" variant="outline" colorScheme="teal">
+              <Button as="a" href="/client-checkin" variant="outline" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}>
                 Take a quick check‑in
               </Button>
               <Button as="a" href="/login/therapist" variant="ghost">
@@ -351,7 +351,7 @@ export default function Client() {
       </Box>
 
       {/* TYPES OF THERAPY */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -671,7 +671,7 @@ export default function Client() {
       </Box>
 
       {/* SEO FAQ */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -793,7 +793,7 @@ export default function Client() {
       </Box>
 
       {/* FINAL CTA */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6} textAlign="center">
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6} textAlign="center">
         <Container maxW="4xl">
           <Heading
             fontFamily="'Playfair Display', serif"

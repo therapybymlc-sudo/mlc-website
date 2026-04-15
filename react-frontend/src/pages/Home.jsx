@@ -242,7 +242,7 @@ export default function Home() {
       </MotionBox>
 
       {/* PORTAL CTA */}
-      <Box bg="#F2F8F5" py={16} px={6}>
+      <Box bg="#E9F2ED" py={16} px={6}>
         <Container maxW="6xl">
           <VStack spacing={8}>
             <Heading
@@ -271,14 +271,26 @@ export default function Home() {
                   dangerouslySetInnerHTML={{ __html: homeContent.portal.client_body || "" }}
                 />
                 <HStack spacing={3} flexWrap="wrap">
-                  <Button as="a" href={homeContent.portal.client_primary_link} colorScheme="teal">
+                  <Button
+                    as="a"
+                    href={homeContent.portal.client_primary_link}
+                    bg="#A9CBB7"
+                    color="#2E2E2E"
+                    _hover={{ bg: "#56756D", color: "white" }}
+                    borderRadius="full"
+                    fontWeight="500"
+                  >
                     {homeContent.portal.client_primary_label}
                   </Button>
                   <Button
                     as="a"
                     href={homeContent.portal.client_secondary_link}
                     variant="outline"
-                    colorScheme="teal"
+                    borderColor="#A9CBB7"
+                    color="#56756D"
+                    _hover={{ bg: "#A9CBB7", color: "#2E2E2E" }}
+                    borderRadius="full"
+                    fontWeight="500"
                   >
                     {homeContent.portal.client_secondary_label}
                   </Button>
@@ -294,14 +306,26 @@ export default function Home() {
                   dangerouslySetInnerHTML={{ __html: homeContent.portal.therapist_body || "" }}
                 />
                 <HStack spacing={3} flexWrap="wrap">
-                  <Button as="a" href={homeContent.portal.therapist_primary_link} colorScheme="purple">
+                  <Button
+                    as="a"
+                    href={homeContent.portal.therapist_primary_link}
+                    bg="#C9A960"
+                    color="white"
+                    _hover={{ bg: "#56756D", color: "white" }}
+                    borderRadius="full"
+                    fontWeight="500"
+                  >
                     {homeContent.portal.therapist_primary_label}
                   </Button>
                   <Button
                     as="a"
                     href={homeContent.portal.therapist_secondary_link}
                     variant="outline"
-                    colorScheme="purple"
+                    borderColor="#C9A960"
+                    color="#C9A960"
+                    _hover={{ bg: "#C9A960", color: "white" }}
+                    borderRadius="full"
+                    fontWeight="500"
                   >
                     {homeContent.portal.therapist_secondary_label}
                   </Button>
@@ -406,7 +430,7 @@ export default function Home() {
       </Container>
 
       {/* SERVICES SECTION */}
-      <Box bg="#F6F6F4" py={20} textAlign="center" px={6}>
+      <Box bg="#F9F9F9" py={20} textAlign="center" px={6}>
         <Heading
           as="h2"
           fontFamily="'Playfair Display', serif"
@@ -489,7 +513,7 @@ export default function Home() {
         </SimpleGrid>
       </Box>
 
-      <Box bg="#F6F6F4" py={6} px={6} textAlign="center">
+      <Box bg="#F9F9F9" py={6} px={6} textAlign="center">
         <Text fontSize="sm" color="#56756D" fontFamily="'Inter', sans-serif">
           MLC Therapy provides online counselling and psychotherapy services across Mumbai, Delhi,
           Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.

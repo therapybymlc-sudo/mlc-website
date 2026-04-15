@@ -17,7 +17,7 @@ import { Helmet } from "react-helmet-async";
 
 export default function MindfulnessAndRelaxation() {
   return (
-    <Box bg="#F6F6F4" py={20}>
+    <Box bg="#F9F9F9" py={20}>
       <Helmet>
         <title>
           Mindfulness & Relaxation Sessions in India | MLC Health & Wellness
@@ -222,7 +222,7 @@ export default function MindfulnessAndRelaxation() {
               Sign up to access guided mindfulness meditations, calming check‑ins,
               and a private dashboard you can return to anytime.
             </Text>
-            <Button as="a" href="/signup/client" colorScheme="teal">
+            <Button as="a" href="/signup/client" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}>
               Sign up as a client
             </Button>
           </VStack>

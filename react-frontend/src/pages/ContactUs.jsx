@@ -255,7 +255,7 @@ export default function ContactUs() {
                 {content.quote.text}
               </Text>
 
-              <Box bg="#E8ECE8" p={8} borderRadius="2xl" w="100%">
+              <Box bg="#E9F2ED" p={8} borderRadius="2xl" w="100%">
                 <Heading
                   fontFamily="'Playfair Display', serif"
                   fontWeight="600"

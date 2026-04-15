@@ -36,7 +36,7 @@ export default function BookNow() {
         <meta name="twitter:image" content="https://mlchealth.in/therapy-room.jpg" />
       </Helmet>
       {/* HERO SECTION */}
-      <Box bg="#F6F6F4" py={20} px={8}>
+      <Box bg="#F9F9F9" py={20} px={8}>
         <Container maxW="7xl">
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10} alignItems="center">
             <Box>
@@ -77,7 +77,7 @@ export default function BookNow() {
       </Box>
 
       {/* HOW IT WORKS */}
-      <Box bg="#E8ECE8" py={20} px={8}>
+      <Box bg="#E9F2ED" py={20} px={8}>
         <Container maxW="6xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -228,7 +228,7 @@ export default function BookNow() {
       </Box>
 
       {/* REASSURANCE / FAQ */}
-      <Box bg="#E8ECE8" py={24} px={8}>
+      <Box bg="#E9F2ED" py={24} px={8}>
         <Container maxW="6xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"

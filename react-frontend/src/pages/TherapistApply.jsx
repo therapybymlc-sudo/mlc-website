@@ -311,7 +311,7 @@ export default function TherapistApply() {
                 </SimpleGrid>
               </Box>
 
-              <Box bg="#F2F8F5" p={{ base: 5, md: 6 }} borderRadius="2xl">
+              <Box bg="#E9F2ED" p={{ base: 5, md: 6 }} borderRadius="2xl">
                 <Heading size="md" mb={4}>
                   {content.sections?.licensure || DEFAULT_CONTENT.sections.licensure}
                 </Heading>
@@ -457,7 +457,7 @@ export default function TherapistApply() {
               </SimpleGrid>
               </Box>
 
-              <Box bg="#F2F8F5" p={{ base: 5, md: 6 }} borderRadius="2xl">
+              <Box bg="#E9F2ED" p={{ base: 5, md: 6 }} borderRadius="2xl">
                 <Heading size="md" mb={4}>
                   {content.sections?.documents || DEFAULT_CONTENT.sections.documents}
                 </Heading>
@@ -477,7 +477,7 @@ export default function TherapistApply() {
                 </Checkbox>
               </Box>
 
-              <Button type="submit" colorScheme="teal" isLoading={isSubmitting}>
+              <Button type="submit" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }} isLoading={isSubmitting}>
                 {content.form?.submit_label || DEFAULT_CONTENT.form.submit_label}
               </Button>
               <Text fontSize="sm" color="gray.500">

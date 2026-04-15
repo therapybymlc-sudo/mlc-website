@@ -162,7 +162,7 @@ export default function Navbar() {
       {/* 📱 Mobile Drawer */}
       {isOpen && (
         <VStack
-          bg="#3C5750"
+          bg="#56756D"
           align="flex-start"
           mt={4}
           spacing={2}

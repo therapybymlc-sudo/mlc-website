@@ -351,7 +351,7 @@ export default function Therapists() {
       </Box>
 
       {/* WHY MLC EXISTS */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
             as="h2"
@@ -457,7 +457,7 @@ export default function Therapists() {
                   as="a"
                   href={content.apply.secondary_link}
                   variant="outline"
-                  colorScheme="teal"
+                  bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
                 >
                   {content.apply.secondary_label}
                 </Button>
@@ -539,7 +539,7 @@ export default function Therapists() {
       </Box>
 
       {/* TRAINING & DEVELOPMENT */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <Heading
             as="h2"

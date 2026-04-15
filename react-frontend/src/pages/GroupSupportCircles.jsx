@@ -16,7 +16,7 @@ import { Helmet } from "react-helmet-async";
 
 export default function GroupSupportCircles() {
   return (
-    <Box bg="#F6F6F4" py={20}>
+    <Box bg="#F9F9F9" py={20}>
       <Helmet>
         <title>Online Group Therapy & Support Circles in India</title>
         <meta

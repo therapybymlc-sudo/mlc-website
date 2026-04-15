@@ -249,7 +249,7 @@ export default function Careers() {
       </Box>
 
       {/* WHY WORK WITH US */}
-      <Box bg="#E8ECE8" py={24} px={8}>
+      <Box bg="#E9F2ED" py={24} px={8}>
         <Container maxW="7xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -304,7 +304,7 @@ export default function Careers() {
       </Box>
 
       {/* OPPORTUNITIES SECTION */}
-      <Box bg="#F6F6F4" py={24} px={8}>
+      <Box bg="#F9F9F9" py={24} px={8}>
         <Container maxW="7xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -390,7 +390,7 @@ export default function Careers() {
       </Box>
 
       {/* APPLICATION FORM */}
-      <Box bg="#E8ECE8" py={24} px={8} ref={applySectionRef} id="careers-apply">
+      <Box bg="#E9F2ED" py={24} px={8} ref={applySectionRef} id="careers-apply">
         <Container maxW="5xl">
           <Heading
             textAlign="center"
@@ -593,7 +593,7 @@ export default function Careers() {
                 Close
               </Button>
               <Button
-                colorScheme="teal"
+                bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
                 onClick={() => {
                   setActiveOpening(null);
                   scrollToApply();

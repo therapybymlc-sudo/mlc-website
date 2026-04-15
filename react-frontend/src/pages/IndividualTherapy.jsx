@@ -18,7 +18,7 @@ import { Helmet } from "react-helmet-async";
 
 export default function IndividualTherapy() {
   return (
-    <Box bg="#F6F6F4" py={20}>
+    <Box bg="#F9F9F9" py={20}>
       <Helmet>
         <title>
           Individual Therapy Online in India | Anxiety, Burnout & Personal Growth

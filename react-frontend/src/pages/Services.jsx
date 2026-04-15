@@ -202,7 +202,7 @@ export default function Services() {
         <meta name="twitter:image" content="https://mlchealth.in/service1_new.jpg" />
       </Helmet>
       {/* HERO / INTRO */}
-      <Box bg="#F6F6F4" py={24} px={8}>
+      <Box bg="#F9F9F9" py={24} px={8}>
         <Container maxW="7xl">
           <VStack spacing={8} textAlign="center">
             <Heading
@@ -250,7 +250,7 @@ export default function Services() {
       </Box>
 
       {/* PORTAL CTA */}
-      <Box bg="#F2F8F5" py={{ base: 16, md: 20 }} px={6}>
+      <Box bg="#E9F2ED" py={{ base: 16, md: 20 }} px={6}>
         <Container maxW="6xl">
           <VStack spacing={6} textAlign="center">
             <Heading fontFamily="'Playfair Display', serif" color="#2E2E2E">
@@ -276,7 +276,7 @@ export default function Services() {
                 as={Link}
                 to={content.portal.therapist_link}
                 variant="outline"
-                colorScheme="teal"
+                bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
               >
                 {content.portal.therapist_label}
               </Button>
@@ -355,7 +355,7 @@ export default function Services() {
       </Box>
 
       {/* SPECIALIZED PROGRAMS */}
-      <Box bg="#E8ECE8" py={24} px={8}>
+      <Box bg="#E9F2ED" py={24} px={8}>
         <Container maxW="7xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"
@@ -402,7 +402,7 @@ export default function Services() {
       </Box>
 
       {/* OUR APPROACH */}
-      <Box bg="#F6F6F4" py={24} px={8}>
+      <Box bg="#F9F9F9" py={24} px={8}>
         <Container maxW="6xl" textAlign="center">
           <Heading
             fontFamily="'Playfair Display', serif"
