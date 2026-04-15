@@ -156,7 +156,12 @@ export default function Home() {
           />
           <Heading
             as="h1"
-            className="hero-title"
+            fontFamily="'Inter', sans-serif"
+            fontWeight="500"
+            fontSize={{ base: "sm", sm: "md", md: "lg" }}
+            color="#2E2E2E"
+            letterSpacing="-0.1px"
+            mb={2}
           >
             {homeContent.hero.title}
           </Heading>
