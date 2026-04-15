@@ -29,6 +29,7 @@ export default function TherapistSignupPreview() {
         <SignUp
           routing="path"
           path="/signup/therapist"
+          unsafeMetadata={{ role: "therapist" }}
           afterSignUpUrl="/dashboard"
           afterSignInUrl="/dashboard"
         />

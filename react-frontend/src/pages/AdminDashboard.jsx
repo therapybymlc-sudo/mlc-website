@@ -19,6 +19,7 @@ import {
   FormHelperText,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "../api";
 
@@ -946,9 +947,9 @@ export default function AdminDashboard() {
           Admin login required
         </Heading>
         <Text mb={6}>Sign in with your admin account to edit the website.</Text>
-        <Button colorScheme="teal" onClick={login}>
-          Sign in as admin
-        </Button>
+          <Button as={Link} to="/login" colorScheme="teal" mt={4}>
+            Sign in
+          </Button>
       </Box>
     );
   }

@@ -3,26 +3,24 @@ import { Helmet } from "react-helmet-async";
 import { SignIn } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 
-export default function TherapistLogin() {
+export default function ClientLogin() {
   return (
     <Box textAlign="center" mt={20} mb={20}>
       <Helmet>
-        <title>Therapist Login | MLC Health & Wellness Centre</title>
+        <title>Client Login | MLC Health & Wellness Centre</title>
         <meta
           name="description"
-          content="Secure therapist portal login for managing clients, notes, and appointments."
+          content="Secure client portal login for your therapy dashboard."
         />
         <meta name="robots" content="noindex,nofollow" />
-        <meta property="og:image" content="https://mlchealth.in/logo_tra.png" />
-        <meta name="twitter:image" content="https://mlchealth.in/logo_tra.png" />
       </Helmet>
       <VStack spacing={6}>
-        <Heading>Therapist Login</Heading>
-        <Text>Secure access for therapists to manage clients and notes</Text>
+        <Heading>Client Login</Heading>
+        <Text>Secure access to your private dashboard</Text>
         <SignIn 
            routing="path" 
-           path="/login/therapist" 
-           signUpUrl="/signup/therapist"
+           path="/login/client" 
+           signUpUrl="/signup/client"
            afterSignInUrl="/dashboard" 
            afterSignUpUrl="/dashboard" 
         />

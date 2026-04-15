@@ -78,11 +78,12 @@ export default function Navbar() {
             <HStack spacing={2}>
               <Avatar size="sm" src="/logo_tra.png" name="Sign in" />
               <Button
+                as={Link}
+                to="/login"
                 size="sm"
                 variant="ghost"
                 fontWeight="medium"
                 borderRadius="full"
-                onClick={login}
               >
                 Sign in
               </Button>

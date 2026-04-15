@@ -27,6 +27,7 @@ export default function ClientSignup() {
         <SignUp
           routing="path"
           path="/signup/client"
+          unsafeMetadata={{ role: "client" }}
           afterSignUpUrl="/dashboard"
           afterSignInUrl="/dashboard"
         />

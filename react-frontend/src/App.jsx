@@ -37,6 +37,8 @@ import ClientCheckinQuiz from "./pages/ClientCheckinQuiz";
 import TherapistSignupPreview from "./pages/TherapistSignupPreview";
 
 // 🩺 Therapist Dashboard Pages
+import RoleSelectionLogin from "./pages/login/RoleSelectionLogin";
+import ClientLogin from "./pages/login/ClientLogin";
 import TherapistLogin from "./pages/login/TherapistLogin";
 import TherapistDashboard from "./pages/dashboards/TherapistDashboard";
 import Clients from "./pages/dashboards/Clients";
@@ -152,7 +154,9 @@ export default function App() {
                 element={<GroupSupportCircles />}
               />
 
-              {/* 🩺 Therapist Authentication & Dashboard */}
+              {/* 🩺 Authentication & Dashboard */}
+              <Route path="/login" element={<RoleSelectionLogin />} />
+              <Route path="/login/client" element={<ClientLogin />} />
               <Route path="/login/therapist" element={<TherapistLogin />} />
               <Route path="/dashboard" element={<DashboardRouter />} />
 
