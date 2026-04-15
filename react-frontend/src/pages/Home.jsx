@@ -166,7 +166,7 @@ export default function Home() {
           mt={3}
           fontSize="lg"
           color="#56756D"
-          fontFamily="'Lato', sans-serif"
+          fontFamily="'Inter', sans-serif"
           fontStyle="italic"
         >
           {homeContent.hero.tagline}
@@ -174,7 +174,7 @@ export default function Home() {
         <Text
           mt={2}
           color="gray.700"
-          fontFamily="'Lato', sans-serif"
+          fontFamily="'Inter', sans-serif"
           fontSize="md"
           maxW="lg"
           dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_one || "" }}
@@ -182,7 +182,7 @@ export default function Home() {
         <Text
           mt={2}
           color="gray.700"
-          fontFamily="'Lato', sans-serif"
+          fontFamily="'Inter', sans-serif"
           fontSize="md"
           maxW="xl"
           dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_two || "" }}
@@ -201,7 +201,7 @@ export default function Home() {
             _hover={{ bg: "#C9A960", color: "white" }}
             as="a"
             href={homeContent.hero.primary_link}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontWeight="500"
             px={8}
             boxShadow="md"
@@ -216,7 +216,7 @@ export default function Home() {
             _hover={{ bg: "#56756D", color: "white" }}
             as="a"
             href={homeContent.hero.secondary_link}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontWeight="500"
             px={8}
             boxShadow="md"
@@ -321,7 +321,7 @@ export default function Home() {
                   {item.title}
                 </Heading>
                 <Text
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   color="#2E2E2E"
                   fontSize="sm"
                   dangerouslySetInnerHTML={{ __html: item.body || "" }}
@@ -351,7 +351,7 @@ export default function Home() {
             </Heading>
             <Text
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               lineHeight="1.8"
               fontSize="lg"
             >
@@ -368,7 +368,7 @@ export default function Home() {
               _hover={{ bg: "#56756D", color: "white" }}
               as="a"
               href="/about"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontWeight="500"
               boxShadow="sm"
               px={8}
@@ -450,7 +450,7 @@ export default function Home() {
               <Text
                 mb={4}
                 color="#555"
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontSize="md"
               >
                 {s.desc}
@@ -462,7 +462,7 @@ export default function Home() {
                 _hover={{ bg: "#C9A960", color: "white" }}
                 as="a"
                 href={s.link}
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="500"
                 px={8}
               >
@@ -474,7 +474,7 @@ export default function Home() {
       </Box>
 
       <Box bg="#F6F6F4" py={6} px={6} textAlign="center">
-        <Text fontSize="sm" color="#56756D" fontFamily="'Lato', sans-serif">
+        <Text fontSize="sm" color="#56756D" fontFamily="'Inter', sans-serif">
           MLC Therapy provides online counselling and psychotherapy services across Mumbai, Delhi,
           Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.
         </Text>
@@ -520,7 +520,7 @@ export default function Home() {
                   <Box
                     flex="1"
                     textAlign="left"
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     color="#2E2E2E"
                     fontWeight="medium"
                   >
@@ -528,7 +528,7 @@ export default function Home() {
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif" color="#555">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif" color="#555">
                   {item.a}
                 </AccordionPanel>
               </AccordionItem>

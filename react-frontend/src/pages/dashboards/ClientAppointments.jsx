@@ -37,7 +37,7 @@ export default function ClientAppointments() {
 
   return (
     <Box>
-      <Heading size="md" mb={4} fontFamily="Playfair Display">Appointments for {client.name}</Heading>
+      <Heading size="md" mb={4}>Appointments for {client.name}</Heading>
       <Table size="sm" variant="simple">
         <Thead>
           <Tr>

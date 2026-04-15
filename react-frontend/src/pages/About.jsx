@@ -110,7 +110,7 @@ export default function About() {
                 {content.hero.title}
               </Heading>
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
@@ -126,7 +126,7 @@ export default function About() {
                 _hover={{ bg: "#C9A960", color: "white" }}
                 as="a"
                 href={content.hero.cta_link || "/meettheteam"}
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="500"
                 px={8}
                 py={5}
@@ -159,7 +159,7 @@ export default function About() {
           </Heading>
           <Box
             color="#2E2E2E"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontSize="lg"
             lineHeight="1.8"
             maxW="3xl"
@@ -189,7 +189,7 @@ export default function About() {
                   {pillar.title}
                 </Heading>
                 <Box
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   color="#2E2E2E"
                   sx={richTextStyles}
                   dangerouslySetInnerHTML={{ __html: pillar.body }}
@@ -218,7 +218,7 @@ export default function About() {
                 {content.message.title}
               </Heading>
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
@@ -255,7 +255,7 @@ export default function About() {
                 A Message from the Founder
               </Heading>
               <Text
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
@@ -302,7 +302,7 @@ export default function About() {
           </Heading>
           <Text
             color="#2E2E2E"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontSize="lg"
             lineHeight="1.8"
             mb={10}
@@ -325,7 +325,7 @@ export default function About() {
           </Heading>
           <Text
             color="#2E2E2E"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontSize="lg"
             lineHeight="1.8"
             maxW="3xl"
@@ -334,7 +334,7 @@ export default function About() {
             To make therapy accessible, ethical, and deeply human, ensuring that
             every therapist feels valued and every client feels seen.
           </Text>
-          <Text fontSize="sm" color="#56756D" fontFamily="'Lato', sans-serif" mt={6}>
+          <Text fontSize="sm" color="#56756D" fontFamily="'Inter', sans-serif" mt={6}>
             We offer online therapy services to individuals, couples, and families across Mumbai,
             Delhi, Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.
           </Text>
@@ -358,7 +358,7 @@ export default function About() {
           borderRadius="full"
           px={8}
           py={6}
-          fontFamily="'Lato', sans-serif"
+          fontFamily="'Inter', sans-serif"
           fontWeight="500"
           _hover={{ bg: "#C9A960", color: "white" }}
           as="a"

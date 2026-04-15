@@ -48,17 +48,17 @@ export default function Supervision() {
             borderColor="blackAlpha.100"
           >
             <VStack spacing={4}>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 At MLC Health & Wellness Centre, supervision is not case management. It is
                 therapist formation.
               </Text>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 We offer structured online supervision across India for therapists who want
                 depth, clarity, and professional coherence. Whether you are practicing in
                 Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, Kolkata or anywhere across
                 India, our supervision cohorts are conducted virtually through secure platforms.
               </Text>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 This is not a space for quick technique exchange. It is a space to develop the
                 therapist you are becoming.
               </Text>
@@ -78,7 +78,7 @@ export default function Supervision() {
             <Heading size="md" color="#2E2E2E" mb={3}>
               A Therapist Development Model
             </Heading>
-            <Text color="#2E2E2E" fontFamily="'Lato', sans-serif">
+            <Text color="#2E2E2E" fontFamily="'Inter', sans-serif">
               MLC supervision cohorts are structured environments designed to help therapists
               develop professional identity, clinical lens clarity, ethical grounding, emotional
               regulation in practice, and session coherence and flow. This is supervision for
@@ -97,11 +97,11 @@ export default function Supervision() {
             <Heading size="md" color="#2E2E2E" mb={3}>
               What Makes MLC Supervision Different
             </Heading>
-            <Text color="#2E2E2E" fontFamily="'Lato', sans-serif" mb={4}>
+            <Text color="#2E2E2E" fontFamily="'Inter', sans-serif" mb={4}>
               This is not: “Bring a case, get advice, leave.” or “Tell me if I handled that
               right.” or “Which technique should I use next week?”
             </Text>
-            <Text color="#2E2E2E" fontFamily="'Lato', sans-serif">
+            <Text color="#2E2E2E" fontFamily="'Inter', sans-serif">
               This is: Who are you as a therapist? What lens are you actually practicing from?
               Are you aligned with your model, or borrowing randomly? What parts of your
               personal history are entering the therapy room? Are you thinking clearly, or
@@ -202,12 +202,12 @@ export default function Supervision() {
                   <Heading size="sm" color="#2E2E2E" mb={2}>
                     {pillar.title}
                   </Heading>
-                  <List fontFamily="'Lato', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
+                  <List fontFamily="'Inter', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
                     {pillar.bullets.map((b) => (
                       <ListItem key={b}>• {b}</ListItem>
                     ))}
                   </List>
-                  <Text color="#2E2E2E" fontFamily="'Lato', sans-serif" mt={3}>
+                  <Text color="#2E2E2E" fontFamily="'Inter', sans-serif" mt={3}>
                     {pillar.note}
                   </Text>
                 </Box>
@@ -231,7 +231,7 @@ export default function Supervision() {
                 <Heading size="sm" color="#2E2E2E" mb={2}>
                   Individual Supervision
                 </Heading>
-                <Text color="#2E2E2E" fontFamily="'Lato', sans-serif">
+                <Text color="#2E2E2E" fontFamily="'Inter', sans-serif">
                   One-on-one supervision tailored to your caseload, ethical dilemmas, clinical
                   questions, and professional development goals. Ideal for early-career therapists,
                   mid-level therapists wanting deeper clarity, clinicians navigating complex cases,
@@ -243,7 +243,7 @@ export default function Supervision() {
                 <Heading size="sm" color="#2E2E2E" mb={2}>
                   Reflective Group Supervision Cohorts
                 </Heading>
-                <Text color="#2E2E2E" fontFamily="'Lato', sans-serif">
+                <Text color="#2E2E2E" fontFamily="'Inter', sans-serif">
                   Small closed cohorts of 4 to 6 therapists meet monthly. Cohorts include grounded
                   check-in, thematic exploration, case discussion through identity and lens, supervisor
                   synthesis, and integration takeaways. Cohorts require a minimum 4-session commitment
@@ -266,7 +266,7 @@ export default function Supervision() {
               <Heading size="md" color="#2E2E2E" mb={3}>
                 Who This Is For
               </Heading>
-              <List fontFamily="'Lato', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
+              <List fontFamily="'Inter', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
                 <ListItem>• Therapists feeling scattered</ListItem>
                 <ListItem>• Practitioners who feel competent but inconsistent</ListItem>
                 <ListItem>• Therapists wanting depth beyond surface technique</ListItem>
@@ -286,7 +286,7 @@ export default function Supervision() {
               <Heading size="md" color="#2E2E2E" mb={3}>
                 Who This Is Not For
               </Heading>
-              <List fontFamily="'Lato', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
+              <List fontFamily="'Inter', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
                 <ListItem>• Those seeking quick case answers only</ListItem>
                 <ListItem>• Therapists unwilling to engage in self-reflection</ListItem>
                 <ListItem>• Compliance-heavy institutional supervision needs</ListItem>
@@ -306,7 +306,7 @@ export default function Supervision() {
             <Heading size="md" color="#2E2E2E" mb={3}>
               Outcomes of MLC Supervision
             </Heading>
-            <List fontFamily="'Lato', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
+            <List fontFamily="'Inter', sans-serif" color="#2E2E2E" pl={4} spacing={2}>
               <ListItem>• Greater internal coherence</ListItem>
               <ListItem>• A clearer theoretical anchor</ListItem>
               <ListItem>• Improved case conceptualization</ListItem>
@@ -315,7 +315,7 @@ export default function Supervision() {
               <ListItem>• Reduced emotional exhaustion</ListItem>
               <ListItem>• Stronger professional identity</ListItem>
             </List>
-            <Text color="#2E2E2E" fontFamily="'Lato', sans-serif" mt={3}>
+            <Text color="#2E2E2E" fontFamily="'Inter', sans-serif" mt={3}>
               This is therapist maturation. Not technique exchange.
             </Text>
           </Box>

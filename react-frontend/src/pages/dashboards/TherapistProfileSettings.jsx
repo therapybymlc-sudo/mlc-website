@@ -135,7 +135,7 @@ export default function TherapistProfileSettings() {
 
   return (
     <VStack align="stretch" spacing={6}>
-      <Heading fontFamily="Playfair Display">Therapist Profile Settings</Heading>
+      <Heading>Therapist Profile Settings</Heading>
       <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
           <FormControl isRequired>

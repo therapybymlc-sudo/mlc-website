@@ -126,7 +126,7 @@ export default function ClientFiles() {
     <Box>
       {/* Header */}
       <HStack justify="space-between" mb={6}>
-        <Heading fontFamily="Playfair Display">Client Files</Heading>
+        <Heading>Client Files</Heading>
         <HStack>
           <IconButton
             aria-label="refresh"

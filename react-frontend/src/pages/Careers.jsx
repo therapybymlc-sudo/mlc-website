@@ -229,7 +229,7 @@ export default function Careers() {
                 {content.hero.title}
               </Heading>
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 fontSize="lg"
@@ -260,7 +260,7 @@ export default function Careers() {
             {content.why.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             lineHeight="1.8"
             fontSize="md"
@@ -290,7 +290,7 @@ export default function Careers() {
                   {item.title}
                 </Heading>
                 <Box
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   color="#2E2E2E"
                   lineHeight="1.7"
                   fontSize="sm"
@@ -342,7 +342,7 @@ export default function Careers() {
             mx="auto"
             mb={12}
             color="#2E2E2E"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             lineHeight="1.8"
             sx={richTextStyles}
             dangerouslySetInnerHTML={{ __html: content.openings.subtitle || "" }}
@@ -403,7 +403,7 @@ export default function Careers() {
           </Heading>
           <Box
             textAlign="center"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             lineHeight="1.8"
             maxW="3xl"
@@ -438,7 +438,7 @@ export default function Careers() {
             />
 
             <FormControl isRequired mb={4}>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Are you comfortable being contacted via phone?
               </FormLabel>
               <RadioGroup defaultValue="Yes" name="comfortable">
@@ -451,7 +451,7 @@ export default function Careers() {
 
             <SimpleField label={content.form.phone_label} name="phone" type="tel" />
             <FormControl mb={4}>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 {content.form.message_label}
               </FormLabel>
               <Textarea
@@ -479,7 +479,7 @@ export default function Careers() {
               borderRadius="full"
               px={8}
               py={6}
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontWeight="500"
               _hover={{ bg: "#C9A960", color: "white" }}
             >
@@ -488,7 +488,7 @@ export default function Careers() {
           </Box>
 
           <Box textAlign="center" mt={12}>
-            <Text color="#2E2E2E" mb={4} fontFamily="'Lato', sans-serif">
+            <Text color="#2E2E2E" mb={4} fontFamily="'Inter', sans-serif">
               Prefer email?
             </Text>
             <Button
@@ -516,7 +516,7 @@ export default function Careers() {
             {content.footer.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontSize="md"
             maxW="3xl"
             mx="auto"
@@ -533,7 +533,7 @@ export default function Careers() {
             borderRadius="full"
             px={8}
             py={6}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             _hover={{ bg: "#F2F2F0" }}
           >
             {content.footer.cta_label}
@@ -571,7 +571,7 @@ export default function Careers() {
             </Text>
             {activeOpening.summary ? (
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.7"
                 mb={4}
@@ -581,7 +581,7 @@ export default function Careers() {
             ) : null}
             {activeOpening.details ? (
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.7"
                 sx={richTextStyles}
@@ -614,7 +614,7 @@ export default function Careers() {
 function SimpleField({ label, name, type = "text", isRequired = false, placeholder }) {
   return (
     <FormControl isRequired={isRequired} mb={4}>
-      <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+      <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
         {label}
       </FormLabel>
       <Input
@@ -650,7 +650,7 @@ function PositionCard({ title, body }) {
         {title}
       </Heading>
       <Box
-        fontFamily="'Lato', sans-serif"
+        fontFamily="'Inter', sans-serif"
         color="#2E2E2E"
         lineHeight="1.7"
         sx={richTextStyles}

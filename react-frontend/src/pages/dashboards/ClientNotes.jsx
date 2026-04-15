@@ -662,7 +662,7 @@ export default function ClientNotes() {
           <Stack direction={{ base: "column", md: "row" }} justify="space-between" mb={3} align="flex-start" spacing={3}>
             <Box>
               <Text fontSize="sm" color="gray.500">Treatment Notes</Text>
-              <Heading fontFamily="Playfair Display" size={{ base: "md", md: "lg" }} wordBreak="break-word">
+              <Heading size={{ base: "md", md: "lg" }} wordBreak="break-word">
                 {selectedClient?.name || "Client"} / New treatment note
               </Heading>
             </Box>

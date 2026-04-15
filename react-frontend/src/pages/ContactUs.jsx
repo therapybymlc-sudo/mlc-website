@@ -148,7 +148,7 @@ export default function ContactUs() {
                 {content.hero.title}
               </Heading>
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
                 maxW="3xl"
@@ -156,14 +156,14 @@ export default function ContactUs() {
                 dangerouslySetInnerHTML={{ __html: content.hero.body }}
               />
               <Text
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 fontWeight="500"
               >
                 📧 {content.hero.email_label}: <strong>{content.hero.email}</strong>
               </Text>
               <Box
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 fontSize="sm"
                 sx={richTextStyles}
@@ -211,7 +211,7 @@ export default function ContactUs() {
               <FormField label="Email Address" name="email" type="email" isRequired />
               <FormField label="Phone Number" name="phone" />
               <FormControl mb={4}>
-                <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   Message
                 </FormLabel>
                 <Textarea
@@ -234,7 +234,7 @@ export default function ContactUs() {
                 borderRadius="full"
                 px={8}
                 py={6}
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="500"
                 color="white"
                 _hover={{ bg: "#C9A960", color: "white" }}
@@ -272,7 +272,7 @@ export default function ContactUs() {
                     return (
                       <HStack spacing={3} key={`hours-${idx}`}>
                         <Icon as={ItemIcon} color="#56756D" />
-                        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                           {item}
                         </Text>
                       </HStack>
@@ -303,7 +303,7 @@ export default function ContactUs() {
             {content.closing.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontSize="md"
             maxW="3xl"
             mx="auto"
@@ -321,7 +321,7 @@ export default function ContactUs() {
 function FormField({ label, name, type = "text", isRequired = false }) {
   return (
     <FormControl isRequired={isRequired} mb={4}>
-      <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+      <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
         {label}
       </FormLabel>
       <Input

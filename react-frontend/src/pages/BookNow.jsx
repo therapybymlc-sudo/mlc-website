@@ -48,7 +48,7 @@ export default function BookNow() {
               >
                 Book a Session
               </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" lineHeight="1.8">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" lineHeight="1.8">
                 Taking the first step toward therapy is an act of courage and care.
                 Fill in your details below, and our coordination team will reach out
                 to schedule your free 30 minute screening call. We’ll help you find
@@ -57,7 +57,7 @@ export default function BookNow() {
               </Text>
               <Text
                 mt={4}
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 lineHeight="1.8"
               >
@@ -123,7 +123,7 @@ export default function BookNow() {
                 >
                   {step.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {step.desc}
                 </Text>
               </Box>
@@ -153,42 +153,42 @@ export default function BookNow() {
             boxShadow="md"
           >
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Full Name
               </FormLabel>
               <Input placeholder="Enter your name" bg="white" borderRadius="lg" />
             </FormControl>
 
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Email Address
               </FormLabel>
               <Input placeholder="Enter your email" bg="white" borderRadius="lg" />
             </FormControl>
 
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Phone Number
               </FormLabel>
               <Input placeholder="Enter your number" bg="white" borderRadius="lg" />
             </FormControl>
 
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Preferred Date
               </FormLabel>
               <Input type="date" bg="white" borderRadius="lg" />
             </FormControl>
 
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Preferred Time
               </FormLabel>
               <Input type="time" bg="white" borderRadius="lg" />
             </FormControl>
 
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Type of Service
               </FormLabel>
               <Select placeholder="Select a service" bg="white" borderRadius="lg">
@@ -200,7 +200,7 @@ export default function BookNow() {
             </FormControl>
 
             <FormControl>
-              <FormLabel fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Additional Notes (optional)
               </FormLabel>
               <Textarea
@@ -217,7 +217,7 @@ export default function BookNow() {
               borderRadius="full"
               px={8}
               py={6}
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontWeight="500"
               _hover={{ bg: "#C9A960", color: "white" }}
             >
@@ -242,7 +242,7 @@ export default function BookNow() {
             maxW="3xl"
             mx="auto"
             mb={12}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             lineHeight="1.8"
           >
@@ -270,7 +270,7 @@ export default function BookNow() {
               <AccordionItem key={i} border="none" mb={4} bg="white" borderRadius="lg">
                 <h2>
                   <AccordionButton
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="500"
                     _expanded={{ bg: "#F6F6F4" }}
                   >
@@ -280,7 +280,7 @@ export default function BookNow() {
                     <AccordionIcon />
                   </AccordionButton>
                 </h2>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif" color="#555">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif" color="#555">
                   {faq.a}
                 </AccordionPanel>
               </AccordionItem>
@@ -304,7 +304,7 @@ export default function BookNow() {
             maxW="3xl"
             mx="auto"
             mb={8}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             lineHeight="1.8"
           >
             Your story matters, and it deserves to be heard. Take that first gentle

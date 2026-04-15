@@ -40,7 +40,7 @@ export default function CouplesTherapy() {
             Couples Therapy
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             maxW="3xl"
             fontSize="lg"
@@ -56,19 +56,19 @@ export default function CouplesTherapy() {
         <Heading size="md" mb={4} fontFamily="'Playfair Display', serif" color="#2E2E2E">
           Common Reasons Couples Seek Therapy
         </Heading>
-        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={10}>
+        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={10}>
           • Frequent arguments or unresolved conflict • Emotional disconnection • Trust
           breaches • Pre-marital counselling • Intimacy challenges • Life transitions
           such as relocation, career shifts, or parenting
         </Text>
-        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={10}>
+        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={10}>
           Couples therapy is not about choosing sides. It is about understanding patterns.
         </Text>
 
         <Heading size="md" mb={4} fontFamily="'Playfair Display', serif" color="#2E2E2E">
           What to Expect
         </Heading>
-        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={10}>
+        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={10}>
           Sessions focus on improving communication clarity, identifying recurring relational
           cycles, learning structured conflict resolution skills, rebuilding emotional safety,
           and strengthening intimacy. Therapists guide conversations with balance, ensuring
@@ -78,7 +78,7 @@ export default function CouplesTherapy() {
         <Heading size="md" mb={4} fontFamily="'Playfair Display', serif" color="#2E2E2E">
           Our Approach to Relationship Therapy
         </Heading>
-        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={10}>
+        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={10}>
           We combine structured frameworks with emotional depth through emotion-focused
           techniques, communication restructuring, conflict pattern analysis, and mindfulness
           in relationships. Sessions are collaborative, not confrontational.
@@ -97,7 +97,7 @@ export default function CouplesTherapy() {
           ].map((item, i) => (
             <AccordionItem key={i} border="none">
               <AccordionButton _expanded={{ bg: "#A9CBB7", color: "black" }}>
-                <Box flex="1" textAlign="left" fontFamily="'Lato', sans-serif">
+                <Box flex="1" textAlign="left" fontFamily="'Inter', sans-serif">
                   {item.q}
                 </Box>
                 <AccordionIcon />
@@ -108,7 +108,7 @@ export default function CouplesTherapy() {
         </Accordion>
 
         <VStack mt={10}>
-          <Text fontFamily="'Lato', sans-serif">Still have questions? Contact us anytime.</Text>
+          <Text fontFamily="'Inter', sans-serif">Still have questions? Contact us anytime.</Text>
           <Button as="a" href="/contactus" bg="#A9CBB7" color="black" borderRadius="full" _hover={{ bg: "#C9A960", color: "white" }}>
             Contact Us
           </Button>

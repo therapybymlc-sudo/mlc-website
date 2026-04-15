@@ -38,16 +38,16 @@ export default function IndividualTherapy() {
           <Heading fontFamily="'Playfair Display', serif" color="#2E2E2E">
             Individual Therapy
           </Heading>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="3xl">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" maxW="3xl">
             A space that is entirely yours, where healing begins with being heard.
           </Text>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="3xl">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" maxW="3xl">
             At MLC Health & Wellness Centre, we offer structured and evidence-informed
             online individual therapy across India. Whether you are in Mumbai, Delhi,
             Bangalore, Hyderabad, Chennai, Pune, Kolkata or anywhere else in India,
             therapy is accessible through secure virtual sessions.
           </Text>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="3xl">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" maxW="3xl">
             Our therapists provide ethical, collaborative, and clinically grounded care
             rooted in compassion, safety, and sustainable growth.
           </Text>
@@ -58,7 +58,7 @@ export default function IndividualTherapy() {
           <Heading size="md" fontFamily="'Playfair Display', serif" color="#2E2E2E">
             What Brings People to Individual Therapy
           </Heading>
-          <List fontFamily="'Lato', sans-serif" color="#2E2E2E" spacing={2} pl={4}>
+          <List fontFamily="'Inter', sans-serif" color="#2E2E2E" spacing={2} pl={4}>
             <ListItem>• Anxiety and overthinking</ListItem>
             <ListItem>• Burnout and workplace stress</ListItem>
             <ListItem>• Life transitions and identity shifts</ListItem>
@@ -67,20 +67,20 @@ export default function IndividualTherapy() {
             <ListItem>• Grief, loss, or unresolved emotional experiences</ListItem>
             <ListItem>• Desire for deeper self-awareness</ListItem>
           </List>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
             You do not need a crisis to begin therapy. Sometimes clarity itself is the goal.
           </Text>
 
           <Heading size="md" fontFamily="'Playfair Display', serif" color="#2E2E2E">
             What to Expect
           </Heading>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
             Each therapy session lasts approximately 50 minutes. Sessions are tailored to your
             goals, pace, and emotional capacity. We integrate structured approaches such as
             Cognitive Behavioral Therapy, mindfulness-based interventions, humanistic and
             relational therapy, and emotion-focused techniques.
           </Text>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
             Therapy is collaborative. You are not analyzed. You are engaged. We create space for
             both emotional depth and structured progress.
           </Text>
@@ -88,15 +88,15 @@ export default function IndividualTherapy() {
           <Heading size="md" fontFamily="'Playfair Display', serif" color="#2E2E2E">
             Our Therapeutic Approach
           </Heading>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
             At MLC, therapy balances three core elements:
           </Text>
-          <List fontFamily="'Lato', sans-serif" color="#2E2E2E" spacing={2} pl={4}>
+          <List fontFamily="'Inter', sans-serif" color="#2E2E2E" spacing={2} pl={4}>
             <ListItem>• Clarity and Structure — we help you understand patterns, triggers, and emotional cycles with precision.</ListItem>
             <ListItem>• Relational Safety — you set the pace, and we ensure emotional containment and safety.</ListItem>
             <ListItem>• Clinical Standards and Ethics — sessions are confidential, ethically grounded, and guided by professional frameworks.</ListItem>
           </List>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
             Progress happens when you feel seen, supported, and respected.
           </Text>
         </VStack>
@@ -133,7 +133,7 @@ export default function IndividualTherapy() {
               <AccordionItem key={i}>
                 <h2>
                   <AccordionButton>
-                    <Box flex="1" textAlign="left" fontFamily="'Lato', sans-serif">
+                    <Box flex="1" textAlign="left" fontFamily="'Inter', sans-serif">
                       {item.q}
                     </Box>
                     <AccordionIcon />
@@ -145,7 +145,7 @@ export default function IndividualTherapy() {
           </Accordion>
 
           <VStack mt={10}>
-            <Text fontFamily="'Lato', sans-serif">
+            <Text fontFamily="'Inter', sans-serif">
               Didn’t find your question? Reach out to us anytime.
             </Text>
             <Button

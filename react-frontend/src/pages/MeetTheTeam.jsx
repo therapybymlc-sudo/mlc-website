@@ -55,7 +55,7 @@ export default function MeetTheTeam() {
             <Text
               maxW="3xl"
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontSize="lg"
               lineHeight="1.8"
             >
@@ -88,7 +88,7 @@ export default function MeetTheTeam() {
                 Team Profiles Coming Soon
               </Heading>
               <Text
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="#2E2E2E"
                 maxW="3xl"
                 mx="auto"
@@ -153,7 +153,7 @@ export default function MeetTheTeam() {
             maxW="3xl"
             mx="auto"
             mb={8}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             lineHeight="1.8"
           >
             Every member of MLC shares a common goal, to create a space that

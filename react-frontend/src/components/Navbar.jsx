@@ -106,7 +106,7 @@ export default function Navbar() {
                 MLC Health & Wellness Centre
               </Text>
               <Text
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontSize={{ base: "xs", sm: "sm" }}
                 color="#56756D"
                 mt={0.5}
@@ -132,7 +132,7 @@ export default function Navbar() {
               key={link.label}
               to={link.href}
               fontWeight="medium"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               color="#2E2E2E"
               _hover={{ color: "#C9A960" }}
               transition="color 0.2s ease"
@@ -172,7 +172,7 @@ export default function Navbar() {
                 as={Link}
                 to={link.href}
                 fontWeight="medium"
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 color="white"
                 display="block"
                 textAlign="left"

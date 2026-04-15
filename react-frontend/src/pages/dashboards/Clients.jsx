@@ -336,7 +336,7 @@ export default function Clients() {
       {viewMode === "list" ? (
         <>
           <HStack justify="space-between" mb={6}>
-            <Heading fontFamily="Playfair Display">Patients</Heading>
+            <Heading>Patients</Heading>
             <Button
               onClick={() => setViewMode("add")}
               bg="#D14D72"
@@ -416,7 +416,7 @@ export default function Clients() {
       ) : viewMode === "add" ? (
         <>
           <HStack justify="space-between" mb={6}>
-            <Heading fontFamily="Playfair Display">Add a new patient</Heading>
+            <Heading>Add a new patient</Heading>
             <HStack>
               <Button
                 onClick={handleAddClient}
@@ -1126,7 +1126,7 @@ export default function Clients() {
       ) : (
         <>
           <HStack justify="space-between" mb={6}>
-            <Heading fontFamily="Playfair Display">
+            <Heading>
               {selectedClient?.name || "Patient"}
             </Heading>
             <HStack>

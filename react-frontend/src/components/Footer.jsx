@@ -45,7 +45,7 @@ export default function Footer() {
         <Divider borderColor="gray.600" />
 
         {/* 🌱 Contact Info */}
-        <VStack align="start" spacing={2} fontFamily="'Lato', sans-serif">
+        <VStack align="start" spacing={2} fontFamily="'Inter', sans-serif">
           <Text>
             Email:{" "}
             <Link href="mailto:therapy@mlchealth.in" color="#A9CBB7">
@@ -78,7 +78,7 @@ export default function Footer() {
         <Divider borderColor="gray.600" />
 
         {/* 🪶 Copyright */}
-        <Text fontFamily="'Lato', sans-serif" fontSize="sm" pt={4}>
+        <Text fontFamily="'Inter', sans-serif" fontSize="sm" pt={4}>
           © 2025 MLC Health & Wellness Centre | A space to feel, to heal, to
           become
         </Text>

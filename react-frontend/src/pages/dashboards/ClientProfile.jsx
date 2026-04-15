@@ -67,7 +67,7 @@ export default function ClientProfile() {
       {/* Sidebar */}
       <Box w={{ base: "100%", lg: "280px" }} flexShrink={0}>
         <Box bg="white" borderRadius="lg" p={5} boxShadow="sm">
-          <Heading size="md" fontFamily="Playfair Display">{client.name}</Heading>
+          <Heading size="md">{client.name}</Heading>
           <VStack align="start" spacing={1} mt={2}>
             <Text fontSize="sm" color="gray.600">{client.email}</Text>
             {client.therapist?.name && (

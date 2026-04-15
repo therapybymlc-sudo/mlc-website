@@ -763,7 +763,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
         {/* MAIN — Calendar */}
         <Box flex="1" w="100%">
           <HStack justify="space-between" mb={4} flexWrap="wrap" gap={3}>
-            <Heading fontFamily="Playfair Display">Appointments</Heading>
+            <Heading>Appointments</Heading>
             <HStack>
               <Button
                 leftIcon={<AddIcon />}

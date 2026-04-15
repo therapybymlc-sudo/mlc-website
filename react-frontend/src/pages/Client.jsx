@@ -62,7 +62,7 @@ export default function Client() {
             </Heading>
             <Text
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontSize={{ base: "md", md: "lg" }}
               maxW="2xl"
             >
@@ -71,7 +71,7 @@ export default function Client() {
             </Text>
             <Text
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontSize={{ base: "md", md: "lg" }}
               maxW="2xl"
             >
@@ -89,7 +89,7 @@ export default function Client() {
                 _hover={{ bg: "#97BFA9" }}
                 as="a"
                 href="/book"
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="600"
               >
                 Book Your First Session
@@ -103,7 +103,7 @@ export default function Client() {
                 _hover={{ bg: "#B8954E" }}
                 as="a"
                 href="/meettheteam"
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="600"
               >
                 Meet Our Therapists
@@ -176,7 +176,7 @@ export default function Client() {
                 >
                   {item.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {item.body}
                 </Text>
               </Box>
@@ -198,7 +198,7 @@ export default function Client() {
             What Happens in a Therapy Session?
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -243,7 +243,7 @@ export default function Client() {
                 >
                   {item.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {item.body}
                 </Text>
               </Box>
@@ -263,7 +263,7 @@ export default function Client() {
             >
               Your Client Dashboard
             </Heading>
-            <Text maxW="2xl" color="#2E2E2E" fontFamily="'Lato', sans-serif">
+            <Text maxW="2xl" color="#2E2E2E" fontFamily="'Inter', sans-serif">
               Sign up to access your private space: daily check‑ins, reflections,
               therapy notes, shared resources, and (if you choose) premium tools
               that sync across devices.
@@ -296,7 +296,7 @@ export default function Client() {
             Finding the Right Therapist Matters
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -341,7 +341,7 @@ export default function Client() {
                 >
                   {item.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {item.body}
                 </Text>
               </Box>
@@ -363,7 +363,7 @@ export default function Client() {
             Different Types of Therapy We Offer
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -420,11 +420,11 @@ export default function Client() {
                 >
                   {card.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={3}>
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={3}>
                   {card.body}
                 </Text>
                 {card.bullets && (
-                  <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" fontSize="sm" mb={3}>
+                  <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" fontSize="sm" mb={3}>
                     Common topics include: {card.bullets.join(", ")}.
                   </Text>
                 )}
@@ -436,7 +436,7 @@ export default function Client() {
                   _hover={{ bg: "#97BFA9" }}
                   as="a"
                   href={card.link}
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   fontWeight="600"
                 >
                   Learn More
@@ -460,7 +460,7 @@ export default function Client() {
             Mindfulness and Emotional Wellbeing Sessions
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -506,7 +506,7 @@ export default function Client() {
                 >
                   {card.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
                 <Button
@@ -518,7 +518,7 @@ export default function Client() {
                   _hover={{ bg: "#97BFA9" }}
                   as="a"
                   href={card.link}
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   fontWeight="600"
                 >
                   {card.cta}
@@ -542,7 +542,7 @@ export default function Client() {
             Workshops & Skill-Building Sessions
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -577,7 +577,7 @@ export default function Client() {
                 >
                   {bubble.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {bubble.body}
                 </Text>
               </Box>
@@ -593,7 +593,7 @@ export default function Client() {
               _hover={{ bg: "#97BFA9" }}
               as="a"
               href="/workshops"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontWeight="600"
               leftIcon={<Icon as={FiBook} />}
             >
@@ -645,7 +645,7 @@ export default function Client() {
                 >
                   {item.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {item.body}
                 </Text>
               </Box>
@@ -661,7 +661,7 @@ export default function Client() {
               _hover={{ bg: "#97BFA9" }}
               as="a"
               href="/book"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontWeight="600"
             >
               Book Your First Session
@@ -727,12 +727,12 @@ export default function Client() {
             ].map((item) => (
               <AccordionItem key={item.q} border="none" mb={4} bg="white" borderRadius="lg">
                 <AccordionButton _expanded={{ bg: "#E8ECE8" }}>
-                  <Box flex="1" textAlign="left" fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                  <Box flex="1" textAlign="left" fontFamily="'Inter', sans-serif" color="#2E2E2E">
                     {item.q}
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif" color="#555">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif" color="#555">
                   {item.a}
                 </AccordionPanel>
               </AccordionItem>
@@ -778,12 +778,12 @@ export default function Client() {
             ].map((item) => (
               <AccordionItem key={item.q} border="none" mb={4} bg="#F9F9F9" borderRadius="lg">
                 <AccordionButton _expanded={{ bg: "#E8ECE8" }}>
-                  <Box flex="1" textAlign="left" fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                  <Box flex="1" textAlign="left" fontFamily="'Inter', sans-serif" color="#2E2E2E">
                     {item.q}
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif" color="#555">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif" color="#555">
                   {item.a}
                 </AccordionPanel>
               </AccordionItem>
@@ -803,7 +803,7 @@ export default function Client() {
           >
             Ready to begin?
           </Heading>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={6}>
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={6}>
             You don’t have to go through things alone.
           </Text>
           <Button
@@ -815,7 +815,7 @@ export default function Client() {
             _hover={{ bg: "#97BFA9" }}
             as="a"
             href="/book"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontWeight="600"
           >
             Book Your First Session

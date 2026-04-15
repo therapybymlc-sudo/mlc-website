@@ -136,7 +136,7 @@ export default function TrainingAndPrograms() {
             {content.hero.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             maxW="3xl"
             fontSize="lg"
@@ -167,7 +167,7 @@ export default function TrainingAndPrograms() {
               >
                 {card.title}
               </Heading>
-              <Box fontFamily="'Lato', sans-serif" color="#2E2E2E" sx={richTextStyles} dangerouslySetInnerHTML={{ __html: card.body }} />
+              <Box fontFamily="'Inter', sans-serif" color="#2E2E2E" sx={richTextStyles} dangerouslySetInnerHTML={{ __html: card.body }} />
             </Box>
           ))}
         </SimpleGrid>
@@ -189,14 +189,14 @@ export default function TrainingAndPrograms() {
                   <Box
                     flex="1"
                     textAlign="left"
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="medium"
                   >
                     {item.q}
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif">
                   <Box sx={richTextStyles} dangerouslySetInnerHTML={{ __html: item.a }} />
                 </AccordionPanel>
               </AccordionItem>
@@ -204,7 +204,7 @@ export default function TrainingAndPrograms() {
           </Accordion>
 
           <VStack mt={10}>
-            <Text fontFamily="'Lato', sans-serif">{content.cta.text}</Text>
+            <Text fontFamily="'Inter', sans-serif">{content.cta.text}</Text>
             <Button
               bg="#A9CBB7"
               color="black"

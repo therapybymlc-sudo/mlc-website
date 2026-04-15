@@ -216,7 +216,7 @@ export default function Services() {
             <Box
               maxW="3xl"
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontSize="lg"
               lineHeight="1.8"
               sx={richTextStyles}
@@ -225,7 +225,7 @@ export default function Services() {
             <Box
               maxW="3xl"
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontSize="lg"
               lineHeight="1.8"
               sx={richTextStyles}
@@ -234,7 +234,7 @@ export default function Services() {
             <Box
               maxW="3xl"
               color="#2E2E2E"
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               fontSize="md"
               lineHeight="1.8"
               sx={richTextStyles}
@@ -257,7 +257,7 @@ export default function Services() {
               {content.portal.title}
             </Heading>
             <Box
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               color="#2E2E2E"
               maxW="2xl"
               sx={richTextStyles}
@@ -338,7 +338,7 @@ export default function Services() {
                 <Text
                   fontSize="sm"
                   color="#555"
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   lineHeight="1.7"
                   sx={{
                     "ul, ol": { paddingLeft: "1.1rem", marginTop: "0.5rem" },
@@ -388,7 +388,7 @@ export default function Services() {
                   {p.title}
                 </Heading>
                 <Text
-                  fontFamily="'Lato', sans-serif"
+                  fontFamily="'Inter', sans-serif"
                   color="#2E2E2E"
                   fontSize="sm"
                   lineHeight="1.7"
@@ -416,7 +416,7 @@ export default function Services() {
             maxW="3xl"
             mx="auto"
             color="#2E2E2E"
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             lineHeight="1.8"
             sx={richTextStyles}
             dangerouslySetInnerHTML={{ __html: content.approach.body }}
@@ -443,7 +443,7 @@ export default function Services() {
                   <Box
                     flex="1"
                     textAlign="left"
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     color="#2E2E2E"
                     fontWeight="medium"
                   >
@@ -451,7 +451,7 @@ export default function Services() {
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif">
                   {item.a}
                 </AccordionPanel>
               </AccordionItem>
@@ -477,7 +477,7 @@ export default function Services() {
             borderRadius="full"
             px={8}
             py={6}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontWeight="500"
             _hover={{ bg: "#C9A960", color: "white" }}
             as="a"

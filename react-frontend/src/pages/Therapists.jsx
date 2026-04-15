@@ -297,7 +297,7 @@ export default function Therapists() {
               {content.hero.title}
             </Heading>
             <Box
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               color="#2E2E2E"
               fontSize={{ base: "md", md: "lg" }}
               maxW="2xl"
@@ -306,7 +306,7 @@ export default function Therapists() {
               dangerouslySetInnerHTML={{ __html: content.hero.body_one }}
             />
             <Box
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               color="#2E2E2E"
               fontSize={{ base: "md", md: "lg" }}
               maxW="2xl"
@@ -324,7 +324,7 @@ export default function Therapists() {
                 _hover={{ bg: "#97BFA9" }}
                 as="a"
                 href={content.hero.primary_link}
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="600"
               >
                 {content.hero.primary_label}
@@ -339,7 +339,7 @@ export default function Therapists() {
                 _hover={{ bg: "#FBF8F3" }}
                 as="a"
                 href={content.hero.secondary_link}
-                fontFamily="'Lato', sans-serif"
+                fontFamily="'Inter', sans-serif"
                 fontWeight="600"
               >
                 {content.hero.secondary_label}
@@ -362,7 +362,7 @@ export default function Therapists() {
             {content.why.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -395,7 +395,7 @@ export default function Therapists() {
                 >
                   {card.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
                 {card.cta_link && card.cta_label && (
@@ -408,7 +408,7 @@ export default function Therapists() {
                     _hover={{ bg: "#97BFA9" }}
                     as="a"
                     href={card.cta_link}
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="600"
                   >
                     {card.cta_label}
@@ -432,7 +432,7 @@ export default function Therapists() {
               {content.apply.title}
             </Heading>
             <Box
-              fontFamily="'Lato', sans-serif"
+              fontFamily="'Inter', sans-serif"
               color="#2E2E2E"
               maxW="2xl"
               lineHeight="1.6"
@@ -478,7 +478,7 @@ export default function Therapists() {
             {content.supervision.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -510,7 +510,7 @@ export default function Therapists() {
                   >
                     {card.title}
                   </Heading>
-                  <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                  <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                     {card.body}
                   </Text>
                   {card.cta_label && card.cta_link && (
@@ -523,7 +523,7 @@ export default function Therapists() {
                       _hover={{ bg: "#97BFA9" }}
                       as="a"
                       href={card.cta_link}
-                      fontFamily="'Lato', sans-serif"
+                      fontFamily="'Inter', sans-serif"
                       fontWeight="600"
                     >
                       {card.cta_label}
@@ -571,7 +571,7 @@ export default function Therapists() {
                 >
                   {card.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
                 {card.cta_label && card.cta_link && (
@@ -584,7 +584,7 @@ export default function Therapists() {
                     _hover={{ bg: "#97BFA9" }}
                     as="a"
                     href={card.cta_link}
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="600"
                   >
                     {card.cta_label}
@@ -609,7 +609,7 @@ export default function Therapists() {
             {content.work.title}
           </Heading>
           <Box
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             textAlign="center"
             maxW="2xl"
@@ -637,7 +637,7 @@ export default function Therapists() {
                 >
                   {card.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {card.body}
                 </Text>
                 {card.cta_label && card.cta_link && (
@@ -650,7 +650,7 @@ export default function Therapists() {
                     _hover={{ bg: "#97BFA9" }}
                     as="a"
                     href={card.cta_link}
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="600"
                   >
                     {card.cta_label}
@@ -692,7 +692,7 @@ export default function Therapists() {
                 >
                   {bubble.title}
                 </Heading>
-                <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+                <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                   {bubble.body}
                 </Text>
               </Box>
@@ -721,7 +721,7 @@ export default function Therapists() {
             _hover={{ bg: "#FBF8F3" }}
             as="a"
             href={content.cta.button_link}
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             fontWeight="600"
           >
             {content.cta.button_label}

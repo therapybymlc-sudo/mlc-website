@@ -296,7 +296,7 @@ export default function TherapistDashboard() {
         if (isTherapistPreview) {
           return (
             <VStack align="start" spacing={6}>
-              <Heading fontFamily="Playfair Display">Clients (Preview)</Heading>
+              <Heading>Clients (Preview)</Heading>
               <Text color="gray.600">
                 Add a client to preview the workflow. Saving is disabled in preview.
               </Text>
@@ -350,7 +350,7 @@ export default function TherapistDashboard() {
         if (isTherapistPreview) {
           return (
             <VStack align="start" spacing={6}>
-              <Heading fontFamily="Playfair Display">Notes (Preview)</Heading>
+              <Heading>Notes (Preview)</Heading>
               <Text color="gray.600">
                 Draft a single note to see the flow. Saving is disabled in preview.
               </Text>
@@ -383,7 +383,7 @@ export default function TherapistDashboard() {
         if (isTherapistPreview) {
           return (
             <VStack align="start" spacing={6}>
-              <Heading fontFamily="Playfair Display">Client Files (Preview)</Heading>
+              <Heading>Client Files (Preview)</Heading>
               <Text color="gray.600">
                 Add files to preview the flow. Saving is disabled in preview.
               </Text>
@@ -428,7 +428,7 @@ export default function TherapistDashboard() {
         if (isTherapistPreview) {
           return (
             <VStack align="start" spacing={6}>
-              <Heading fontFamily="Playfair Display">Schedule (Preview)</Heading>
+              <Heading>Schedule (Preview)</Heading>
               <Text color="gray.600">
                 View the scheduler layout. Editing is disabled in preview.
               </Text>
@@ -527,7 +527,7 @@ export default function TherapistDashboard() {
         }
         return (
           <VStack align="start" spacing={6}>
-            <Heading fontFamily="Playfair Display">Therapist Care</Heading>
+            <Heading>Therapist Care</Heading>
             <Text color="gray.600" maxW="2xl">
               A gentle space just for you — check in, reflect, and nurture your own
               steadiness.
@@ -658,7 +658,7 @@ export default function TherapistDashboard() {
         }
         return (
           <VStack align="start" spacing={6}>
-            <Heading fontFamily="Playfair Display">Client Tools & Sharing</Heading>
+            <Heading>Client Tools & Sharing</Heading>
             <Text color="gray.600" maxW="2xl">
               Assign goals, share resources, and keep client support in one place.
             </Text>
@@ -827,7 +827,7 @@ export default function TherapistDashboard() {
                   <Tag bg="#C9A960" color="black" borderRadius="full" mb={3}>
                     Therapist Premium
                   </Tag>
-                  <Heading fontFamily="Playfair Display" size="xl">
+                  <Heading size="xl">
                     The MLC Therapist OS
                   </Heading>
                   <Text color="whiteAlpha.700" mt={3} maxW="2xl">
@@ -891,7 +891,7 @@ export default function TherapistDashboard() {
         if (isTherapistPreview) {
           return (
             <VStack align="start" spacing={6}>
-              <Heading fontFamily="Playfair Display" color="#2E2E2E">
+              <Heading color="#2E2E2E">
                 Therapist Preview
               </Heading>
               <Text color="gray.600" maxW="3xl">
@@ -952,10 +952,10 @@ export default function TherapistDashboard() {
         }
         return (
           <VStack align="start" spacing={4}>
-            <Heading fontFamily="Playfair Display" color="#2E2E2E">
+            <Heading color="#2E2E2E">
               Welcome, {user?.firstName || user?.username}
             </Heading>
-            <Text color="gray.600" fontFamily="Lato" maxW="3xl">
+            <Text color="gray.600" maxW="3xl">
               Manage your clients, write notes, track appointments, and organize files —
               all in one seamless space.
             </Text>
@@ -1525,7 +1525,6 @@ function SidebarButton({ label, active, onClick, icon }) {
       color={active ? "#2E2E2E" : "#555"}
       _hover={{ bg: "#C9A960", color: "white" }}
       size="sm"
-      fontFamily="Lato"
       onClick={onClick}
     >
       {label}
@@ -1558,9 +1557,11 @@ function PremiumOverlay() {
       <Text color="gray.600" mb={5}>
         This feature is available on premium therapist subscriptions.
       </Text>
-      <Button colorScheme="purple" isDisabled>
-        Upgrade coming soon
-      </Button>
+      <Tooltip label="This feature requires an active premium subscription" hasArrow placement="top">
+        <Button colorScheme="purple" isDisabled>
+          Upgrade coming soon
+        </Button>
+      </Tooltip>
     </Box>
   );
 }

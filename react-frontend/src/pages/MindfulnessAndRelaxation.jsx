@@ -47,7 +47,7 @@ export default function MindfulnessAndRelaxation() {
             Mindfulness & Relaxation Sessions
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             maxW="3xl"
             fontSize="lg"
@@ -79,7 +79,7 @@ export default function MindfulnessAndRelaxation() {
               >
                 Guided Mindfulness
               </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Learn to bring your awareness to the present moment through gentle, guided sessions.
                 We help you notice your thoughts and emotions with compassion, not judgment.
               </Text>
@@ -94,7 +94,7 @@ export default function MindfulnessAndRelaxation() {
               >
                 Guided Meditation
               </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Experience calming meditations that ground the mind and body.
                 Each session promotes stillness, focus, and deep relaxation.
               </Text>
@@ -109,7 +109,7 @@ export default function MindfulnessAndRelaxation() {
               >
                 Grounding & Relaxation Techniques
               </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 Learn simple grounding tools and body-based relaxation techniques that
                 can be practiced anytime to calm anxiety and regulate stress.
               </Text>
@@ -124,7 +124,7 @@ export default function MindfulnessAndRelaxation() {
               >
                 Anxiety Regulation Practices
               </Heading>
-              <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+              <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
                 For those struggling with anxiety, we integrate mindfulness with
                 practical coping tools to help you respond, not react, to daily challenges.
               </Text>
@@ -141,7 +141,7 @@ export default function MindfulnessAndRelaxation() {
           >
             How These Sessions Help
           </Heading>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="4xl">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" maxW="4xl">
             Participants often report improved sleep, better focus, emotional regulation,
             and a renewed sense of connection with themselves. These sessions can be done individually
             or in small groups and are ideal for anyone seeking a structured yet gentle way to heal.
@@ -182,14 +182,14 @@ export default function MindfulnessAndRelaxation() {
                   <Box
                     flex="1"
                     textAlign="left"
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="medium"
                   >
                     {item.q}
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif">
                   {item.a}
                 </AccordionPanel>
               </AccordionItem>
@@ -197,7 +197,7 @@ export default function MindfulnessAndRelaxation() {
           </Accordion>
 
           <VStack mt={10}>
-            <Text fontFamily="'Lato', sans-serif">
+            <Text fontFamily="'Inter', sans-serif">
               Didn’t find your question? Reach out to us anytime.
             </Text>
             <Button
@@ -218,7 +218,7 @@ export default function MindfulnessAndRelaxation() {
             <Heading size="md" fontFamily="'Playfair Display', serif">
               Interested in mindfulness?
             </Heading>
-            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+            <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
               Sign up to access guided mindfulness meditations, calming check‑ins,
               and a private dashboard you can return to anytime.
             </Text>

@@ -926,7 +926,7 @@ export default function ClientDashboard() {
       return (
         <VStack align="start" spacing={6} w="100%">
           <Box>
-            <Heading fontFamily="Playfair Display">Welcome back</Heading>
+            <Heading>Welcome back</Heading>
             <Text color="gray.600" mt={2} maxW="xl">
               Your private space to reflect, prepare for therapy, and keep gentle track
               of your progress.
@@ -1555,7 +1555,7 @@ export default function ClientDashboard() {
                 <Tag bg="#C9A960" color="black" borderRadius="full" mb={3}>
                   Premium Studio
                 </Tag>
-                <Heading fontFamily="Playfair Display" size="xl">
+                <Heading size="xl">
                   The Lux Studio
                 </Heading>
                 <Text color="whiteAlpha.700" mt={3} maxW="2xl">

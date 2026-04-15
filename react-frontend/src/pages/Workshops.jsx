@@ -47,7 +47,7 @@ export default function Workshops() {
             Workshops, Outreach & Collaborations
           </Heading>
           <Text
-            fontFamily="'Lato', sans-serif"
+            fontFamily="'Inter', sans-serif"
             color="#2E2E2E"
             maxW="3xl"
             fontSize="lg"
@@ -71,7 +71,7 @@ export default function Workshops() {
             >
               Workshops
             </Heading>
-            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+            <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
               We conduct engaging, evidence-informed workshops on topics such as
               stress management, emotional regulation, communication, and healthy
               boundaries. Each session blends psychoeducation with reflection and
@@ -88,7 +88,7 @@ export default function Workshops() {
             >
               Outreach Programs
             </Heading>
-            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+            <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
               Our outreach initiatives aim to make mental health accessible in
               schools, universities, and workplaces. We collaborate with community
               partners to deliver culturally sensitive, empowering content for all.
@@ -104,7 +104,7 @@ export default function Workshops() {
             >
               Collaborations
             </Heading>
-            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+            <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
               We partner with organizations, educational institutions, and NGOs to
               design events, panels, and training sessions that promote well-being and
               professional growth. Reach out to host a collaborative mental health
@@ -121,7 +121,7 @@ export default function Workshops() {
             >
               Corporate & Institutional Events
             </Heading>
-            <Text fontFamily="'Lato', sans-serif" color="#2E2E2E">
+            <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
               From employee wellness programs to leadership mental health seminars,
               our facilitators bring depth and relatability to every event.
             </Text>
@@ -162,14 +162,14 @@ export default function Workshops() {
                   <Box
                     flex="1"
                     textAlign="left"
-                    fontFamily="'Lato', sans-serif"
+                    fontFamily="'Inter', sans-serif"
                     fontWeight="medium"
                   >
                     {item.q}
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4} fontFamily="'Lato', sans-serif">
+                <AccordionPanel pb={4} fontFamily="'Inter', sans-serif">
                   {item.a}
                 </AccordionPanel>
               </AccordionItem>
@@ -177,7 +177,7 @@ export default function Workshops() {
           </Accordion>
 
           <VStack mt={10}>
-            <Text fontFamily="'Lato', sans-serif">
+            <Text fontFamily="'Inter', sans-serif">
               Didn’t find your question? Reach out to us anytime.
             </Text>
             <Button

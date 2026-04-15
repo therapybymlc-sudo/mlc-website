@@ -6,7 +6,7 @@ export default function ClientInfo() {
 
   return (
     <Box>
-      <Heading size="md" mb={4} fontFamily="Playfair Display">Client Details</Heading>
+      <Heading size="md" mb={4}>Client Details</Heading>
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
         <InfoItem label="Name" value={client.name} />
         <InfoItem label="Email" value={client.email} />

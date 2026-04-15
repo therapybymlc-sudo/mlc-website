@@ -968,7 +968,7 @@ export default function AdminDashboard() {
   return (
     <Box bg="#F6F6F4" py={12}>
       <Container maxW="6xl">
-        <Heading mb={8} fontFamily="'Playfair Display', serif">
+        <Heading mb={8}>
           Admin Dashboard
         </Heading>
 

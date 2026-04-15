@@ -37,7 +37,7 @@ export default function GroupSupportCircles() {
           <Heading fontFamily="'Playfair Display', serif" color="#2E2E2E" fontWeight="600">
             Group & Support Circles
           </Heading>
-          <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" maxW="3xl" fontSize="lg" lineHeight="1.8">
+          <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" maxW="3xl" fontSize="lg" lineHeight="1.8">
             A guided collective space for reflection, empathy, and shared growth. Our online
             support circles allow individuals across India to connect through structured
             therapeutic facilitation.
@@ -47,7 +47,7 @@ export default function GroupSupportCircles() {
         <Heading size="md" mb={4} fontFamily="'Playfair Display', serif" color="#2E2E2E">
           Why Join a Circle?
         </Heading>
-        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={10}>
+        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={10}>
           Group therapy offers shared understanding, emotional normalization, collective
           reflection, exposure to diverse perspectives, and structured coping techniques.
           Healing often deepens in community.
@@ -56,7 +56,7 @@ export default function GroupSupportCircles() {
         <Heading size="md" mb={4} fontFamily="'Playfair Display', serif" color="#2E2E2E">
           What Happens in a Circle?
         </Heading>
-        <Text fontFamily="'Lato', sans-serif" color="#2E2E2E" mb={10}>
+        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E" mb={10}>
           Therapist-led discussions, themed conversations, structured reflection prompts,
           mindfulness exercises, and voluntary sharing. You are never forced to speak.
           Participation is encouraged, not imposed.
@@ -75,7 +75,7 @@ export default function GroupSupportCircles() {
           ].map((item, i) => (
             <AccordionItem key={i} border="none">
               <AccordionButton _expanded={{ bg: "#A9CBB7", color: "black" }}>
-                <Box flex="1" textAlign="left" fontFamily="'Lato', sans-serif">
+                <Box flex="1" textAlign="left" fontFamily="'Inter', sans-serif">
                   {item.q}
                 </Box>
                 <AccordionIcon />
@@ -86,7 +86,7 @@ export default function GroupSupportCircles() {
         </Accordion>
 
         <VStack mt={10}>
-          <Text fontFamily="'Lato', sans-serif">Still have questions?</Text>
+          <Text fontFamily="'Inter', sans-serif">Still have questions?</Text>
           <Button as="a" href="/contactus" bg="#A9CBB7" color="black" borderRadius="full" _hover={{ bg: "#C9A960", color: "white" }}>
             Contact Us
           </Button>

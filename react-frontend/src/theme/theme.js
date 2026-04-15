@@ -2,8 +2,38 @@ import { extendTheme } from "@chakra-ui/react";
 
 const theme = extendTheme({
   fonts: {
-    heading: `'Playfair Display', serif`,
-    body: `'Lato', sans-serif`,
+    heading: `'Inter', sans-serif`,
+    body: `'Inter', sans-serif`,
+    accent: `'Playfair Display', serif`,
+    // For legacy usages if they manually referenced Lato anywhere
+    lato: `'Inter', sans-serif`,
+  },
+  fontSizes: {
+    xs: "clamp(0.75rem, 0.70rem + 0.25vw, 0.875rem)",
+    sm: "clamp(0.875rem, 0.80rem + 0.30vw, 1rem)",
+    md: "clamp(1rem, 0.90rem + 0.40vw, 1.125rem)",
+    lg: "clamp(1.125rem, 1.00rem + 0.50vw, 1.25rem)",
+    xl: "clamp(1.25rem, 1.10rem + 0.60vw, 1.5rem)",
+    "2xl": "clamp(1.5rem, 1.30rem + 0.80vw, 1.875rem)",
+    "3xl": "clamp(1.875rem, 1.50rem + 1vw, 2.25rem)",
+    "4xl": "clamp(2.25rem, 1.80rem + 1.20vw, 3rem)",
+    "5xl": "clamp(3rem, 2.50rem + 1.50vw, 4rem)",
+    "6xl": "clamp(3.75rem, 3.00rem + 2vw, 5rem)",
+  },
+  lineHeights: {
+    normal: "normal",
+    none: 1,
+    shorter: 1.25,
+    short: 1.375,
+    base: 1.6,
+    tall: 1.75,
+    taller: "2",
+  },
+  fontWeights: {
+    normal: 400,
+    medium: 500,
+    semibold: 600,
+    bold: 700,
   },
   colors: {
     mlc: {
