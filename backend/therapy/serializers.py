@@ -904,8 +904,11 @@ class TherapistApplicationSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         licensed = self._coerce_list(attrs.get("licensed_countries"))
         languages = self._coerce_list(attrs.get("languages"))
+        expertise = self._coerce_list(attrs.get("expertise_areas"))
+        
         attrs["licensed_countries"] = licensed
         attrs["languages"] = languages
+        attrs["expertise_areas"] = expertise
 
         if not licensed:
             raise serializers.ValidationError(
