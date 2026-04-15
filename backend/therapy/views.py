@@ -232,6 +232,15 @@ def _extract_roles_from_auth(request):
         roles = [roles]
     if not roles and meta.get("role"):
         roles = [meta.get("role")]
+        
+    unsafe_meta = payload.get("unsafe_metadata") or payload.get("unsafeMetadata") or {}
+    if not roles:
+        unsafe_roles = unsafe_meta.get("roles")
+        if isinstance(unsafe_roles, str):
+            unsafe_roles = [unsafe_roles]
+        roles = unsafe_roles or []
+        if not roles and unsafe_meta.get("role"):
+            roles = [unsafe_meta.get("role")]
     # Fallback: allow explicit admin emails via env
     admin_emails = [
         e.strip().lower()

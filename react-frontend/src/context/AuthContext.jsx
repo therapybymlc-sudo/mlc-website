@@ -14,6 +14,11 @@ export const AuthProvider = ({ children }) => {
     const metaRoles = user?.publicMetadata?.roles;
     if (Array.isArray(metaRoles)) return metaRoles;
     if (user?.publicMetadata?.role) return [user.publicMetadata.role];
+    
+    const unsafeRoles = user?.unsafeMetadata?.roles;
+    if (Array.isArray(unsafeRoles)) return unsafeRoles;
+    if (user?.unsafeMetadata?.role) return [user.unsafeMetadata.role];
+
     return [];
   }, [user]);
 

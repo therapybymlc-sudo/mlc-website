@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { apiPost } from "../../api";
 
 export default function DashboardRouter() {
-  const { loading, isAuthenticated, isTherapist, roles } = useAuth();
+  const { loading, isAuthenticated, isTherapist, roles, user } = useAuth();
   const [onboarding, setOnboarding] = useState(false);
   const toast = useToast();
 
@@ -18,6 +18,9 @@ export default function DashboardRouter() {
       await apiPost("/onboard/", { role });
       localStorage.setItem("mlc_signup_role", role);
       localStorage.removeItem("mlc_role_preview");
+      if (user && user.reload) {
+        await user.reload();
+      }
       window.location.reload();
     } catch (e) {
       console.error(e);
