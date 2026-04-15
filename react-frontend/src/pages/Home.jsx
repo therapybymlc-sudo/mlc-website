@@ -224,11 +224,11 @@ export default function Home() {
             </Button>
             <Button
               size="lg"
-              variant="outline"
-              borderColor="#C9A960"
-              color="#C9A960"
+              bg="#C9A960"
+              color="white"
               borderRadius="full"
-              _hover={{ bg: "#C9A960", color: "white" }}
+              _hover={{ bg: "#56756D", color: "white" }}
+              _active={{ bg: "#56756D" }}
               as="a"
               href={homeContent.hero.secondary_link}
               fontWeight="500"
