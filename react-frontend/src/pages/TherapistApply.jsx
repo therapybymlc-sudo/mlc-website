@@ -38,10 +38,37 @@ const OFFICE_SPACE = [
 ];
 const YOUNGEST_AGE = ["Under 5", "5-10", "11-13", "14-17", "18+"];
 const REFERRAL_SOURCES = [
-  "Search",
-  "Social media",
-  "Referral",
-  "Events",
+  "Google Search",
+  "Social Media (Instagram/LinkedIn)",
+  "Referral from a therapist",
+  "Events/Workshops",
+  "MLC Website",
+  "Other",
+];
+
+const EXPERTISE_AREAS = [
+  "Anxiety & Depression",
+  "Trauma & PTSD",
+  "Relationships & Couples",
+  "LGBTQ+ Affirmative",
+  "Grief & Loss",
+  "ADHD & Neurodivergence",
+  "Eating Disorders",
+  "Body Image",
+  "Career & Life Transitions",
+  "Child & Adolescent",
+  "Geriatric Therapy",
+  "Addiction & Substance Use",
+  "Self-Harm & Suicidality",
+];
+
+const QUALIFICATIONS = [
+  "PhD in Psychology",
+  "PsyD",
+  "M.Phil (Clinical Psychology)",
+  "MA/MSc in Clinical Psychology",
+  "MA/MSc in Counseling Psychology",
+  "MSW (Psychiatric Social Work)",
   "Other",
 ];
 
@@ -95,6 +122,12 @@ export default function TherapistApply() {
     in_person_state: "",
     in_person_postal_code: "",
     years_experience: "",
+    highest_qualification: "",
+    supervised_years: "",
+    supervisor_name: "",
+    expertise_areas: [],
+    therapeutic_approach: "",
+    whatsapp_community: false,
     treat_minors: "",
     youngest_age: "",
     referral_source: "",
@@ -159,11 +192,14 @@ export default function TherapistApply() {
       !form.has_private_practice ||
       !form.open_to_in_person ||
       !form.years_experience ||
+      !form.highest_qualification ||
+      !form.supervised_years ||
       !form.treat_minors ||
       !form.youngest_age ||
-      !form.referral_source
+      !form.referral_source ||
+      !form.therapeutic_approach
     ) {
-      toast({ title: "Please complete all required selections.", status: "error" });
+      toast({ title: "Please complete all required professional detail fields.", status: "error" });
       return;
     }
     if (!resumeFile) {
@@ -208,6 +244,12 @@ export default function TherapistApply() {
         in_person_state: "",
         in_person_postal_code: "",
         years_experience: "",
+        highest_qualification: "",
+        supervised_years: "",
+        supervisor_name: "",
+        expertise_areas: [],
+        therapeutic_approach: "",
+        whatsapp_community: false,
         treat_minors: "",
         youngest_age: "",
         referral_source: "",
@@ -249,12 +291,15 @@ export default function TherapistApply() {
           color="gray.600"
           maxW="2xl"
           textAlign="center"
+          fontSize="lg"
           dangerouslySetInnerHTML={{ __html: content.hero?.body || DEFAULT_CONTENT.hero.body }}
         />
         <Box
-          color="gray.600"
+          color="gray.500"
           maxW="2xl"
           textAlign="center"
+          fontSize="sm"
+          fontStyle="italic"
           dangerouslySetInnerHTML={{ __html: content.hero?.note || DEFAULT_CONTENT.hero.note }}
         />
 
@@ -317,16 +362,27 @@ export default function TherapistApply() {
                 </Heading>
                 <FormControl isRequired>
                   <FormLabel>
-                    What country(s) are you currently licensed/registered to practice in?
+                    What country/territory are you currently licensed/registered to practice in?
                   </FormLabel>
-                  <Select multiple value={licensedCountries} onChange={handleMulti(setLicensedCountries)} minH="160px">
-                    {COUNTRIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </Select>
-                  <FormHelperText>Hold Cmd (Mac) / Ctrl (Windows) to select multiple.</FormHelperText>
+                  <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={3} maxH="200px" overflowY="auto" bg="white">
+                    <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={2}>
+                      {COUNTRIES.map((c) => (
+                        <Checkbox
+                          key={c}
+                          isChecked={licensedCountries.includes(c)}
+                          onChange={(e) => {
+                            if (e.target.checked) setLicensedCountries([...licensedCountries, c]);
+                            else setLicensedCountries(licensedCountries.filter(x => x !== c));
+                          }}
+                          size="sm"
+                          colorScheme="teal"
+                        >
+                          {c}
+                        </Checkbox>
+                      ))}
+                    </SimpleGrid>
+                  </Box>
+                  <FormHelperText>Select all that apply.</FormHelperText>
                 </FormControl>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
@@ -398,63 +454,139 @@ export default function TherapistApply() {
                 <Heading size="md" mb={4}>
                   {content.sections?.experience || DEFAULT_CONTENT.sections.experience}
                 </Heading>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>How many years of independently licensed clinical experience do you have?</FormLabel>
-                  <Select value={form.years_experience} onChange={handleChange("years_experience")} placeholder="Select">
-                    {EXPERIENCE_OPTIONS.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <FormLabel>Which languages are you fluent in besides English?</FormLabel>
-                  <Select multiple value={languages} onChange={handleMulti(setLanguages)} minH="160px">
-                    {LANGUAGES.map((l) => (
-                      <option key={l} value={l}>
-                        {l}
-                      </option>
-                    ))}
-                  </Select>
-                  <FormHelperText>Hold Cmd/Ctrl to select multiple.</FormHelperText>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Do you treat minors?</FormLabel>
-                  <Select value={form.treat_minors} onChange={handleChange("treat_minors")} placeholder="Select">
-                    {YES_NO.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>What is the youngest age open to working with?</FormLabel>
-                  <Select value={form.youngest_age} onChange={handleChange("youngest_age")} placeholder="Select">
-                    {YOUNGEST_AGE.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>How did you hear about Spring Health?</FormLabel>
-                  <Select value={form.referral_source} onChange={handleChange("referral_source")} placeholder="Select">
-                    {REFERRAL_SOURCES.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <FormLabel>If referred, who referred you?</FormLabel>
-                  <Input value={form.referral_name} onChange={handleChange("referral_name")} />
-                </FormControl>
-              </SimpleGrid>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                  <FormControl isRequired>
+                    <FormLabel>Highest Qualification</FormLabel>
+                    <Select value={form.highest_qualification} onChange={handleChange("highest_qualification")} placeholder="Select">
+                      {QUALIFICATIONS.map((q) => (
+                        <option key={q} value={q}>
+                          {q}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>How many years of independently licensed clinical experience do you have?</FormLabel>
+                    <Select value={form.years_experience} onChange={handleChange("years_experience")} placeholder="Select">
+                      {EXPERIENCE_OPTIONS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Number of years of supervised clinical practice?</FormLabel>
+                    <Input type="number" value={form.supervised_years} onChange={handleChange("supervised_years")} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Who was your most recent supervisor?</FormLabel>
+                    <Input value={form.supervisor_name} onChange={handleChange("supervisor_name")} placeholder="Name of supervisor" />
+                  </FormControl>
+
+                  <FormControl gridColumn={{ md: "span 2" }}>
+                    <FormLabel>Areas of Expertise / Specialization</FormLabel>
+                    <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={4} bg="white">
+                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                        {EXPERTISE_AREAS.map((area) => (
+                          <Checkbox
+                            key={area}
+                            isChecked={form.expertise_areas.includes(area)}
+                            onChange={(e) => {
+                              const current = form.expertise_areas;
+                              if (e.target.checked) setForm({...form, expertise_areas: [...current, area]});
+                              else setForm({...form, expertise_areas: current.filter(x => x !== area)});
+                            }}
+                          >
+                            {area}
+                          </Checkbox>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  </FormControl>
+
+                  <FormControl isRequired gridColumn={{ md: "span 2" }}>
+                    <FormLabel>Describe your Therapeutic Approach & What makes you a good fit for MLC?</FormLabel>
+                    <Input
+                      as="textarea"
+                      minH="120px"
+                      py={3}
+                      value={form.therapeutic_approach}
+                      onChange={handleChange("therapeutic_approach")}
+                      placeholder="Tell us about your orientation, modalities, and why you want to join MLC Therapy..."
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Which languages are you fluent in besides English?</FormLabel>
+                    <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={3} maxH="160px" overflowY="auto" bg="white">
+                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
+                        {LANGUAGES.map((l) => (
+                          <Checkbox
+                            key={l}
+                            isChecked={languages.includes(l)}
+                            onChange={(e) => {
+                              if (e.target.checked) setLanguages([...languages, l]);
+                              else setLanguages(languages.filter(x => x !== l));
+                            }}
+                            size="sm"
+                          >
+                            {l}
+                          </Checkbox>
+                        ))}
+                      </SimpleGrid>
+                    </Box>
+                  </FormControl>
+
+                  <VStack align="stretch" spacing={4}>
+                    <FormControl isRequired>
+                      <FormLabel>Do you treat minors?</FormLabel>
+                      <Select value={form.treat_minors} onChange={handleChange("treat_minors")} placeholder="Select">
+                        {YES_NO.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormControl isRequired>
+                      <FormLabel>What is the youngest age you work with?</FormLabel>
+                      <Select value={form.youngest_age} onChange={handleChange("youngest_age")} placeholder="Select">
+                        {YOUNGEST_AGE.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </VStack>
+
+                  <FormControl isRequired>
+                    <FormLabel>How did you hear about MLC Therapy?</FormLabel>
+                    <Select value={form.referral_source} onChange={handleChange("referral_source")} placeholder="Select">
+                      {REFERRAL_SOURCES.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>If referred, who referred you?</FormLabel>
+                    <Input value={form.referral_name} onChange={handleChange("referral_name")} />
+                  </FormControl>
+
+                  <Box gridColumn={{ md: "span 2" }} p={4} bg="#E9F2ED" borderRadius="xl" border="1px solid" borderColor="teal.100">
+                    <Checkbox isChecked={form.whatsapp_community} onChange={handleChange("whatsapp_community")}>
+                      <VStack align="start" spacing={0}>
+                        <Text fontWeight="semibold">Interested in joining our Therapist WhatsApp Community?</Text>
+                        <Text fontSize="xs" color="gray.600">
+                          For referrals, resource sharing, therapist peer support, and exclusive MLC networking opportunities.
+                        </Text>
+                      </VStack>
+                    </Checkbox>
+                  </Box>
+                </SimpleGrid>
               </Box>
 
               <Box bg="#E9F2ED" p={{ base: 5, md: 6 }} borderRadius="2xl">
@@ -467,6 +599,7 @@ export default function TherapistApply() {
                     type="file"
                     accept="application/pdf,.doc,.docx"
                     onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    pt={1}
                   />
                   <FormHelperText>
                     {content.form?.resume_hint || DEFAULT_CONTENT.form.resume_hint}
@@ -477,7 +610,7 @@ export default function TherapistApply() {
                 </Checkbox>
               </Box>
 
-              <Button type="submit" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }} isLoading={isSubmitting}>
+              <Button type="submit" bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }} isLoading={isSubmitting} size="lg" borderRadius="full">
                 {content.form?.submit_label || DEFAULT_CONTENT.form.submit_label}
               </Button>
               <Text fontSize="sm" color="gray.500">
