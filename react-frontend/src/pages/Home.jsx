@@ -168,11 +168,11 @@ export default function Home() {
             as="h1"
             className="hero-title"
             fontFamily="'Inter', sans-serif"
-            fontWeight="700"
-            fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
+            fontWeight="500"
+            fontSize={{ base: "2xl", md: "4xl", lg: "5xl" }}
             color="#2E2E2E"
-            letterSpacing="-1px"
-            lineHeight="1.1"
+            letterSpacing="-0.5px"
+            lineHeight="1.2"
             mb={4}
           >
             MLC Health & Wellness Centre
