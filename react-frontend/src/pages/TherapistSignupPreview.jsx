@@ -5,32 +5,30 @@ import { useEffect } from "react";
 
 export default function TherapistSignupPreview() {
   useEffect(() => {
-    localStorage.setItem("mlc_role_preview", "therapist");
     localStorage.setItem("mlc_signup_role", "therapist");
+    localStorage.removeItem("mlc_role_preview");
   }, []);
 
   return (
     <Box textAlign="center" py={20}>
       <Helmet>
-        <title>Therapist Preview Sign Up | MLC Therapy</title>
+        <title>Therapist Sign Up | MLC Therapy</title>
         <meta
           name="description"
-          content="Create a therapist preview account to explore the MLC therapist dashboard."
+          content="Create your therapist account for the MLC therapist dashboard."
         />
         <meta name="robots" content="noindex,nofollow" />
       </Helmet>
       <VStack spacing={6}>
-        <Tag colorScheme="purple" borderRadius="full">
-          Therapist Preview
-        </Tag>
-        <Heading mb={2}>Create your therapist preview account</Heading>
+        <Tag colorScheme="purple" borderRadius="full">Therapist</Tag>
+        <Heading mb={2}>Create your therapist account</Heading>
         <Text color="gray.600" maxW="2xl">
-          This gives you access to the basic therapist preview. Full access
-          unlocks after your application is approved.
+          After sign up, your therapist role is stamped and your dashboard opens
+          in verification mode until your provider status is approved.
         </Text>
         <SignUp
           routing="path"
-          path="/signup/therapist-preview"
+          path="/signup/therapist"
           afterSignUpUrl="/dashboard"
           afterSignInUrl="/dashboard"
         />

@@ -121,8 +121,12 @@ export default function App() {
               <Route path="/therapist-apply" element={<TherapistApply />} />
               <Route path="/signup/client" element={<ClientSignup />} />
               <Route
-                path="/signup/therapist-preview"
+                path="/signup/therapist"
                 element={<TherapistSignupPreview />}
+              />
+              <Route
+                path="/signup/therapist-preview"
+                element={<Navigate to="/signup/therapist" replace />}
               />
 
               {/* 🌸 Service Detail Pages */}
@@ -155,10 +159,7 @@ export default function App() {
               <Route
                 path="/dashboard/therapist"
                 element={
-                  <ProtectedRoute
-                    allowRoles={["therapist", "admin"]}
-                    allowPreviewRole="therapist"
-                  >
+                  <ProtectedRoute allowRoles={["therapist", "admin"]}>
                     <TherapistDashboard />
                   </ProtectedRoute>
                 }

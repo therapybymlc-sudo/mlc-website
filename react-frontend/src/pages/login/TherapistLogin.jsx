@@ -29,8 +29,8 @@ export default function TherapistLogin() {
         <Button as={Link} to="/signup/client" colorScheme="purple">
           Sign up as a client
         </Button>
-        <Button as={Link} to="/signup/therapist-preview" variant="ghost">
-          Sign up as a therapist (preview)
+        <Button as={Link} to="/signup/therapist" variant="ghost">
+          Sign up as a therapist
         </Button>
       </VStack>
     </Box>

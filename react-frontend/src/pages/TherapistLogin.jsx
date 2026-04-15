@@ -33,8 +33,8 @@ function TherapistLogin() {
             Sign up as a client
           </Button>
         </HStack>
-        <Button as={Link} to="/signup/therapist-preview" variant="ghost">
-          Sign up as a therapist (preview)
+        <Button as={Link} to="/signup/therapist" variant="ghost">
+          Sign up as a therapist
         </Button>
       </VStack>
     </Box>

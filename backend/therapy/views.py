@@ -117,6 +117,9 @@ def _profile_required_response(profile_type: str):
     )
 from therapy.services.appointments import cancel_appointment
 from django.core.exceptions import ValidationError
+from urllib import request as urllib_request
+from urllib.error import URLError, HTTPError
+import json
 
 
 # ----------------------------
@@ -1557,6 +1560,42 @@ class FrontendAppView(TemplateView):
 class OnboardUserRoleView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def _sync_clerk_role(self, user, role):
+        """
+        Persist selected role in Clerk public metadata so frontend role-based routing
+        consistently matches backend profile onboarding.
+        """
+        clerk_secret_key = getattr(settings, "CLERK_SECRET_KEY", "")
+        if not clerk_secret_key:
+            return False, "CLERK_SECRET_KEY is not configured."
+
+        auth_payload = getattr(self.request, "auth", {}) or {}
+        clerk_user_id = auth_payload.get("sub")
+        if not clerk_user_id:
+            return False, "Missing Clerk subject in auth token."
+
+        metadata_payload = {
+            "public_metadata": {
+                "role": role,
+                "roles": [role],
+            }
+        }
+
+        try:
+            req = urllib_request.Request(
+                url=f"https://api.clerk.com/v1/users/{clerk_user_id}",
+                data=json.dumps(metadata_payload).encode("utf-8"),
+                method="PATCH",
+                headers={
+                    "Authorization": f"Bearer {clerk_secret_key}",
+                    "Content-Type": "application/json",
+                },
+            )
+            with urllib_request.urlopen(req, timeout=8):
+                return True, None
+        except (HTTPError, URLError, TimeoutError) as exc:
+            return False, str(exc)
+
     def post(self, request):
         role = request.data.get("role")
         user = request.user
@@ -1566,15 +1605,25 @@ class OnboardUserRoleView(APIView):
 
         # Ensure the user doesn't already have the requested profile
         if role == "client":
-            if getattr(user, "client_profile", None):
-                return Response({"detail": "Client profile already exists."}, status=status.HTTP_400_BAD_REQUEST)
-            _resolve_client_from_request(request) # This will create one if it doesn't exist
-            return Response({"detail": "Client profile created successfully."})
+            if not getattr(user, "client_profile", None):
+                _resolve_client_from_request(request)
+            synced, sync_error = self._sync_clerk_role(user, "client")
+            payload = {"detail": "Client profile created successfully.", "role": "client", "clerk_role_synced": synced}
+            if sync_error:
+                payload["clerk_sync_error"] = sync_error
+            return Response(payload)
             
         elif role == "therapist":
-            if getattr(user, "therapist_profile", None):
-                return Response({"detail": "Therapist profile already exists."}, status=status.HTTP_400_BAD_REQUEST)
-            name = getattr(user, "get_full_name", lambda: "")().strip() or getattr(user, "username", "Unnamed Therapist")
-            email = getattr(user, "email", None) or f"therapist_{user.pk}@local"
-            TherapistProfile.objects.create(user=user, name=name, email=email, is_verified=False)
-            return Response({"detail": "Therapist profile created successfully and pending verification."})
+            if not getattr(user, "therapist_profile", None):
+                name = getattr(user, "get_full_name", lambda: "")().strip() or getattr(user, "username", "Unnamed Therapist")
+                email = getattr(user, "email", None) or f"therapist_{user.pk}@local"
+                TherapistProfile.objects.create(user=user, name=name, email=email, is_verified=False)
+            synced, sync_error = self._sync_clerk_role(user, "therapist")
+            payload = {
+                "detail": "Therapist profile created successfully and pending verification.",
+                "role": "therapist",
+                "clerk_role_synced": synced,
+            }
+            if sync_error:
+                payload["clerk_sync_error"] = sync_error
+            return Response(payload)
