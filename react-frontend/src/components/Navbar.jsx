@@ -100,10 +100,10 @@ export default function Navbar() {
             <Box lineHeight="1.1" whiteSpace={{ base: "normal", md: "nowrap" }} minW={0}>
               <Text
                 fontFamily="'Inter', sans-serif"
-                fontWeight="600"
+                fontWeight="500"
                 fontSize={{ base: "sm", sm: "md", md: "lg" }}
                 color="#2E2E2E"
-                letterSpacing="-0.2px"
+                letterSpacing="-0.1px"
               >
                 MLC Health & Wellness Centre
               </Text>

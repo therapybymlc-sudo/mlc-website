@@ -448,7 +448,7 @@ export default function Home() {
               </Heading>
               <Text
                 mb={4}
-                fontWeight="600"
+                color="#555"
                 fontFamily="'Inter', sans-serif"
                 fontSize="md"
               >

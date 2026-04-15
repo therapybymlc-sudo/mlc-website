@@ -64,9 +64,9 @@ button {
   inset: 0;
   background: radial-gradient(
     circle,
-    rgba(249, 249, 249, 0.8) 0%,
-    rgba(249, 249, 249, 0.4) 60%,
-    rgba(249, 249, 249, 0) 100%
+    rgba(249, 249, 249, 0.95) 0%,
+    rgba(249, 249, 249, 0.7) 50%,
+    rgba(249, 249, 249, 0.2) 100%
   );
   z-index: 1;
   pointer-events: none;
