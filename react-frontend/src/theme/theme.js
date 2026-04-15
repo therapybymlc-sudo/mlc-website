@@ -38,6 +38,7 @@ const theme = extendTheme({
     mlc: {
       gold: "#C9A960",
       green: "#A9CBB7",
+      greenDark: "#56756D",
       black: "#2E2E2E",
       blackSoft: "rgba(46, 46, 46, 0.9)",
       white: "#F9F9F9",

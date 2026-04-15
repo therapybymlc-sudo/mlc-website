@@ -20,6 +20,7 @@ import theme from "../theme/theme";
 import { Helmet } from "react-helmet-async";
 import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { apiGet } from "../api";
 
 const MotionBox = motion(Box);
@@ -43,16 +44,16 @@ const fallbackHome = {
     title: "Your MLC Portal",
     body:
       "A gentle, private space for clients — and a structured workspace for therapists. Choose your path below to get started.",
-    client_title: "Client Dashboard",
+    client_title: "Client Workspace",
     client_body:
-      "Daily check‑ins, private journaling, session notes, shared materials, and premium tools when you’re ready.",
+      "A dedicated environment for your healing journey. Track your progress, access shared resources, and collaborate securely with your therapist.",
     client_primary_label: "Sign up as a client",
     client_primary_link: "/signup/client",
     client_secondary_label: "Take a quick check‑in",
     client_secondary_link: "/client-checkin",
     therapist_title: "Therapist Workspace",
     therapist_body:
-      "Apply to join MLC and access therapist tools, client collaboration, and a calm workspace designed for your practice.",
+      "A professional environment for clinical excellence. Manage your practice, collaborate with clients, and focus on the clinical work.",
     therapist_primary_label: "Apply as a therapist",
     therapist_primary_link: "/therapist-apply",
     therapist_secondary_label: "Sign in",
@@ -272,8 +273,8 @@ export default function Home() {
                 />
                 <HStack spacing={3} flexWrap="wrap">
                   <Button
-                    as="a"
-                    href={homeContent.portal.client_primary_link}
+                    as={Link}
+                    to={homeContent.portal.client_primary_link}
                     bg="#A9CBB7"
                     color="#2E2E2E"
                     _hover={{ bg: "#56756D", color: "white" }}
@@ -283,8 +284,8 @@ export default function Home() {
                     {homeContent.portal.client_primary_label}
                   </Button>
                   <Button
-                    as="a"
-                    href={homeContent.portal.client_secondary_link}
+                    as={Link}
+                    to={homeContent.portal.client_secondary_link}
                     variant="outline"
                     borderColor="#A9CBB7"
                     color="#56756D"
@@ -296,19 +297,20 @@ export default function Home() {
                   </Button>
                 </HStack>
               </Box>
-              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md">
-                <Heading size="md" mb={2}>
+              <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" border="1px solid" borderColor="gray.100">
+                <Heading size="md" mb={2} color="mlc.black">
                   {homeContent.portal.therapist_title}
                 </Heading>
                 <Text
                   color="gray.600"
                   mb={4}
+                  fontSize="sm"
                   dangerouslySetInnerHTML={{ __html: homeContent.portal.therapist_body || "" }}
                 />
                 <HStack spacing={3} flexWrap="wrap">
                   <Button
-                    as="a"
-                    href={homeContent.portal.therapist_primary_link}
+                    as={Link}
+                    to={homeContent.portal.therapist_primary_link}
                     bg="#C9A960"
                     color="white"
                     _hover={{ bg: "#56756D", color: "white" }}
@@ -318,8 +320,8 @@ export default function Home() {
                     {homeContent.portal.therapist_primary_label}
                   </Button>
                   <Button
-                    as="a"
-                    href={homeContent.portal.therapist_secondary_link}
+                    as={Link}
+                    to={homeContent.portal.therapist_secondary_link}
                     variant="outline"
                     borderColor="#C9A960"
                     color="#C9A960"
