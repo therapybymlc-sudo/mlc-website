@@ -131,10 +131,10 @@ export default function Home() {
       </Helmet>
       {/* HERO SECTION */}
       <MotionBox
-        className="hero-container"
+        position="relative"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
         bgSize="cover"
-        bgPosition={{ base: "top", md: "center" }}
+        bgPosition="center"
         minH={{ base: "100svh", md: "100vh" }}
         display="flex"
         alignItems="center"
@@ -145,8 +145,18 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
+        _before={{
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bg: "rgba(255, 255, 255, 0.7)", // Translucent white layer
+          zIndex: 1,
+        }}
       >
-        <Box className="hero-content" maxW="4xl">
+        <Box position="relative" zIndex={2} maxW="4xl">
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
@@ -156,14 +166,16 @@ export default function Home() {
           />
           <Heading
             as="h1"
+            className="hero-title"
             fontFamily="'Inter', sans-serif"
-            fontWeight="500"
-            fontSize={{ base: "sm", sm: "md", md: "lg" }}
+            fontWeight="700"
+            fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
             color="#2E2E2E"
-            letterSpacing="-0.1px"
-            mb={2}
+            letterSpacing="-1px"
+            lineHeight="1.1"
+            mb={4}
           >
-            {homeContent.hero.title}
+            MLC Health & Wellness Centre
           </Heading>
           <Text
             mt={4}
