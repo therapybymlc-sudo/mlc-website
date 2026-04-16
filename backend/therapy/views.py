@@ -45,6 +45,12 @@ from therapy.models import (
     TrainingProgramsContent,
     CareersContent,
     TherapistApplyContent,
+    TherapistScreening,
+)
+from therapy.utils import (
+    calculate_dass_scores,
+    get_dass_severity,
+    generate_dass_summary,
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
@@ -1642,74 +1648,156 @@ class TherapistMatchView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """
-        Receives quiz answers and returns segmented therapist matches.
-        Payload: {
-           "concerns": ["Anxiety", "Grief"],
-           "gender_pref": "Female",
-           "is_queer_preferred": true,
-           "languages": ["English", "Hindi"],
-           "location": "Mumbai",
-           "religion": "No preference"
-        }
-        """
-        quiz = request.data
+        data = request.data
+        
+        # 1. DASS-21 Scoring
+        dass_answers = data.get("dass_answers", {})
+        dass_scores = calculate_dass_scores(dass_answers)
+        dass_levels = get_dass_severity(dass_scores)
+        dass_summary = generate_dass_summary(dass_levels)
+        
+        # 2. Risk Assessment
+        suicidal_thoughts = data.get("suicidal_thoughts", "No")
+        feels_safe = data.get("feels_safe", "Yes")
+        immediate_safety_concern = data.get("immediate_safety_concern", "No")
+        
+        risk_level = "routine"
+        if suicidal_thoughts == "Yes, and I feel at risk of acting on these thoughts" or feels_safe == "No" or immediate_safety_concern == "Yes":
+            risk_level = "high"
+        elif suicidal_thoughts != "No" or feels_safe == "I am not completely sure":
+            risk_level = "moderate"
+            
+        # 3. Hard Filters
         all_verified = TherapistProfile.objects.filter(is_verified=True)
         
+        # Age served (Placeholder logic for now as profiles don't have age_min/max yet, but we'll assume they fit)
+        # Service type
+        st_req = data.get("service_type") # "Individual therapy", "Couples therapy", etc.
+        if st_req:
+            all_verified = all_verified.filter(modalities__icontains=st_req) | all_verified.exclude(modalities__isnull=False) # Fallback if not specified
+
+        # Language
+        lang_req = data.get("languages", [])
+        if lang_req:
+            # Simple intersection check
+            potential = []
+            for t in all_verified:
+                t_langs = [l.lower() for l in (t.languages or [])]
+                if any(l.lower() in t_langs for l in lang_req):
+                    potential.append(t)
+            all_verified = TherapistProfile.objects.filter(id__in=[p.id for p in potential])
+            
+        # 4. Weighted Scoring
         matches = []
         others = []
-
+        
+        primary_concern = data.get("primary_concern", "").lower()
+        secondary_concerns = [c.lower() for c in data.get("presenting_concerns", [])]
+        style_pref = data.get("therapy_style_pref", "").lower()
+        gender_pref = data.get("therapist_gender_pref", "").lower()
+        religion_pref = data.get("religion_pref", "").lower()
+        
         for t in all_verified:
             score = 0
             
-            # 1. Concerns (Keyword matching)
+            # Primary Concern (High)
             t_concerns = [c.lower() for c in (t.concerns or [])]
-            msg_concerns = [c.lower() for c in (quiz.get("concerns") or [])]
-            matching_concerns = set(t_concerns).intersection(set(msg_concerns))
-            score += len(matching_concerns) * 2
+            if primary_concern in t_concerns:
+                score += 10
+                
+            # Secondary Concerns (Medium)
+            matching_secondaries = set(t_concerns).intersection(set(secondary_concerns))
+            score += len(matching_secondaries) * 5
             
-            # 2. Gender preference
-            gender_pref = quiz.get("gender_pref")
-            if gender_pref and gender_pref != "No preference":
-                if t.gender and t.gender.lower() == gender_pref.lower():
+            # Gender Preference (High)
+            if gender_pref and gender_pref != "no preference":
+                if t.gender and gender_pref in t.gender.lower():
+                    score += 10
+
+            # Religion Preference (Medium)
+            if religion_pref and religion_pref != "no preference":
+                if t.religion and religion_pref in t.religion.lower():
                     score += 5
             
-            # 3. Queer-affirmative
-            if quiz.get("is_queer_preferred") and t.is_queer_affirmative:
-                score += 5
-            
-            # 4. Languages
-            t_langs = [l.lower() for l in (t.languages or [])]
-            msg_langs = [l.lower() for l in (quiz.get("languages") or [])]
-            matching_langs = set(t_langs).intersection(set(msg_langs))
-            score += len(matching_langs) * 2
-            
-            # 5. Location
-            loc_pref = quiz.get("location")
-            if loc_pref and t.city and loc_pref.lower() in t.city.lower():
-                score += 3
-            
-            # 6. Religion
-            rel_pref = quiz.get("religion")
-            if rel_pref and rel_pref != "No preference":
-                if t.religion and t.religion.lower() == rel_pref.lower():
-                    score += 2
+            # DASS Profile Fit (Medium-High)
+            # Anxiety + Stress Focus
+            if (dass_levels['anxiety'] != 'Normal' or dass_levels['stress'] != 'Normal') and \
+               any(kw in t_concerns for kw in ['anxiety', 'stress', 'burnout', 'overwhelmed']):
+                score += 8
+            # Depression Focus
+            if dass_levels['depression'] != 'Normal' and \
+               any(kw in t_concerns for kw in ['depression', 'low mood', 'sadness']):
+                score += 8
+                
+            # Style Preference (Medium)
+            t_modalities = [m.lower() for m in (t.modalities or [])]
+            if style_pref:
+                if 'structured' in style_pref and any(m in t_modalities for m in ['cbt', 'dbf', 'solution-focused']):
+                    score += 5
+                elif 'reflective' in style_pref and any(m in t_modalities for m in ['humanistic', 'psychodynamic', 'existential']):
+                    score += 5
 
             t_data = TherapistProfileSerializer(t).data
             t_data["match_score"] = score
             
-            # Threshold for "Match"
-            if score >= 5: # Arbitrary threshold for high-quality match
+            if score >= 15:
                 matches.append(t_data)
             else:
                 others.append(t_data)
-
-        # Sort by score
+                
         matches.sort(key=lambda x: x["match_score"], reverse=True)
         others.sort(key=lambda x: x["match_score"], reverse=True)
-
+        
+        # 5. Save Screening
+        screening = TherapistScreening.objects.create(
+            age=data.get("age"),
+            gender=data.get("gender"),
+            location=data.get("location", {}),
+            languages=data.get("languages", []),
+            session_type_pref=data.get("session_type_pref"),
+            service_type=data.get("service_type"),
+            therapist_gender_pref=data.get("therapist_gender_pref"),
+            therapy_style_pref=data.get("therapy_style_pref"),
+            urgency=data.get("urgency"),
+            religion_pref=data.get("religion_pref"),
+            presenting_concerns=data.get("presenting_concerns", []),
+            primary_concern=data.get("primary_concern"),
+            duration=data.get("duration"),
+            impairment_level=data.get("impairment_level"),
+            prior_therapy=data.get("prior_therapy"),
+            psychiatry_history=data.get("psychiatry_history"),
+            on_medication=data.get("on_medication"),
+            has_diagnosis=data.get("has_diagnosis"),
+            diagnosis_details=data.get("diagnosis_details"),
+            health_factors=data.get("health_factors"),
+            daily_functioning=data.get("daily_functioning"),
+            sleep_quality=data.get("sleep_quality"),
+            energy_level=data.get("energy_level"),
+            appetite_level=data.get("appetite_level"),
+            support_level=data.get("support_level"),
+            support_sources=data.get("support_sources", []),
+            suicidal_thoughts=suicidal_thoughts,
+            feels_safe=feels_safe,
+            immediate_safety_concern=immediate_safety_concern,
+            risk_level=risk_level,
+            dass_answers=dass_answers,
+            dass_depression_score=dass_scores['depression'],
+            dass_anxiety_score=dass_scores['anxiety'],
+            dass_stress_score=dass_scores['stress'],
+            dass_depression_level=dass_levels['depression'],
+            dass_anxiety_level=dass_levels['anxiety'],
+            dass_stress_level=dass_levels['stress'],
+            summary_paragraph=dass_summary,
+        )
+        # Add matches to M2M
+        for m in matches[:5]:
+            screening.recommended_therapists.add(m['id'])
+            
         return Response({
-            "matches": matches[:5], # Recommend top 5
-            "others": others[:10]   # Show up to 10 more
+            "screening_id": screening.id,
+            "dass_summary": dass_summary,
+            "risk_level": risk_level,
+            "matches": matches[:5],
+            "others": others[:10]
         })
 

@@ -168,6 +168,77 @@ class ClientProfile(models.Model):
         return self.name
 
 
+class TherapistScreening(models.Model):
+    # Basic info (can be anonymous)
+    age = models.PositiveIntegerField(null=True, blank=True)
+    gender = models.CharField(max_length=100, blank=True, null=True)
+    location = models.JSONField(default=dict, blank=True) # {country, city, timezone}
+    languages = models.JSONField(default=list, blank=True)
+    
+    # Practical prefs
+    session_type_pref = models.CharField(max_length=100, blank=True, null=True)
+    service_type = models.CharField(max_length=100, blank=True, null=True)
+    therapist_gender_pref = models.CharField(max_length=100, blank=True, null=True)
+    therapy_style_pref = models.CharField(max_length=100, blank=True, null=True)
+    urgency = models.CharField(max_length=100, blank=True, null=True)
+    religion_pref = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Concerns
+    presenting_concerns = models.JSONField(default=list, blank=True)
+    primary_concern = models.CharField(max_length=255, blank=True, null=True)
+    duration = models.CharField(max_length=100, blank=True, null=True)
+    impairment_level = models.CharField(max_length=100, blank=True, null=True)
+    
+    # History
+    prior_therapy = models.CharField(max_length=100, blank=True, null=True)
+    psychiatry_history = models.CharField(max_length=100, blank=True, null=True)
+    on_medication = models.CharField(max_length=100, blank=True, null=True)
+    has_diagnosis = models.CharField(max_length=100, blank=True, null=True)
+    diagnosis_details = models.TextField(blank=True, null=True)
+    health_factors = models.TextField(blank=True, null=True)
+    
+    # Functioning
+    daily_functioning = models.CharField(max_length=100, blank=True, null=True)
+    sleep_quality = models.CharField(max_length=100, blank=True, null=True)
+    energy_level = models.CharField(max_length=100, blank=True, null=True)
+    appetite_level = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Support
+    support_level = models.CharField(max_length=100, blank=True, null=True)
+    support_sources = models.JSONField(default=list, blank=True)
+    
+    # Risk
+    suicidal_thoughts = models.CharField(max_length=100, blank=True, null=True)
+    past_self_harm = models.CharField(max_length=100, blank=True, null=True)
+    feels_safe = models.CharField(max_length=100, blank=True, null=True)
+    immediate_safety_concern = models.CharField(max_length=100, blank=True, null=True)
+    risk_level = models.CharField(max_length=50, default='routine')
+    
+    # DASS-21 Raw Answers
+    dass_answers = models.JSONField(default=dict, blank=True)
+    
+    # Calculated Scores
+    dass_depression_score = models.IntegerField(null=True, blank=True)
+    dass_anxiety_score = models.IntegerField(null=True, blank=True)
+    dass_stress_score = models.IntegerField(null=True, blank=True)
+    
+    dass_depression_level = models.CharField(max_length=50, blank=True, null=True)
+    dass_anxiety_level = models.CharField(max_length=50, blank=True, null=True)
+    dass_stress_level = models.CharField(max_length=50, blank=True, null=True)
+    
+    # Results
+    summary_paragraph = models.TextField(blank=True, null=True)
+    recommended_therapists = models.ManyToManyField(TherapistProfile, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Linked client if they sign up later
+    client = models.ForeignKey(ClientProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='screenings')
+
+    def __str__(self):
+        return f'Screening {self.id} - {self.created_at.date()}'
+
+
 class TherapistApplication(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
