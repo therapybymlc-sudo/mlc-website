@@ -22,7 +22,7 @@ import { motion } from "framer-motion";
 import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import NextLink from "next/link";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 const MotionBox = motion(Box);
 

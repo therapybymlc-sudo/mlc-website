@@ -24,7 +24,7 @@ import {
   EMAIL_PUBLIC_KEY,
 } from "../emailConfig";
 import { Helmet } from "react-helmet-async";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 const defaultCareersContent = {
   hero: {

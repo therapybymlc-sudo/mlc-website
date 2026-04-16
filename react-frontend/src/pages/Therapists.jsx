@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 import {
   FiUsers,
   FiCompass,

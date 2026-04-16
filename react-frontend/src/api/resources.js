@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "../api";
+import { apiGet, apiPost } from "../api.js";
 
 const buildFormData = (payload) => {
   const formData = new FormData();

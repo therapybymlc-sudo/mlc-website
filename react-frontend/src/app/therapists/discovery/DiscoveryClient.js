@@ -36,7 +36,7 @@ import {
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSearch, FiAlertCircle } from "react-icons/fi";
-import { apiPost } from "../../../api";
+import { apiPost } from "../../../api.js";
 import TherapistCard from "../../../components/TherapistCard";
 import { useAuth } from "../../../context/AuthContext";
 import NextLink from "next/link";

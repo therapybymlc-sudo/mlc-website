@@ -20,7 +20,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiUsers, FiCalendar, FiClock, FiFileText } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
-import { apiGet } from "../../../api";
+import { apiGet } from "../../../../api.js";
 
 export default function TherapistDashboardOverview() {
   const { user } = useUser();

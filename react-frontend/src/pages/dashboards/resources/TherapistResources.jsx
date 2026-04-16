@@ -12,7 +12,7 @@ import {
   Switch,
 } from "@chakra-ui/react";
 import { resourcesApi } from "../../../api/resources";
-import { apiGet } from "../../../api";
+import { apiGet } from "../../../api.js";
 import SchedulePageHeader from "../../../components/scheduling/SchedulePageHeader";
 import ScheduleSectionCard from "../../../components/scheduling/ScheduleSectionCard";
 import ScheduleStatusBadge from "../../../components/scheduling/ScheduleStatusBadge";

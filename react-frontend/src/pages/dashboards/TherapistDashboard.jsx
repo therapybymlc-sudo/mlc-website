@@ -59,7 +59,7 @@ import TherapistResources from "./resources/TherapistResources";
 import SchedulingNotifications from "./notifications/SchedulingNotifications";
 import NoteTemplates from "./NoteTemplates"; // ✅ added
 import TherapistProfileSettings from "./TherapistProfileSettings";
-import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api.js";
 import RichTextEditor from "../../components/RichTextEditor";
 
 export default function TherapistDashboard() {

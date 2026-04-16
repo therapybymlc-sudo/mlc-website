@@ -11,13 +11,13 @@ import {
 import { AddIcon, RepeatIcon, CopyIcon, ViewIcon, DeleteIcon, SearchIcon, HamburgerIcon } from "@chakra-ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { apiGet, apiPost, apiPut } from "../../api";
+import { apiGet, apiPost, apiPut } from "../../api.js";
 import {
   getNoteTemplates,
   createNoteTemplate,
   updateNoteTemplate,
   deleteNoteTemplate,
-} from "../../api";
+} from "../../api.js";
 
 /* =========================================
    Helpers

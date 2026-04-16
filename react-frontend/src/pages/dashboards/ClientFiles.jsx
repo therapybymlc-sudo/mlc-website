@@ -27,7 +27,7 @@ import {
 } from "@chakra-ui/react";
 import { DeleteIcon, DownloadIcon, AddIcon, RepeatIcon, ViewIcon } from "@chakra-ui/icons";
 import { useState, useEffect } from "react";
-import { apiGet, apiDelete, apiUpload } from "../../api";
+import { apiGet, apiDelete, apiUpload } from "../../api.js";
 
 export default function ClientFiles() {
   const [clients, setClients] = useState([]);

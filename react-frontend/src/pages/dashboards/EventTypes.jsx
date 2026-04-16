@@ -5,7 +5,7 @@ import {
   Button, HStack, Input, useDisclosure, Modal, ModalOverlay,
   ModalContent, ModalHeader, ModalBody, ModalFooter, useToast, Spinner,
 } from "@chakra-ui/react";
-import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api.js";
 
 export default function EventTypes() {
   const toast = useToast();

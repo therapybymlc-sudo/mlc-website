@@ -28,7 +28,7 @@ import {
   FiUser, FiVideo, FiFileText, FiAward, FiGlobe, FiHeart, FiSave, FiPlus, FiCamera 
 } from "react-icons/fi";
 import RichTextEditor from "../../components/RichTextEditor";
-import { apiGet, apiPut } from "../../api";
+import { apiGet, apiPut } from "../../api.js";
 
 const FOCUS_AREAS = [
   { id: 'anxiety', label: 'Anxiety disorders', icon: '🧶' },

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Center, Spinner, Box, Heading, Text, Button, VStack, useToast } from "@chakra-ui/react";
 import { useAuth } from "../../context/AuthContext";
-import { apiPost } from "../../api";
+import { apiPost } from "../../api.js";
 
 export default function DashboardRouter() {
   const { loading, isAuthenticated, isTherapist, roles, user } = useAuth();

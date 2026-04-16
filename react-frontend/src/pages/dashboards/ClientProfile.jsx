@@ -3,7 +3,7 @@ import { useParams, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Box, Flex, Heading, Text, VStack, HStack, Divider, Spinner, Badge, Button, Link,
 } from "@chakra-ui/react";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 export default function ClientProfile() {
   const { id } = useParams();

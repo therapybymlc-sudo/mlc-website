@@ -35,7 +35,7 @@ import {
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSearch, FiAlertCircle } from "react-icons/fi";
-import { apiPost } from "../api";
+import { apiPost } from "../api.js";
 import TherapistCard from "../components/TherapistCard";
 import { useAuth } from "../context/AuthContext";
 import { Link as RouterLink } from "react-router-dom";
@@ -292,7 +292,7 @@ DASS Interpretation based on Lovibond & Lovibond (1995).
                 formData.append("title", "Clinical Assessment (DASS-21)");
                 formData.append("is_private", "true");
 
-                const { apiUpload } = await import("../../api");
+                const { apiUpload } = await import("../api.js");
                 await apiUpload("files/", formData);
             }
           } catch (syncErr) {

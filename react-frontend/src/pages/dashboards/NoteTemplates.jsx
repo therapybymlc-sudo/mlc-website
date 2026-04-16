@@ -8,7 +8,7 @@ import {
   ModalCloseButton, useDisclosure, Spinner, Text, Textarea, Tag, TagLabel
 } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api.js";
 import { useAuth } from "../../context/AuthContext";
 
 /**

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Center, Spinner, Box, Heading, Text, Button, VStack, useToast } from "@chakra-ui/react";
 import { useUser } from "@clerk/nextjs";
-import { apiPost } from "../../../api";
+import { apiPost } from "../../../api.js";
 
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Box, Heading, Text, Button, VStack, HStack, Spinner, Badge, Divider } from "@chakra-ui/react";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 export default function AppointmentDetail() {
   const { id } = useParams();

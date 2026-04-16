@@ -25,7 +25,7 @@ import {
   EMAIL_TEMPLATE_ID,
   EMAIL_PUBLIC_KEY,
 } from "../../emailConfig";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 const defaultCareersContent = {
   hero: {

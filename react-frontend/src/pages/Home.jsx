@@ -21,7 +21,7 @@ import { Helmet } from "react-helmet-async";
 import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 const MotionBox = motion(Box);
 

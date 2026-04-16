@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
 import { useEffect, useState } from "react";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 const defaultAboutContent = {
   hero: {

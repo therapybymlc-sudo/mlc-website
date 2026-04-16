@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 export default function MeetTheTeam() {
   const [team, setTeam] = useState([]);

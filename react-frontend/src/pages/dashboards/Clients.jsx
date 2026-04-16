@@ -31,7 +31,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { apiGet, apiPost, apiPut } from "../../api";
+import { apiGet, apiPost, apiPut } from "../../api.js";
 
 export default function Clients() {
   const navigate = useNavigate();

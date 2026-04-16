@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Spinner } from "@chakra-ui/react";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 export default function ClientAppointments() {
   const { client } = useOutletContext();

@@ -21,7 +21,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { apiGet, apiPost, apiPut, apiDelete } from "../api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../api.js";
 
 const emptyMember = {
   name: "",
@@ -4402,6 +4402,7 @@ export default function AdminDashboard() {
               Save therapist apply page
             </Button>
           </HStack>
+        </Box>
         <Divider my={12} />
 
         <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" mb={10}>

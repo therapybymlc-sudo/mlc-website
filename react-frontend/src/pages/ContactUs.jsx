@@ -24,7 +24,7 @@ import {
 } from "../emailConfig";
 import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 const defaultContactContent = {
   hero: {

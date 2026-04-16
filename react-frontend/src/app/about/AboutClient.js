@@ -11,7 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import NextLink from "next/link";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 const defaultAboutContent = {
   hero: {

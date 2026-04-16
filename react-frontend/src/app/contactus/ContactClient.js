@@ -25,7 +25,7 @@ import {
   EMAIL_PUBLIC_KEY,
 } from "../../emailConfig";
 import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 const defaultContactContent = {
   hero: {

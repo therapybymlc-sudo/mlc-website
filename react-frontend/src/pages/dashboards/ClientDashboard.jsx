@@ -51,7 +51,7 @@ import {
 } from "@chakra-ui/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { apiGet, apiPost, apiPut, apiDelete } from "../../api";
+import { apiGet, apiPost, apiPut, apiDelete } from "../../api.js";
 import RichTextEditor from "../../components/RichTextEditor";
 import ClientBooking from "./scheduling/ClientBooking";
 import ClientBookingRequests from "./scheduling/ClientBookingRequests";

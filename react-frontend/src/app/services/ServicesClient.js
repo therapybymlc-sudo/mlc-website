@@ -17,7 +17,7 @@ import {
 } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet } from "../../api";
+import { apiGet } from "../../api.js";
 
 const defaultServicesContent = {
   hero: {

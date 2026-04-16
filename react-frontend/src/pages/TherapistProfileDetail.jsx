@@ -19,7 +19,7 @@ import {
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FiCheckCircle, FiVideo, FiClock, FiShield, FiHeart, FiGlobe } from "react-icons/fi";
-import { apiGet } from "../api";
+import { apiGet } from "../api.js";
 
 export default function TherapistProfileDetail() {
   const { id } = useParams();
