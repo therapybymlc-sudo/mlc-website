@@ -9,6 +9,7 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { FaInstagram, FaLinkedin } from "react-icons/fa";
+import NextLink from 'next/link'
 
 export default function Footer() {
   return (
@@ -16,28 +17,28 @@ export default function Footer() {
       <VStack spacing={6} align="start" maxW="7xl" mx="auto">
         {/* 🔗 Top Links */}
         <HStack spacing={8} flexWrap="wrap">
-          <Link href="/about" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/about" _hover={{ color: "#A9CBB7" }}>
             About
           </Link>
-          <Link href="/services" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/services" _hover={{ color: "#A9CBB7" }}>
             Services
           </Link>
-          <Link href="/meettheteam" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/meettheteam" _hover={{ color: "#A9CBB7" }}>
             Meet the Team
           </Link>
-          <Link href="/book" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/book" _hover={{ color: "#A9CBB7" }}>
             Book Now
           </Link>
-          <Link href="/signup/client" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/signup/client" _hover={{ color: "#A9CBB7" }}>
             Client Sign Up
           </Link>
-          <Link href="/therapist-apply" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/therapist-apply" _hover={{ color: "#A9CBB7" }}>
             Therapist Apply
           </Link>
-          <Link href="/contactus" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/contactus" _hover={{ color: "#A9CBB7" }}>
             Contact
           </Link>
-          <Link href="/careers" _hover={{ color: "#A9CBB7" }}>
+          <Link as={NextLink} href="/careers" _hover={{ color: "#A9CBB7" }}>
             Careers
           </Link>
         </HStack>
