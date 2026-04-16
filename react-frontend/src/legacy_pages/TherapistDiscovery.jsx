@@ -38,7 +38,16 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiSearch, FiAlertCircle } from "rea
 import { apiPost } from "../api.js";
 import TherapistCard from "../components/TherapistCard";
 import { useAuth } from "../context/AuthContext";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RRLink, useLocation, useNavigate } from "react-router-dom";
+// Resilient Link for SSR/Next compatibility
+const RouterLink = ({ to, children, ...props }) => {
+  const navigate = (() => { try { return useNavigate(); } catch (e) { return null; } })();
+  return (
+    <a href={to} onClick={(e) => { if (navigate) { e.preventDefault(); navigate(to); } }} {...props}>
+      {children}
+    </a>
+  );
+};
 
 const MotionBox = motion(Box);
 

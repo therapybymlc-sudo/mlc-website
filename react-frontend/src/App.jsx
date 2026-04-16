@@ -12,47 +12,47 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
 // 🌿 Public Pages
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Services from "./pages/Services";
-import MeetTheTeam from "./pages/MeetTheTeam";
-import AdminDashboard from "./pages/AdminDashboard";
-import BookNow from "./pages/BookNow";
-import ContactUs from "./pages/ContactUs";
-import Careers from "./pages/Careers";
+import Home from "./legacy_pages/Home";
+import About from "./legacy_pages/About";
+import Services from "./legacy_pages/Services";
+import MeetTheTeam from "./legacy_pages/MeetTheTeam";
+import AdminDashboard from "./legacy_pages/AdminDashboard";
+import BookNow from "./legacy_pages/BookNow";
+import ContactUs from "./legacy_pages/ContactUs";
+import Careers from "./legacy_pages/Careers";
 
 // 🌿 Service Detail Pages
-import IndividualTherapy from "./pages/IndividualTherapy";
-import CouplesTherapy from "./pages/CouplesTherapy";
-import AdolescentTherapy from "./pages/AdolescentTherapy";
-import GroupSupportCircles from "./pages/GroupSupportCircles";
-import Supervision from "./pages/Supervision";
-import MindfulnessRelaxation from "./pages/MindfulnessAndRelaxation";
-import TrainingPrograms from "./pages/TrainingAndPrograms";
-import Client from "./pages/Client";
-import Therapists from "./pages/Therapists";
-import TherapistApply from "./pages/TherapistApply";
-import ClientSignup from "./pages/ClientSignup";
-import ClientCheckinQuiz from "./pages/ClientCheckinQuiz";
-import TherapistSignupPreview from "./pages/TherapistSignupPreview";
-import TherapistDiscovery from "./pages/TherapistDiscovery";
-import TherapistProfileDetail from "./pages/TherapistProfileDetail";
+import IndividualTherapy from "./legacy_pages/IndividualTherapy";
+import CouplesTherapy from "./legacy_pages/CouplesTherapy";
+import AdolescentTherapy from "./legacy_pages/AdolescentTherapy";
+import GroupSupportCircles from "./legacy_pages/GroupSupportCircles";
+import Supervision from "./legacy_pages/Supervision";
+import MindfulnessRelaxation from "./legacy_pages/MindfulnessAndRelaxation";
+import TrainingPrograms from "./legacy_pages/TrainingAndPrograms";
+import Client from "./legacy_pages/Client";
+import Therapists from "./legacy_pages/Therapists";
+import TherapistApply from "./legacy_pages/TherapistApply";
+import ClientSignup from "./legacy_pages/ClientSignup";
+import ClientCheckinQuiz from "./legacy_pages/ClientCheckinQuiz";
+import TherapistSignupPreview from "./legacy_pages/TherapistSignupPreview";
+import TherapistDiscovery from "./legacy_pages/TherapistDiscovery";
+import TherapistProfileDetail from "./legacy_pages/TherapistProfileDetail";
 
 // 🩺 Therapist Dashboard Pages
-import RoleSelectionLogin from "./pages/login/RoleSelectionLogin";
-import ClientLogin from "./pages/login/ClientLogin";
-import TherapistLogin from "./pages/login/TherapistLogin";
-import TherapistDashboard from "./pages/dashboards/TherapistDashboard";
-import Clients from "./pages/dashboards/Clients";
-import ClientProfile from "./pages/dashboards/ClientProfile";
-import ClientInfo from "./pages/dashboards/ClientInfo";
-import ClientNotes from "./pages/dashboards/ClientNotes";
-import ClientFiles from "./pages/dashboards/ClientFiles";
-import ClientAppointments from "./pages/dashboards/ClientAppointments";
-import AppointmentDetail from "./pages/dashboards/AppointmentDetail";
+import RoleSelectionLogin from "./legacy_pages/login/RoleSelectionLogin";
+import ClientLogin from "./legacy_pages/login/ClientLogin";
+import TherapistLogin from "./legacy_pages/login/TherapistLogin";
+import TherapistDashboard from "./legacy_pages/dashboards/TherapistDashboard";
+import Clients from "./legacy_pages/dashboards/Clients";
+import ClientProfile from "./legacy_pages/dashboards/ClientProfile";
+import ClientInfo from "./legacy_pages/dashboards/ClientInfo";
+import ClientNotes from "./legacy_pages/dashboards/ClientNotes";
+import ClientFiles from "./legacy_pages/dashboards/ClientFiles";
+import ClientAppointments from "./legacy_pages/dashboards/ClientAppointments";
+import AppointmentDetail from "./legacy_pages/dashboards/AppointmentDetail";
 import ProtectedRoute from "./components/ProtectedRoute";
-import DashboardRouter from "./pages/dashboards/DashboardRouter";
-import ClientDashboard from "./pages/dashboards/ClientDashboard";
+import DashboardRouter from "./legacy_pages/dashboards/DashboardRouter";
+import ClientDashboard from "./legacy_pages/dashboards/ClientDashboard";
 
 /**
  * 🌸 AppLayout:

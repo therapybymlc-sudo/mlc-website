@@ -38,7 +38,16 @@ import {
   Select,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link as RRLink, useNavigate } from "react-router-dom";
+// Resilient Link for SSR/Next compatibility
+const Link = ({ to, children, ...props }) => {
+  const navigate = (() => { try { return useNavigate(); } catch (e) { return null; } })();
+  return (
+    <a href={to} onClick={(e) => { if (navigate) { e.preventDefault(); navigate(to); } }} {...props}>
+      {children}
+    </a>
+  );
+};
 import {
   CalendarIcon,
   EditIcon,

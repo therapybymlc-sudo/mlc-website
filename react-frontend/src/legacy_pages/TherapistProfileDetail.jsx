@@ -17,7 +17,16 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link as RRLink, useNavigate } from "react-router-dom";
+// Resilient Link for SSR/Next compatibility
+const Link = ({ to, children, ...props }) => {
+  const navigate = (() => { try { return useNavigate(); } catch (e) { return null; } })();
+  return (
+    <a href={to} onClick={(e) => { if (navigate) { e.preventDefault(); navigate(to); } }} {...props}>
+      {children}
+    </a>
+  );
+};
 import { FiCheckCircle, FiVideo, FiClock, FiShield, FiHeart, FiGlobe } from "react-icons/fi";
 import { apiGet } from "../api.js";
 

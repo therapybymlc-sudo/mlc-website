@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useParams, NavLink as RRNavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+// Resilient NavLink for SSR/Next compatibility
+const NavLink = ({ to, children, ...props }) => {
+  const navigate = (() => { try { return useNavigate(); } catch (e) { return null; } })();
+  return (
+    <a href={to} onClick={(e) => { if (navigate) { e.preventDefault(); navigate(to); } }} {...props}>
+      {children}
+    </a>
+  );
+};
 import {
   Box, Flex, Heading, Text, VStack, HStack, Divider, Spinner, Badge, Button, Link,
 } from "@chakra-ui/react";
