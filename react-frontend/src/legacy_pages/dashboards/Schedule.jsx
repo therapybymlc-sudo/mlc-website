@@ -40,6 +40,15 @@ import {
 import { useRouter } from "next/navigation";
 import { FiCalendar, FiClock, FiCheck, FiX, FiList, FiCheckCircle } from "react-icons/fi";
 import { schedulingApi } from "../../api/scheduling";
+import { 
+  AddIcon, 
+  HamburgerIcon, 
+  ChevronLeftIcon, 
+  ChevronRightIcon, 
+  SettingsIcon, 
+  EditIcon, 
+  AttachmentIcon 
+} from "@chakra-ui/icons";
 import "../../styles/CalendarStyles.css";
 
 export default function Schedule({ preselectClientId, onPreselectConsumed }) {
