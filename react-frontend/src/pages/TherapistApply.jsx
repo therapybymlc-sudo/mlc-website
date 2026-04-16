@@ -12,8 +12,13 @@ import {
   FormLabel,
   FormHelperText,
   Checkbox,
-  SimpleGrid,
   useToast,
+  Radio,
+  RadioGroup,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
 } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
 import { useEffect, useMemo, useState } from "react";
@@ -96,6 +101,83 @@ const DEFAULT_CONTENT = {
   },
 };
 
+// SearchableCheckboxList helper
+function SearchableCheckboxList({ label, options, selected, onChange, placeholder = "Search..." }) {
+  const [search, setSearch] = useState("");
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <FormControl>
+      <FormLabel>{label}</FormLabel>
+      <Popover placement="bottom-start" matchWidth>
+        <PopoverTrigger>
+          <Button
+            w="100%"
+            justifyContent="space-between"
+            variant="outline"
+            fontWeight="normal"
+            fontSize="md"
+            rightIcon={<Text fontSize="xs">▼</Text>}
+            bg="white"
+            borderRadius="2xl"
+            _hover={{ borderColor: "mlc.green" }}
+          >
+            <Text noOfLines={1}>
+              {selected.length > 0 ? `${selected.length} selected` : placeholder}
+            </Text>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent w="100%" borderRadius="xl" shadow="xl">
+          <PopoverBody p={0}>
+            <Box p={2} borderBottom="1px solid" borderColor="gray.100">
+              <Input
+                size="sm"
+                placeholder="Type to filter..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                borderRadius="md"
+              />
+            </Box>
+            <Box maxH="250px" overflowY="auto" p={2}>
+              <VStack align="stretch" spacing={1}>
+                {filtered.map((opt) => (
+                  <Checkbox
+                    key={opt}
+                    isChecked={selected.includes(opt)}
+                    onChange={(e) => {
+                      if (e.target.checked) onChange([...selected, opt]);
+                      else onChange(selected.filter((s) => s !== opt));
+                    }}
+                    px={2}
+                    py={1}
+                    borderRadius="md"
+                    _hover={{ bg: "gray.50" }}
+                  >
+                    <Text fontSize="sm">{opt}</Text>
+                  </Checkbox>
+                ))}
+                {filtered.length === 0 && (
+                  <Text p={2} fontSize="sm" color="gray.500">No results found.</Text>
+                )}
+              </VStack>
+            </Box>
+          </PopoverBody>
+        </PopoverContent>
+      </Popover>
+      {selected.length > 0 && (
+        <HStack spacing={2} wrap="wrap" mt={2}>
+          {selected.slice(0, 5).map(s => (
+            <Box key={s} bg="mlc.sageTint" px={2} py={1} borderRadius="md" fontSize="xs" color="mlc.greenDark" border="1px solid" borderColor="mlc.green">
+              {s}
+            </Box>
+          ))}
+          {selected.length > 5 && <Text fontSize="xs" color="gray.500">+{selected.length - 5} more</Text>}
+        </HStack>
+      )}
+    </FormControl>
+  );
+}
+
 export default function TherapistApply() {
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -127,12 +209,14 @@ export default function TherapistApply() {
     supervisor_name: "",
     expertise_areas: [],
     therapeutic_approach: "",
-    whatsapp_community: false,
+    whatsapp_community: "", // Now mandatory Yes/No
     treat_minors: "",
     youngest_age: "",
     referral_source: "",
     referral_name: "",
     subscribe: false,
+    has_licenses: "", // New field
+    interested_in_spaces: "", // New field
   });
 
   useEffect(() => {
@@ -177,7 +261,7 @@ export default function TherapistApply() {
   const submitApplication = async (e) => {
     e.preventDefault();
     if (!licensedCountries.length) {
-      toast({ title: "Select at least one licensure country.", status: "error" });
+      toast({ title: "Select at least one country you are eligible to practice in.", status: "error" });
       return;
     }
     if (!form.first_name || !form.last_name || !form.email || !form.phone) {
@@ -197,7 +281,9 @@ export default function TherapistApply() {
       !form.treat_minors ||
       !form.youngest_age ||
       !form.referral_source ||
-      !form.therapeutic_approach
+      !form.therapeutic_approach ||
+      !form.whatsapp_community ||
+      !form.has_licenses
     ) {
       toast({ title: "Please complete all required professional detail fields.", status: "error" });
       return;
@@ -249,12 +335,14 @@ export default function TherapistApply() {
         supervisor_name: "",
         expertise_areas: [],
         therapeutic_approach: "",
-        whatsapp_community: false,
+        whatsapp_community: "",
         treat_minors: "",
         youngest_age: "",
         referral_source: "",
         referral_name: "",
         subscribe: false,
+        has_licenses: "",
+        interested_in_spaces: "",
       });
       setLicensedCountries([]);
       setLanguages([]);
@@ -360,96 +448,91 @@ export default function TherapistApply() {
                 <Heading size="md" mb={4}>
                   {content.sections?.licensure || DEFAULT_CONTENT.sections.licensure}
                 </Heading>
-                <FormControl isRequired>
-                  <FormLabel>
-                    What country/territory are you currently licensed/registered to practice in?
-                  </FormLabel>
-                  <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={3} maxH="200px" overflowY="auto" bg="white">
-                    <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={2}>
-                      {COUNTRIES.map((c) => (
-                        <Checkbox
-                          key={c}
-                          isChecked={licensedCountries.includes(c)}
-                          onChange={(e) => {
-                            if (e.target.checked) setLicensedCountries([...licensedCountries, c]);
-                            else setLicensedCountries(licensedCountries.filter(x => x !== c));
-                          }}
-                          size="sm"
-                          colorScheme="teal"
-                        >
-                          {c}
-                        </Checkbox>
+                 <VStack spacing={6} align="stretch" mt={4}>
+                  <SearchableCheckboxList
+                    label="Which countries/territories are you currently eligible to practice in? *"
+                    options={COUNTRIES}
+                    selected={licensedCountries}
+                    onChange={setLicensedCountries}
+                  />
+
+                  <FormControl isRequired>
+                    <FormLabel>Do you hold any licenses or registrations to practice from these countries?</FormLabel>
+                    <Select value={form.has_licenses} onChange={handleChange("has_licenses")} placeholder="Select">
+                      {YES_NO.map((o) => (
+                        <option key={o} value={o}>{o}</option>
                       ))}
-                    </SimpleGrid>
-                  </Box>
-                  <FormHelperText>Select all that apply.</FormHelperText>
-                </FormControl>
-
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
-                <FormControl isRequired>
-                  <FormLabel>Do you have your own private practice?</FormLabel>
-                  <Select value={form.has_private_practice} onChange={handleChange("has_private_practice")} placeholder="Select">
-                    {YES_NO.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Are you open to seeing patients in‑person?</FormLabel>
-                  <Select value={form.open_to_in_person} onChange={handleChange("open_to_in_person")} placeholder="Select">
-                    {YES_NO.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl>
-                  <FormLabel>How would you describe your office space?</FormLabel>
-                  <Select value={form.office_space} onChange={handleChange("office_space")} placeholder="Select">
-                    {OFFICE_SPACE.map((o) => (
-                      <option key={o} value={o}>
-                        {o}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-              </SimpleGrid>
-
-              {showInPerson && (
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={4}>
-                  <FormControl>
-                    <FormLabel>In‑person Office Address (Country/Territory)</FormLabel>
-                    <Select value={form.in_person_country} onChange={handleChange("in_person_country")} placeholder="Select">
-                      {COUNTRIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
+                    </Select>
+                  </FormControl>
+                </VStack>
+                        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mt={6}>
+                  <FormControl isRequired>
+                    <FormLabel>Do you have your own private practice?</FormLabel>
+                    <Select value={form.has_private_practice} onChange={handleChange("has_private_practice")} placeholder="Select">
+                      {YES_NO.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel>Are you open to seeing patients in‑person?</FormLabel>
+                    <Select value={form.open_to_in_person} onChange={handleChange("open_to_in_person")} placeholder="Select">
+                      {YES_NO.map((o) => (
+                        <option key={o} value={o}>{o}</option>
                       ))}
                     </Select>
                   </FormControl>
                   <FormControl>
-                    <FormLabel>In‑person Office Address (Street)</FormLabel>
-                    <Input value={form.in_person_street} onChange={handleChange("in_person_street")} />
+                    <FormLabel>How would you describe your office space?</FormLabel>
+                    <Select value={form.office_space} onChange={handleChange("office_space")} placeholder="Select">
+                      {OFFICE_SPACE.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </Select>
                   </FormControl>
                   <FormControl>
-                    <FormLabel>In‑person Office Address (City)</FormLabel>
-                    <Input value={form.in_person_city} onChange={handleChange("in_person_city")} />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>In‑person Office Address (State/Province)</FormLabel>
-                    <Input value={form.in_person_state} onChange={handleChange("in_person_state")} />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>In‑person Office Address (ZIP/Postal Code)</FormLabel>
-                    <Input value={form.in_person_postal_code} onChange={handleChange("in_person_postal_code")} />
+                    <FormLabel>Interested in info on therapy spaces for in-person sessions?</FormLabel>
+                    <Select value={form.interested_in_spaces} onChange={handleChange("interested_in_spaces")} placeholder="Select">
+                      {YES_NO.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
+                    </Select>
                   </FormControl>
                 </SimpleGrid>
-              )}
+ 
+                {showInPerson && (
+                  <Box mt={6} bg="white" p={6} borderRadius="2xl" border="1px dashed" borderColor="mlc.green">
+                    <Heading size="xs" color="mlc.greenDark" mb={4}>In-person Practice Details</Heading>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                      <FormControl>
+                        <FormLabel>Country/Territory</FormLabel>
+                        <Select value={form.in_person_country} onChange={handleChange("in_person_country")} placeholder="Select">
+                          {COUNTRIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel>Street Address</FormLabel>
+                        <Input value={form.in_person_street} onChange={handleChange("in_person_street")} />
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel>City</FormLabel>
+                        <Input value={form.in_person_city} onChange={handleChange("in_person_city")} />
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel>State/Province</FormLabel>
+                        <Input value={form.in_person_state} onChange={handleChange("in_person_state")} />
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel>ZIP/Postal Code</FormLabel>
+                        <Input value={form.in_person_postal_code} onChange={handleChange("in_person_postal_code")} />
+                      </FormControl>
+                    </SimpleGrid>
+                  </Box>
+                )}
               </Box>
-
+ 
               <Box bg="#FBF8F3" p={{ base: 5, md: 6 }} borderRadius="2xl">
                 <Heading size="md" mb={4}>
                   {content.sections?.experience || DEFAULT_CONTENT.sections.experience}
@@ -459,31 +542,27 @@ export default function TherapistApply() {
                     <FormLabel>Highest Qualification</FormLabel>
                     <Select value={form.highest_qualification} onChange={handleChange("highest_qualification")} placeholder="Select">
                       {QUALIFICATIONS.map((q) => (
-                        <option key={q} value={q}>
-                          {q}
-                        </option>
+                        <option key={q} value={q}>{q}</option>
                       ))}
                     </Select>
                   </FormControl>
                   <FormControl isRequired>
-                    <FormLabel>How many years of independently licensed clinical experience do you have?</FormLabel>
+                    <FormLabel>Years of licensed clinical experience</FormLabel>
                     <Select value={form.years_experience} onChange={handleChange("years_experience")} placeholder="Select">
                       {EXPERIENCE_OPTIONS.map((o) => (
-                        <option key={o} value={o}>
-                          {o}
-                        </option>
+                        <option key={o} value={o}>{o}</option>
                       ))}
                     </Select>
                   </FormControl>
                   <FormControl isRequired>
-                    <FormLabel>Number of years of supervised clinical practice?</FormLabel>
+                    <FormLabel>Years of supervised clinical practice</FormLabel>
                     <Input type="number" value={form.supervised_years} onChange={handleChange("supervised_years")} />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Who was your most recent supervisor?</FormLabel>
+                    <FormLabel>Recent Supervisor Name</FormLabel>
                     <Input value={form.supervisor_name} onChange={handleChange("supervisor_name")} placeholder="Name of supervisor" />
                   </FormControl>
-
+ 
                   <FormControl gridColumn={{ md: "span 2" }}>
                     <FormLabel>Areas of Expertise / Specialization</FormLabel>
                     <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={4} bg="white">
@@ -504,39 +583,27 @@ export default function TherapistApply() {
                       </SimpleGrid>
                     </Box>
                   </FormControl>
-
+ 
                   <FormControl isRequired gridColumn={{ md: "span 2" }}>
-                    <FormLabel>Describe your Therapeutic Approach & What makes you a good fit for MLC?</FormLabel>
+                    <FormLabel>Describe your Therapeutic Approach</FormLabel>
                     <Input
                       as="textarea"
                       minH="120px"
                       py={3}
                       value={form.therapeutic_approach}
                       onChange={handleChange("therapeutic_approach")}
-                      placeholder="Tell us about your orientation, modalities, and why you want to join MLC Therapy..."
+                      placeholder="Tell us about your orientation, modalities, and clinical philosophy..."
                     />
                   </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Which languages are you fluent in besides English?</FormLabel>
-                    <Box border="1px solid" borderColor="gray.200" borderRadius="md" p={3} maxH="160px" overflowY="auto" bg="white">
-                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
-                        {LANGUAGES.map((l) => (
-                          <Checkbox
-                            key={l}
-                            isChecked={languages.includes(l)}
-                            onChange={(e) => {
-                              if (e.target.checked) setLanguages([...languages, l]);
-                              else setLanguages(languages.filter(x => x !== l));
-                            }}
-                            size="sm"
-                          >
-                            {l}
-                          </Checkbox>
-                        ))}
-                      </SimpleGrid>
-                    </Box>
-                  </FormControl>
+ 
+                  <Box gridColumn={{ md: "span 2" }}>
+                    <SearchableCheckboxList
+                      label="Which languages are you fluent in besides English?"
+                      options={LANGUAGES}
+                      selected={languages}
+                      onChange={setLanguages}
+                    />
+                  </Box>
 
                   <VStack align="stretch" spacing={4}>
                     <FormControl isRequired>
@@ -576,15 +643,22 @@ export default function TherapistApply() {
                     <Input value={form.referral_name} onChange={handleChange("referral_name")} />
                   </FormControl>
 
-                  <Box gridColumn={{ md: "span 2" }} p={4} bg="#E9F2ED" borderRadius="xl" border="1px solid" borderColor="teal.100">
-                    <Checkbox isChecked={form.whatsapp_community} onChange={handleChange("whatsapp_community")}>
-                      <VStack align="start" spacing={0}>
-                        <Text fontWeight="semibold">Interested in joining our Therapist WhatsApp Community?</Text>
-                        <Text fontSize="xs" color="gray.600">
-                          For referrals, resource sharing, therapist peer support, and exclusive MLC networking opportunities.
-                        </Text>
-                      </VStack>
-                    </Checkbox>
+                  <Box gridColumn={{ md: "span 2" }} p={5} bg="#E9F2ED" borderRadius="2xl" border="1px solid" borderColor="teal.100">
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="600" mb={1}>Interested in joining our Therapist WhatsApp Community?</FormLabel>
+                      <Text fontSize="xs" color="gray.600" mb={3}>
+                        For referrals, resource sharing, therapist peer support, and exclusive MLC networking opportunities.
+                      </Text>
+                      <RadioGroup 
+                        onChange={(val) => setForm(prev => ({ ...prev, whatsapp_community: val }))} 
+                        value={form.whatsapp_community}
+                      >
+                        <HStack spacing={6}>
+                          <Radio value="Yes" colorScheme="teal">Yes, I'm interested</Radio>
+                          <Radio value="No" colorScheme="teal">No, thank you</Radio>
+                        </HStack>
+                      </RadioGroup>
+                    </FormControl>
                   </Box>
                 </SimpleGrid>
               </Box>

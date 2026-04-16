@@ -22,7 +22,7 @@ export default function ClientSignup() {
       <VStack spacing={6}>
         <Heading mb={2}>Create your client account</Heading>
         <Text color="gray.600">
-          Sign up to access your private dashboard, check-ins, and session notes.
+          Sign up to access your private dashboard, check-ins, and session prep resources.
         </Text>
         <SignUp
           routing="path"

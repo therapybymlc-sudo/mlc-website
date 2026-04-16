@@ -31,6 +31,20 @@ class TherapistProfile(models.Model):
     bio = models.TextField(blank=True, null=True)
     profile_image_url = models.URLField(blank=True, null=True)
     specialties = models.JSONField(default=list, blank=True)
+    
+    # Discovery & Matching Fields
+    gender = models.CharField(max_length=50, blank=True, null=True)
+    religion = models.CharField(max_length=100, blank=True, null=True)
+    is_queer_affirmative = models.BooleanField(default=False)
+    languages = models.JSONField(default=list, blank=True) # e.g. ["English", "Hindi"]
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    years_experience = models.PositiveIntegerField(default=0)
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    session_duration = models.PositiveIntegerField(default=50) # in minutes
+    concerns = models.JSONField(default=list, blank=True) # Tags like "Anxiety", "Depression", etc.
+    affiliations = models.TextField(blank=True, null=True) # e.g. "Psychiatric Social Worker at Amaha"
+    modalities = models.JSONField(default=list, blank=True) # e.g. ["CBT", "DBT"]
 
     def __str__(self) -> str:
         return self.name
@@ -185,7 +199,9 @@ class TherapistApplication(models.Model):
     supervisor_name = models.CharField(max_length=255, blank=True, null=True)
     expertise_areas = models.JSONField(default=list, blank=True)
     therapeutic_approach = models.TextField(blank=True, null=True)
-    whatsapp_community = models.BooleanField(default=False)
+    whatsapp_community = models.CharField(max_length=20, blank=True, null=True)
+    has_licenses = models.CharField(max_length=20, blank=True, null=True)
+    interested_in_spaces = models.CharField(max_length=20, blank=True, null=True)
     languages = models.JSONField(default=list, blank=True)
     treat_minors = models.CharField(max_length=20)
     youngest_age = models.CharField(max_length=50)

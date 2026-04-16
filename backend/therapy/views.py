@@ -1636,3 +1636,80 @@ class OnboardUserRoleView(APIView):
             if sync_error:
                 payload["clerk_sync_error"] = sync_error
             return Response(payload)
+
+
+class TherapistMatchView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """
+        Receives quiz answers and returns segmented therapist matches.
+        Payload: {
+           "concerns": ["Anxiety", "Grief"],
+           "gender_pref": "Female",
+           "is_queer_preferred": true,
+           "languages": ["English", "Hindi"],
+           "location": "Mumbai",
+           "religion": "No preference"
+        }
+        """
+        quiz = request.data
+        all_verified = TherapistProfile.objects.filter(is_verified=True)
+        
+        matches = []
+        others = []
+
+        for t in all_verified:
+            score = 0
+            
+            # 1. Concerns (Keyword matching)
+            t_concerns = [c.lower() for c in (t.concerns or [])]
+            msg_concerns = [c.lower() for c in (quiz.get("concerns") or [])]
+            matching_concerns = set(t_concerns).intersection(set(msg_concerns))
+            score += len(matching_concerns) * 2
+            
+            # 2. Gender preference
+            gender_pref = quiz.get("gender_pref")
+            if gender_pref and gender_pref != "No preference":
+                if t.gender and t.gender.lower() == gender_pref.lower():
+                    score += 5
+            
+            # 3. Queer-affirmative
+            if quiz.get("is_queer_preferred") and t.is_queer_affirmative:
+                score += 5
+            
+            # 4. Languages
+            t_langs = [l.lower() for l in (t.languages or [])]
+            msg_langs = [l.lower() for l in (quiz.get("languages") or [])]
+            matching_langs = set(t_langs).intersection(set(msg_langs))
+            score += len(matching_langs) * 2
+            
+            # 5. Location
+            loc_pref = quiz.get("location")
+            if loc_pref and t.city and loc_pref.lower() in t.city.lower():
+                score += 3
+            
+            # 6. Religion
+            rel_pref = quiz.get("religion")
+            if rel_pref and rel_pref != "No preference":
+                if t.religion and t.religion.lower() == rel_pref.lower():
+                    score += 2
+
+            t_data = TherapistProfileSerializer(t).data
+            t_data["match_score"] = score
+            
+            # Threshold for "Match"
+            if score >= 5: # Arbitrary threshold for high-quality match
+                matches.append(t_data)
+            else:
+                others.append(t_data)
+
+        # Sort by score
+        matches.sort(key=lambda x: x["match_score"], reverse=True)
+        others.sort(key=lambda x: x["match_score"], reverse=True)
+
+        return Response({
+            "matches": matches[:5], # Recommend top 5
+            "others": others[:10]   # Show up to 10 more
+        })
+

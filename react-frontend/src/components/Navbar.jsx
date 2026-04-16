@@ -36,11 +36,11 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
+  { label: "Find a Therapist", href: "/therapists/discovery" },
   { label: "For Therapists", href: "/therapists" },
   { label: "Meet the Team", href: "/meettheteam" },
   { label: "Book Now", href: "/book" },
   { label: "Contact Us", href: "/contactus" },
-  { label: "Careers", href: "/careers" },
 ];
 
 export default function Navbar() {
@@ -187,10 +187,36 @@ export default function Navbar() {
                   icon={<Icon as={FiLayout} boxSize={4} color="mlc.greenDark" />}
                   _hover={{ bg: "gray.50", color: "mlc.gold" }}
                   fontSize="sm"
-                  fontWeight="500"
-                  py={2.5}
+                  fontWeight="600"
+                  py={3}
                 >
-                  Dashboard
+                  My Dashboard
+                </MenuItem>
+                
+                <MenuItem
+                  as={Link}
+                  to="/dashboard/appointments"
+                  borderRadius="lg"
+                  icon={<Icon as={FiClock} boxSize={4} color="mlc.greenDark" />}
+                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
+                  fontSize="sm"
+                  fontWeight="600"
+                  py={3}
+                >
+                  My Appointments
+                </MenuItem>
+
+                <MenuItem
+                  as={Link}
+                  to="/dashboard/resources"
+                  borderRadius="lg"
+                  icon={<Icon as={FiBookOpen} boxSize={4} color="mlc.greenDark" />}
+                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
+                  fontSize="sm"
+                  fontWeight="600"
+                  py={3}
+                >
+                  Resources & Tools
                 </MenuItem>
                 
                 <MenuItem
@@ -200,8 +226,8 @@ export default function Navbar() {
                   icon={<Icon as={FiSettings} boxSize={4} color="mlc.greenDark" />}
                   _hover={{ bg: "gray.50", color: "mlc.gold" }}
                   fontSize="sm"
-                  fontWeight="500"
-                  py={2.5}
+                  fontWeight="600"
+                  py={3}
                 >
                   Profile & Settings
                 </MenuItem>
@@ -213,8 +239,8 @@ export default function Navbar() {
                   icon={<Icon as={FiCreditCard} boxSize={4} color="mlc.greenDark" />}
                   _hover={{ bg: "gray.50", color: "mlc.gold" }}
                   fontSize="sm"
-                  fontWeight="500"
-                  py={2.5}
+                  fontWeight="600"
+                  py={3}
                 >
                   Manage Subscription
                 </MenuItem>
@@ -251,7 +277,7 @@ export default function Navbar() {
               </Button>
               <Button
                 as={Link}
-                to="/signup"
+                to="/signup/client"
                 bg="mlc.greenDark"
                 color="white"
                 fontWeight="600"

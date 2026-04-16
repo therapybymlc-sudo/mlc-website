@@ -448,7 +448,7 @@ export default function ClientDashboard() {
     localStorage.setItem(LOCAL_KEYS.notesRich, JSON.stringify(notesContent));
     localStorage.setItem(LOCAL_KEYS.notes, notesContent.text || "");
     localStorage.setItem(LOCAL_KEYS.notesDraft, JSON.stringify(notesContent));
-    toast({ title: "Saved notes for next session", status: "success" });
+    toast({ title: "Saved prep for next session", status: "success" });
   };
 
   const exportJournalEntry = (entry) => {
@@ -892,7 +892,7 @@ export default function ClientDashboard() {
     { id: "notifications", label: "Notifications" },
     { id: "checkin", label: "Daily Check‑in" },
     { id: "journal", label: "Private Journal" },
-    { id: "notes", label: "Notes for Session" },
+    { id: "notes", label: "Session Prep" },
     { id: "goals", label: "My Goals" },
     { id: "resources", label: "Resources" },
     { id: "prompts", label: "Reflection Prompts" },
@@ -1329,7 +1329,7 @@ export default function ClientDashboard() {
       return (
         <Box bg="white" p={6} borderRadius="3xl" boxShadow="md">
           <Heading size="md" mb={3}>
-            Notes for Next Session
+            Session Prep & Reflections
           </Heading>
           <RichTextEditor
             value={notesContent.html}

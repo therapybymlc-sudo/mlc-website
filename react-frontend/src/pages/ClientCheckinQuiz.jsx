@@ -83,9 +83,13 @@ export default function ClientCheckinQuiz() {
           <Progress
             value={progress}
             borderRadius="full"
-            bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
             h="10px"
             bg="#E6EFEA"
+            sx={{
+              "& > div": {
+                bg: "#A9CBB7",
+              },
+            }}
           />
 
           <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" boxShadow="lg">

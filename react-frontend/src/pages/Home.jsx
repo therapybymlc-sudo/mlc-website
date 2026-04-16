@@ -33,8 +33,8 @@ const fallbackHome = {
       "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.",
     paragraph_two:
       "At MLC Therapy, we offer thoughtful online therapy across India in spaces designed to help you feel heard, supported, and respected.",
-    primary_label: "I'm Looking for Therapy",
-    primary_link: "/client-checkin",
+    primary_label: "Find My Therapist",
+    primary_link: "/therapists/discovery",
     secondary_label: "I'm a Therapist",
     secondary_link: "/therapists",
     background_image: "/hero-bg.jpg",
@@ -46,11 +46,11 @@ const fallbackHome = {
       "A gentle, private space for clients — and a structured workspace for therapists. Choose your path below to get started.",
     client_title: "Client Workspace",
     client_body:
-      "A dedicated environment for your healing journey. Track your progress, access shared resources, and collaborate securely with your therapist.",
-    client_primary_label: "Sign up as a client",
+      "A dedicated environment for your healing journey. Track your goals, access shared resources, and collaborate securely with your therapist.",
+    client_primary_label: "Create Client Account",
     client_primary_link: "/signup/client",
-    client_secondary_label: "Take a quick check‑in",
-    client_secondary_link: "/client-checkin",
+    client_secondary_label: "Find a therapist",
+    client_secondary_link: "/therapists/discovery",
     therapist_title: "Therapist Workspace",
     therapist_body:
       "A professional environment for clinical excellence. Manage your practice, collaborate with clients, and focus on the clinical work.",
@@ -216,12 +216,12 @@ export default function Home() {
               borderRadius="full"
               _hover={{ bg: "#C9A960", color: "white" }}
               as="a"
-              href={homeContent.hero.primary_link}
+              href="/therapists/discovery"
               fontWeight="500"
               px={10}
               py={7}
             >
-              {homeContent.hero.primary_label}
+              Find My Therapist
             </Button>
             <Button
               size="lg"
@@ -231,12 +231,12 @@ export default function Home() {
               _hover={{ bg: "#56756D", color: "white" }}
               _active={{ bg: "#56756D" }}
               as="a"
-              href={homeContent.hero.secondary_link}
+              href="/therapists"
               fontWeight="500"
               px={10}
               py={7}
             >
-              {homeContent.hero.secondary_label}
+              I'm a Therapist
             </Button>
           </HStack>
         </Box>
@@ -274,18 +274,18 @@ export default function Home() {
                 <HStack spacing={3} flexWrap="wrap">
                   <Button
                     as={Link}
-                    to={homeContent.portal.client_primary_link}
+                    to="/signup/client"
                     bg="#A9CBB7"
                     color="#2E2E2E"
                     _hover={{ bg: "#56756D", color: "white" }}
                     borderRadius="full"
                     fontWeight="500"
                   >
-                    {homeContent.portal.client_primary_label}
+                    Create Client Account
                   </Button>
                   <Button
                     as={Link}
-                    to={homeContent.portal.client_secondary_link}
+                    to="/therapists/discovery"
                     variant="outline"
                     borderColor="#A9CBB7"
                     color="#56756D"
@@ -293,7 +293,7 @@ export default function Home() {
                     borderRadius="full"
                     fontWeight="500"
                   >
-                    {homeContent.portal.client_secondary_label}
+                    Find a therapist
                   </Button>
                 </HStack>
               </Box>

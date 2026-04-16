@@ -35,6 +35,8 @@ import TherapistApply from "./pages/TherapistApply";
 import ClientSignup from "./pages/ClientSignup";
 import ClientCheckinQuiz from "./pages/ClientCheckinQuiz";
 import TherapistSignupPreview from "./pages/TherapistSignupPreview";
+import TherapistDiscovery from "./pages/TherapistDiscovery";
+import TherapistProfileDetail from "./pages/TherapistProfileDetail";
 
 // 🩺 Therapist Dashboard Pages
 import RoleSelectionLogin from "./pages/login/RoleSelectionLogin";
@@ -120,6 +122,8 @@ export default function App() {
               <Route path="/client" element={<Client />} />
               <Route path="/client-checkin" element={<ClientCheckinQuiz />} />
               <Route path="/therapists" element={<Therapists />} />
+              <Route path="/therapists/discovery" element={<TherapistDiscovery />} />
+              <Route path="/therapists/:id" element={<TherapistProfileDetail />} />
               <Route path="/therapist-apply" element={<TherapistApply />} />
               <Route path="/signup/client" element={<ClientSignup />} />
               <Route
