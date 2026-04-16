@@ -19,7 +19,6 @@ import {
   InputLeftElement,
   Select,
   useToast,
-  AnimatePresence,
   Divider,
   Icon,
   Tag,
@@ -34,7 +33,7 @@ import {
   AlertDescription,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSearch, FiAlertCircle } from "react-icons/fi";
 import { apiPost } from "../api";
 import TherapistCard from "../components/TherapistCard";
