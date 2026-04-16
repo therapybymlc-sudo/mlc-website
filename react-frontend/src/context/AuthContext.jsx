@@ -8,7 +8,8 @@ export const AuthProvider = ({ children }) => {
   const { isLoaded, isSignedIn, getToken } = useClerkAuth();
   const { user } = useUser();
   const clerk = useClerk();
-  const tokenTemplate = import.meta.env.VITE_CLERK_JWT_TEMPLATE;
+  const tokenTemplate = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) || 
+                       (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_CLERK_JWT_TEMPLATE : null);
 
   const roles = useMemo(() => {
     const metaRoles = user?.publicMetadata?.roles;
@@ -22,7 +23,8 @@ export const AuthProvider = ({ children }) => {
     return [];
   }, [user]);
 
-  const premiumPreviewEnabled = import.meta.env.VITE_PREMIUM_PREVIEW === "true";
+  const premiumPreviewEnabled = ((typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_PREMIUM_PREVIEW : null) || 
+                                 (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PREMIUM_PREVIEW : null)) === "true";
   const isAdmin = roles.includes("admin");
   const isTherapist = isAdmin || roles.includes("therapist");
   const isClient = !isTherapist;

@@ -14,7 +14,9 @@ const buildFormData = (payload) => {
 };
 
 const fetchWithFormData = async (path, method, payload) => {
-  const base = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/+$/, "");
+  const base = ((typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) || 
+                (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE : null) || 
+                "http://127.0.0.1:8000/api").replace(/\/+$/, "");
   let token = null;
   if (typeof window !== "undefined" && window.Clerk?.session?.getToken) {
     token = await window.Clerk.session.getToken();
