@@ -180,14 +180,25 @@ function FieldInput({ field, value, onChange, isReadOnly = false }) {
    Main Page
 ========================================= */
 export default function ClientNotes() {
+  const { id } = (() => {
+    try { return useParams(); } catch (e) { return {}; }
+  })();
   const toast = useToast();
   const manageModal = useDisclosure();
   const editorModal = useDisclosure();
   const copyModal = useDisclosure();
   const clientNavDrawer = useDisclosure();
-  const { id: routeClientId } = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const { id: routeClientId } = (() => {
+    try { return useParams(); } catch (e) { return {}; }
+  })();
+  const location = (() => {
+    try { return useLocation(); } catch (e) {
+      return typeof window !== "undefined" ? window.location : { pathname: "", search: "" };
+    }
+  })();
+  const navigate = (() => {
+    try { return useNavigate(); } catch (e) { return () => {}; }
+  })();
 
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState(routeClientId || "");

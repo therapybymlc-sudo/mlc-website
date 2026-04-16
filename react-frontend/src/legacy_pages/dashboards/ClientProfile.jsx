@@ -6,12 +6,18 @@ import {
 import { apiGet } from "../../api.js";
 
 export default function ClientProfile() {
-  const { id } = useParams();
+  const { id } = (() => {
+    try { return useParams(); } catch (e) { return {}; }
+  })();
   const [client, setClient] = useState(null);
   const [notes, setNotes] = useState([]);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const location = useLocation();
+  const location = (() => {
+    try { return useLocation(); } catch (e) {
+      return typeof window !== "undefined" ? window.location : { pathname: "", search: "" };
+    }
+  })();
 
   useEffect(() => {
     let mounted = true;

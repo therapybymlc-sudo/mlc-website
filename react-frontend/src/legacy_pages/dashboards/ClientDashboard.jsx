@@ -130,7 +130,11 @@ export default function ClientDashboard({ initialSection }) {
   const toast = useToast();
   const { logout, isPremium } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const location = useLocation();
+  const location = (() => {
+    try { return useLocation(); } catch (e) {
+      return typeof window !== "undefined" ? window.location : { pathname: "", search: "" };
+    }
+  })();
   const [activeSection, setActiveSection] = useState(initialSection || "overview");
   const [journalContent, setJournalContent] = useState(() => {
     const draft = localStorage.getItem(LOCAL_KEYS.journalDraft);

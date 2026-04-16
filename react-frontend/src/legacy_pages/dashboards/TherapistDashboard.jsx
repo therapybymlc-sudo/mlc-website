@@ -76,7 +76,9 @@ export default function TherapistDashboard() {
   } =
     useAuth(); // ✅ now using isAdmin from AuthContext
   const toast = useToast();
-  const navigate = useNavigate();
+  const navigate = (() => {
+    try { return useNavigate(); } catch (e) { return () => {}; }
+  })();
   const { isOpen: isSidebarOpen, onOpen: onSidebarOpen, onClose: onSidebarClose } = useDisclosure();
   const [activeTab, setActiveTab] = useState("overview");
   const [preselectClientId, setPreselectClientId] = useState("");
@@ -115,7 +117,11 @@ export default function TherapistDashboard() {
   });
   const [careJournalEmotion, setCareJournalEmotion] = useState("Grounded");
   const [careJournalIntensity, setCareJournalIntensity] = useState(5);
-  const location = useLocation();
+  const location = (() => {
+    try { return useLocation(); } catch (e) {
+      return typeof window !== "undefined" ? window.location : { pathname: "", search: "" };
+    }
+  })();
 
   const moodOptions = useMemo(
     () => [

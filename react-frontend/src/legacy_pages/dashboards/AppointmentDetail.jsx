@@ -4,8 +4,12 @@ import { Box, Heading, Text, Button, VStack, HStack, Spinner, Badge, Divider } f
 import { apiGet } from "../../api.js";
 
 export default function AppointmentDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = (() => {
+    try { return useParams(); } catch (e) { return {}; }
+  })();
+  const navigate = (() => {
+    try { return useNavigate(); } catch (e) { return () => {}; }
+  })();
   const [appt, setAppt] = useState(null);
   const [loading, setLoading] = useState(true);
 

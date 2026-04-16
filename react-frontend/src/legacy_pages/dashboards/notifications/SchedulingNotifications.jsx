@@ -15,7 +15,9 @@ export default function SchedulingNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const navigate = (() => {
+    try { return useNavigate(); } catch (e) { return () => {}; }
+  })();
 
   const loadNotifications = async () => {
     try {

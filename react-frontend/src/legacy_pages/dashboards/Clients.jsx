@@ -34,7 +34,9 @@ import { useNavigate } from "react-router-dom";
 import { apiGet, apiPost, apiPut } from "../../api.js";
 
 export default function Clients() {
-  const navigate = useNavigate();
+  const navigate = (() => {
+    try { return useNavigate(); } catch (e) { return () => {}; }
+  })();
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedClient, setSelectedClient] = useState(null);
