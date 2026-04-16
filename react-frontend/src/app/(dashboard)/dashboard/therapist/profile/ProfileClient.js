@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import TherapistProfileSettings from '../../../../../pages/dashboards/TherapistProfileSettings';
+import TherapistProfileSettings from '../../../../../legacy_pages/dashboards/TherapistProfileSettings';
 
 export default function TherapistProfilePage() {
   return (

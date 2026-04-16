@@ -1,5 +1,5 @@
 'use client';
-import ClientAppointments from '../../../../../pages/dashboards/ClientAppointments';
+import ClientAppointments from '../../../../../legacy_pages/dashboards/ClientAppointments';
 export default function AppointmentsClient() {
   return <ClientAppointments />;
 }
