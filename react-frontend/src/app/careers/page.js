@@ -1,10 +1,10 @@
-import CareersClient from './CareersClient'
+import CareersClient from "./CareersClient";
 
 export const metadata = {
-  title: 'Careers | Join MLC Health & Wellness Centre',
-  description: 'Join our team of dedicated therapists, supervisors, and clinical interns. We provide a structured and ethical space that values both clients and clinicians across India.',
+  title: 'Careers | Join Our Team of Dedicated Therapists',
+  description: 'Join MLC Health & Wellness Centre’s growing therapist network. We offer structured online therapy roles, supervision opportunities, and internships across India with ethical practice, mentorship, and sustainable workloads.',
 }
 
 export default function CareersPage() {
-  return <CareersClient />
+  return <CareersClient />;
 }

@@ -1,10 +1,10 @@
-import TeamClient from './TeamClient'
+import MeetTheTeamClient from "./MeetTheTeamClient";
 
 export const metadata = {
-  title: 'Meet Our Therapists | MLC Health & Wellness Centre',
-  description: 'Meet the dedicated specialists at MLC Health. Our team of experienced therapists provides structured and ethical care, supported by clinical supervisors and operations leaders.',
+  title: 'Meet the Team | MLC Health & Wellness Centre',
+  description: 'Meet the team behind MLC Health & Wellness Centre. Our profiles will be available soon.',
 }
 
-export default function TeamPage() {
-  return <TeamClient />
+export default function MeetTheTeamPage() {
+  return <MeetTheTeamClient />;
 }

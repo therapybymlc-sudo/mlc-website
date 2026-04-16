@@ -31,11 +31,11 @@ const defaultContactContent = {
   hero: {
     title: "We’d Love to Hear from You",
     body:
-      "<p>Whether you’re reaching out about ethical therapy, professional collaborations, therapist supervision, or joining our team, we’re here to listen. Every message is reviewed and responded to personally by our coordination team.</p>",
+      "<p>Whether you’re reaching out about online therapy, professional collaborations, therapist supervision, or joining our team, we’re here to listen. Every message is reviewed and responded to personally by our coordination team.</p>",
     email_label: "Email",
     email: "therapy@mlchealth.in",
     subtext:
-      "<p>Operating across India including Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, Kolkata and other major cities.</p><p>Virtual therapy sessions available internationally via secure platforms.</p>",
+      "<p>Operating remotely across India including Mumbai, Delhi, Bangalore, Hyderabad, Chennai, Pune, Kolkata and other major cities.</p><p>Virtual therapy sessions available internationally via secure platforms.</p>",
     image_url: "/contact-illustration.jpg",
   },
   form: {
@@ -68,7 +68,7 @@ const richTextStyles = {
 };
 
 export default function ContactClient() {
-  const formRef = useRef();
+  const form = useRef();
   const toast = useToast();
   const [content, setContent] = useState(defaultContactContent);
 
@@ -96,7 +96,7 @@ export default function ContactClient() {
   const sendEmail = (e) => {
     e.preventDefault();
     emailjs
-      .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, formRef.current, EMAIL_PUBLIC_KEY)
+      .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, form.current, EMAIL_PUBLIC_KEY)
       .then(() => {
         toast({
           title: "Message Sent!",
@@ -105,7 +105,7 @@ export default function ContactClient() {
           duration: 5000,
           isClosable: true,
         });
-        formRef.current.reset();
+        form.current.reset();
       })
       .catch(() => {
         toast({
@@ -120,7 +120,6 @@ export default function ContactClient() {
 
   return (
     <Box>
-      {/* HERO SECTION */}
       <Box
         bgGradient="linear(to-b, #F6F6F4, #E8ECE8)"
         py={20}
@@ -145,14 +144,14 @@ export default function ContactClient() {
                 dangerouslySetInnerHTML={{ __html: content.hero.body }}
               />
               <Text
-                fontFamily="'Inter', sans-serif"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
                 color="#2E2E2E"
                 fontWeight="500"
               >
                 📧 {content.hero.email_label}: <strong>{content.hero.email}</strong>
               </Text>
               <Box
-                fontFamily="'Inter', sans-serif"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
                 color="#2E2E2E"
                 fontSize="sm"
                 sx={richTextStyles}
@@ -172,13 +171,12 @@ export default function ContactClient() {
         </Container>
       </Box>
 
-      {/* CONTACT FORM SECTION */}
       <Box bg="white" py={24}>
         <Container maxW="7xl">
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={14} alignItems="flex-start">
             <Box
               as="form"
-              ref={formRef}
+              ref={form}
               onSubmit={sendEmail}
               bg="#F9F9F9"
               p={10}
@@ -208,8 +206,8 @@ export default function ContactClient() {
                   bg="white"
                   borderRadius="lg"
                   _focus={{
-                    borderColor: "#A9CBB7",
-                    boxShadow: "0 0 0 1px #A9CBB7",
+                    borderColor: "#C9A960",
+                    boxShadow: "0 0 0 1px #C9A960",
                   }}
                 />
               </FormControl>
@@ -219,11 +217,12 @@ export default function ContactClient() {
                 type="submit"
                 bg="#56756D"
                 borderRadius="full"
-                px={8}
+                px={12}
                 py={6}
-                fontWeight="500"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                fontWeight="600"
                 color="white"
-                _hover={{ bg: "#C9A960", color: "white" }}
+                _hover={{ bg: "#C9A960" }}
               >
                 {content.form.button_label}
               </Button>
@@ -257,7 +256,7 @@ export default function ContactClient() {
                     return (
                       <HStack spacing={3} key={`hours-${idx}`}>
                         <Icon as={ItemIcon} color="#56756D" />
-                        <Text fontFamily="'Inter', sans-serif" color="#2E2E2E">
+                        <Text fontFamily="'Inter', var(--font-inter), sans-serif" color="#2E2E2E">
                           {item}
                         </Text>
                       </HStack>
@@ -270,14 +269,12 @@ export default function ContactClient() {
         </Container>
       </Box>
 
-      {/* REASSURANCE BANNER */}
       <Box
         bg="#56756D"
         color="white"
         textAlign="center"
         py={20}
         px={8}
-        borderTopRadius="2xl"
       >
         <Container maxW="6xl">
           <Heading
@@ -314,7 +311,7 @@ function FormField({ label, name, type = "text", isRequired = false }) {
         bg="white"
         borderRadius="lg"
         borderColor="gray.300"
-        _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }}
+        _focus={{ borderColor: "#C9A960", boxShadow: "0 0 0 1px #C9A960" }}
       />
     </FormControl>
   );

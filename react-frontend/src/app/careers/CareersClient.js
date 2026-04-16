@@ -52,7 +52,7 @@ const defaultCareersContent = {
       {
         title: "Flexible Work Options",
         body:
-          "<p>Remote opportunities across India that respect your time, geography, and lifestyle while maintaining high clinical standards.</p>",
+          "<p>Remote and hybrid opportunities across India that respect your time, geography, and lifestyle while maintaining high clinical standards.</p>",
       },
       {
         title: "Meaningful Collaboration",
@@ -72,7 +72,7 @@ const defaultCareersContent = {
         location: "Remote · India",
         type: "Contract",
         summary:
-          "<p>Provide ethical therapy within our structured and supportive system.</p>",
+          "<p>Provide online therapy within our structured and supportive system.</p>",
         details:
           "<p><strong>Responsibilities:</strong></p><ul><li>Deliver client‑centered sessions</li><li>Maintain timely documentation</li><li>Participate in supervision</li></ul><p><strong>Requirements:</strong> Licensed clinician with experience in individual therapy.</p>",
       },
@@ -129,7 +129,7 @@ const richTextStyles = {
 };
 
 export default function CareersClient() {
-  const formRef = useRef();
+  const form = useRef();
   const toast = useToast();
   const [content, setContent] = useState(defaultCareersContent);
   const [activeOpening, setActiveOpening] = useState(null);
@@ -166,7 +166,7 @@ export default function CareersClient() {
   const sendEmail = (e) => {
     e.preventDefault();
     emailjs
-      .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, formRef.current, EMAIL_PUBLIC_KEY)
+      .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, form.current, EMAIL_PUBLIC_KEY)
       .then(() => {
         toast({
           title: content.form.success_title || "Application Sent!",
@@ -175,7 +175,7 @@ export default function CareersClient() {
           duration: 5000,
           isClosable: true,
         });
-        formRef.current.reset();
+        form.current.reset();
       })
       .catch(() => {
         toast({
@@ -261,8 +261,8 @@ export default function CareersClient() {
                 borderRadius="2xl"
                 p={8}
                 boxShadow="md"
-                transition="all 0.3s ease"
                 _hover={{ transform: "translateY(-6px)", boxShadow: "xl" }}
+                transition="all 0.3s ease"
               >
                 <Heading
                   fontFamily="'Playfair Display', var(--font-playfair), serif"
@@ -286,7 +286,7 @@ export default function CareersClient() {
         </Container>
       </Box>
 
-      {/* OPPORTUNITIES */}
+      {/* OPPORTUNITIES SECTION */}
       <Box bg="#F9F9F9" py={24} px={8}>
         <Container maxW="7xl" textAlign="center">
           <Heading
@@ -297,17 +297,51 @@ export default function CareersClient() {
           >
             {content.opportunities.title}
           </Heading>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
             {(content.opportunities.cards || []).map((card, index) => (
-              <Box
+              <PositionCard
                 key={`${card.title}-${index}`}
-                bg="white"
+                title={card.title}
+                body={card.body}
+              />
+            ))}
+          </SimpleGrid>
+        </Container>
+      </Box>
+
+      {/* OPENINGS SECTION */}
+      <Box bg="white" py={24} px={8}>
+        <Container maxW="7xl" textAlign="center">
+          <Heading
+            fontFamily="'Playfair Display', var(--font-playfair), serif"
+            color="#2E2E2E"
+            mb={4}
+            fontWeight="600"
+          >
+            {content.openings.title}
+          </Heading>
+          <Box
+            maxW="3xl"
+            mx="auto"
+            mb={12}
+            color="#2E2E2E"
+            fontFamily="'Inter', var(--font-inter), sans-serif"
+            lineHeight="1.8"
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.openings.subtitle || "" }}
+          />
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
+            {(content.openings.cards || []).map((opening, index) => (
+              <Box
+                key={`${opening.title}-${index}`}
+                bg="#F8F8F4"
                 borderRadius="2xl"
-                p={8}
+                p={6}
                 boxShadow="md"
-                textAlign="center"
+                cursor="pointer"
                 transition="all 0.3s ease"
-                _hover={{ transform: "translateY(-6px)", boxShadow: "lg" }}
+                _hover={{ transform: "translateY(-4px)", boxShadow: "lg" }}
+                onClick={() => setActiveOpening(opening)}
               >
                 <Heading
                   size="md"
@@ -315,91 +349,79 @@ export default function CareersClient() {
                   fontFamily="'Playfair Display', var(--font-playfair), serif"
                   color="#2E2E2E"
                 >
-                  {card.title}
+                  {opening.title}
                 </Heading>
-                <Box
-                  fontFamily="'Inter', var(--font-inter), sans-serif"
-                  color="#2E2E2E"
-                  lineHeight="1.7"
-                  sx={richTextStyles}
-                  dangerouslySetInnerHTML={{ __html: card.body || "" }}
-                />
+                <HStack spacing={2} justify="center" flexWrap="wrap">
+                  {opening.location ? (
+                    <Text fontSize="sm" color="#56756D">
+                      {opening.location}
+                    </Text>
+                  ) : null}
+                  {opening.type ? (
+                    <Text fontSize="sm" color="#56756D">
+                      · {opening.type}
+                    </Text>
+                  ) : null}
+                </HStack>
+                <Text mt={4} fontSize="sm" color="#56756D">
+                  Tap to view details
+                </Text>
               </Box>
             ))}
           </SimpleGrid>
         </Container>
       </Box>
 
-      {/* FORM */}
-      <Box bg="#E9F2ED" py={24} px={8} ref={applySectionRef}>
+      {/* APPLICATION FORM */}
+      <Box bg="#E9F2ED" py={24} px={8} ref={applySectionRef} id="careers-apply">
         <Container maxW="5xl">
-          <VStack spacing={4} mb={10} textAlign="center">
-            <Heading
-              fontFamily="'Playfair Display', var(--font-playfair), serif"
-              fontWeight="600"
-              color="#2E2E2E"
-            >
-              {content.form.title}
-            </Heading>
-            <Box
-              fontFamily="'Inter', var(--font-inter), sans-serif"
-              color="#2E2E2E"
-              lineHeight="1.8"
-              maxW="3xl"
-              sx={richTextStyles}
-              dangerouslySetInnerHTML={{ __html: content.form.subtitle || "" }}
-            />
-          </VStack>
+          <Heading
+            textAlign="center"
+            mb={4}
+            fontFamily="'Playfair Display', var(--font-playfair), serif"
+            fontWeight="600"
+            color="#2E2E2E"
+          >
+            {content.form.title}
+          </Heading>
+          <Box
+            textAlign="center"
+            fontFamily="'Inter', var(--font-inter), sans-serif"
+            color="#2E2E2E"
+            lineHeight="1.8"
+            maxW="3xl"
+            mx="auto"
+            mb={10}
+            sx={richTextStyles}
+            dangerouslySetInnerHTML={{ __html: content.form.subtitle || "" }}
+          />
 
           <Box
             as="form"
-            ref={formRef}
+            ref={form}
             onSubmit={sendEmail}
             bg="white"
             p={10}
             borderRadius="2xl"
             boxShadow="md"
           >
+            <input type="hidden" name="form_type" value="Careers Form" />
+
+            <SimpleField label={content.form.name_label} name="full_name" isRequired />
+            <SimpleField
+              label={content.form.email_label}
+              name="email"
+              type="email"
+              isRequired
+            />
+            <SimpleField
+              label={content.form.role_label}
+              name="position"
+              placeholder="Therapist / Supervisor / Intern"
+            />
+
             <FormControl isRequired mb={4}>
-              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
-                {content.form.name_label}
-              </FormLabel>
-              <Input
-                name="full_name"
-                bg="white"
-                borderRadius="lg"
-                borderColor="gray.300"
-                _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }}
-              />
-            </FormControl>
-            <FormControl isRequired mb={4}>
-              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
-                {content.form.email_label}
-              </FormLabel>
-              <Input
-                name="email"
-                type="email"
-                bg="white"
-                borderRadius="lg"
-                borderColor="gray.300"
-                _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }}
-              />
-            </FormControl>
-            <FormControl mb={4}>
-              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
-                {content.form.role_label}
-              </FormLabel>
-              <Input
-                name="position"
-                placeholder="Therapist / Supervisor / Intern"
-                bg="white"
-                borderRadius="lg"
-                borderColor="gray.300"
-                _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }}
-              />
-            </FormControl>
-            <FormControl isRequired mb={4}>
-              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', var(--font-inter), sans-serif" color="#2E2E2E">
                 Are you comfortable being contacted via phone?
               </FormLabel>
               <RadioGroup defaultValue="Yes" name="comfortable">
@@ -410,14 +432,9 @@ export default function CareersClient() {
               </RadioGroup>
             </FormControl>
 
+            <SimpleField label={content.form.phone_label} name="phone" type="tel" />
             <FormControl mb={4}>
-                <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">{content.form.phone_label}</FormLabel>
-                <Input name="phone" type="tel" bg="white" borderRadius="lg" borderColor="gray.300"
-                    _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }} />
-            </FormControl>
-
-            <FormControl mb={4}>
-              <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">
+              <FormLabel fontFamily="'Inter', var(--font-inter), sans-serif" color="#2E2E2E">
                 {content.form.message_label}
               </FormLabel>
               <Textarea
@@ -431,11 +448,11 @@ export default function CareersClient() {
                 }}
               />
             </FormControl>
-            <FormControl mb={4}>
-                <FormLabel fontFamily="'Inter', sans-serif" color="#2E2E2E">{content.form.resume_label}</FormLabel>
-                <Input name="link" placeholder={content.form.resume_hint} bg="white" borderRadius="lg" borderColor="gray.300"
-                    _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }} />
-            </FormControl>
+            <SimpleField
+              label={content.form.resume_label}
+              name="link"
+              placeholder={content.form.resume_hint}
+            />
 
             <Button
               mt={6}
@@ -443,18 +460,35 @@ export default function CareersClient() {
               bg="#56756D"
               color="white"
               borderRadius="full"
-              px={10}
+              px={8}
               py={6}
+              fontFamily="'Inter', var(--font-inter), sans-serif"
               fontWeight="500"
               _hover={{ bg: "#C9A960", color: "white" }}
             >
               {content.form.submit_label}
             </Button>
           </Box>
+
+          <Box textAlign="center" mt={12}>
+            <Text color="#2E2E2E" mb={4} fontFamily="'Inter', var(--font-inter), sans-serif">
+              Prefer email?
+            </Text>
+            <Button
+              as="a"
+              href={content.footer.cta_link}
+              variant="outline"
+              borderColor="#C9A960"
+              _hover={{ bg: "#C9A960", color: "white" }}
+              borderRadius="full"
+            >
+              {content.footer.cta_label}
+            </Button>
+          </Box>
         </Container>
       </Box>
 
-      {/* FINAL CTA */}
+      {/* FOOTER BANNER */}
       <Box bg="#56756D" py={20} textAlign="center" color="white">
         <Container maxW="6xl">
           <Heading
@@ -480,14 +514,129 @@ export default function CareersClient() {
             bg="white"
             color="#2E2E2E"
             borderRadius="full"
-            px={10}
+            px={8}
             py={6}
+            fontFamily="'Inter', var(--font-inter), sans-serif"
             _hover={{ bg: "#F2F2F0" }}
           >
             {content.footer.cta_label}
           </Button>
         </Container>
       </Box>
+
+      {activeOpening ? (
+        <Box
+          position="fixed"
+          inset={0}
+          bg="rgba(15, 16, 20, 0.45)"
+          backdropFilter="blur(6px)"
+          zIndex={9999}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          px={4}
+          onClick={() => setActiveOpening(null)}
+        >
+          <Box
+            bg="white"
+            borderRadius="2xl"
+            boxShadow="xl"
+            maxW="680px"
+            w="100%"
+            p={{ base: 6, md: 8 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Heading size="lg" fontFamily="'Playfair Display', var(--font-playfair), serif" mb={2}>
+              {activeOpening.title}
+            </Heading>
+            <Text color="#56756D" mb={4}>
+              {[activeOpening.location, activeOpening.type].filter(Boolean).join(" · ")}
+            </Text>
+            {activeOpening.summary ? (
+              <Box
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                color="#2E2E2E"
+                lineHeight="1.7"
+                mb={4}
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: activeOpening.summary }}
+              />
+            ) : null}
+            {activeOpening.details ? (
+              <Box
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                color="#2E2E2E"
+                lineHeight="1.7"
+                sx={richTextStyles}
+                dangerouslySetInnerHTML={{ __html: activeOpening.details }}
+              />
+            ) : null}
+            <HStack mt={6} justify="space-between">
+              <Button variant="ghost" onClick={() => setActiveOpening(null)}>
+                Close
+              </Button>
+              <Button
+                bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
+                onClick={() => {
+                  setActiveOpening(null);
+                  scrollToApply();
+                }}
+              >
+                {content.openings.apply_label || "Apply to this role"}
+              </Button>
+            </HStack>
+          </Box>
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
+function SimpleField({ label, name, type = "text", isRequired = false, placeholder }) {
+  return (
+    <FormControl isRequired={isRequired} mb={4}>
+      <FormLabel fontFamily="'Inter', var(--font-inter), sans-serif" color="#2E2E2E">
+        {label}
+      </FormLabel>
+      <Input
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        bg="white"
+        borderRadius="lg"
+        borderColor="gray.300"
+        _focus={{ borderColor: "#A9CBB7", boxShadow: "0 0 0 1px #A9CBB7" }}
+      />
+    </FormControl>
+  );
+}
+
+function PositionCard({ title, body }) {
+  return (
+    <Box
+      bg="white"
+      borderRadius="2xl"
+      p={8}
+      boxShadow="md"
+      textAlign="center"
+      transition="all 0.3s ease"
+      _hover={{ transform: "translateY(-6px)", boxShadow: "lg" }}
+    >
+      <Heading
+        size="md"
+        mb={3}
+        fontFamily="'Playfair Display', var(--font-playfair), serif"
+        color="#2E2E2E"
+      >
+        {title}
+      </Heading>
+      <Box
+        fontFamily="'Inter', var(--font-inter), sans-serif"
+        color="#2E2E2E"
+        lineHeight="1.7"
+        sx={richTextStyles}
+        dangerouslySetInnerHTML={{ __html: body || "" }}
+      />
     </Box>
   );
 }

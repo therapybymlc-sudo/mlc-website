@@ -8,10 +8,11 @@ import {
   Text,
   Image,
   Button,
+  VStack,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import NextLink from "next/link";
 import { apiGet } from "../../api.js";
+import LinkButton from "@/components/LinkButton";
 
 const defaultAboutContent = {
   hero: {
@@ -39,7 +40,7 @@ const defaultAboutContent = {
         "<p>We prioritise attuned presence. Therapy is not mechanical. It is relational, safe, and human.</p>",
     },
     {
-      title: "Ethical &amp; Professional Standards",
+      title: "Ethical & Professional Standards",
       body:
         "<p>Supervision, documentation, and structured review processes ensure that your care remains aligned with international standards of mental health practice.</p>",
     },
@@ -111,21 +112,19 @@ export default function AboutClient() {
                 dangerouslySetInnerHTML={{ __html: content.hero.body }}
               />
 
-              <Button
-                as={NextLink}
+              <LinkButton
                 href={content.hero.cta_link || "/meettheteam"}
                 mt={8}
                 bg="#56756D"
                 borderRadius="full"
                 color="white"
                 _hover={{ bg: "#C9A960", color: "white" }}
-                fontWeight="500"
                 px={8}
                 py={5}
                 boxShadow="md"
               >
                 {content.hero.cta_label || "Meet the Team"}
-              </Button>
+              </LinkButton>
             </Box>
             <Image
               src={content.hero.image_url || "/approach_new.jpg"}
@@ -327,7 +326,7 @@ export default function AboutClient() {
             every therapist feels valued and every client feels seen.
           </Text>
           <Text fontSize="sm" color="#56756D" fontFamily="'Inter', var(--font-inter), sans-serif" mt={6}>
-            We offer ethical therapy services to individuals, couples, and families across Mumbai,
+            We offer online therapy services to individuals, couples, and families across Mumbai,
             Delhi, Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.
           </Text>
         </Container>
@@ -344,8 +343,7 @@ export default function AboutClient() {
         >
           Ready to Experience the MLC Approach?
         </Heading>
-        <Button
-          as={NextLink}
+        <LinkButton
           href="/book"
           bg="white"
           color="#2E2E2E"
@@ -357,7 +355,7 @@ export default function AboutClient() {
           boxShadow="md"
         >
           Book a Session
-        </Button>
+        </LinkButton>
       </Box>
     </Box>
   );
