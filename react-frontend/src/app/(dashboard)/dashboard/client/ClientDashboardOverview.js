@@ -14,6 +14,7 @@ import {
   Icon,
   Tag,
   TagLabel,
+  Divider,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiCalendar, FiCheckCircle, FiEdit3, FiActivity } from "react-icons/fi";
