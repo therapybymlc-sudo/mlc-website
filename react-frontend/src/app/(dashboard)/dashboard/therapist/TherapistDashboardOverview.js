@@ -20,6 +20,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
+import NextLink from 'next/link';
 import { apiGet } from "../../../../api.js";
 
 export default function TherapistDashboardOverview() {
