@@ -2,7 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['mlchealth.in'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'mlchealth.in',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
   // Since we are migrating, we might want to handle trailing slashes
   trailingSlash: true,

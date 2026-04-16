@@ -26,8 +26,10 @@ api.interceptors.request.use(async (config) => {
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   }
-  const token = localStorage.getItem("access_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -60,7 +62,12 @@ export async function apiDelete(path) {
 }
 
 export async function apiUpload(path, formData) {
-  const token = tokenGetter ? await tokenGetter() : localStorage.getItem("access_token");
+  let token = null;
+  if (tokenGetter) {
+    token = await tokenGetter();
+  } else if (typeof window !== "undefined") {
+    token = localStorage.getItem("access_token");
+  }
   const url = `${API_BASE}/${path.replace(/^\/+/, "")}`;
   const res = await fetch(url, {
     method: "POST",

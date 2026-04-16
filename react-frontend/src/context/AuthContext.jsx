@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/clerk-react";
+import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs";
 import api, { setTokenGetter } from "../api.js";
 
 const AuthContext = createContext(null);
@@ -29,8 +29,8 @@ export const AuthProvider = ({ children }) => {
   const isTherapist = isAdmin || roles.includes("therapist");
   const isClient = !isTherapist;
   const isPremium = premiumPreviewEnabled || isAdmin || roles.includes("premium");
-  const previewRole = localStorage.getItem("mlc_role_preview");
-  const signupRole = localStorage.getItem("mlc_signup_role");
+  const previewRole = typeof window !== 'undefined' ? localStorage.getItem("mlc_role_preview") : null;
+  const signupRole = typeof window !== 'undefined' ? localStorage.getItem("mlc_signup_role") : null;
   const isTherapistPreview =
     previewRole === "therapist" &&
     signupRole === "therapist" &&
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
         const token = await getToken(
           tokenTemplate ? { template: tokenTemplate } : undefined
         );
-        if (isMounted) {
+        if (isMounted && typeof window !== 'undefined') {
           if (token) {
             localStorage.setItem("access_token", token);
             api.defaults.headers.Authorization = `Bearer ${token}`;
@@ -112,17 +112,26 @@ export const AuthProvider = ({ children }) => {
     );
   }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
 
-  const login = () =>
+  const login = () => {
+    if (typeof window === 'undefined') return;
     clerk.redirectToSignIn({
       redirectUrl: `${window.location.origin}/dashboard`,
     });
+  };
 
-  const logout = () =>
+  const logout = () => {
+    if (typeof window === 'undefined') return;
     clerk.signOut({
       redirectUrl: window.location.origin,
     });
+  };
 
-  const token = localStorage.getItem("access_token");
+  const [token, setToken] = useState(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setToken(localStorage.getItem("access_token"));
+    }
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -152,4 +161,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext) || {};
