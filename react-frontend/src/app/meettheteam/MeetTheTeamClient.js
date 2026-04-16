@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { apiGet } from "../../api.js";
-import LinkButton from "@/components/LinkButton";
+import LinkButton from "../../components/LinkButton";
 
 export default function MeetTheTeamClient() {
   const [team, setTeam] = useState([]);
