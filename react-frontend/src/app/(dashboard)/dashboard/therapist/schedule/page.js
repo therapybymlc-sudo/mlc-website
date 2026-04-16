@@ -1,10 +1,10 @@
-import ScheduleClient from './ScheduleClient';
+import ScheduleClient from "./ScheduleClient";
 
 export const metadata = {
-  title: 'My Schedule | MLC Health',
-  description: 'View and manage your upcoming session appointments, clinical events, and client meetings.',
-};
+  title: 'Clinical Schedule | Therapist Dashboard',
+  description: 'Manage your clinical appointments, availability, and session bookings securely.',
+}
 
-export default function Page() {
+export default function TherapistSchedulePage() {
   return <ScheduleClient />;
 }

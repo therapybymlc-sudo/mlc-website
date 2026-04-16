@@ -197,6 +197,12 @@ export default function Navbar() {
                 
                 <MenuDivider />
                 
+                {(() => {
+                  const roles = user?.publicMetadata?.roles || [];
+                  const dashboardBase = roles.includes("therapist") || roles.includes("admin") ? "/dashboard/therapist" : "/dashboard/client";
+                  
+                  return (
+                    <>
                 <MenuItem
                   as={NextLink}
                   href="/dashboard"
@@ -212,7 +218,7 @@ export default function Navbar() {
                 
                 <MenuItem
                   as={NextLink}
-                  href="/dashboard/appointments"
+                  href={`${dashboardBase}/appointments`}
                   borderRadius="lg"
                   icon={<Icon as={FiClock} boxSize={4} color="#56756D" />}
                   _hover={{ bg: "gray.50", color: "#C9A960" }}
@@ -225,7 +231,7 @@ export default function Navbar() {
 
                 <MenuItem
                   as={NextLink}
-                  href="/dashboard/resources"
+                  href={`${dashboardBase}/resources`}
                   borderRadius="lg"
                   icon={<Icon as={FiBookOpen} boxSize={4} color="#56756D" />}
                   _hover={{ bg: "gray.50", color: "#C9A960" }}
@@ -235,6 +241,9 @@ export default function Navbar() {
                 >
                   Resources & Tools
                 </MenuItem>
+                </>
+                )
+              })()}
                 
                 <MenuDivider />
                 
