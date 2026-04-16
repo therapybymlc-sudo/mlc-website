@@ -15,7 +15,7 @@ import {
   ListItem,
   SimpleGrid,
 } from "@chakra-ui/react";
-import LinkButton from "@/components/LinkButton";
+import LinkButton from "../../components/LinkButton";
 
 export const metadata = {
   title: 'Therapist Supervision & Cohorts | MLC Health & Wellness Centre',

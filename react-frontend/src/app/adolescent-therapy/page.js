@@ -12,7 +12,7 @@ import {
   AccordionIcon,
   Button,
 } from "@chakra-ui/react";
-import LinkButton from "@/components/LinkButton";
+import LinkButton from "../../components/LinkButton";
 
 export const metadata = {
   title: 'Adolescent Therapy | MLC Health & Wellness Centre',

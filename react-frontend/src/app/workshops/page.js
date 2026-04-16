@@ -13,7 +13,7 @@ import {
   Button,
   SimpleGrid,
 } from "@chakra-ui/react";
-import LinkButton from "@/components/LinkButton";
+import LinkButton from "../../components/LinkButton";
 
 export const metadata = {
   title: 'Workshops & Outreach | MLC Health & Wellness Centre',

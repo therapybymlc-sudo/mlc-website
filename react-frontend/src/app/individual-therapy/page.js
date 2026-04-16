@@ -14,7 +14,7 @@ import {
   List,
   ListItem,
 } from "@chakra-ui/react";
-import LinkButton from "@/components/LinkButton";
+import LinkButton from "../../components/LinkButton";
 
 export const metadata = {
   title: 'Individual Therapy | MLC Health & Wellness Centre',
