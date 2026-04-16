@@ -1,0 +1,160 @@
+/* 🌸 Calendar Redesign Styles */
+
+/* Base Font */
+.fc {
+  font-family: 'Inter', var(--font-inter), sans-serif !important;
+  --fc-border-color: #F1F3F4;
+  --fc-today-bg-color: transparent;
+}
+
+/* 🌙 Slot Styling (Hours) */
+.fc-timegrid-slot-label {
+  font-size: 0.7rem !important;
+  color: #9AA0A6 !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  padding-right: 16px !important;
+  border-right: none !important;
+  vertical-align: middle !important;
+}
+
+.fc-timegrid-slot {
+    height: 60px !important; /* Larger slots for better readability */
+    border-bottom: 1px solid #F1F3F4 !important;
+}
+
+.fc-timegrid-slot-label-cushion {
+  padding: 12px 0 !important;
+}
+
+
+/* Grid Lines */
+.fc-timegrid-slots td {
+    border-bottom: 1px solid #F8F9FA !important;
+}
+
+.fc-scrollgrid {
+    border: none !important;
+    border-radius: 20px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+}
+
+/* 📅 Day Headers */
+.fc-col-header-cell {
+  background: white !important;
+  padding: 16px 0 !important;
+  border-bottom: 1px solid #E9EAED !important;
+}
+
+.fc-col-header-cell-cushion {
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: #2E2E2E !important;
+  text-decoration: none !important;
+}
+
+/* 🏮 "Now" Indicator */
+.fc-timegrid-now-indicator-line {
+    border-color: #56756D !important;
+    border-width: 2px !important;
+}
+
+.fc-timegrid-now-indicator-arrow {
+    border-top-color: #56756D !important;
+    border-bottom-color: #56756D !important;
+}
+
+/* Business Hours (White vs Light Gray) */
+.fc-nonbusiness {
+  background-color: #F9FAFB !important;
+  opacity: 1 !important;
+}
+
+.fc-business-container {
+  background-color: white !important;
+}
+
+/* 🎫 Event Card Styling */
+.fc-v-event {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+  overflow: visible !important;
+}
+
+.custom-event-card {
+  height: 100%;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-left: 4px solid;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: white;
+  overflow: hidden;
+}
+
+.custom-event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  z-index: 10;
+}
+
+.event-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #2E2E2E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-client {
+  font-size: 0.7rem;
+  color: #5F6368;
+  font-weight: 500;
+}
+
+.event-time {
+  font-size: 0.65rem;
+  color: #70757A;
+  margin-top: auto;
+}
+
+/* 🖱️ Interaction */
+.fc-timegrid-event-harness {
+    padding: 2px !important;
+}
+
+/* 🚀 Header Toolbar */
+.fc-toolbar-title {
+    font-family: 'Playfair Display', serif !important;
+    font-weight: 700 !important;
+    color: #2E2E2E !important;
+}
+
+.fc-button-primary {
+    background-color: white !important;
+    border-color: #E2E8F0 !important;
+    color: #56756D !important;
+    font-weight: 600 !important;
+    text-transform: capitalize !important;
+    border-radius: 12px !important;
+}
+
+.fc-button-primary:hover {
+    background-color: #F8FAFC !important;
+    border-color: #CBD5E0 !important;
+}
+
+.fc-button-active {
+    background-color: #56756D !important;
+    border-color: #56756D !important;
+    color: white !important;
+}

@@ -11,7 +11,9 @@ import {
   Text,
   useToast,
 } from "@chakra-ui/react";
+import { FiCheckCircle } from "react-icons/fi";
 import { schedulingApi } from "../../api/scheduling";
+
 
 const DAYS = [
   { id: "1", label: "Monday" },
@@ -63,7 +65,6 @@ export default function BusinessHoursForm({ profile, onSlotsGenerated }) {
       await schedulingApi.updateTherapistProfile(profile.id, {
         business_hours: hours,
       });
-      // automatically generate slots for next 30 days
       const start_date = new Date();
       const end_date = new Date(start_date.getTime() + 30 * 24 * 60 * 60 * 1000);
       
@@ -71,13 +72,12 @@ export default function BusinessHoursForm({ profile, onSlotsGenerated }) {
         start_date: start_date.toISOString().split("T")[0],
         end_date: end_date.toISOString().split("T")[0],
       };
-      const res = await schedulingApi.generateAvailabilitySlotsBulk(payload);
+      await schedulingApi.generateAvailabilitySlotsBulk(payload);
       
       toast({
-        title: "Slots Generated",
-        description: res.detail || "Successfully updated business hours and generated calendar.",
+        title: "Schedule Synced",
+        description: "Your business hours were updated and calendar slots generated.",
         status: "success",
-        duration: 3000,
       });
       if (onSlotsGenerated) onSlotsGenerated();
     } catch (err) {
@@ -92,49 +92,76 @@ export default function BusinessHoursForm({ profile, onSlotsGenerated }) {
   };
 
   return (
-    <VStack align="stretch" spacing={4}>
+    <VStack align="stretch" spacing={5}>
       {DAYS.map((day) => {
         const isEnabled = !!hours[day.id];
         const times = hours[day.id] || [];
         return (
-          <HStack key={day.id} spacing={4} align="flex-start">
-            <Checkbox
-              w="120px"
-              isChecked={isEnabled}
-              onChange={(e) => handleDayChange(day.id, e.target.checked)}
-            >
-              {day.label}
-            </Checkbox>
-            {isEnabled && (
-              <VStack align="stretch">
-                {times.map((block, idx) => (
-                  <HStack key={idx} spacing={3}>
-                    <Input
-                      type="time"
-                      size="sm"
-                      value={block.startTime}
-                      onChange={(e) => handleTimeChange(day.id, idx, "startTime", e.target.value)}
-                    />
-                    <Text fontSize="sm">to</Text>
-                    <Input
-                      type="time"
-                      size="sm"
-                      value={block.endTime}
-                      onChange={(e) => handleTimeChange(day.id, idx, "endTime", e.target.value)}
-                    />
-                  </HStack>
-                ))}
-              </VStack>
-            )}
-          </HStack>
+          <Box 
+            key={day.id} 
+            p={4} 
+            borderRadius="2xl" 
+            bg={isEnabled ? "rgba(169, 203, 183, 0.08)" : "gray.50"}
+            border="1px solid"
+            borderColor={isEnabled ? "rgba(169, 203, 183, 0.3)" : "gray.100"}
+            transition="all 0.2s"
+          >
+            <HStack spacing={4} align="center" justify="space-between">
+              <Checkbox
+                size="lg"
+                colorScheme="teal"
+                isChecked={isEnabled}
+                onChange={(e) => handleDayChange(day.id, e.target.checked)}
+              >
+                <Text fontWeight="600" fontSize="sm">{day.label}</Text>
+              </Checkbox>
+              
+              {isEnabled && (
+                <HStack spacing={3}>
+                  <Input
+                    type="time"
+                    size="sm"
+                    bg="white"
+                    borderRadius="lg"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    value={times[0]?.startTime || ""}
+                    onChange={(e) => handleTimeChange(day.id, 0, "startTime", e.target.value)}
+                  />
+                  <Text fontSize="xs" fontWeight="700" color="gray.400">TO</Text>
+                  <Input
+                    type="time"
+                    size="sm"
+                    bg="white"
+                    borderRadius="lg"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    value={times[0]?.endTime || ""}
+                    onChange={(e) => handleTimeChange(day.id, 0, "endTime", e.target.value)}
+                  />
+                </HStack>
+              )}
+            </HStack>
+          </Box>
         );
       })}
+      
       <Box pt={4}>
-        <Button colorScheme="teal" onClick={saveAndGenerate} isLoading={loading}>
-          Save & Generate 30 Days
+        <Button 
+          w="100%"
+          h="50px"
+          bg="#56756C" 
+          color="white"
+          borderRadius="full"
+          _hover={{ bg: "#C9A960" }}
+          onClick={saveAndGenerate} 
+          isLoading={loading}
+          leftIcon={<FiCheckCircle />}
+        >
+          Save & Sync Calendar
         </Button>
-        <Text fontSize="xs" color="gray.500" mt={2}>
-          This will update your profile and auto-create open slots for any matched times in the next 30 days. You can manually block/delete them below.
+        <Text fontSize="xs" color="gray.400" mt={4} textAlign="center">
+          Updating your hours will auto-refresh your public availability for the next 30 days.
         </Text>
       </Box>
     </VStack>

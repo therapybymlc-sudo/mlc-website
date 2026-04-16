@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Box,
   Flex,
@@ -25,10 +27,12 @@ import {
   FiLogOut, 
   FiLayout, 
   FiCreditCard,
-  FiUserPlus
+  FiClock,
+  FiBookOpen
 } from "react-icons/fi";
-import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import NextLink from "next/link";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 
 const logoSrc = "/logo_tra.png";
 
@@ -45,7 +49,9 @@ const navLinks = [
 
 export default function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isAuthenticated, login, logout, user } = useAuth();
+  const { user, isSignedIn } = useUser();
+  const { signOut } = useClerk();
+  const pathname = usePathname();
 
   return (
     <Box
@@ -67,8 +73,8 @@ export default function Navbar() {
       >
         {/* 🌿 Left Section: Logo & Name */}
         <HStack 
-          as={Link} 
-          to="/" 
+          as={NextLink} 
+          href="/" 
           spacing={3} 
           alignItems="center" 
           flexShrink={0}
@@ -81,18 +87,18 @@ export default function Navbar() {
           />
           <Box lineHeight="1.1" display={{ base: "none", sm: "block" }}>
             <Text
-              fontFamily="'Inter', sans-serif"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
               fontWeight="600"
               fontSize={{ base: "sm", md: "md" }}
-              color="mlc.black"
+              color="#2E2E2E"
               letterSpacing="-0.2px"
             >
               MLC Health
             </Text>
             <Text
-              fontFamily="'Inter', sans-serif"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
               fontSize="xs"
-              color="mlc.greenDark"
+              color="#56756D"
               fontWeight="500"
             >
               Wellness Centre
@@ -108,28 +114,40 @@ export default function Navbar() {
           flex="1"
           mx={4}
         >
-          {navLinks.map((link) => (
-            <ChakraLink
-              as={Link}
-              key={link.label}
-              to={link.href}
-              fontWeight="500"
-              fontFamily="'Inter', sans-serif"
-              fontSize="15px"
-              letterSpacing="0.2px"
-              color="mlc.blackSoft"
-              _hover={{ color: "mlc.gold", textDecoration: "none" }}
-              transition="all 0.2s ease"
-              whiteSpace="nowrap"
-            >
-              {link.label}
-            </ChakraLink>
-          ))}
+          {navLinks.map((link) => {
+            const isDiscovery = link.href === "/therapists/discovery";
+            const isActive = pathname === link.href;
+            return (
+              <ChakraLink
+                as={NextLink}
+                key={link.label}
+                href={link.href}
+                fontWeight={isDiscovery ? "700" : "500"}
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                fontSize="15px"
+                letterSpacing="0.2px"
+                color={isDiscovery ? "#56756D" : isActive ? "#C9A960" : "#212121"}
+                bg={isDiscovery ? "rgba(86, 117, 109, 0.08)" : "transparent"}
+                px={isDiscovery ? 4 : 0}
+                py={isDiscovery ? 2 : 0}
+                borderRadius={isDiscovery ? "full" : "none"}
+                _hover={{ 
+                  color: "#C9A960", 
+                  textDecoration: "none",
+                  bg: isDiscovery ? "rgba(86, 117, 109, 0.15)" : "transparent"
+                }}
+                transition="all 0.2s ease"
+                whiteSpace="nowrap"
+              >
+                {link.label}
+              </ChakraLink>
+            )
+          })}
         </HStack>
 
         {/* 👤 Right Section: Auth & Mobile Menu */}
         <HStack spacing={{ base: 2, md: 4 }} flexShrink={0}>
-          {isAuthenticated ? (
+          {isSignedIn ? (
             <Menu gutter={12} placement="bottom-end">
               <MenuButton
                 as={Button}
@@ -139,7 +157,6 @@ export default function Navbar() {
                 py={1.5}
                 px={{ base: 1, md: 2 }}
                 _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
-                _active={{ bg: "rgba(169, 203, 183, 0.2)" }}
               >
                 <HStack spacing={2}>
                   <Avatar 
@@ -147,12 +164,12 @@ export default function Navbar() {
                     name={user?.fullName || "User"} 
                     src={user?.imageUrl} 
                     border="2px solid"
-                    borderColor="mlc.green"
+                    borderColor="#A9CBB7"
                   />
                   <Text 
                     fontSize="sm" 
                     fontWeight="600" 
-                    color="mlc.black"
+                    color="#2E2E2E"
                     display={{ base: "none", md: "block" }}
                   >
                     {user?.firstName || "Account"}
@@ -170,7 +187,7 @@ export default function Navbar() {
                 minW="240px"
               >
                 <Box px={4} py={3}>
-                  <Text fontWeight="700" color="mlc.black" fontSize="sm">
+                  <Text fontWeight="700" color="#2E2E2E" fontSize="sm">
                     {user?.fullName || "User Account"}
                   </Text>
                   <Text fontSize="xs" color="gray.500" mt={0.5}>
@@ -181,11 +198,11 @@ export default function Navbar() {
                 <MenuDivider />
                 
                 <MenuItem
-                  as={Link}
-                  to="/dashboard"
+                  as={NextLink}
+                  href="/dashboard"
                   borderRadius="lg"
-                  icon={<Icon as={FiLayout} boxSize={4} color="mlc.greenDark" />}
-                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
+                  icon={<Icon as={FiLayout} boxSize={4} color="#56756D" />}
+                  _hover={{ bg: "gray.50", color: "#C9A960" }}
                   fontSize="sm"
                   fontWeight="600"
                   py={3}
@@ -194,11 +211,11 @@ export default function Navbar() {
                 </MenuItem>
                 
                 <MenuItem
-                  as={Link}
-                  to="/dashboard/appointments"
+                  as={NextLink}
+                  href="/dashboard/appointments"
                   borderRadius="lg"
-                  icon={<Icon as={FiClock} boxSize={4} color="mlc.greenDark" />}
-                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
+                  icon={<Icon as={FiClock} boxSize={4} color="#56756D" />}
+                  _hover={{ bg: "gray.50", color: "#C9A960" }}
                   fontSize="sm"
                   fontWeight="600"
                   py={3}
@@ -207,11 +224,11 @@ export default function Navbar() {
                 </MenuItem>
 
                 <MenuItem
-                  as={Link}
-                  to="/dashboard/resources"
+                  as={NextLink}
+                  href="/dashboard/resources"
                   borderRadius="lg"
-                  icon={<Icon as={FiBookOpen} boxSize={4} color="mlc.greenDark" />}
-                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
+                  icon={<Icon as={FiBookOpen} boxSize={4} color="#56756D" />}
+                  _hover={{ bg: "gray.50", color: "#C9A960" }}
                   fontSize="sm"
                   fontWeight="600"
                   py={3}
@@ -219,36 +236,10 @@ export default function Navbar() {
                   Resources & Tools
                 </MenuItem>
                 
-                <MenuItem
-                  as={Link}
-                  to="/profile"
-                  borderRadius="lg"
-                  icon={<Icon as={FiSettings} boxSize={4} color="mlc.greenDark" />}
-                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
-                  fontSize="sm"
-                  fontWeight="600"
-                  py={3}
-                >
-                  Profile & Settings
-                </MenuItem>
-                
-                <MenuItem
-                  as={Link}
-                  to="/subscription"
-                  borderRadius="lg"
-                  icon={<Icon as={FiCreditCard} boxSize={4} color="mlc.greenDark" />}
-                  _hover={{ bg: "gray.50", color: "mlc.gold" }}
-                  fontSize="sm"
-                  fontWeight="600"
-                  py={3}
-                >
-                  Manage Subscription
-                </MenuItem>
-                
                 <MenuDivider />
                 
                 <MenuItem
-                  onClick={logout}
+                  onClick={() => signOut()}
                   borderRadius="lg"
                   icon={<Icon as={FiLogOut} boxSize={4} />}
                   color="red.500"
@@ -264,27 +255,27 @@ export default function Navbar() {
           ) : (
             <HStack spacing={3} display={{ base: "none", md: "flex" }}>
               <Button
-                as={Link}
-                to="/login"
+                as={NextLink}
+                href="/login"
                 variant="ghost"
                 fontWeight="600"
                 fontSize="sm"
-                color="mlc.black"
+                color="#2E2E2E"
                 borderRadius="full"
                 _hover={{ bg: "gray.50" }}
               >
                 Sign In
               </Button>
               <Button
-                as={Link}
-                to="/signup/client"
-                bg="mlc.greenDark"
+                as={NextLink}
+                href="/signup/client"
+                bg="#56756D"
                 color="white"
                 fontWeight="600"
                 fontSize="sm"
                 borderRadius="full"
                 px={6}
-                _hover={{ bg: "mlc.gold", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
+                _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
                 transition="all 0.2s"
               >
                 Join MLC
@@ -292,7 +283,6 @@ export default function Navbar() {
             </HStack>
           )}
 
-          {/* 📱 Mobile Menu Icon */}
           <IconButton
             display={{ base: "flex", lg: "none" }}
             onClick={isOpen ? onClose : onOpen}
@@ -308,7 +298,7 @@ export default function Navbar() {
       {isOpen && (
         <Box display={{ lg: "none" }} pb={4}>
           <VStack
-            bg="mlc.greenDark"
+            bg="#56756D"
             align="stretch"
             spacing={0}
             px={4}
@@ -318,42 +308,42 @@ export default function Navbar() {
           >
             {navLinks.map((link) => (
               <ChakraLink
-                as={Link}
+                as={NextLink}
                 key={link.label}
-                to={link.href}
+                href={link.href}
                 fontWeight="medium"
-                fontFamily="'Inter', sans-serif"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
                 color="white"
                 py={3.5}
                 px={4}
                 borderRadius="lg"
-                _hover={{ bg: "rgba(255,255,255,0.1)", color: "mlc.gold" }}
+                _hover={{ bg: "rgba(255,255,255,0.1)", color: "#C9A960" }}
                 onClick={onClose}
               >
                 {link.label}
               </ChakraLink>
             ))}
             
-            {!isAuthenticated && (
+            {!isSignedIn && (
               <>
                 <Divider borderColor="whiteAlpha.300" my={2} />
                 <Button
-                  as={Link}
-                  to="/login"
+                  as={NextLink}
+                  href="/login"
                   variant="ghost"
                   color="white"
                   justifyContent="flex-start"
                   py={6}
-                  _hover={{ bg: "whiteAlpha.100" }}
+                  _active={{ bg: "whiteAlpha.100" }}
                   onClick={onClose}
                 >
                   Sign In
                 </Button>
                 <Button
-                  as={Link}
-                  to="/signup"
-                  bg="mlc.gold"
-                  color="mlc.black"
+                  as={NextLink}
+                  href="/signup/client"
+                  bg="#C9A960"
+                  color="#2E2E2E"
                   py={6}
                   mt={2}
                   mb={4}

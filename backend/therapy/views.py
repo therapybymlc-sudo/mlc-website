@@ -54,6 +54,7 @@ from therapy.utils import (
 )
 from therapy.serializers import (
     TherapistProfileSerializer,
+    TherapistApplicationSerializer,
     ClientProfileSerializer,
     AppointmentSerializer,
     AvailabilitySlotSerializer,
@@ -290,8 +291,12 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         roles = _extract_roles_from_auth(self.request)
-        if "admin" in roles:
-            return TherapistProfile.objects.all()
+        if "admin" in roles or self.request.user.is_staff:
+            qs = TherapistProfile.objects.all()
+            is_verified = self.request.query_params.get("is_verified")
+            if is_verified is not None:
+                qs = qs.filter(is_verified=is_verified.lower() == "true")
+            return qs
         return TherapistProfile.objects.filter(id=therapist.id)
 
     def update(self, request, *args, **kwargs):
@@ -1644,6 +1649,45 @@ class OnboardUserRoleView(APIView):
             return Response(payload)
 
 
+class TherapistApplicationViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = TherapistApplication.objects.all().order_by("-created_at")
+    serializer_class = TherapistApplicationSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return super().get_queryset()
+        return TherapistApplication.objects.none()
+
+
+class VerifyTherapistView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        if not request.user.is_staff:
+            return Response({"detail": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+            
+        try:
+            profile = TherapistProfile.objects.get(pk=pk)
+            profile.is_verified = True
+            profile.save(update_fields=["is_verified", "updated_at"])
+            
+            # Notify the therapist
+            if profile.user:
+                Notification.objects.create(
+                    recipient_user_profile=profile.user,
+                    type=Notification.Type.APPOINTMENT_SCHEDULED, # Reuse or use a message
+                    title="Account Verified",
+                    body="Your therapist profile has been verified by MLC. You now have full access to the dashboard.",
+                    related_model="TherapistProfile",
+                    related_id=str(profile.id),
+                    action_url="/therapist/dashboard"
+                )
+            return Response({"detail": f"Therapist {profile.name} verified successfully."})
+        except TherapistProfile.DoesNotExist:
+            return Response({"detail": "Therapist not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
 class TherapistMatchView(APIView):
     permission_classes = [AllowAny]
 
@@ -1744,7 +1788,16 @@ class TherapistMatchView(APIView):
                 matches.append(t_data)
             else:
                 others.append(t_data)
-                
+
+        # Fallback: If no matches or others found (too restrictive filters), 
+        # add all verified therapists to others
+        if not matches and not others:
+            all_verified_fallback = TherapistProfile.objects.filter(is_verified=True)
+            for t in all_verified_fallback:
+                t_data = TherapistProfileSerializer(t).data
+                t_data["match_score"] = 0
+                others.append(t_data)
+        
         matches.sort(key=lambda x: x["match_score"], reverse=True)
         others.sort(key=lambda x: x["match_score"], reverse=True)
         
@@ -1788,6 +1841,8 @@ class TherapistMatchView(APIView):
             dass_anxiety_level=dass_levels['anxiety'],
             dass_stress_level=dass_levels['stress'],
             summary_paragraph=dass_summary,
+            marketing_email_consent=data.get("marketing_email_consent", False),
+            marketing_whatsapp_consent=data.get("marketing_whatsapp_consent", False),
         )
         # Add matches to M2M
         for m in matches[:5]:

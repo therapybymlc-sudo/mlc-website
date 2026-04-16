@@ -680,6 +680,9 @@ export default function AdminDashboard() {
   const [therapistApplyDraft, setTherapistApplyDraft] = useState(defaultTherapistApplyDraft);
   const [therapistApplyId, setTherapistApplyId] = useState(null);
 
+  const [unverifiedTherapists, setUnverifiedTherapists] = useState([]);
+  const [therapistApplications, setTherapistApplications] = useState([]);
+
   const fetchMembers = async () => {
     try {
       const res = await apiGet("team-members/");
@@ -917,6 +920,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchUnverifiedTherapists = async () => {
+    try {
+      const data = await apiGet("therapists/?is_verified=false");
+      setUnverifiedTherapists(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) {
+      console.error("Failed to fetch unverified therapists", err);
+    }
+  };
+
+  const fetchTherapistApplications = async () => {
+    try {
+      const data = await apiGet("manage-therapist-applications/");
+      setTherapistApplications(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) {
+      console.error("Failed to fetch applications", err);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
       fetchMembers();
@@ -929,6 +950,8 @@ export default function AdminDashboard() {
       fetchTrainingContent();
       fetchCareersContent();
       fetchTherapistApplyContent();
+      fetchUnverifiedTherapists();
+      fetchTherapistApplications();
     }
   }, [isAuthenticated, isAdmin]);
 
@@ -4379,6 +4402,89 @@ export default function AdminDashboard() {
               Save therapist apply page
             </Button>
           </HStack>
+        <Divider my={12} />
+
+        <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" mb={10}>
+          <Heading size="md" mb={6}>
+            Therapist Verification & Applications
+          </Heading>
+
+          <VStack align="stretch" spacing={10}>
+             <Box>
+                <Heading size="sm" mb={4} color="mlc.greenDark">
+                  Pending Applications ({therapistApplications.length})
+                </Heading>
+                {therapistApplications.length === 0 ? (
+                  <Text color="gray.500" fontSize="sm">No pending applications.</Text>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {therapistApplications.map(app => (
+                      <Box key={app.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" _hover={{ bg: "gray.50" }}>
+                        <HStack justify="space-between">
+                          <VStack align="flex-start" spacing={1}>
+                            <Text fontWeight="600">{app.first_name} {app.last_name}</Text>
+                            <Text fontSize="xs" color="gray.500">{app.email} • {app.phone}</Text>
+                            <Text fontSize="xs" color="gray.600">Experience: {app.years_experience} yrs • Qualification: {app.highest_qualification}</Text>
+                          </VStack>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            colorScheme="teal"
+                            onClick={() => window.open(app.resume, "_blank")}
+                          >
+                            View Resume
+                          </Button>
+                        </HStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                )}
+             </Box>
+
+             <Divider />
+
+             <Box>
+                <Heading size="sm" mb={4} color="mlc.greenDark">
+                  Unverified Therapist Profiles ({unverifiedTherapists.length})
+                </Heading>
+                <Text fontSize="xs" color="gray.500" mb={4}>
+                  These are therapists who signed up/onboarded but haven't been verified by MLC yet. 
+                  Verifying them grants them full access to the Therapist Dashboard.
+                </Text>
+                {unverifiedTherapists.length === 0 ? (
+                  <Text color="gray.500" fontSize="sm">No unverified profiles.</Text>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {unverifiedTherapists.map(t => (
+                      <Box key={t.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" _hover={{ bg: "gray.50" }}>
+                        <HStack justify="space-between">
+                          <VStack align="flex-start" spacing={1}>
+                            <Text fontWeight="600">{t.name}</Text>
+                            <Text fontSize="xs" color="gray.500">{t.email}</Text>
+                          </VStack>
+                          <Button 
+                            size="sm" 
+                            bg="mlc.green" 
+                            color="white"
+                            onClick={async () => {
+                              try {
+                                await apiPost(`therapists/verify/${t.id}/`, {});
+                                toast({ status: "success", title: "Therapist verified" });
+                                fetchUnverifiedTherapists();
+                              } catch {
+                                toast({ status: "error", title: "Verification failed" });
+                              }
+                            }}
+                          >
+                            Verify Profile
+                          </Button>
+                        </HStack>
+                      </Box>
+                    ))}
+                  </VStack>
+                )}
+             </Box>
+          </VStack>
         </Box>
       </Container>
     </Box>

@@ -51,6 +51,8 @@ from therapy.views import (
     terminate_relationship,
     OnboardUserRoleView,
     TherapistMatchView,
+    TherapistApplicationViewSet,
+    VerifyTherapistView,
 )
 
 # ----------------------------
@@ -91,6 +93,7 @@ router.register(r"contact-content", ContactContentViewSet, basename="contact-con
 router.register(r"training-programs-content", TrainingProgramsContentViewSet, basename="training-programs-content")
 router.register(r"careers-content", CareersContentViewSet, basename="careers-content")
 router.register(r"therapist-apply-content", TherapistApplyContentViewSet, basename="therapist-apply-content")
+router.register(r"manage-therapist-applications", TherapistApplicationViewSet, basename="manage-therapist-applications")
 
 # ----------------------------
 # Small utility/test endpoints
@@ -169,6 +172,7 @@ urlpatterns = [
     path("api/therapists/public/", PublicTherapistDirectoryView.as_view(), name="therapists-public"),
     path("api/therapists/match/", TherapistMatchView.as_view(), name="therapists-match"),
     path("api/clients/terminate_relationship/", terminate_relationship, name="terminate-relationship"),
+    path("api/therapists/verify/<int:pk>/", VerifyTherapistView.as_view(), name="verify-therapist"),
 
     # REST API
     path("api/", include(router.urls)),

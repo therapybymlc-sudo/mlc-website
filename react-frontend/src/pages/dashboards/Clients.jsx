@@ -67,7 +67,7 @@ export default function Clients() {
     time_zone: "Use account time zone",
     appointment_notes: "",
     privacy_policy_status: "no_response",
-    related_patients: [],
+    related_clients: [],
     reminder_sms: false,
     reminder_email: false,
     followup_sms: false,
@@ -88,8 +88,8 @@ export default function Clients() {
     referral_type: "None",
     nationality: "",
     civil_id_number: "",
-    patient_file_number: "",
-    terminated_patient: false,
+    client_file_number: "",
+    terminated_client: false,
     termination_reasons: [],
     termination_notes: "",
   };
@@ -205,14 +205,24 @@ export default function Clients() {
         </Box>
       );
     }
+    const sortedFields = [...tpl.fields].sort((a,b) => (a.order||0) - (b.order||0));
     return (
       <VStack align="stretch" spacing={3}>
-        {tpl.fields.map((f) => {
+        {sortedFields.map((f) => {
+          if (f.field_type === "section") {
+            return (
+              <Box key={f.id} pt={4} pb={1} borderBottom="1px solid" borderColor="gray.100" mb={1}>
+                <Heading size="xs" color="mlc.greenDark" letterSpacing="wider" textTransform="uppercase">
+                  {f.label}
+                </Heading>
+              </Box>
+            );
+          }
           const val = data?.[f.id];
           if (val === undefined || val === null || val === "") return null;
           return (
             <Box key={f.id}>
-              <Text fontWeight="semibold">{f.label}</Text>
+              <Text fontWeight="semibold" fontSize="sm">{f.label}</Text>
               <Text fontSize="sm" color="gray.700">
                 {Array.isArray(val) ? val.join(", ") : String(val)}
               </Text>
@@ -227,7 +237,7 @@ export default function Clients() {
     ...initialClient,
     ...c,
     pronouns: c?.pronouns || [],
-    related_patients: c?.related_patients || [],
+    related_clients: c?.related_clients || [],
     termination_reasons: c?.termination_reasons || [],
   });
 
@@ -336,7 +346,7 @@ export default function Clients() {
       {viewMode === "list" ? (
         <>
           <HStack justify="space-between" mb={6}>
-            <Heading>Patients</Heading>
+            <Heading>Clients</Heading>
             <Button
               onClick={() => setViewMode("add")}
               bg="#D14D72"
@@ -416,7 +426,7 @@ export default function Clients() {
       ) : viewMode === "add" ? (
         <>
           <HStack justify="space-between" mb={6}>
-            <Heading>Add a new patient</Heading>
+            <Heading>Add a new client</Heading>
             <HStack>
               <Button
                 onClick={handleAddClient}
@@ -424,7 +434,7 @@ export default function Clients() {
                 color="white"
                 _hover={{ bg: "#276FD1" }}
               >
-                Save patient
+                Save client
               </Button>
               <Button variant="outline" onClick={() => setViewMode("list")}>
                 Cancel
@@ -623,7 +633,7 @@ export default function Clients() {
                     }
                   />
                   <FormHelperText>
-                    These notes will be shown on this patient’s appointments in the calendar.
+                    These notes will be shown on this client’s appointments in the calendar.
                   </FormHelperText>
                 </FormControl>
               </Box>
@@ -634,7 +644,7 @@ export default function Clients() {
                   Privacy policy
                 </Heading>
                 <FormControl>
-                  <FormLabel>Does the patient consent to your privacy policy?</FormLabel>
+                  <FormLabel>Does the client consent to your privacy policy?</FormLabel>
                   <RadioGroup
                     value={newClient.privacy_policy_status}
                     onChange={(val) =>
@@ -650,10 +660,10 @@ export default function Clients() {
                 </FormControl>
               </Box>
 
-              {/* Section 4: Related Patients */}
+              {/* Section 4: Related Clients */}
               <Box>
                 <Heading size="sm" bg="#E8F1FA" p={3} borderRadius="md" mb={4}>
-                  Related patients
+                  Related clients
                 </Heading>
                 <Button variant="outline">Add relationship</Button>
               </Box>
@@ -1045,26 +1055,26 @@ export default function Clients() {
                     />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Patient file number</FormLabel>
+                    <FormLabel>Client file number</FormLabel>
                     <Input
-                      value={newClient.patient_file_number}
+                      value={newClient.client_file_number}
                       onChange={(e) =>
                         setNewClient((c) => ({
                           ...c,
-                          patient_file_number: e.target.value,
+                          client_file_number: e.target.value,
                         }))
                       }
                     />
                   </FormControl>
                 </SimpleGrid>
                 <FormControl mt={4}>
-                  <FormLabel>Terminated patient</FormLabel>
+                  <FormLabel>Terminated client</FormLabel>
                   <RadioGroup
-                    value={newClient.terminated_patient ? "yes" : "no"}
+                    value={newClient.terminated_client ? "yes" : "no"}
                     onChange={(val) =>
                       setNewClient((c) => ({
                         ...c,
-                        terminated_patient: val === "yes",
+                        terminated_client: val === "yes",
                       }))
                     }
                   >
@@ -1084,7 +1094,7 @@ export default function Clients() {
                   >
                     <Stack direction={{ base: "column", md: "row" }}>
                       <Checkbox value="Completed treatment">Completed treatment</Checkbox>
-                      <Checkbox value="Patient request">Patient request</Checkbox>
+                      <Checkbox value="Client request">Client request</Checkbox>
                       <Checkbox value="Non-compliance">Non-compliance</Checkbox>
                       <Checkbox value="Insurance coverage ended">Insurance coverage ended</Checkbox>
                       <Checkbox value="Ethical concerns">Ethical concerns</Checkbox>
@@ -1114,7 +1124,7 @@ export default function Clients() {
                   color="white"
                   _hover={{ bg: "#276FD1" }}
                 >
-                  Save patient
+                  Save client
                 </Button>
                 <Button variant="outline" onClick={() => setViewMode("list")}>
                   Cancel
@@ -1127,7 +1137,7 @@ export default function Clients() {
         <>
           <HStack justify="space-between" mb={6}>
             <Heading>
-              {selectedClient?.name || "Patient"}
+              {selectedClient?.name || "Client"}
             </Heading>
             <HStack>
               {isEditing ? (
@@ -1184,7 +1194,7 @@ export default function Clients() {
             {/* LEFT — contextual nav */}
             <Box w={{ base: "100%", xl: "240px" }} bg="white" borderRadius="lg" p={4} boxShadow="sm">
               <VStack align="stretch" spacing={2}>
-                <NavButton label="Patient details" active={activeSection === "details"} onClick={() => setActiveSection("details")} />
+                <NavButton label="Client details" active={activeSection === "details"} onClick={() => setActiveSection("details")} />
                 <NavButton label="Treatment notes" count={clientNotes.length} active={activeSection === "notes"} onClick={() => setActiveSection("notes")} />
                 <NavButton label="Files" count={clientFiles.length} active={activeSection === "files"} onClick={() => setActiveSection("files")} />
                 <NavButton label="Appointments" count={clientAppointments.length} active={activeSection === "appointments"} onClick={() => setActiveSection("appointments")} />
@@ -1710,26 +1720,26 @@ export default function Clients() {
                             />
                           </FormControl>
                           <FormControl>
-                            <FormLabel>Patient file number</FormLabel>
+                            <FormLabel>Client file number</FormLabel>
                             <Input
-                              value={editClient.patient_file_number || ""}
+                              value={editClient.client_file_number || ""}
                               onChange={(e) =>
                                 setEditClient((c) => ({
                                   ...c,
-                                  patient_file_number: e.target.value,
+                                  client_file_number: e.target.value,
                                 }))
                               }
                             />
                           </FormControl>
                         </SimpleGrid>
                         <FormControl mt={4}>
-                          <FormLabel>Terminated patient</FormLabel>
+                          <FormLabel>Terminated client</FormLabel>
                           <RadioGroup
-                            value={editClient.terminated_patient ? "yes" : "no"}
+                            value={editClient.terminated_client ? "yes" : "no"}
                             onChange={(val) =>
                               setEditClient((c) => ({
                                 ...c,
-                                terminated_patient: val === "yes",
+                                terminated_client: val === "yes",
                               }))
                             }
                           >
@@ -1752,7 +1762,7 @@ export default function Clients() {
                           >
                             <Stack direction={{ base: "column", md: "row" }}>
                               <Checkbox value="Completed treatment">Completed treatment</Checkbox>
-                              <Checkbox value="Patient request">Patient request</Checkbox>
+                              <Checkbox value="Client request">Client request</Checkbox>
                               <Checkbox value="Non-compliance">Non-compliance</Checkbox>
                               <Checkbox value="Insurance coverage ended">Insurance coverage ended</Checkbox>
                               <Checkbox value="Ethical concerns">Ethical concerns</Checkbox>
@@ -1804,8 +1814,8 @@ export default function Clients() {
                         )}
                       </SectionCard>
 
-                      <SectionCard title="Related patients">
-                        {renderInfoRows([["Related patients", selectedClient?.related_patients]])}
+                      <SectionCard title="Related clients">
+                        {renderInfoRows([["Related clients", selectedClient?.related_clients]])}
                       </SectionCard>
 
                       <SectionCard title="General information">
@@ -1862,8 +1872,8 @@ export default function Clients() {
                         {renderInfoRows([
                           ["Nationality", selectedClient?.nationality],
                           ["Civil ID number", selectedClient?.civil_id_number],
-                          ["Patient file number", selectedClient?.patient_file_number],
-                          ["Terminated patient", selectedClient?.terminated_patient ? "Yes" : ""],
+                          ["Client file number", selectedClient?.client_file_number],
+                          ["Terminated client", selectedClient?.terminated_client ? "Yes" : ""],
                           ["Termination reasons", selectedClient?.termination_reasons],
                           ["Additional notes", selectedClient?.termination_notes],
                         ])}

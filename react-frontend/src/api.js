@@ -3,10 +3,11 @@ import axios from "axios";
 // Axios Setup
 // ==============================
 // Use a baseURL WITHOUT trailing slash and pass paths WITHOUT leading slash
-const API_BASE = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(
-  /\/+$/,
-  ""
-);
+const API_BASE = (
+  (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+  (import.meta.env.VITE_API_BASE) || 
+  "http://127.0.0.1:8000/api"
+).replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL: API_BASE,

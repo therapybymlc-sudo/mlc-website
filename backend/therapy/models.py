@@ -230,6 +230,10 @@ class TherapistScreening(models.Model):
     summary_paragraph = models.TextField(blank=True, null=True)
     recommended_therapists = models.ManyToManyField(TherapistProfile, blank=True)
     
+    # Marketing
+    marketing_email_consent = models.BooleanField(default=False)
+    marketing_whatsapp_consent = models.BooleanField(default=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     
     # Linked client if they sign up later

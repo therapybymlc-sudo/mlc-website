@@ -126,12 +126,12 @@ const journalEmotions = [
 const stripHtml = (value) =>
   value ? value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "";
 
-export default function ClientDashboard() {
+export default function ClientDashboard({ initialSection }) {
   const toast = useToast();
   const { logout, isPremium } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const location = useLocation();
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState(initialSection || "overview");
   const [journalContent, setJournalContent] = useState(() => {
     const draft = localStorage.getItem(LOCAL_KEYS.journalDraft);
     if (!draft) return { html: "", text: "" };

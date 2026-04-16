@@ -37,6 +37,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSearch, FiAlertCircle } from "react-icons/fi";
 import { apiPost } from "../api";
 import TherapistCard from "../components/TherapistCard";
+import { useAuth } from "../context/AuthContext";
+import { Link as RouterLink } from "react-router-dom";
 
 const MotionBox = motion(Box);
 
@@ -45,6 +47,7 @@ const MotionBox = motion(Box);
 // ===========================
 
 const SECTIONS = [
+  "Identity",
   "Welcome",
   "Basics",
   "Preferences",
@@ -54,7 +57,7 @@ const SECTIONS = [
   "Support",
   "Risk",
   "Assessment", // DASS-21
-  "Matching",
+  "Marketing", // Final Marketing Step
 ];
 
 const LANGUAGES = [
@@ -112,7 +115,6 @@ const DASS_ITEMS = [
 export default function TherapistDiscovery() {
   const [view, setView] = useState("quiz"); // quiz, results, high_risk
   const [currentSection, setCurrentSection] = useState(0);
-  const [stepInSection, setStepInSection] = useState(0);
   const [quizData, setQuizData] = useState({
     // Basics
     consent: null,
@@ -165,9 +167,15 @@ export default function TherapistDiscovery() {
     immediate_safety_concern: "",
     safety_details: "",
 
+    // Marketing
+    marketing_email_consent: false,
+    marketing_whatsapp_consent: false,
+    
     // Assessment (DASS-21)
     dass_answers: {}, // { '30': 0, ... }
   });
+
+  const { isAuthenticated, user } = useAuth();
 
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -182,12 +190,12 @@ export default function TherapistDiscovery() {
 
   const nextStep = () => {
     // Branching & Safety Overrides
-    if (currentSection === 0 && quizData.consent === "No, I do not wish to continue") {
+    if (currentSection === 1 && quizData.consent === "No, I do not wish to continue") {
       window.location.href = "/";
       return;
     }
 
-    if (currentSection === 7) { // Risk Section
+    if (currentSection === 8) { // Risk Section
       const { suicidal_thoughts, feels_safe, immediate_safety_concern } = quizData;
       if (
         suicidal_thoughts === "Yes, and I feel at risk of acting on these thoughts" ||
@@ -215,12 +223,92 @@ export default function TherapistDiscovery() {
   const submitQuiz = async () => {
     setIsLoading(true);
     try {
+      // 1. Get Matching Results (Backend handles logic)
       const res = await apiPost("therapists/match/", quizData);
       setResults(res);
+
+      // 2. Clinical Integration (If Authenticated Client)
+      if (isAuthenticated && clientProfile?.id) {
+          try {
+            // A. Save Detailed Quiz Responses as a Clinical Note
+            const clinicalNoteBody = `
+--- INITIAL CLINICAL SCREENING (MATCHING QUIZ) ---
+DATE: ${new Date().toLocaleString()}
+
+CONCERNS & INTENSITY:
+- Primary: ${quizData.primary_concern}
+- Duration: ${quizData.duration}
+- Daily Impact: ${quizData.impairment_level}
+- Stress Level self-score: ${quizData.stress_level}/10
+
+ALL CONCERNS: ${quizData.presenting_concerns.join(', ')}
+
+THERAPY PREFERENCES:
+- Type: ${quizData.service_type}
+- Format: ${quizData.session_type_pref}
+- Gender Pref: ${quizData.therapist_gender_pref}
+- Style: ${quizData.therapy_style_pref}
+- Languages: ${quizData.languages.join(', ')} ${quizData.language_other}
+
+CLINICAL HISTORY:
+- Prev Therapy: ${quizData.previous_therapy}
+- Medications: Current(${quizData.medication_current}), Past(${quizData.medication_past})
+- Functioning: Sleep(${quizData.sleep_quality}), Appetite(${quizData.appetite_change})
+
+RISK ASSESSMENT:
+- Immediate Concern: ${quizData.immediate_safety_concern}
+- Safe right now: ${quizData.feels_safe}
+- Detailed notes: ${quizData.safety_details}
+            `;
+
+            await apiPost("notes/", {
+                client: clientProfile.id,
+                title: "Screening: Therapist Discovery Quiz",
+                body: clinicalNoteBody,
+                is_private: true
+            });
+
+            // B. Save DASS-21 Results as a Secure File Attachment
+            if (res.dass_summary) {
+                const reportContent = `
+MLC CLINICAL ASSESSMENT REPORT: DASS-21
+Generated: ${new Date().toLocaleString()}
+
+INTERPRETATION:
+${res.dass_summary}
+
+CLINICAL SCORES:
+- Depression Score: ${res.dass_scores?.depression}
+- Anxiety Score: ${res.dass_scores?.anxiety}
+- Stress Score: ${res.dass_scores?.stress}
+
+DASS Interpretation based on Lovibond & Lovibond (1995).
+                `;
+
+                const blob = new Blob([reportContent], { type: "text/plain" });
+                const formData = new FormData();
+                formData.append("file", blob, `DASS21_Assessment_${new Date().toISOString().slice(0,10)}.txt`);
+                formData.append("client", clientProfile.id);
+                formData.append("title", "Clinical Assessment (DASS-21)");
+                formData.append("is_private", "true");
+
+                const { apiUpload } = await import("../../api");
+                await apiUpload("files/", formData);
+            }
+          } catch (syncErr) {
+            console.error("Clinical sync background failure", syncErr);
+          }
+      }
+
       if (view !== "high_risk") setView("results");
       window.scrollTo(0, 0);
     } catch (err) {
-      toast({ title: "Something went wrong", description: "We couldn't process your request. Please try again.", status: "error" });
+      console.error("Submit quiz yield", err);
+      toast({ 
+        title: "Something went wrong", 
+        description: "We couldn't process your request. Please try again.", 
+        status: "error" 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +320,46 @@ export default function TherapistDiscovery() {
 
   const renderSection = () => {
     switch (currentSection) {
-      case 0: // Welcome
+      case 0: // Identity
+         return (
+           <VStack spacing={10} align="center" textAlign="center" py={10}>
+             <Icon as={FiCheck} w={12} h={12} color="mlc.green" />
+             <VStack spacing={4}>
+               <Heading size="xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">
+                 Before we begin...
+               </Heading>
+               {isAuthenticated ? (
+                 <Box>
+                    <Text fontSize="lg" color="gray.600">
+                      Welcome back, <b>{user?.first_name || "there"}</b>! We've linked this screening to your account.
+                    </Text>
+                    <Button mt={8} bg="mlc.green" color="white" borderRadius="full" px={10} onClick={nextStep}>
+                       Start the Screening
+                    </Button>
+                 </Box>
+               ) : (
+                 <Box>
+                    <Text fontSize="lg" color="gray.600" mb={8}>
+                      To give you a seamless experience and save your results, please take a moment to create your MLC account.
+                    </Text>
+                    <Stack direction={{ base: "column", md: "row" }} spacing={4} justify="center">
+                       <Button as={RouterLink} to="/signup/client" bg="mlc.gold" color="white" borderRadius="full" px={8}>
+                          Create my MLC Account
+                       </Button>
+                       <Button as={RouterLink} to="/login" variant="outline" borderColor="mlc.green" color="mlc.greenDark" borderRadius="full" px={8}>
+                          Log In
+                       </Button>
+                    </Stack>
+                    <Text mt={6} fontSize="sm" color="gray.400">
+                      Already have an account? Log in above to continue.
+                    </Text>
+                 </Box>
+               )}
+             </VStack>
+           </VStack>
+         );
+
+      case 1: // Welcome
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={4}>
@@ -275,7 +402,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 1: // Basics
+      case 2: // Basics
         return (
           <VStack spacing={8} align="stretch">
              <VStack align="flex-start" spacing={2}>
@@ -295,7 +422,7 @@ export default function TherapistDiscovery() {
                   <option value="Woman">Woman</option>
                   <option value="Man">Man</option>
                   <option value="Non-binary">Non-binary</option>
-                  <option value="Other">Prefer to self-describe</option>
+                  <option value="Transgender">Transgender</option>
                   <option value="Prefer not to say">Prefer not to say</option>
                 </Select>
               </FormControl>
@@ -315,8 +442,8 @@ export default function TherapistDiscovery() {
             </VStack>
 
             <VStack align="stretch" spacing={4}>
-              <Text fontWeight="600">Languages you're comfortable with</Text>
-              <InputGroup size="md">
+              <Text fontWeight="600">Which languages would you be comfortable in for therapy? (Select all that apply)</Text>
+               <InputGroup size="md" mb={4}>
                 <InputLeftElement pointerEvents="none" children={<FiSearch color="gray.300" />} />
                 <Input 
                   placeholder="Type to find a language..." 
@@ -324,32 +451,34 @@ export default function TherapistDiscovery() {
                   onChange={(e) => setSearchLang(e.target.value)}
                 />
               </InputGroup>
-              <Wrap spacing={2}>
-                {LANGUAGES.filter(l => l.toLowerCase().includes(searchLang.toLowerCase())).map(l => (
-                   <WrapItem key={l}>
+              <Wrap spacing={3}>
+                {LANGUAGES.filter(lang => lang.toLowerCase().includes(searchLang.toLowerCase())).map(lang => (
+                  <WrapItem key={lang}>
                     <Tag 
                       size="lg" 
-                      colorScheme={quizData.languages.includes(l) ? "teal" : "gray"} 
+                      variant={quizData.languages.includes(lang) ? "solid" : "outline"} 
+                      colorScheme="teal"
                       cursor="pointer"
                       onClick={() => {
                         const current = quizData.languages;
-                        if (current.includes(l)) setQuizData({...quizData, languages: current.filter(x => x !== l)});
-                        else setQuizData({...quizData, languages: [...current, l]});
+                        if (current.includes(lang)) setQuizData({...quizData, languages: current.filter(l => l !== lang)});
+                        else setQuizData({...quizData, languages: [...current, lang]});
                       }}
                     >
-                      {l}
+                      {lang}
                     </Tag>
                   </WrapItem>
                 ))}
                 <WrapItem>
-                   <Tag 
+                  <Tag 
                     size="lg" 
-                    colorScheme={quizData.languages.includes("Other") ? "teal" : "gray"} 
+                    variant={quizData.languages.includes("Other") ? "solid" : "outline"} 
+                    colorScheme="teal"
                     cursor="pointer"
                     onClick={() => {
-                       const current = quizData.languages;
-                       if (current.includes("Other")) setQuizData({...quizData, languages: current.filter(x => x !== "Other")});
-                       else setQuizData({...quizData, languages: [...current, "Other"]});
+                        const current = quizData.languages;
+                        if (current.includes("Other")) setQuizData({...quizData, languages: current.filter(l => l !== "Other")});
+                        else setQuizData({...quizData, languages: [...current, "Other"]});
                     }}
                   >
                     Other
@@ -363,7 +492,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 2: // Preferences
+      case 3: // Preferences
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={2}>
@@ -448,7 +577,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 3: // Concerns
+      case 4: // Concerns
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={2}>
@@ -543,7 +672,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 4: // History
+      case 5: // History
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={2}>
@@ -618,7 +747,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 5: // Functioning
+      case 6: // Functioning
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={2}>
@@ -678,7 +807,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 6: // Support
+      case 7: // Support
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={2}>
@@ -734,7 +863,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 7: // Risk
+      case 8: // Risk
         return (
           <VStack spacing={8} align="stretch">
             <VStack align="flex-start" spacing={2}>
@@ -796,7 +925,7 @@ export default function TherapistDiscovery() {
           </VStack>
         );
 
-      case 8: // DASS-21
+      case 9: // Assessment (DASS-21)
         return (
           <VStack spacing={8} align="stretch">
              <VStack align="flex-start" spacing={2}>
@@ -833,25 +962,61 @@ export default function TherapistDiscovery() {
                  )
                })}
             </VStack>
-
-            <Box textAlign="center" py={10}>
-               <Heading size="md" color="mlc.greenDark" mb={4}>Thank you for your openness.</Heading>
-               <Button 
-                size="xl" 
-                bg="mlc.green" 
-                color="white" 
-                px={12} 
-                borderRadius="full" 
-                isLoading={isLoading}
-                onClick={nextStep}
-                _hover={{ bg: "#56756D" }}
-               >
-                 Discover My Matches
-               </Button>
-            </Box>
           </VStack>
         );
 
+      case 10: // Marketing
+         return (
+           <VStack spacing={10} align="stretch">
+              <VStack align="flex-start" spacing={3}>
+                <Heading size="lg" color="mlc.greenDark">Stay Connected</Heading>
+                <Text color="gray.600">We’d love to share more resources for your mental health journey with you.</Text>
+              </VStack>
+              
+              <VStack align="stretch" spacing={6} p={8} bg="#FBF8F3" borderRadius="2xl" border="1px solid" borderColor="mlc.gold">
+                  <Checkbox 
+                    size="lg" 
+                    colorScheme="teal"
+                    isChecked={quizData.marketing_email_consent}
+                    onChange={(e) => setQuizData({...quizData, marketing_email_consent: e.target.checked})}
+                  >
+                    <VStack align="flex-start" spacing={0}>
+                      <Text fontWeight="600">Keep me inspired</Text>
+                      <Text fontSize="sm" color="gray.500">I’d like to receive mental health insights, expert advice, and MLC community news via email.</Text>
+                    </VStack>
+                  </Checkbox>
+
+                  <Divider borderColor="gray.200" />
+
+                  <Checkbox 
+                    size="lg" 
+                    colorScheme="teal"
+                    isChecked={quizData.marketing_whatsapp_consent}
+                    onChange={(e) => setQuizData({...quizData, marketing_whatsapp_consent: e.target.checked})}
+                  >
+                    <VStack align="flex-start" spacing={0}>
+                      <Text fontWeight="600">Join our community on WhatsApp</Text>
+                      <Text fontSize="sm" color="gray.500">I’d like to receive occasional updates, quick tips, and special offers directly on WhatsApp.</Text>
+                    </VStack>
+                  </Checkbox>
+              </VStack>
+
+              <Box textAlign="center" py={6}>
+                 <Button 
+                    size="xl" 
+                    bg="mlc.green" 
+                    color="white" 
+                    px={16} 
+                    borderRadius="full" 
+                    isLoading={isLoading}
+                    onClick={submitQuiz}
+                    _hover={{ bg: "#56756D" }}
+                 >
+                   Reveal My Matches
+                 </Button>
+              </Box>
+           </VStack>
+         );
       default:
         return null;
     }
@@ -865,29 +1030,28 @@ export default function TherapistDiscovery() {
     return (
       <Box minH="100vh" bg="#FFF5F5" pt={32} pb={20}>
          <Container maxW="3xl">
-           <VStack spacing={8} align="center" textAlign="center">
+           <VStack spacing={10} bg="white" p={12} borderRadius="3xl" shadow="2xl" textAlign="center">
              <Icon as={FiAlertCircle} w={20} h={20} color="red.500" />
-             <Heading color="red.800">Timely Support Matters</Heading>
-             <Text fontSize="lg" color="red.700">
-               Thank you for sharing with us. Some of your responses suggest that you might need immediate support right now.
-             </Text>
-             <VStack p={10} bg="white" borderRadius="3xl" boxShadow="xl" spacing={6} align="stretch" w="full">
-                <Text fontWeight="600" fontSize="xl" color="mlc.greenDark">If you are in immediate danger:</Text>
-                <VStack spacing={4}>
-                   <Box p={6} borderRadius="xl" bg="gray.50" border="1px solid" borderColor="gray.200">
-                      <Text fontWeight="700" mb={1}>Emergency Services</Text>
-                      <Text color="gray.600">Please call your local emergency number (e.g., 911, 102, 999) or head to the nearest hospital emergency room.</Text>
-                   </Box>
-                   <Box p={6} borderRadius="xl" bg="gray.50" border="1px solid" borderColor="gray.200">
-                      <Text fontWeight="700" mb={1}>Crisis Support</Text>
-                      <Text color="gray.600">Reach out to a 24/7 crisis helpline in your region. They are there to listen and support you.</Text>
-                   </Box>
-                </VStack>
-                <Divider />
-                <Text color="gray.600">
-                  We have received your screening and our team will prioritize your submission. We will get in touch as soon as practically possible to guide you toward specialized care.
-                </Text>
-                <Button as="a" href="/" colorScheme="teal" variant="ghost">Return Home</Button>
+             <VStack spacing={4}>
+               <Heading size="xl" color="red.700">Your safety is our priority</Heading>
+               <Text fontSize="lg" color="gray.700">
+                 Based on your responses, we want to ensure you have the immediate support you deserve. 
+                 MLC regular therapy sessions are not suitable for crisis intervention.
+               </Text>
+             </VStack>
+
+             <VStack spacing={6} w="full">
+               <Box w="full" p={6} bg="red.50" borderRadius="2xl" border="1px solid" borderColor="red.100">
+                  <Heading size="md" color="red.700" mb={4}>Crisis Resources</Heading>
+                  <VStack align="flex-start" spacing={3}>
+                    <Text fontWeight="600">• Call your local emergency services (999, 911, etc.)</Text>
+                    <Text fontWeight="600">• Reach out to a 24/7 Crisis Hotline</Text>
+                    <Text fontWeight="600">• Go to the nearest hospital emergency room</Text>
+                  </VStack>
+               </Box>
+               <Button as={RouterLink} to="/" colorScheme="red" size="lg" borderRadius="full" px={10}>
+                 Back to Home
+               </Button>
              </VStack>
            </VStack>
          </Container>
@@ -901,54 +1065,64 @@ export default function TherapistDiscovery() {
 
   if (view === "results") {
     return (
-      <Box pt={32} pb={20} bg="#F9F9F9">
-        <Container maxW="5xl">
-          <VStack align="stretch" spacing={12}>
-            {/* DASS Summary Header */}
-            <Box p={10} bg="white" borderRadius="3xl" boxShadow="lg" border="1px solid" borderColor="mlc.green">
-               <Heading size="lg" color="mlc.greenDark" mb={4} fontFamily="'Playfair Display', serif">Your Screening Summary</Heading>
-               <Text fontSize="lg" lineHeight="tall" color="gray.700 italic">
-                 "{results?.dass_summary}"
-               </Text>
-            </Box>
-
-            <VStack align="stretch" spacing={6}>
-               <Heading size="xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">
-                 Your Handpicked Matches
-               </Heading>
-               <Text color="gray.600">
-                 Based on your concerns, history, and the emotional profile captured today, these therapists are particularly well-equipped to support you.
-               </Text>
-               
-               {results?.matches && results.matches.length > 0 ? (
-                 <VStack align="stretch" spacing={8}>
-                    {results.matches.map(t => (
-                      <TherapistCard key={t.id} therapist={t} isMatch={true} />
-                    ))}
-                 </VStack>
-               ) : (
-                 <Box p={10} bg="white" borderRadius="2xl" textAlign="center" border="1px dashed" borderColor="gray.300">
-                   <Text color="gray.500">We couldn't find an exact match for all your current criteria, but these specialists are excellent options who might still be a great fit.</Text>
-                 </Box>
-               )}
-            </VStack>
-
-            {results?.others && results.others.length > 0 && (
-              <VStack align="stretch" spacing={8}>
-                 <Heading size="md" color="mlc.greenDark" borderBottom="1px solid" borderColor="gray.200" pb={4}>
-                   Other Specialists at MLC
-                 </Heading>
-                 {results.others.map(t => (
-                    <TherapistCard key={t.id} therapist={t} />
-                 ))}
+      <Box minH="100vh" bg="#F7F9F8" pt={32} pb={20}>
+        <Container maxW="6xl">
+          <VStack spacing={12} align="stretch">
+            {/* Summary Card */}
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              bg="white"
+              p={10}
+              borderRadius="3xl"
+              shadow="xl"
+              borderTop="8px solid"
+              borderTopColor="mlc.green"
+            >
+              <VStack align="flex-start" spacing={6}>
+                <Heading color="mlc.greenDark" fontFamily="'Playfair Display', serif">
+                  Your Personalized Insights
+                </Heading>
+                <Text fontSize="lg" color="gray.700" lineHeight="tall">
+                  {results?.dass_summary || "We've analyzed your responses to find the best support path for you."}
+                </Text>
               </VStack>
-            )}
+            </MotionBox>
 
-            <VStack py={10} textAlign="center" spacing={4}>
-               <Text color="gray.500">Not quite finding the right person?</Text>
-               <Button as="a" href="/contactus" variant="link" color="mlc.greenDark">Talk to our care team directly</Button>
-               <Button variant="ghost" size="sm" onClick={() => setView("quiz")} color="gray.400">Retake screening</Button>
+            {/* Matches Section */}
+            <VStack align="stretch" spacing={8}>
+              <Heading size="lg" color="mlc.greenDark">Best Matches for You</Heading>
+              {results?.matches?.length > 0 ? (
+                <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
+                  {results.matches.map(therapist => (
+                    <TherapistCard key={therapist.id} therapist={therapist} />
+                  ))}
+                </SimpleGrid>
+              ) : (
+                <Box p={10} bg="mlc.peachHighlight" borderRadius="2xl" textAlign="center">
+                  <Text fontSize="lg" color="mlc.greenDark" fontWeight="500">
+                    We are working to onboard more therapists that fit your exact needs, and we will reach out to you as soon as we have someone who does.
+                  </Text>
+                </Box>
+              )}
             </VStack>
+
+            {/* Others Section */}
+            <VStack align="stretch" spacing={8}>
+              <Heading size="lg" color="mlc.greenDark">Other Available Specialists</Heading>
+              <Text color="gray.600">While they may not be an exact match for your primary preference, these specialists are highly recommended members of our team.</Text>
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8}>
+                {results?.others?.map(therapist => (
+                  <TherapistCard key={therapist.id} therapist={therapist} />
+                ))}
+              </SimpleGrid>
+            </VStack>
+
+            <Box textAlign="center" pt={10}>
+              <Button as={RouterLink} to="/therapists" variant="outline" colorScheme="teal" borderRadius="full" px={10}>
+                View All Therapists
+              </Button>
+            </Box>
           </VStack>
         </Container>
       </Box>
@@ -956,75 +1130,64 @@ export default function TherapistDiscovery() {
   }
 
   // ===========================
-  // 🔹 Main Return
+  // 🔹 Quiz View (Main)
   // ===========================
 
   return (
-    <Box minH="100vh" bg="#FBF8F3" pt={32} pb={20}>
-      <Container maxW="4xl">
-        <VStack spacing={10} align="stretch">
-           <Box>
-              <HStack justify="space-between" mb={2}>
-                 <Text fontWeight="700" color="mlc.greenDark" fontSize="sm">{SECTIONS[currentSection]}</Text>
-                 <Text fontSize="xs" color="gray.500">Step {currentSection + 1} of {SECTIONS.length}</Text>
-              </HStack>
-              <Progress 
-                value={progress} 
-                size="xs" 
-                colorScheme="teal" 
-                bg="white" 
-                borderRadius="full" 
-                transition="all 0.5s"
-              />
-           </Box>
+    <Box minH="100vh" bg="#FDFBFA" pt={24} pb={20}>
+      <Container maxW="3xl">
+        <VStack spacing={8} align="stretch">
+          {/* Header */}
+          <VStack align="flex-start" spacing={4}>
+             <HStack w="full" justify="space-between">
+                <Heading size="md" color="mlc.greenDark">Discovery Quiz</Heading>
+                <Text fontSize="sm" color="gray.500">Section {currentSection + 1} of {SECTIONS.length}</Text>
+             </HStack>
+             <Progress value={progress} w="full" colorScheme="teal" borderRadius="full" size="sm" bg="gray.100" />
+          </VStack>
 
-           <AnimatePresence mode="wait">
-             <MotionBox
+          {/* Card */}
+          <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="3xl" shadow="xl" border="1px solid" borderColor="gray.100">
+            <AnimatePresence mode="wait">
+              <MotionBox
                 key={currentSection}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                bg="white"
-                p={{ base: 8, md: 16 }}
-                borderRadius="3xl"
-                boxShadow="xl"
-             >
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
                 {renderSection()}
+              </MotionBox>
+            </AnimatePresence>
 
-                {currentSection < SECTIONS.length - 1 && (
-                  <HStack justify="space-between" mt={16}>
-                    <Button 
-                      variant="ghost" 
-                      leftIcon={<FiArrowLeft />} 
-                      onClick={prevStep}
-                      isDisabled={currentSection === 0}
-                      color="gray.400"
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      bg="mlc.gold" 
-                      color="white" 
-                      px={10} 
-                      borderRadius="full" 
-                      onClick={nextStep}
-                      _hover={{ bg: "mlc.green" }}
-                      rightIcon={<FiArrowRight />}
-                      isDisabled={currentSection === 0 && !quizData.consent}
-                    >
-                      Continue
-                    </Button>
-                  </HStack>
-                )}
-             </MotionBox>
-           </AnimatePresence>
+            {/* Navigation */}
+            <HStack justify="space-between" mt={12} pt={8} borderTop="1px solid" borderColor="gray.100">
+              <Button 
+                variant="ghost" 
+                leftIcon={<FiArrowLeft />} 
+                onClick={prevStep}
+                isDisabled={currentSection === 0}
+              >
+                Back
+              </Button>
+              {currentSection < SECTIONS.length - 1 && (
+                <Button 
+                  bg="mlc.green" 
+                  color="white" 
+                  rightIcon={<FiArrowRight />}
+                  px={8}
+                  borderRadius="full"
+                  onClick={nextStep}
+                  isLoading={isLoading}
+                  _hover={{ bg: "#56756D" }}
+                >
+                  Continue
+                </Button>
+              )}
+            </HStack>
+          </Box>
         </VStack>
       </Container>
     </Box>
   );
 }
-
-// ===========================
-// 🔹 Helper Components
-// ===========================

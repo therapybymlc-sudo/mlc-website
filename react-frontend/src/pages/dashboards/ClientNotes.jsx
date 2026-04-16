@@ -163,6 +163,14 @@ function FieldInput({ field, value, onChange, isReadOnly = false }) {
       );
     }
 
+    case "section":
+      return (
+        <Box pt={6} pb={2} borderBottom="2px solid" borderColor="mlc.green" mb={2}>
+           <Heading size="xs" color="mlc.greenDark" letterSpacing="widest" textTransform="uppercase">
+             {field.label}
+           </Heading>
+        </Box>
+      );
     default:
       return <Input value={value ?? ""} onChange={(e) => set(e.target.value)} isReadOnly={isReadOnly} />;
   }
@@ -327,18 +335,33 @@ export default function ClientNotes() {
 
   const setFieldValue = (fieldId, val) => setValues((v) => ({ ...v, [fieldId]: val }));
 
-  /* ---------- Template Section Helpers ---------- */
+  /* ---------- Template Movement Helpers ---------- */
+  const moveSection = (index, direction) => {
+    setTemplateForm(prev => {
+      const sections = [...prev.sections];
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= sections.length) return prev;
+      [sections[index], sections[newIndex]] = [sections[newIndex], sections[index]];
+      return { ...prev, sections };
+    });
+  };
+
+  const moveFieldInSection = (si, fi, direction) => {
+    setTemplateForm(prev => {
+      const sections = [...prev.sections];
+      const fields = [...sections[si].fields];
+      const newIndex = fi + direction;
+      if (newIndex < 0 || newIndex >= fields.length) return prev;
+      [fields[fi], fields[newIndex]] = [fields[newIndex], fields[fi]];
+      sections[si].fields = fields.map((f, i) => ({ ...f, order: i }));
+      return { ...prev, sections };
+    });
+  };
+
   const addSection = () => {
     setTemplateForm((prev) => ({
       ...prev,
-      sections: [
-        ...prev.sections,
-        {
-          title: `Section ${prev.sections.length + 1}`,
-          description: "",
-          fields: [],
-        },
-      ],
+      sections: [...prev.sections, { title: `New Section`, description: "", fields: [] }],
     }));
   };
 
@@ -545,9 +568,11 @@ export default function ClientNotes() {
             )}
             <Box p={4}>
             <VStack align="stretch" spacing={4}>
-              {(section.fields || []).map((f) => (
-                <FormControl key={f.id || `${si}-${f.label}`} isRequired={f.is_required}>
-                  <FormLabel>{f.label}</FormLabel>
+              {(section.fields || [])
+                .sort((a,b) => (a.order||0) - (b.order||0))
+                .map((f) => (
+                <FormControl key={f.id || `${si}-${f.label}`} isRequired={f.is_required && f.field_type !== 'section'}>
+                  {f.field_type !== "section" && <FormLabel fontSize="sm" fontWeight="600">{f.label}</FormLabel>}
                   <FieldInput field={f} value={values[f.id]} onChange={setFieldValue} isReadOnly={isNoteReadOnly} />
                 </FormControl>
               ))}
@@ -609,7 +634,7 @@ export default function ClientNotes() {
           <DrawerBody>
             <VStack align="stretch" spacing={2}>
               <ClientNavButton
-                label="Patient details"
+                label="Client details"
                 active={activeSection === "details"}
                 onClick={() => {
                   navigate(`/dashboard/therapist?tab=clients`);
@@ -809,7 +834,7 @@ export default function ClientNotes() {
                 <Tabs variant="enclosed">
                   <TabList>
                     <Tab>Previous notes</Tab>
-                    <Tab>Patient info</Tab>
+                    <Tab>Client info</Tab>
                     <Tab>Appointments</Tab>
                   </TabList>
                   <TabPanels>
@@ -924,7 +949,7 @@ export default function ClientNotes() {
             >
               <VStack align="stretch" spacing={2}>
                 <ClientNavButton
-                  label="Patient details"
+                  label="Client details"
                   active={activeSection === "details"}
                   onClick={() => navigate(`/dashboard/therapist?tab=clients`)}
                 />
@@ -1005,288 +1030,226 @@ export default function ClientNotes() {
         <ModalContent>
           <ModalHeader>{editingTemplate ? "Edit Template" : "New Template"}</ModalHeader>
           <ModalBody>
-            <VStack align="stretch" spacing={6}>
-              <FormControl isRequired>
-                <FormLabel>Name</FormLabel>
-                <Input
-                  value={templateForm.name}
-                  onChange={(e) => setTemplateForm((p) => ({ ...p, name: e.target.value }))}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Description</FormLabel>
-                <Textarea
-                  value={templateForm.description}
-                  onChange={(e) => setTemplateForm((p) => ({ ...p, description: e.target.value }))}
-                  whiteSpace="pre-wrap"
-                  resize="vertical"
-                />
-              </FormControl>
-
-              <Divider />
-              <Heading size="sm">Sections</Heading>
-
-              {templateForm.sections.map((section, si) => (
-                <Box key={si} border="1px solid #E2E8F0" borderRadius="lg" p={4} mb={4}>
-                  <HStack justify="space-between" mb={3}>
-                    <Heading size="sm">{section.title || `Section ${si + 1}`}</Heading>
-                    <Button
-                      size="xs"
-                      colorScheme="red"
-                      leftIcon={<DeleteIcon />}
-                      variant="ghost"
-                      onClick={() => removeSection(si)}
-                    >
-                      Delete Section
-                    </Button>
-                  </HStack>
-
-                  <FormControl mb={3}>
-                    <FormLabel>Section Title</FormLabel>
+            <VStack align="stretch" spacing={8}>
+                <VStack align="stretch" spacing={4}>
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="bold">Template Name</FormLabel>
                     <Input
-                      value={section.title}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTemplateForm((prev) => {
-                          const sections = [...prev.sections];
-                          sections[si].title = val;
-                          return { ...prev, sections };
-                        });
-                      }}
+                      bg="white"
+                      size="lg"
+                      borderRadius="xl"
+                      placeholder="e.g., Initial Clinical Intake"
+                      value={templateForm.name}
+                      onChange={(e) => setTemplateForm((p) => ({ ...p, name: e.target.value }))}
                     />
                   </FormControl>
 
-                  <FormControl mb={3}>
-                    <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <FormLabel fontWeight="bold">Internal Description</FormLabel>
                     <Textarea
-                      value={section.description}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTemplateForm((prev) => {
-                          const sections = [...prev.sections];
-                          sections[si].description = val;
-                          return { ...prev, sections };
-                        });
-                      }}
-                      whiteSpace="pre-wrap"
-                      resize="vertical"
+                      bg="white"
+                      borderRadius="xl"
+                      placeholder="Optional notes for other therapists about when to use this template..."
+                      value={templateForm.description}
+                      onChange={(e) => setTemplateForm((p) => ({ ...p, description: e.target.value }))}
                     />
                   </FormControl>
+                </VStack>
 
-                  <Divider my={3} />
-                  <Heading size="xs" mb={2}>Fields in this Section</Heading>
+                <Divider />
 
-                  {section.fields.map((f, fi) => (
-                    <Box key={fi} p={3} border="1px solid #E2E8F0" borderRadius="md" mb={2}>
-                      <HStack align="start" spacing={3}>
-                        <FormControl>
-                          <FormLabel>Label</FormLabel>
-                          <Input
-                            value={f.label}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                sections[si].fields[fi].label = val;
-                                return { ...prev, sections };
-                              });
-                            }}
-                          />
-                        </FormControl>
-
-                        <FormControl w="200px">
-                          <FormLabel>Type</FormLabel>
-                          <Select
-                            value={f.field_type}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                sections[si].fields[fi].field_type = val;
-                                return { ...prev, sections };
-                              });
-                            }}
-                          >
-                            <option value="text">Text</option>
-                            <option value="textarea">Large Text</option>
-                            <option value="number">Number</option>
-                            <option value="date">Date</option>
-                            <option value="choice">Multiple Choice</option>
-                            <option value="select">Dropdown</option>
-                            <option value="checkboxes">Checkboxes</option>
-                            <option value="likert">Likert Scale</option>
-                          </Select>
-                        </FormControl>
-
-                        <FormControl w="100px">
-                          <FormLabel>Order</FormLabel>
-                          <Input
-                            type="number"
-                            value={f.order}
-                            onChange={(e) => {
-                              const val = Number(e.target.value);
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                sections[si].fields[fi].order = val;
-                                return { ...prev, sections };
-                              });
-                            }}
-                          />
-                        </FormControl>
-
-                        <FormControl w="120px" pt={6}>
-                          <Checkbox
-                            isChecked={!!f.is_required}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                sections[si].fields[fi].is_required = checked;
-                                return { ...prev, sections };
-                              });
-                            }}
-                          >
-                            Required
-                          </Checkbox>
-                        </FormControl>
-
-                        <Button
-                          size="xs"
-                          colorScheme="red"
-                          variant="ghost"
-                          onClick={() => removeFieldFromSection(si, fi)}
-                        >
-                          Remove
-                        </Button>
+                <VStack align="stretch" spacing={8}>
+                  {templateForm.sections.map((section, si) => (
+                    <Box key={si} p={5} border="1px solid #E2E8F0" borderRadius="2xl" bg="white" shadow="sm" position="relative">
+                      <HStack justify="space-between" mb={4}>
+                         <HStack flex="1">
+                            <VStack spacing={0}>
+                               <IconButton size="xs" variant="ghost" icon={<Text fontSize="xs">▲</Text>} onClick={() => moveSection(si, -1)} isDisabled={si === 0} aria-label="up" />
+                               <IconButton size="xs" variant="ghost" icon={<Text fontSize="xs">▼</Text>} onClick={() => moveSection(si, 1)} isDisabled={si === templateForm.sections.length - 1} aria-label="down" />
+                            </VStack>
+                            <Box flex="1">
+                               <Input
+                                 fontWeight="bold"
+                                 variant="unstyled"
+                                 fontSize="lg"
+                                 placeholder="Section Title (e.g. Risk Assessment)"
+                                 value={section.title}
+                                 onChange={(e) => {
+                                   const val = e.target.value;
+                                   setTemplateForm((p) => {
+                                     const s = [...p.sections];
+                                     s[si].title = val;
+                                     return { ...p, sections: s };
+                                   });
+                                 }}
+                               />
+                               <Input
+                                 variant="unstyled"
+                                 fontSize="xs"
+                                 color="gray.500"
+                                 placeholder="Describe the purpose of this section..."
+                                 value={section.description}
+                                 onChange={(e) => {
+                                   const val = e.target.value;
+                                   setTemplateForm((p) => {
+                                     const s = [...p.sections];
+                                     s[si].description = val;
+                                     return { ...p, sections: s };
+                                   });
+                                 }}
+                               />
+                            </Box>
+                         </HStack>
+                         <Button size="xs" colorScheme="red" variant="ghost" onClick={() => removeSection(si)}>Remove Section</Button>
                       </HStack>
 
-                      {["choice", "select", "checkboxes"].includes(f.field_type) && (
-                        <Box mt={3}>
-                          <FormLabel mb={1}>Choices (comma or newline separated)</FormLabel>
-                          {/* ✅ FIX: allow typing commas/spaces freely */}
-                          <Textarea
-                            placeholder="Example: Calm, Anxious, Irritable"
-                            defaultValue={(f.options?.choices || []).join(", ")}
-                            whiteSpace="pre-wrap"
-                            resize="vertical"
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              // store raw text temporarily for display
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                sections[si].fields[fi].options._choicesText = val; // temporary
-                                return { ...prev, sections };
-                              });
-                            }}
-                            onBlur={(e) => {
-                              const newChoices = normalizeChoices(e.target.value);
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                sections[si].fields[fi].options.choices = newChoices;
-                                delete sections[si].fields[fi].options._choicesText;
-                                return { ...prev, sections };
-                              });
-                            }}
-                          />
-                          <Checkbox
-                            mt={2}
-                            isChecked={!!f.options?.allow_other}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setTemplateForm((prev) => {
-                                const sections = [...prev.sections];
-                                if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                sections[si].fields[fi].options.allow_other = checked;
-                                return { ...prev, sections };
-                              });
-                            }}
-                          >
-                            Allow “Other” free-text
-                          </Checkbox>
-                        </Box>
-                      )}
+                      <VStack align="stretch" spacing={3} pl={6} borderLeft="2px solid" borderColor="gray.100">
+                        {section.fields.map((f, fi) => (
+                          <Box key={fi} p={3} bg="gray.50" borderRadius="xl" position="relative" role="group">
+                            <HStack spacing={3} align="flex-end">
+                              <VStack spacing={0}>
+                                 <IconButton size="xs" variant="ghost" icon={<Text fontSize="9px">▲</Text>} onClick={() => moveFieldInSection(si, fi, -1)} isDisabled={fi === 0} aria-label="up" />
+                                 <IconButton size="xs" variant="ghost" icon={<Text fontSize="9px">▼</Text>} onClick={() => moveFieldInSection(si, fi, 1)} isDisabled={fi === section.fields.length - 1} aria-label="down" />
+                              </VStack>
 
-                      {f.field_type === "likert" && (
-                        <HStack mt={3} spacing={3}>
-                          <FormControl w="110px">
-                            <FormLabel>Min</FormLabel>
-                            <Input
-                              type="number"
-                              value={f.options?.min ?? 1}
-                              onChange={(e) => {
-                                const val = Number(e.target.value);
-                                setTemplateForm((prev) => {
-                                  const sections = [...prev.sections];
-                                  if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                  sections[si].fields[fi].options.min = val;
-                                  return { ...prev, sections };
-                                });
-                              }}
-                            />
-                          </FormControl>
-                          <FormControl w="110px">
-                            <FormLabel>Max</FormLabel>
-                            <Input
-                              type="number"
-                              value={f.options?.max ?? 5}
-                              onChange={(e) => {
-                                const val = Number(e.target.value);
-                                setTemplateForm((prev) => {
-                                  const sections = [...prev.sections];
-                                  if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                  sections[si].fields[fi].options.max = val;
-                                  return { ...prev, sections };
-                                });
-                              }}
-                            />
-                          </FormControl>
-                          <FormControl>
-                            <FormLabel>Min label</FormLabel>
-                            <Input
-                              value={f.options?.min_label ?? "Low"}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setTemplateForm((prev) => {
-                                  const sections = [...prev.sections];
-                                  if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                  sections[si].fields[fi].options.min_label = val;
-                                  return { ...prev, sections };
-                                });
-                              }}
-                            />
-                          </FormControl>
-                          <FormControl>
-                            <FormLabel>Max label</FormLabel>
-                            <Input
-                              value={f.options?.max_label ?? "High"}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setTemplateForm((prev) => {
-                                  const sections = [...prev.sections];
-                                  if (!sections[si].fields[fi].options) sections[si].fields[fi].options = {};
-                                  sections[si].fields[fi].options.max_label = val;
-                                  return { ...prev, sections };
-                                });
-                              }}
-                            />
-                          </FormControl>
-                        </HStack>
-                      )}
+                              <FormControl flex={1}>
+                                <FormLabel fontSize="xs" fontWeight="700" color="gray.500">QUESTION LABEL</FormLabel>
+                                <Input
+                                  bg="white"
+                                  size="sm"
+                                  borderRadius="md"
+                                  value={f.label}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTemplateForm((prev) => {
+                                      const sections = [...prev.sections];
+                                      sections[si].fields[fi].label = val;
+                                      return { ...prev, sections };
+                                    });
+                                  }}
+                                />
+                              </FormControl>
+
+                              <FormControl w="140px">
+                                <FormLabel fontSize="xs" fontWeight="700" color="gray.500">TYPE</FormLabel>
+                                <Select
+                                  bg="white"
+                                  size="sm"
+                                  borderRadius="md"
+                                  value={f.field_type}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTemplateForm((prev) => {
+                                      const sections = [...prev.sections];
+                                      sections[si].fields[fi].field_type = val;
+                                      return { ...prev, sections };
+                                    });
+                                  }}
+                                >
+                                  <option value="text">Text</option>
+                                  <option value="textarea">Large Text</option>
+                                  <option value="number">Number</option>
+                                  <option value="date">Date</option>
+                                  <option value="choice">Choice</option>
+                                  <option value="select">Dropdown</option>
+                                  <option value="checkboxes">Checkboxes</option>
+                                  <option value="likert">Likert</option>
+                                  <option value="section">--- SECTION HEADER ---</option>
+                                </Select>
+                              </FormControl>
+
+                              <IconButton aria-label="Remove" icon={<DeleteIcon />} size="xs" colorScheme="red" variant="ghost" onClick={() => removeFieldFromSection(si, fi)} />
+                            </HStack>
+
+                            {/* Options for multi-choice */}
+                            {["choice", "select", "checkboxes"].includes(f.field_type) && (
+                                <Box mt={3} pl={8}>
+                                    <Textarea
+                                        size="xs"
+                                        bg="white"
+                                        placeholder="Choices, separated by commas or new lines..."
+                                        defaultValue={(f.options?.choices || []).join(", ")}
+                                        onBlur={(e) => {
+                                          const newChoices = normalizeChoices(e.target.value);
+                                          setTemplateForm((p) => {
+                                            const s = [...p.sections];
+                                            s[si].fields[fi].options = { ...s[si].fields[fi].options, choices: newChoices };
+                                            return { ...p, sections: s };
+                                          });
+                                        }}
+                                    />
+                                </Box>
+                            )}
+
+                            {f.field_type === "likert" && (
+                                <HStack mt={3} pl={8} spacing={4}>
+                                   <FormControl>
+                                      <FormLabel fontSize="xs">Min</FormLabel>
+                                      <Input size="xs" type="number" value={f.options?.min ?? 1} onChange={(e) => {
+                                         const val = Number(e.target.value);
+                                         setTemplateForm(p => {
+                                            const s = [...p.sections];
+                                            s[si].fields[fi].options = { ...s[si].fields[fi].options, min: val };
+                                            return { ...p, sections: s };
+                                         });
+                                      }} />
+                                   </FormControl>
+                                   <FormControl>
+                                      <FormLabel fontSize="xs">Max</FormLabel>
+                                      <Input size="xs" type="number" value={f.options?.max ?? 5} onChange={(e) => {
+                                         const val = Number(e.target.value);
+                                         setTemplateForm(p => {
+                                            const s = [...p.sections];
+                                            s[si].fields[fi].options = { ...s[si].fields[fi].options, max: val };
+                                            return { ...p, sections: s };
+                                         });
+                                      }} />
+                                   </FormControl>
+                                   <FormControl>
+                                      <FormLabel fontSize="xs">Min Label</FormLabel>
+                                      <Input size="xs" value={f.options?.min_label || "Low"} onChange={(e) => {
+                                         const val = e.target.value;
+                                         setTemplateForm(p => {
+                                            const s = [...p.sections];
+                                            s[si].fields[fi].options = { ...s[si].fields[fi].options, min_label: val };
+                                            return { ...p, sections: s };
+                                         });
+                                      }} />
+                                   </FormControl>
+                                   <FormControl>
+                                      <FormLabel fontSize="xs">Max Label</FormLabel>
+                                      <Input size="xs" value={f.options?.max_label || "High"} onChange={(e) => {
+                                         const val = e.target.value;
+                                         setTemplateForm(p => {
+                                            const s = [...p.sections];
+                                            s[si].fields[fi].options = { ...s[si].fields[fi].options, max_label: val };
+                                            return { ...p, sections: s };
+                                         });
+                                      }} />
+                                   </FormControl>
+                                </HStack>
+                            )}
+                            
+                            {/* Insertion button below field */}
+                            <HStack justify="center" position="absolute" bottom="-12px" left="0" right="0" opacity={0} _groupHover={{ opacity: 1 }} zIndex={5}>
+                                <Button size="xs" variant="solid" bg="teal.400" color="white" height="18px" fontSize="8px" borderRadius="full" onClick={() => insertFieldAt(si, fi)}>
+                                    Insert Question After
+                                </Button>
+                            </HStack>
+                          </Box>
+                        ))}
+
+                        <Button size="xs" variant="dashed" leftIcon={<AddIcon />} onClick={() => addFieldToSection(si)} py={4} borderRadius="xl">
+                          Add Question to Section
+                        </Button>
+                      </VStack>
                     </Box>
                   ))}
 
-                  <Button size="sm" variant="outline" leftIcon={<AddIcon />} onClick={() => addFieldToSection(si)}>
-                    Add Field
+                  <Button leftIcon={<AddIcon />} variant="solid" bg="mlc.green" color="white" onClick={addSection} py={6} borderRadius="2xl">
+                    Add New Large Section
                   </Button>
-                </Box>
-              ))}
-
-              <Button size="sm" variant="outline" leftIcon={<AddIcon />} onClick={addSection}>
-                Add Section
-              </Button>
+                </VStack>
             </VStack>
           </ModalBody>
           <ModalFooter>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Button,
   Checkbox,
@@ -9,18 +9,22 @@ import {
   Select,
   Text,
   VStack,
+  Box,
+  Heading,
+  SimpleGrid,
+  useToast,
+  Divider,
+  Icon,
 } from "@chakra-ui/react";
+import { FiCalendar, FiClock, FiCheckCircle, FiLock, FiTrash2, FiEdit3 } from "react-icons/fi";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+
 import { schedulingApi } from "../../../api/scheduling";
-import SchedulePageHeader from "../../../components/scheduling/SchedulePageHeader";
-import ScheduleSectionCard from "../../../components/scheduling/ScheduleSectionCard";
-import ScheduleStatusBadge from "../../../components/scheduling/ScheduleStatusBadge";
-import ScheduleDateTimeCard from "../../../components/scheduling/ScheduleDateTimeCard";
-import ScheduleEmptyState from "../../../components/scheduling/ScheduleEmptyState";
-import ScheduleLoadingState from "../../../components/scheduling/ScheduleLoadingState";
-import ScheduleErrorState from "../../../components/scheduling/ScheduleErrorState";
-import ScheduleActionBar from "../../../components/scheduling/ScheduleActionBar";
-import { getSchedulingErrorMessage } from "../../../utils/schedulingErrors";
 import BusinessHoursForm from "../../../components/scheduling/BusinessHoursForm";
+import "../../../styles/CalendarStyles.css";
 
 const toLocalInputValue = (value) => {
   if (!value) return "";
@@ -37,9 +41,10 @@ const toISOFromLocal = (value) => {
 };
 
 export default function TherapistAvailability() {
+  const toast = useToast();
+  const calendarRef = useRef(null);
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editingSlot, setEditingSlot] = useState(null);
   const [formState, setFormState] = useState({
@@ -52,22 +57,15 @@ export default function TherapistAvailability() {
   const loadSlotsAndProfile = async () => {
     try {
       setLoading(true);
-      setError("");
-      
-      try {
-        const { apiGet } = await import("../../../api");
-        const profs = await apiGet("therapists/");
-        if (profs && profs.length > 0) {
-          setProfile(profs[0]);
-        }
-      } catch (err) {
-        console.error("Failed to load profile", err);
+      const { apiGet } = await import("../../../api");
+      const profs = await apiGet("therapists/");
+      if (profs && profs.length > 0) {
+        setProfile(profs[0]);
       }
-      
       const data = await schedulingApi.listAvailabilitySlots();
       setSlots(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(getSchedulingErrorMessage(err, "Unable to load availability slots."));
+      toast({ status: "error", title: "Couldn't load availability data" });
     } finally {
       setLoading(false);
     }
@@ -77,15 +75,33 @@ export default function TherapistAvailability() {
     loadSlotsAndProfile();
   }, []);
 
-  const filteredSlots = useMemo(() => {
-    if (statusFilter === "all") return slots;
-    return slots.filter((slot) => slot.status === statusFilter);
-  }, [slots, statusFilter]);
+  const businessHoursPreview = useMemo(() => {
+    if (!profile?.business_hours) return undefined;
+    const bh = [];
+    Object.keys(profile.business_hours).forEach(day => {
+      const dayOfWeek = parseInt(day, 10);
+      profile.business_hours[day].forEach(block => {
+        bh.push({
+          daysOfWeek: [dayOfWeek],
+          startTime: block.startTime,
+          endTime: block.endTime
+        });
+      });
+    });
+    return bh;
+  }, [profile]);
 
-  const resetForm = () => {
-    setEditingSlot(null);
-    setFormState({ start_time: "", end_time: "", visible_to_clients: true });
-  };
+  const calendarEvents = useMemo(() => {
+    return slots.map(slot => ({
+      id: slot.id,
+      title: slot.status_label || slot.status,
+      start: slot.start_time,
+      end: slot.end_time,
+      backgroundColor: slot.status === 'blocked' ? '#CBD5E0' : '#A9CBB7',
+      borderColor: slot.status === 'blocked' ? '#CBD5E0' : '#A9CBB7',
+      extendedProps: { ...slot }
+    }));
+  }, [slots]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -98,14 +114,21 @@ export default function TherapistAvailability() {
 
       if (editingSlot) {
         await schedulingApi.updateAvailabilitySlot(editingSlot.id, payload);
+        toast({ status: "success", title: "Slot updated" });
       } else {
         await schedulingApi.createAvailabilitySlot(payload);
+        toast({ status: "success", title: "Manual slot created" });
       }
       await loadSlotsAndProfile();
       resetForm();
     } catch (err) {
-      setError(getSchedulingErrorMessage(err, "Unable to save availability slot."));
+      toast({ status: "error", title: "Failed to save slot" });
     }
+  };
+
+  const resetForm = () => {
+    setEditingSlot(null);
+    setFormState({ start_time: "", end_time: "", visible_to_clients: true });
   };
 
   const handleEdit = (slot) => {
@@ -118,11 +141,13 @@ export default function TherapistAvailability() {
   };
 
   const handleDelete = async (slotId) => {
+    if (!window.confirm("Delete this availability slot?")) return;
     try {
       await schedulingApi.deleteAvailabilitySlot(slotId);
       await loadSlotsAndProfile();
+      toast({ status: "success", title: "Slot deleted" });
     } catch (err) {
-      setError(getSchedulingErrorMessage(err, "Unable to delete slot."));
+      toast({ status: "error", title: "Delete failed" });
     }
   };
 
@@ -135,163 +160,189 @@ export default function TherapistAvailability() {
       }
       await loadSlotsAndProfile();
     } catch (err) {
-      setError(getSchedulingErrorMessage(err, "Unable to update slot."));
+      toast({ status: "error", title: "Toggle block failed" });
     }
   };
 
-  if (loading) {
-    return <ScheduleLoadingState label="Loading availability…" />;
-  }
-
-  if (error) {
-    return <ScheduleErrorState description={error} onRetry={loadSlotsAndProfile} />;
-  }
-
   return (
-    <VStack align="stretch" spacing={6} w="100%">
-      <SchedulePageHeader
-        title="Availability"
-        subtitle="Manage your standard business hours and specific availabilities."
-      />
+    <VStack align="stretch" spacing={10} w="100%">
+      <Box>
+        <Heading size="lg" color="mlc.greenDark" mb={2} fontFamily="'Playfair Display', serif">
+          Clinical Availability
+        </Heading>
+        <Text color="gray.500">Manage your business hours and live calendar slots.</Text>
+      </Box>
 
-      <ScheduleSectionCard
-        title="Weekly Business Hours"
-        subtitle="Set defaults. Your slots will auto-generate for the next 30 days."
-      >
-        <BusinessHoursForm profile={profile} onSlotsGenerated={loadSlotsAndProfile} />
-      </ScheduleSectionCard>
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={10}>
+        {/* Left: Configuration */}
+        <VStack align="stretch" spacing={8}>
+          <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+            <HStack mb={6}>
+              <Icon as={FiClock} color="mlc.green" />
+              <Heading size="md" color="mlc.black">Standard Weekly Hours</Heading>
+            </HStack>
+            <BusinessHoursForm profile={profile} onSlotsGenerated={loadSlotsAndProfile} />
+          </Box>
 
-      <ScheduleSectionCard
-        title={editingSlot ? "Edit slot" : "Add a manual override slot"}
-        subtitle="Keep specific time windows open (or manage single events)."
-      >
-        <form onSubmit={handleSubmit}>
-          <VStack align="stretch" spacing={4}>
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">Start time</FormLabel>
-              <Input
-                type="datetime-local"
-                value={formState.start_time}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    start_time: event.target.value,
-                  }))
-                }
-              />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel fontSize="sm">End time</FormLabel>
-              <Input
-                type="datetime-local"
-                value={formState.end_time}
-                onChange={(event) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    end_time: event.target.value,
-                  }))
-                }
-              />
-            </FormControl>
-            <Checkbox
-              isChecked={formState.visible_to_clients}
-              onChange={(event) =>
-                setFormState((prev) => ({
-                  ...prev,
-                  visible_to_clients: event.target.checked,
-                }))
-              }
-            >
-              Visible to clients
-            </Checkbox>
-            <ScheduleActionBar>
-              <Button
-                type="submit"
-                colorScheme="teal"
-                borderRadius="full"
-              >
-                {editingSlot ? "Save changes" : "Create slot"}
-              </Button>
-              {editingSlot ? (
-                <Button variant="ghost" borderRadius="full" onClick={resetForm}>
-                  Cancel
-                </Button>
-              ) : null}
-            </ScheduleActionBar>
-          </VStack>
-        </form>
-      </ScheduleSectionCard>
-
-      <ScheduleSectionCard
-        title="Your slots"
-        subtitle="Filter and manage upcoming availability."
-        rightSlot={
-          <Select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            size="sm"
-            borderRadius="full"
-          >
-            <option value="all">All statuses</option>
-            <option value="open">Open</option>
-            <option value="held">Held</option>
-            <option value="blocked">Blocked</option>
-            <option value="booked">Booked</option>
-            <option value="expired">Expired</option>
-          </Select>
-        }
-      >
-        {filteredSlots.length === 0 ? (
-          <ScheduleEmptyState
-            title="No slots yet"
-            description="Create availability so clients can request a time."
-          />
-        ) : (
-          <VStack spacing={4} align="stretch">
-            {filteredSlots.map((slot) => (
-              <VStack key={slot.id} align="stretch" spacing={3}>
-                <ScheduleDateTimeCard
-                  title={slot.therapist_display_name || "Availability"}
-                  start={slot.start_time}
-                  end={slot.end_time}
-                  rightSlot={<ScheduleStatusBadge status={slot.status} label={slot.status_label} />}
-                  description={slot.visible_to_clients ? "Visible to clients" : "Hidden from clients"}
-                />
-                <HStack spacing={2} flexWrap="wrap">
+          <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+             <HStack mb={6}>
+              <Icon as={FiEdit3} color="mlc.gold" />
+              <Heading size="md">Manual Overrides</Heading>
+            </HStack>
+            <form onSubmit={handleSubmit}>
+              <VStack align="stretch" spacing={4}>
+                <SimpleGrid columns={2} spacing={4}>
+                   <FormControl isRequired>
+                    <FormLabel fontSize="sm" fontWeight="700">Start Time</FormLabel>
+                    <Input
+                      bg="gray.50"
+                      border="none"
+                      borderRadius="xl"
+                      type="datetime-local"
+                      value={formState.start_time}
+                      onChange={(e) => setFormState(p => ({...p, start_time: e.target.value}))}
+                    />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel fontSize="sm" fontWeight="700">End Time</FormLabel>
+                    <Input
+                      bg="gray.50"
+                      border="none"
+                      borderRadius="xl"
+                      type="datetime-local"
+                      value={formState.end_time}
+                      onChange={(e) => setFormState(p => ({...p, end_time: e.target.value}))}
+                    />
+                  </FormControl>
+                </SimpleGrid>
+                <Checkbox
+                  isChecked={formState.visible_to_clients}
+                  onChange={(e) => setFormState(p => ({...p, visible_to_clients: e.target.checked}))}
+                  colorScheme="teal"
+                >
+                  Visible to clients
+                </Checkbox>
+                <HStack pt={2}>
                   <Button
-                    size="sm"
-                    variant="outline"
+                    type="submit"
+                    bg="#56756D"
+                    color="white"
                     borderRadius="full"
-                    onClick={() => handleEdit(slot)}
-                    isDisabled={slot.status === "booked"}
+                    px={8}
+                    _hover={{ bg: '#C9A960' }}
                   >
-                    Edit
+                    {editingSlot ? "Update Slot" : "Add Slot"}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    borderRadius="full"
-                    onClick={() => handleToggleBlock(slot)}
-                    isDisabled={slot.status === "booked"}
-                  >
-                    {slot.status === "blocked" ? "Unblock" : "Block"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    borderRadius="full"
-                    colorScheme="red"
-                    onClick={() => handleDelete(slot.id)}
-                    isDisabled={slot.status === "booked"}
-                  >
-                    Delete
-                  </Button>
+                  {editingSlot && <Button variant="ghost" onClick={resetForm}>Cancel</Button>}
                 </HStack>
               </VStack>
-            ))}
-          </VStack>
-        )}
-      </ScheduleSectionCard>
+            </form>
+          </Box>
+        </VStack>
+
+        {/* Right: Live Preview */}
+        <VStack align="stretch" spacing={6}>
+           <Box bg="white" p={1} borderRadius="3xl" shadow="xl" overflow="hidden" border="1px solid" borderColor="gray.100" h="640px">
+              <Box p={4} bg="gray.50" borderBottom="1px solid" borderColor="gray.100">
+                <HStack justify="space-between">
+                  <Heading size="xs" textTransform="uppercase" letterSpacing="0.1em" color="gray.500">Live Preview</Heading>
+                  <Tag bg="green.100" color="green.700" size="sm" borderRadius="full">Sync Active</Tag>
+                </HStack>
+              </Box>
+              <Box className="calendar-wrapper" p={2} h="calc(100% - 50px)">
+                <FullCalendar
+                  ref={calendarRef}
+                  plugins={[timeGridPlugin, interactionPlugin]}
+                  initialView="timeGridWeek"
+                  headerToolbar={{ left: 'prev,next', center: 'title', right: '' }}
+                  height="100%"
+                  allDaySlot={false}
+                  slotMinTime="07:00:00"
+                  slotMaxTime="22:00:00"
+                  businessHours={businessHoursPreview}
+                  events={calendarEvents}
+                  nowIndicator={true}
+                  slotLabelFormat={{
+                    hour: 'numeric',
+                    meridiem: 'short'
+                  }}
+                  dayHeaderFormat={{ weekday: 'short' }}
+                />
+              </Box>
+           </Box>
+        </VStack>
+      </SimpleGrid>
+
+      {/* List View for fine management */}
+      <Box pt={4}>
+        <HStack justify="space-between" mb={6}>
+           <Heading size="md" fontFamily="'Playfair Display', serif">Manage Upcoming Slots</Heading>
+           <Select 
+            maxW="200px" 
+            size="sm" 
+            borderRadius="full" 
+            value={statusFilter} 
+            onChange={e => setStatusFilter(e.target.value)}
+           >
+              <option value="all">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="blocked">Blocked</option>
+           </Select>
+        </HStack>
+        
+        <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+           {slots.filter(s => statusFilter === 'all' || s.status === statusFilter).map(slot => (
+             <Box 
+              key={slot.id} 
+              bg="white" 
+              p={5} 
+              borderRadius="2xl" 
+              border="1px solid" 
+              borderColor="gray.100"
+              transition="all 0.2s"
+              _hover={{ shadow: 'md', borderColor: 'mlc.green' }}
+             >
+                <HStack justify="space-between" mb={3}>
+                   <Tag bg={slot.status === 'open' ? 'green.50' : 'gray.50'} color={slot.status === 'open' ? 'green.700' : 'gray.600'} borderRadius="full">
+                      {slot.status_label || slot.status}
+                   </Tag>
+                   <HStack>
+                      <IconButton icon={<FiEdit3 />} size="xs" variant="ghost" onClick={() => handleEdit(slot)} />
+                      <IconButton icon={<FiTrash2 />} size="xs" variant="ghost" colorScheme="red" onClick={() => handleDelete(slot.id)} />
+                   </HStack>
+                </HStack>
+                <VStack align="start" spacing={1}>
+                   <Text fontWeight="700" fontSize="sm">{new Date(slot.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</Text>
+                   <Text fontSize="xs" color="gray.500">
+                    {new Date(slot.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                   </Text>
+                </VStack>
+                <Button 
+                  mt={4} 
+                  size="xs" 
+                  w="100%" 
+                  variant="outline" 
+                  leftIcon={slot.status === 'blocked' ? <FiCheckCircle /> : <FiLock />}
+                  onClick={() => handleToggleBlock(slot)}
+                >
+                  {slot.status === 'blocked' ? "Unblock" : "Block"}
+                </Button>
+             </Box>
+           ))}
+        </SimpleGrid>
+      </Box>
     </VStack>
   );
 }
+
+const Tag = ({ children, bg, color, size, borderRadius }) => (
+    <Box px={2} py={0.5} bg={bg} color={color} fontSize={size === 'sm' ? 'xs' : 'sm'} fontWeight="700" borderRadius={borderRadius} display="inline-block">
+        {children}
+    </Box>
+);
+
+const IconButton = ({ icon, onClick, size, variant, colorScheme }) => (
+    <Button size={size} variant={variant} colorScheme={colorScheme} onClick={onClick} p={0} minW={8}>
+        {icon}
+    </Button>
+);

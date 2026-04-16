@@ -34,29 +34,36 @@ export const AuthProvider = ({ children }) => {
     signupRole === "therapist" &&
     !isTherapist;
   const [therapistProfile, setTherapistProfile] = useState(null);
+  const [clientProfile, setClientProfile] = useState(null);
 
   useEffect(() => {
     let mounted = true;
-    const loadTherapistProfile = async () => {
+    const loadProfiles = async () => {
       if (!isLoaded || !isSignedIn) {
-        if (mounted) setTherapistProfile(null);
+        if (mounted) {
+          setTherapistProfile(null);
+          setClientProfile(null);
+        }
         return;
       }
       try {
-        const res = await api.get("therapists/");
-        const list = Array.isArray(res.data) ? res.data : res.data?.results || [];
+        const [tRes, cRes] = await Promise.all([
+          api.get("therapists/me/").catch(() => null),
+          api.get("clients/me/").catch(() => null)
+        ]);
         if (mounted) {
-          setTherapistProfile(list[0] || null);
+          if (tRes) setTherapistProfile(tRes.data);
+          if (cRes) setClientProfile(cRes.data);
         }
-      } catch {
-        if (mounted) setTherapistProfile(null);
+      } catch (err) {
+        console.warn("Profile load failed", err);
       }
     };
-    loadTherapistProfile();
+    loadProfiles();
     return () => {
       mounted = false;
     };
-  }, [isLoaded, isSignedIn, roles.join(",")]);
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
     let isMounted = true;
@@ -130,6 +137,7 @@ export const AuthProvider = ({ children }) => {
         isClient,
         isPremium,
         therapistProfile,
+        clientProfile,
         isVerifiedTherapist: !!therapistProfile?.is_verified,
         isTherapistPremium: !!therapistProfile?.is_premium,
         isTherapistPreview,

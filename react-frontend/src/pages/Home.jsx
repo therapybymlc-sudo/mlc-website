@@ -136,13 +136,13 @@ export default function Home() {
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
         bgSize="cover"
         bgPosition="center"
-        minH={{ base: "100svh", md: "100vh" }}
+        minH={{ base: "100svh", md: "110vh" }}
         display="flex"
         alignItems="center"
         justifyContent="center"
         textAlign="center"
         px={6}
-        py={10}
+        py={20}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
@@ -153,7 +153,7 @@ export default function Home() {
           left: 0,
           right: 0,
           bottom: 0,
-          bg: "rgba(255, 255, 255, 0.7)", // Translucent white layer
+          bg: "linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.85))",
           zIndex: 1,
         }}
       >
@@ -162,87 +162,138 @@ export default function Home() {
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
             boxSize={{ base: "100px", sm: "120px", md: "140px" }}
-            mb={6}
+            mb={8}
             mx="auto"
           />
           <Heading
             as="h1"
             className="hero-title"
-            fontFamily="'Inter', sans-serif"
-            fontWeight="500"
-            fontSize={{ base: "2xl", md: "4xl", lg: "5xl" }}
+            fontFamily="'Playfair Display', serif"
+            fontWeight="600"
+            fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
             color="#2E2E2E"
             letterSpacing="-0.5px"
-            lineHeight="1.2"
-            mb={4}
+            lineHeight="1.1"
+            mb={6}
           >
-            MLC Health & Wellness Centre
+            Find the therapist meant for <Text as="span" color="mlc.green">your journey</Text>
           </Heading>
           <Text
             mt={4}
-            fontSize="xl"
+            fontSize={{ base: "lg", md: "xl" }}
             color="#56756D"
             fontFamily="'Inter', sans-serif"
             fontWeight="500"
+            letterSpacing="1px"
+            textTransform="uppercase"
           >
             {homeContent.hero.tagline}
           </Text>
           <Text
-            mt={4}
-            color="rgba(46, 46, 46, 0.9)"
+            mt={6}
+            color="rgba(46, 46, 46, 0.8)"
             fontFamily="'Inter', sans-serif"
-            fontSize="lg"
-            lineHeight="1.7"
+            fontSize={{ base: "md", md: "lg" }}
+            lineHeight="1.8"
+            maxW="2xl"
+            mx="auto"
             dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_one || "" }}
           />
-          <Text
-            mt={2}
-            color="rgba(46, 46, 46, 0.9)"
-            fontFamily="'Inter', sans-serif"
-            fontSize="lg"
-            lineHeight="1.7"
-            dangerouslySetInnerHTML={{ __html: homeContent.hero.paragraph_two || "" }}
-          />
-          <HStack
-            mt={8}
-            spacing={4}
-            flexWrap="wrap"
-            justify="center"
-          >
+
+          <VStack spacing={6} mt={12} align="center">
             <Button
-              size="lg"
+              size="xl"
               bg="#56756D"
               color="white"
               borderRadius="full"
-              _hover={{ bg: "#C9A960", color: "white" }}
-              as="a"
-              href="/therapists/discovery"
-              fontWeight="500"
-              px={10}
-              py={7}
+              shadow="2xl"
+              _hover={{ bg: "#C9A960", transform: "scale(1.05)", shadow: "dark-lg" }}
+              as={Link}
+              to="/therapists/discovery"
+              fontWeight="600"
+              fontSize="lg"
+              px={12}
+              py={8}
             >
-              Find My Therapist
+              Take the Matching Quiz
             </Button>
-            <Button
-              size="lg"
-              bg="#C9A960"
-              color="white"
-              borderRadius="full"
-              _hover={{ bg: "#56756D", color: "white" }}
-              _active={{ bg: "#56756D" }}
-              as="a"
-              href="/therapists"
-              fontWeight="500"
-              px={10}
-              py={7}
-            >
-              I'm a Therapist
-            </Button>
-          </HStack>
+            <HStack spacing={4}>
+              <Text fontSize="sm" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>
+              <ChakraLink
+                as={Link}
+                to="/therapists"
+                color="mlc.greenDark"
+                fontWeight="600"
+                fontSize="sm"
+                textDecoration="underline"
+                _hover={{ color: "mlc.gold" }}
+              >
+                Browse all therapists
+              </ChakraLink>
+            </HStack>
+          </VStack>
         </Box>
       </MotionBox>
 
+
+      {/* HOW TO START SECTION */}
+      <Box py={24} bg="white">
+        <Container maxW="6xl">
+          <VStack spacing={16} align="center">
+            <VStack spacing={4} textAlign="center">
+              <Heading fontFamily="'Playfair Display', serif" size="xl" color="mlc.black">
+                How to find your space here
+              </Heading>
+              <Text fontSize="lg" color="gray.600" maxW="2xl">
+                We've simplified the journey to ensure you find a therapist who truly aligns with your needs, values, and life situation.
+              </Text>
+            </VStack>
+
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={12} w="full">
+              {[
+                {
+                  step: "01",
+                  title: "Discovery Quiz",
+                  desc: "Take our 10-minute discovery quiz to share your preferences, concerns, and what you’re looking for in a therapeutic relationship.",
+                },
+                {
+                  step: "02",
+                  title: "Personalized Match",
+                  desc: "Receive a curated selection of therapists who specialize in your areas of concern and meet your specific preferences.",
+                },
+                {
+                  step: "03",
+                  title: "Book & Begin",
+                  desc: "Review detailed therapist profiles and book your first session directly through our secure platform.",
+                },
+              ].map((item, idx) => (
+                <VStack key={idx} align="flex-start" spacing={6} p={8} bg="#FDFBFA" borderRadius="2xl" border="1px solid" borderColor="gray.100" _hover={{ shadow: 'lg', transform: 'translateY(-4px)' }} transition="all 0.3s">
+                   <Text fontSize="5xl" fontWeight="800" color="mlc.gold" opacity="0.3" fontFamily="'Playfair Display', serif" lineHeight="1">{item.step}</Text>
+                   <Heading size="md" color="mlc.greenDark">{item.title}</Heading>
+                   <Text color="gray.600" fontSize="md">{item.desc}</Text>
+                </VStack>
+              ))}
+            </SimpleGrid>
+
+            <Button
+              as={Link}
+              to="/therapists/discovery"
+              variant="outline"
+              borderColor="mlc.green"
+              color="mlc.greenDark"
+              px={10}
+              py={7}
+              borderRadius="full"
+              _hover={{ bg: "mlc.green", color: "white" }}
+            >
+              Start the Discovery Quiz
+            </Button>
+          </VStack>
+        </Container>
+      </Box>
+
       {/* PORTAL CTA */}
+
       <Box bg="#E9F2ED" py={16} px={6}>
         <Container maxW="6xl">
           <VStack spacing={8}>

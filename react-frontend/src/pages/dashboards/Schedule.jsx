@@ -37,16 +37,17 @@ import {
   DrawerHeader,
   DrawerBody,
 } from "@chakra-ui/react";
-import { AddIcon, ChevronLeftIcon, ChevronRightIcon, SettingsIcon, HamburgerIcon, EditIcon, AttachmentIcon } from "@chakra-ui/icons";
-import { useNavigate } from "react-router-dom";
-import { apiGet, apiPost, apiPut } from "../../api";
+import { useRouter } from "next/navigation";
+import { FiCalendar, FiClock, FiCheck, FiX, FiList, FiCheckCircle } from "react-icons/fi";
+import { schedulingApi } from "../../api/scheduling";
+import "../../styles/CalendarStyles.css";
 
 export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   const toast = useToast();
   const eventTypeModal = useDisclosure();
   const calendarRef = useRef(null);
   const miniCalendarRef = useRef(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [events, setEvents] = useState([]);
   const [sessionLinks, setSessionLinks] = useState([]);
@@ -61,6 +62,13 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   const [showNames, setShowNames] = useState(true);
   const [miniDate, setMiniDate] = useState(new Date());
   const [rangeTitle, setRangeTitle] = useState("");
+  
+  // New State for Consolidation
+  const [bookingRequests, setBookingRequests] = useState([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  const [activeSideTab, setActiveSideTab] = useState("filters"); // filters | requests
+  const [showAgenda, setShowAgenda] = useState(false);
+
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [waitlistSearch, setWaitlistSearch] = useState("");
   const [waitlistPractitioner, setWaitlistPractitioner] = useState("all");
@@ -92,8 +100,8 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   });
 
   const [newType, setNewType] = useState({ name: "", color: "#A9CBB7" });
-  const [patientSearch, setPatientSearch] = useState("");
-  const [showPatientResults, setShowPatientResults] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [showClientResults, setShowClientResults] = useState(false);
 
   const seedEventTypes = [
     { name: "Art Healing Group", color: "#F2994A" },
@@ -145,6 +153,23 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
     return `${y}-${m}-${d}T${h}:${min}`;
   };
 
+  const renderEventContent = (eventInfo) => {
+    const { event } = eventInfo;
+    const accentColor = event.backgroundColor || "#56756D";
+    const startTime = event.start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    return (
+      <div className="custom-event-card" style={{ borderLeftColor: accentColor }}>
+        <div className="event-title">{event.title}</div>
+        {event.extendedProps.client_name && (
+          <div className="event-client">{event.extendedProps.client_name}</div>
+        )}
+        <div className="event-time">{startTime}</div>
+      </div>
+    );
+  };
+
+
   const brightenColor = (hex) => {
     if (!hex) return "#A9CBB7";
     const clean = hex.startsWith("#") ? hex.slice(1) : hex;
@@ -180,6 +205,38 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
     const next = new Date(base);
     next.setMonth(next.getMonth() + months);
     api.gotoDate(next);
+  };
+
+  const loadBookingRequests = async () => {
+    try {
+      const data = await schedulingApi.listTherapistBookingRequests();
+      setBookingRequests(Array.isArray(data) ? data.filter(r => r.status === 'pending') : []);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadAppointmentsList = async () => {
+    try {
+      const data = await schedulingApi.listTherapistAppointments();
+      setUpcomingAppointments(Array.isArray(data) ? data : []);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleConfirmRequest = async (id) => {
+    try {
+      await schedulingApi.confirmBookingRequest(id);
+      toast({ status: "success", title: "Appointment confirmed" });
+      loadBookingRequests();
+      fetchEvents();
+      loadAppointmentsList();
+    } catch (e) { toast({ status: "error", title: "Confirm failed" }); }
+  };
+
+  const handleDeclineRequest = async (id) => {
+    try {
+      await schedulingApi.declineBookingRequest(id, "Declined from Clinical Center");
+      toast({ status: "info", title: "Request declined" });
+      loadBookingRequests();
+    } catch (e) { toast({ status: "error", title: "Decline failed" }); }
   };
 
   /* ===============================
@@ -337,7 +394,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       repeat_unit: "week",
       repeat_count: 1,
     });
-    setPatientSearch("");
+    setClientSearch("");
     setIsOpen(true);
   };
 
@@ -538,7 +595,13 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      await Promise.all([fetchTherapists(), fetchClients(), fetchEventTypes()]);
+      await Promise.all([
+        fetchTherapists(), 
+        fetchClients(), 
+        fetchEventTypes(),
+        loadBookingRequests(),
+        loadAppointmentsList()
+      ]);
       setLoading(false);
     })();
   }, []);
@@ -632,8 +695,8 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
     return true;
   });
 
-  const filteredPatients = clients.filter((c) => {
-    const q = patientSearch.trim().toLowerCase();
+  const filteredClientsForSearch = clients.filter((c) => {
+    const q = clientSearch.trim().toLowerCase();
     if (!q) return true;
     return (
       c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)
@@ -654,106 +717,130 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   };
 
   const sidePanelContent = (
-    <Box w="100%" bg="white" p={4} borderRadius="lg" boxShadow="sm">
-      <Heading size="sm" mb={3}>Calendar</Heading>
+    <Box w="100%" bg="white" p={4} borderRadius="3xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
+      <HStack spacing={0} mb={6} bg="gray.50" p={1} borderRadius="2xl">
+        <Button 
+          flex={1} 
+          size="sm" 
+          variant={activeSideTab === 'filters' ? 'solid' : 'ghost'}
+          colorScheme={activeSideTab === 'filters' ? 'teal' : 'gray'}
+          borderRadius="xl"
+          onClick={() => setActiveSideTab('filters')}
+          leftIcon={<FiCalendar />}
+        >
+          Filters
+        </Button>
+        <Button 
+          flex={1} 
+          size="sm" 
+          variant={activeSideTab === 'requests' ? 'solid' : 'ghost'}
+          colorScheme={activeSideTab === 'requests' ? 'teal' : 'gray'}
+          borderRadius="xl"
+          onClick={() => setActiveSideTab('requests')}
+          leftIcon={<FiList />}
+        >
+          {bookingRequests.length > 0 && (
+            <Badge colorScheme="red" variant="solid" borderRadius="full" mr={1} fontSize="10px">
+              {bookingRequests.length}
+            </Badge>
+          )}
+          Requests
+        </Button>
+      </HStack>
 
-      <Box
-        border="1px solid #E2E8F0"
-        borderRadius="md"
-        p={2}
-        mb={4}
-        sx={{
-          ".fc-header-toolbar": { marginBottom: "0.5rem" },
-          ".fc-toolbar": { alignItems: "center" },
-          ".fc-toolbar-title": {
-            fontSize: "0.95rem",
-            fontWeight: "600",
-            lineHeight: "1.2",
-            textAlign: "center",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          },
-          ".fc-col-header-cell": {
-            padding: "2px 4px",
-          },
-          ".fc-col-header-cell-cushion": {
-            display: "block",
-            fontSize: "0.7rem",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          },
-          ".fc-daygrid-day-number": {
-            fontSize: "0.75rem",
-            padding: "2px",
-          },
-        }}
-      >
-        <FullCalendar
-          ref={miniCalendarRef}
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={{ left: "prev", center: "title", right: "next" }}
-          height="auto"
-          fixedWeekCount={false}
-          showNonCurrentDates={false}
-          dateClick={(info) => {
-            setMiniDate(info.date);
-            gotoDate(info.date);
-          }}
-        />
-      </Box>
-
-      <Button
-        w="100%"
-        mb={4}
-        leftIcon={
-          <Badge bg="white" color="black" borderRadius="full" px={2}>
-            {waitlistItems.length}
-          </Badge>
-        }
-        bg="#A9CBB7"
-        color="#2E2E2E"
-        _hover={{ bg: "#8FB6A0" }}
-        onClick={() => setIsWaitlistOpen(true)}
-      >
-        Wait list
-      </Button>
-
-      <Text fontWeight="medium" mb={2}>Skip ahead</Text>
-      <SimpleGrid columns={3} spacing={2} mb={4}>
-        <Button size="xs" variant="outline" onClick={() => shiftByDays(14)}>+2w</Button>
-        <Button size="xs" variant="outline" onClick={() => shiftByDays(28)}>+4w</Button>
-        <Button size="xs" variant="outline" onClick={() => shiftByDays(42)}>+6w</Button>
-        <Button size="xs" variant="outline" onClick={() => shiftByMonths(3)}>+3m</Button>
-        <Button size="xs" variant="outline" onClick={() => shiftByMonths(6)}>+6m</Button>
-        <Button size="xs" variant="outline" onClick={() => shiftByMonths(12)}>+12m</Button>
-      </SimpleGrid>
-
-      <Divider my={3} />
-
-      <Text fontWeight="medium" mb={2}>Practitioners</Text>
-      <VStack align="start" spacing={2} mb={4}>
-        {therapists.map((t) => (
-          <Checkbox
-            key={t.id}
-            isChecked={selectedTherapists.includes(String(t.id))}
-            onChange={(e) => {
-              if (e.target.checked)
-                setSelectedTherapists([...selectedTherapists, String(t.id)]);
-              else
-                setSelectedTherapists(
-                  selectedTherapists.filter((id) => id !== String(t.id))
-                );
+      {activeSideTab === 'filters' ? (
+        <VStack align="stretch" spacing={6}>
+          <Box
+            border="1px solid #F1F3F4"
+            borderRadius="2xl"
+            p={2}
+            sx={{
+              ".fc-header-toolbar": { marginBottom: "0.5rem" },
+              ".fc-toolbar-title": { fontSize: "0.9rem", fontWeight: "700" },
             }}
           >
-            {t.name}
-          </Checkbox>
-        ))}
-      </VStack>
+            <FullCalendar
+              ref={miniCalendarRef}
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              headerToolbar={{ left: "prev", center: "title", right: "next" }}
+              height="auto"
+              fixedWeekCount={false}
+              dateClick={(info) => {
+                setMiniDate(info.date);
+                gotoDate(info.date);
+              }}
+            />
+          </Box>
 
-      <Divider my={3} />
+          <Box>
+            <Text fontWeight="700" fontSize="xs" color="gray.400" textTransform="uppercase" mb={3} letterSpacing="wider">
+              Practitioners
+            </Text>
+            <VStack align="start" spacing={3}>
+              {therapists.map((t) => (
+                <Checkbox
+                  key={t.id}
+                  colorScheme="teal"
+                  isChecked={selectedTherapists.includes(String(t.id))}
+                  onChange={(e) => {
+                    if (e.target.checked)
+                      setSelectedTherapists([...selectedTherapists, String(t.id)]);
+                    else
+                      setSelectedTherapists(
+                        selectedTherapists.filter((id) => id !== String(t.id))
+                      );
+                  }}
+                >
+                  <Text fontSize="sm" fontWeight="500">{t.name}</Text>
+                </Checkbox>
+              ))}
+            </VStack>
+          </Box>
+
+          <Divider />
+          
+          <Box>
+            <Text fontWeight="700" fontSize="xs" color="gray.400" textTransform="uppercase" mb={3} letterSpacing="wider">
+              Quick Skip
+            </Text>
+            <SimpleGrid columns={3} spacing={2}>
+              <Button size="xs" variant="outline" onClick={() => shiftByDays(14)}>+2w</Button>
+              <Button size="xs" variant="outline" onClick={() => shiftByDays(28)}>+4w</Button>
+              <Button size="xs" variant="outline" onClick={() => shiftByMonths(3)}>+3m</Button>
+            </SimpleGrid>
+          </Box>
+        </VStack>
+      ) : (
+        <VStack align="stretch" spacing={4}>
+          <Text fontWeight="700" fontSize="xs" color="gray.400" textTransform="uppercase" letterSpacing="wider">
+            Booking Requests
+          </Text>
+          {bookingRequests.length === 0 ? (
+            <VStack py={10} spacing={2}>
+              <Icon as={FiCheckCircle} color="green.300" boxSize={8} />
+              <Text fontSize="xs" color="gray.500" textAlign="center">No pending requests. You're all caught up!</Text>
+            </VStack>
+          ) : (
+            bookingRequests.map(req => (
+              <Box key={req.id} p={3} bg="gray.50" borderRadius="2xl" border="1px solid" borderColor="gray.100">
+                <Text fontWeight="700" fontSize="sm">{req.client_display_name}</Text>
+                <Text fontSize="xs" color="gray.500" mb={3}>
+                  {new Date(req.slot_start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ {new Date(req.slot_start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                </Text>
+                <HStack spacing={2}>
+                  <Button size="xs" colorScheme="teal" flex={1} borderRadius="full" leftIcon={<FiCheck />} onClick={() => handleConfirmRequest(req.id)}>
+                    Confirm
+                  </Button>
+                  <Button size="xs" variant="ghost" colorScheme="red" flex={1} borderRadius="full" leftIcon={<FiX />} onClick={() => handleDeclineRequest(req.id)}>
+                    Pass
+                  </Button>
+                </HStack>
+              </Box>
+            ))
+          )}
+        </VStack>
+      )}
     </Box>
   );
 
@@ -840,100 +927,47 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
           </HStack>
 
           {!loading && (
-            <Box
-              bg="white"
-              p={4}
-              rounded="lg"
-              shadow="sm"
-              overflowX="auto"
-              sx={{
-                ".fc-col-header-cell-cushion": {
-                  display: "block",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "100%",
-                },
-                ".fc-col-header-cell": {
-                  padding: "4px 6px",
-                },
-                ".fc-col-header-cell-cushion, .fc-resource": {
-                  fontSize: "0.8rem",
-                },
-                ".fc-event-title, .fc-event-title-container": {
-                  whiteSpace: "normal",
-                },
-                ".fc-event": {
-                  overflow: "hidden",
-                },
-                ".fc-event-main": {
-                  overflow: "hidden",
-                },
-                ".fc-event-time, .fc-event-title": {
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                },
-                "@media (max-width: 768px)": {
-                  ".fc": {
-                    minWidth: "720px",
-                  },
-                  ".fc-col-header-cell-cushion, .fc-resource": {
-                    fontSize: "0.7rem",
-                  },
-                  ".fc-timegrid-slot-label": {
-                    fontSize: "0.7rem",
-                  },
-                },
+          <Box className="calendar-wrapper" h="calc(100vh - 220px)" position="relative">
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[
+                resourceTimeGridPlugin,
+                dayGridPlugin,
+                timeGridPlugin,
+                interactionPlugin,
+              ]}
+              initialView="resourceTimeGridWeek"
+              resources={resources}
+              events={filteredEvents}
+              headerToolbar={false}
+              height="100%"
+              allDaySlot={false}
+              slotMinTime="07:00:00"
+              slotMaxTime="23:00:00"
+              expandRows={true}
+              nowIndicator={true}
+              businessHours={computedBusinessHours.length > 0 ? computedBusinessHours : undefined}
+              editable={true}
+              selectable={true}
+              selectMirror={true}
+              dayMaxEvents={true}
+              select={handleSelect}
+              eventClick={handleEventClick}
+              eventContent={renderEventContent}
+              slotLabelFormat={{
+                hour: 'numeric',
+                minute: '2-digit',
+                omitZeroMinute: true,
+                meridiem: 'short'
               }}
-            >
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, timeGridPlugin, resourceTimeGridPlugin, interactionPlugin]}
-                initialView={hasResources ? "resourceTimeGridWeek" : "timeGridWeek"}
-                schedulerLicenseKey="GPL-My-Project-Is-Open-Source"
-                resources={resources}
-                resourceAreaWidth={showNames ? "140px" : "0px"}
-                resourceAreaHeaderContent={showNames ? "Practitioner" : ""}
-                views={{
-                  resourceTimeGridThreeDay: { type: "resourceTimeGridWeek", duration: { days: 3 } },
-                  resourceTimeGridWeek: { type: "resourceTimeGridWeek" },
-                  resourceTimeGridDay: { type: "resourceTimeGridDay" },
-                }}
-                selectable
-                select={handleSelect}
-                businessHours={computedBusinessHours.length > 0 ? computedBusinessHours : undefined}
-                events={filteredEvents}
-                eventClick={handleEventClick}
-                datesSet={(arg) => {
-                  setCurrentView(arg.view.type);
-                  setMiniDate(arg.start);
-                  setRangeTitle(arg.view.title);
-                }}
-                height="78vh"
-                slotMinTime="07:00:00"
-                slotMaxTime="22:00:00"
-                allDaySlot={false}
-                headerToolbar={false}
-                eventContent={(arg) => {
-                  const clientName = arg.event.extendedProps.client_name;
-                  const typeName = arg.event.extendedProps.event_type_name;
-                  return (
-                    <Box>
-                      <Text fontSize="xs" fontWeight="bold">
-                        {arg.timeText}
-                      </Text>
-                      <Text fontSize="sm" fontWeight="semibold">
-                        {clientName || arg.event.title}
-                      </Text>
-                      <Text fontSize="xs">{typeName || "Session"}</Text>
-                    </Box>
-                  );
-                }}
-                eventTextColor="#1F2A2E"
-                dayHeaderFormat={{ weekday: "short", day: "numeric" }}
-                slotLabelFormat={{ hour: "numeric", minute: "2-digit", meridiem: "short" }}
-              />
-            </Box>
+              datesSet={(arg) => {
+                setCurrentView(arg.view.type);
+                setMiniDate(arg.start);
+                setRangeTitle(arg.view.title);
+              }}
+              dayHeaderFormat={{ weekday: "short", day: "numeric" }}
+            />
+          </Box>
           )}
         </Box>
 
@@ -999,18 +1033,18 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               </FormControl>
 
               <FormControl>
-                <FormLabel>Patient</FormLabel>
+                <FormLabel>Client</FormLabel>
                 <Input
                   placeholder="Start typing to search patients"
-                  value={patientSearch}
+                  value={clientSearch}
                   onChange={(e) => {
-                    setPatientSearch(e.target.value);
-                    setShowPatientResults(true);
+                    setClientSearch(e.target.value);
+                    setShowClientResults(true);
                   }}
-                  onFocus={() => setShowPatientResults(true)}
-                  onBlur={() => setTimeout(() => setShowPatientResults(false), 150)}
+                  onFocus={() => setShowClientResults(true)}
+                  onBlur={() => setTimeout(() => setShowClientResults(false), 150)}
                 />
-                {showPatientResults && (
+                {showClientResults && (
                   <Box
                     mt={2}
                     border="1px solid #E2E8F0"
@@ -1019,7 +1053,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                     overflowY="auto"
                     bg="white"
                   >
-                    {filteredPatients.map((c) => (
+                    {filteredClients.map((c) => (
                       <Box
                         key={c.id}
                         px={3}
@@ -1028,8 +1062,8 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                         cursor="pointer"
                         onClick={() => {
                           setNewEvent({ ...newEvent, client: String(c.id) });
-                          setPatientSearch(c.name);
-                          setShowPatientResults(false);
+                          setClientSearch(c.name);
+                          setShowClientResults(false);
                         }}
                       >
                         <Text fontSize="sm" fontWeight="semibold">
@@ -1250,10 +1284,10 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               <VStack align="stretch" spacing={6}>
                 {!eventEditMode ? (
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} alignItems="start">
-                    {/* LEFT COLUMN: Patient Info */}
+                    {/* LEFT COLUMN: Client Info */}
                     <VStack align="stretch" spacing={5}>
                       <Box>
-                        <Text fontSize="sm" color="#2E2E2E" fontWeight="semibold" mb={1}>Patient</Text>
+                        <Text fontSize="sm" color="#2E2E2E" fontWeight="semibold" mb={1}>Client</Text>
                         <Text fontWeight="medium" color="gray.800">
                           {selectedEvent.extendedProps?.client_name || "Client"}
                         </Text>
@@ -1314,7 +1348,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
                         borderColor="gray.300"
                         rightIcon={<EditIcon color="#A9CBB7" />}
                         onClick={() =>
-                          navigate(
+                          router.push(
                             selectedEvent.extendedProps?.client
                               ? `/dashboard/therapist?tab=notes&noteClientId=${selectedEvent.extendedProps.client}&newNote=1`
                               : "/dashboard/therapist?tab=notes&newNote=1"
@@ -1557,7 +1591,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               <Box border="1px solid #E2E8F0" borderRadius="md" p={4} mb={6}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   <FormControl>
-                    <FormLabel>Patient</FormLabel>
+                    <FormLabel>Client</FormLabel>
                     <Select
                       placeholder="Select patient"
                       value={waitlistForm.client}
@@ -1628,7 +1662,7 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
 
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
               <FormControl>
-                <FormLabel>Patient</FormLabel>
+                <FormLabel>Client</FormLabel>
                 <Input
                   placeholder="Search patients"
                   value={waitlistSearch}
