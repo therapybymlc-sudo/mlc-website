@@ -15,7 +15,7 @@ import {
   ListItem,
   SimpleGrid,
 } from "@chakra-ui/react";
-import NextLink from 'next/link'
+import LinkButton from "@/components/LinkButton";
 
 export const metadata = {
   title: 'Therapist Supervision & Cohorts | MLC Health & Wellness Centre',
@@ -207,7 +207,7 @@ export default function SupervisionPage() {
           </Accordion>
           <VStack mt={12}>
             <Text fontFamily="'Inter', var(--font-inter), sans-serif">Questions about supervision?</Text>
-            <Button as={NextLink} href="/contactus" bg="#A9CBB7" color="#2E2E2E" borderRadius="full" px={10} _hover={{ bg: "#C9A960", color: "white" }}>Contact Us</Button>
+            <LinkButton href="/contactus" bg="#A9CBB7" color="#2E2E2E" borderRadius="full" px={10} _hover={{ bg: "#C9A960", color: "white" }}>Contact Us</LinkButton>
           </VStack>
         </Box>
       </Container>

@@ -12,7 +12,7 @@ import {
   AccordionIcon,
   Button,
 } from "@chakra-ui/react";
-import NextLink from 'next/link'
+import LinkButton from "@/components/LinkButton";
 
 export const metadata = {
   title: 'Couples Therapy & Marriage Counselling | MLC Health',
@@ -114,8 +114,7 @@ export default function CouplesTherapyPage() {
 
         <VStack mt={16} spacing={4}>
           <Text fontFamily="'Inter', var(--font-inter), sans-serif">Still have questions? Reach out to us anytime.</Text>
-          <Button 
-            as={NextLink} 
+          <LinkButton 
             href="/contactus" 
             bg="#A9CBB7" 
             color="#2E2E2E" 
@@ -124,7 +123,7 @@ export default function CouplesTherapyPage() {
             _hover={{ bg: "#C9A960", color: "white" }}
           >
             Contact Us
-          </Button>
+          </LinkButton>
         </VStack>
       </Container>
     </Box>

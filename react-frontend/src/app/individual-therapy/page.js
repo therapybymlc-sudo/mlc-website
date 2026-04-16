@@ -14,7 +14,7 @@ import {
   List,
   ListItem,
 } from "@chakra-ui/react";
-import NextLink from 'next/link'
+import LinkButton from "@/components/LinkButton";
 
 export const metadata = {
   title: 'Individual Therapy | MLC Health & Wellness Centre',
@@ -143,8 +143,7 @@ export default function IndividualTherapyPage() {
             <Text fontFamily="'Inter', var(--font-inter), sans-serif">
               Didn’t find your question? Reach out to us anytime.
             </Text>
-            <Button
-              as={NextLink}
+            <LinkButton
               href="/contactus"
               bg="#A9CBB7"
               color="black"
@@ -153,7 +152,7 @@ export default function IndividualTherapyPage() {
               _hover={{ bg: "#C9A960", color: "white" }}
             >
               Contact Us
-            </Button>
+            </LinkButton>
           </VStack>
         </Box>
       </Container>

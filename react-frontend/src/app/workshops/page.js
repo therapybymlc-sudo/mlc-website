@@ -13,7 +13,7 @@ import {
   Button,
   SimpleGrid,
 } from "@chakra-ui/react";
-import NextLink from 'next/link'
+import LinkButton from "@/components/LinkButton";
 
 export const metadata = {
   title: 'Workshops & Outreach | MLC Health & Wellness Centre',
@@ -173,8 +173,7 @@ export default function WorkshopsPage() {
             <Text fontFamily="'Inter', var(--font-inter), sans-serif">
               Didn’t find your question? Reach out to us anytime.
             </Text>
-            <Button
-              as={NextLink}
+            <LinkButton
               href="/contactus"
               bg="#A9CBB7"
               color="#2E2E2E"
@@ -183,7 +182,7 @@ export default function WorkshopsPage() {
               _hover={{ bg: "#C9A960", color: "white" }}
             >
               Contact Us
-            </Button>
+            </LinkButton>
           </VStack>
         </Box>
       </Container>

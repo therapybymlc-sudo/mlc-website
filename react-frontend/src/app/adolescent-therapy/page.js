@@ -12,7 +12,7 @@ import {
   AccordionIcon,
   Button,
 } from "@chakra-ui/react";
-import NextLink from 'next/link'
+import LinkButton from "@/components/LinkButton";
 
 export const metadata = {
   title: 'Adolescent Therapy | MLC Health & Wellness Centre',
@@ -93,17 +93,16 @@ export default function AdolescentTherapyPage() {
 
         <VStack mt={16} spacing={4}>
           <Text fontFamily="'Inter', var(--font-inter), sans-serif">Still have questions?</Text>
-          <Button 
-            as={NextLink} 
-            href="/contactus" 
-            bg="#A9CBB7" 
-            color="#2E2E2E" 
-            borderRadius="full" 
+          <LinkButton
+            href="/contactus"
+            bg="#A9CBB7"
+            color="black"
+            borderRadius="full"
             px={10}
             _hover={{ bg: "#C9A960", color: "white" }}
           >
             Contact Us
-          </Button>
+          </LinkButton>
         </VStack>
       </Container>
     </Box>
