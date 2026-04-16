@@ -137,6 +137,7 @@ export default function ClientDashboard({ initialSection }) {
   })();
   const [activeSection, setActiveSection] = useState(initialSection || "overview");
   const [journalContent, setJournalContent] = useState(() => {
+    if (typeof window === "undefined") return { html: "", text: "" };
     const draft = localStorage.getItem(LOCAL_KEYS.journalDraft);
     if (!draft) return { html: "", text: "" };
     try {
@@ -149,6 +150,7 @@ export default function ClientDashboard({ initialSection }) {
   const [journalIntensity, setJournalIntensity] = useState(5);
   const [timeZones, setTimeZones] = useState([]);
   const [notesContent, setNotesContent] = useState(() => {
+    if (typeof window === "undefined") return { html: "", text: "" };
     const saved = localStorage.getItem(LOCAL_KEYS.notesRich);
     if (saved) {
       try {
@@ -161,12 +163,14 @@ export default function ClientDashboard({ initialSection }) {
     return { html: legacy ? `<p>${legacy}</p>` : "", text: legacy };
   });
   const [shareNotes, setShareNotes] = useState(false);
-  const [mood, setMood] = useState(
-    localStorage.getItem(LOCAL_KEYS.mood) || "Okay"
-  );
+  const [mood, setMood] = useState(() => {
+    if (typeof window === "undefined") return "Okay";
+    return localStorage.getItem(LOCAL_KEYS.mood) || "Okay";
+  });
   const [goals, setGoals] = useState(defaultGoals);
   const [newGoal, setNewGoal] = useState("");
   const [profile, setProfile] = useState(() => {
+    if (typeof window === "undefined") return null;
     const saved = localStorage.getItem(LOCAL_KEYS.profile);
     if (!saved) return null;
     try {
@@ -186,40 +190,26 @@ export default function ClientDashboard({ initialSection }) {
   const [showCheckin, setShowCheckin] = useState(false);
   const [checkinStep, setCheckinStep] = useState(0);
   const [checkinData, setCheckinData] = useState(() => {
+    if (typeof window === "undefined")
+      return {
+        mood: "", energy: "", stress: "", gratitude: "", note: "",
+        sleepQuality: "", bodyFeel: "", worry: "", smallGoal: "",
+        joy: "", learned: "", challenge: "", tomorrow: "",
+      };
     const saved = localStorage.getItem(LOCAL_KEYS.checkinData);
     if (!saved)
       return {
-        mood: "",
-        energy: "",
-        stress: "",
-        gratitude: "",
-        note: "",
-        sleepQuality: "",
-        bodyFeel: "",
-        worry: "",
-        smallGoal: "",
-        joy: "",
-        learned: "",
-        challenge: "",
-        tomorrow: "",
+        mood: "", energy: "", stress: "", gratitude: "", note: "",
+        sleepQuality: "", bodyFeel: "", worry: "", smallGoal: "",
+        joy: "", learned: "", challenge: "", tomorrow: "",
       };
     try {
       return JSON.parse(saved);
     } catch {
       return {
-        mood: "",
-        energy: "",
-        stress: "",
-        gratitude: "",
-        note: "",
-        sleepQuality: "",
-        bodyFeel: "",
-        worry: "",
-        smallGoal: "",
-        joy: "",
-        learned: "",
-        challenge: "",
-        tomorrow: "",
+        mood: "", energy: "", stress: "", gratitude: "", note: "",
+        sleepQuality: "", bodyFeel: "", worry: "", smallGoal: "",
+        joy: "", learned: "", challenge: "", tomorrow: "",
       };
     }
   });

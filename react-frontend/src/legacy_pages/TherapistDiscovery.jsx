@@ -38,7 +38,7 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiSearch, FiAlertCircle } from "rea
 import { apiPost } from "../api.js";
 import TherapistCard from "../components/TherapistCard";
 import { useAuth } from "../context/AuthContext";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 
 const MotionBox = motion(Box);
 
@@ -115,6 +115,11 @@ const DASS_ITEMS = [
 export default function TherapistDiscovery() {
   const [view, setView] = useState("quiz"); // quiz, results, high_risk
   const [currentSection, setCurrentSection] = useState(0);
+  const location = (() => {
+    try { return useLocation(); } catch (e) {
+      return typeof window !== "undefined" ? window.location : { pathname: "", search: "" };
+    }
+  })();
   const [quizData, setQuizData] = useState({
     // Basics
     consent: null,

@@ -22,7 +22,9 @@ import { FiCheckCircle, FiVideo, FiClock, FiShield, FiHeart, FiGlobe } from "rea
 import { apiGet } from "../api.js";
 
 export default function TherapistProfileDetail() {
-  const { id } = useParams();
+  const { id } = (() => {
+    try { return useParams(); } catch (e) { return {}; }
+  })();
   const [therapist, setTherapist] = useState(null);
   const [loading, setLoading] = useState(true);
 

@@ -95,6 +95,7 @@ export default function TherapistDashboard() {
   const [showCareCheckin, setShowCareCheckin] = useState(false);
   const [careStep, setCareStep] = useState(0);
   const [careCheckin, setCareCheckin] = useState(() => {
+    if (typeof window === "undefined") return { mood: "", energy: "", gratitude: "", note: "" };
     const saved = localStorage.getItem("mlc_therapist_checkin_data");
     if (!saved) return { mood: "", energy: "", gratitude: "", note: "" };
     try {
@@ -103,10 +104,12 @@ export default function TherapistDashboard() {
       return { mood: "", energy: "", gratitude: "", note: "" };
     }
   });
-  const [careNote, setCareNote] = useState(
-    localStorage.getItem("mlc_therapist_care_note") || ""
-  );
+  const [careNote, setCareNote] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("mlc_therapist_care_note") || "";
+  });
   const [careJournalContent, setCareJournalContent] = useState(() => {
+    if (typeof window === "undefined") return { html: "", text: "" };
     const draft = localStorage.getItem("mlc_therapist_journal_draft");
     if (!draft) return { html: "", text: "" };
     try {
@@ -135,6 +138,7 @@ export default function TherapistDashboard() {
   );
 
   const [therapistJournalEntries, setTherapistJournalEntries] = useState(() => {
+    if (typeof window === "undefined") return [];
     const raw = localStorage.getItem("mlc_therapist_journal_entries");
     if (!raw) return [];
     try {
