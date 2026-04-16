@@ -2,21 +2,18 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   '/', 
-  '/about', 
-  '/services', 
-  '/meettheteam', 
-  '/book', 
-  '/contactus', 
-  '/careers',
-  '/individual-therapy',
-  '/couples-therapy',
-  '/adolescent-therapy',
-  '/supervision',
-  '/workshops',
-  '/therapists(.*)',
-  '/api(.*)', // Allow API routes unless handled elsewhere
   '/login(.*)',
-  '/signup(.*)'
+  '/signup(.*)',
+  '/about(.*)',
+  '/services(.*)',
+  '/contactus(.*)',
+  '/individual-therapy(.*)',
+  '/couples-therapy(.*)',
+  '/adolescent-therapy(.*)',
+  '/supervision(.*)',
+  '/workshops(.*)',
+  '/therapists(.*)',
+  '/api(.*)'
 ]);
 
 export default clerkMiddleware((auth, request) => {
