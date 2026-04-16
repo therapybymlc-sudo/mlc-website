@@ -3,9 +3,11 @@ import { useOutletContext, useParams } from "react-router-dom";
 import { Box, Heading, Table, Thead, Tbody, Tr, Th, Td, Spinner } from "@chakra-ui/react";
 import { apiGet } from "../../api.js";
 
-export default function ClientAppointments() {
-  const { client } = useOutletContext();
-  const { id } = useParams();
+export default function ClientAppointments({ client: clientProp, id: idProp }) {
+  const context = useOutletContext() || {};
+  const client = clientProp || context.client || { name: "Client" };
+  const params = useParams() || {};
+  const id = idProp || params.id;
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
 

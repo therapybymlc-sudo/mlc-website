@@ -1,8 +1,9 @@
 import { useOutletContext } from "react-router-dom";
 import { Heading, Text, SimpleGrid, Box } from "@chakra-ui/react";
 
-export default function ClientInfo() {
-  const { client } = useOutletContext();
+export default function ClientInfo({ client: clientProp }) {
+  const context = useOutletContext() || {};
+  const client = clientProp || context.client || { name: "Client", email: "-" };
 
   return (
     <Box>
