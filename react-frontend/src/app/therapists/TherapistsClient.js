@@ -199,7 +199,7 @@ export default function TherapistsClient() {
                           Experience a seamless clinical journey where your <b>supervisor is on the same platform</b>. Conduct your reflective sessions through our secure video tools, tracks goals together, and share clinical resources in one unified space.
                         </Text>
                         <Text color="gray.600">
-                          Our cohorts aren't just for case-by-case troubleshooting—they are designed to help you <b>grow as a therapist and an individual</b> in the room with your clients.
+                          Our cohorts transcend simple case-by-case troubleshooting—they are designed for the <b>holistic evolution of your therapeutic identity</b>, helping you cultivate the clinical depth and personal presence required to truly hold space for the human experience.
                         </Text>
                      </VStack>
                      <Button as={NextLink} href="/supervision" variant="link" color="teal.800" rightIcon={<FiChevronDown />} fontWeight="800">Explore Supervision</Button>
