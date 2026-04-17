@@ -148,7 +148,7 @@ export default function AboutClient() {
                     <Circle size="40px" bg="teal.700" color="teal.300"><Icon as={FiZap} /></Circle>
                     <VStack align="start" spacing={0}>
                       <Text fontWeight="800" fontSize="md">Body</Text>
-                      <Text fontSize="sm" opacity="0.8">The biological and somatic foundation of our well-being—focusing on nervous system regulation, physical grounding, and the somatic integration of healing.</Text>
+                      <Text fontSize="sm" opacity="0.8">Addressing the literal biological foundation of health—focusing on physical fitness, physiological well-being, and the tangible needs of our bodies as a vessel for growth.</Text>
                     </VStack>
                   </HStack>
                 </VStack>
