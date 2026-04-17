@@ -665,8 +665,6 @@ export default function AdminDashboard() {
   const { isAuthenticated, isAdmin, login, loading } = useAuth();
   const toast = useToast();
 
-  if (!isMounted) return null;
-
   const [members, setMembers] = useState([]);
   const [draft, setDraft] = useState(emptyMember);
   const [editingId, setEditingId] = useState(null);
@@ -964,6 +962,8 @@ export default function AdminDashboard() {
       fetchTherapistApplications();
     }
   }, [isAuthenticated, isAdmin]);
+
+  if (!isMounted) return null;
 
   if (loading) {
     return (
