@@ -1671,9 +1671,51 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = TherapistApplicationSerializer
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        # We allow staff and admins to see applications
+        roles = _extract_roles_from_auth(self.request)
+        if "admin" in roles or self.request.user.is_staff:
             return super().get_queryset()
         return TherapistApplication.objects.none()
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        roles = _extract_roles_from_auth(request)
+        if "admin" not in roles and not request.user.is_staff:
+            return Response({"detail": "Admin permissions required."}, status=status.HTTP_403_FORBIDDEN)
+            
+        app = self.get_object()
+        if app.status == "approved":
+            return Response({"detail": "This application is already approved."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        review_notes = request.data.get("review_notes", "")
+        
+        with transaction.atomic():
+            app.status = "approved"
+            app.approved_at = timezone.now()
+            if review_notes:
+                app.review_notes = review_notes
+            app.save()
+            
+            # Create or update Therapist Profile
+            # Note: We try to find by email first
+            profile, created = TherapistProfile.objects.get_or_create(
+                email=app.email,
+                defaults={
+                    "name": f"{app.first_name} {app.last_name}",
+                    "phone": app.phone,
+                    "bio": app.relevant_experience or "Approved Therapist",
+                    "languages": app.languages,
+                    "concerns": app.therapeutic_stance or "",
+                    "is_verified": True,
+                }
+            )
+            
+            if not created:
+                profile.is_verified = True
+                profile.name = f"{app.first_name} {app.last_name}"
+                profile.save()
+                
+        return Response({"detail": f"Application for {app.first_name} approved and profile created."})
 
 
 class VerifyTherapistView(APIView):

@@ -17,6 +17,8 @@ import {
   Divider,
   useToast,
   FormHelperText,
+  Tag,
+  Wrap,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -4407,35 +4409,116 @@ export default function AdminDashboard() {
 
         <Box bg="white" p={6} borderRadius="2xl" boxShadow="md" mb={10}>
           <Heading size="md" mb={6}>
-            Therapist Verification & Applications
+            Therapist Vetting & Verification
           </Heading>
 
           <VStack align="stretch" spacing={10}>
              <Box>
                 <Heading size="sm" mb={4} color="mlc.greenDark">
-                  Pending Applications ({therapistApplications.length})
+                  Therapist Applications ({therapistApplications.filter(a => a.status === 'pending').length} Pending)
                 </Heading>
                 {therapistApplications.length === 0 ? (
-                  <Text color="gray.500" fontSize="sm">No pending applications.</Text>
+                  <Text color="gray.500" fontSize="sm">No applications found.</Text>
                 ) : (
-                  <VStack align="stretch" spacing={3}>
+                  <VStack align="stretch" spacing={6}>
                     {therapistApplications.map(app => (
-                      <Box key={app.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" _hover={{ bg: "gray.50" }}>
-                        <HStack justify="space-between">
+                      <Box key={app.id} p={6} border="1px solid" borderColor="gray.200" borderRadius="2xl" boxShadow="sm" bg={app.status === 'approved' ? "gray.50" : "white"}>
+                        <HStack justify="space-between" mb={4}>
                           <VStack align="flex-start" spacing={1}>
-                            <Text fontWeight="600">{app.first_name} {app.last_name}</Text>
-                            <Text fontSize="xs" color="gray.500">{app.email} • {app.phone}</Text>
-                            <Text fontSize="xs" color="gray.600">Experience: {app.years_experience} yrs • Qualification: {app.highest_qualification}</Text>
+                            <HStack>
+                              <Text fontWeight="700" fontSize="lg">{app.first_name} {app.last_name}</Text>
+                              <Tag colorScheme={app.status === 'approved' ? "green" : "orange"} size="sm" variant="subtle">
+                                {app.status.toUpperCase()}
+                              </Tag>
+                            </HStack>
+                            <Text fontSize="sm" color="gray.600">{app.email} • {app.phone}</Text>
                           </VStack>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            colorScheme="teal"
-                            onClick={() => window.open(app.resume, "_blank")}
-                          >
-                            View Resume
-                          </Button>
+                          <HStack spacing={3}>
+                             <Button size="sm" variant="ghost" onClick={() => window.open(app.resume, "_blank")}>CV</Button>
+                             {app.qualification_doc && <Button size="sm" variant="ghost" onClick={() => window.open(app.qualification_doc, "_blank")}>Quals</Button>}
+                             {app.license_doc && <Button size="sm" variant="ghost" onClick={() => window.open(app.license_doc, "_blank")}>License</Button>}
+                          </HStack>
                         </HStack>
+
+                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4} p={4} bg="rgba(95, 160, 147, 0.05)" borderRadius="xl">
+                           <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">CLINICAL EXPERIENCE</Text>
+                              <Text fontSize="sm">{app.years_experience} Years ({app.highest_qualification})</Text>
+                           </Box>
+                           <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">LANGUAGES</Text>
+                              <Wrap spacing={1} mt={1}>
+                                {Array.isArray(app.languages) ? app.languages.map(l => <Tag key={l} size="sm" variant="outline">{l}</Tag>) : <Text fontSize="sm">{app.languages}</Text>}
+                              </Wrap>
+                           </Box>
+                           <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">POPULATIONS</Text>
+                              <Wrap spacing={1} mt={1}>
+                                {Array.isArray(app.populations) ? app.populations.map(p => <Tag key={p} size="sm" variant="outline">{p}</Tag>) : <Text fontSize="sm">{app.populations}</Text>}
+                              </Wrap>
+                           </Box>
+                        </SimpleGrid>
+
+                        <VStack align="stretch" spacing={3} mb={6}>
+                           <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">THERAPEUTIC STANCE</Text>
+                              <Text fontSize="sm" noOfLines={3}>{app.therapeutic_stance}</Text>
+                           </Box>
+                           <Box>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">RELEVANT EXPERIENCE</Text>
+                              <Text fontSize="sm" noOfLines={3}>{app.relevant_experience}</Text>
+                           </Box>
+                        </VStack>
+
+                        {app.status === 'pending' && (
+                          <VStack align="stretch" spacing={4} borderTop="1px dashed" borderColor="gray.200" pt={4}>
+                             <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="bold">Internal Review Notes</FormLabel>
+                                <Textarea 
+                                  placeholder="Notes for our clinical team..." 
+                                  size="sm" 
+                                  id={`notes-${app.id}`}
+                                  borderRadius="md"
+                                />
+                             </FormControl>
+                             <HStack justify="flex-end">
+                                <Button 
+                                  variant="ghost" 
+                                  colorScheme="red" 
+                                  size="sm"
+                                  onClick={async () => {
+                                    if(!confirm("Are you sure you want to reject this application?")) return;
+                                    try { 
+                                      await apiPut(`manage-therapist-applications/${app.id}/`, { status: "rejected" });
+                                      fetchTherapistApplications();
+                                      toast({ status: "info", title: "Application rejected" });
+                                    } catch { toast({ status: "error", title: "Action failed" }); }
+                                  }}
+                                >
+                                  Reject
+                                </Button>
+                                <Button 
+                                  bg="mlc.green" 
+                                  color="white" 
+                                  size="md"
+                                  _hover={{ bg: "mlc.greenDark" }}
+                                  onClick={async () => {
+                                    const notes = document.getElementById(`notes-${app.id}`)?.value;
+                                    try {
+                                      await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes });
+                                      toast({ status: "success", title: "Therapist Approved!", description: "Application status updated and profile created." });
+                                      fetchTherapistApplications();
+                                      fetchUnverifiedTherapists();
+                                    } catch {
+                                      toast({ status: "error", title: "Approval failed", description: "Please check console for details." });
+                                    }
+                                  }}
+                                >
+                                  Approve & Onboard
+                                </Button>
+                             </HStack>
+                          </VStack>
+                        )}
                       </Box>
                     ))}
                   </VStack>
@@ -4446,14 +4529,13 @@ export default function AdminDashboard() {
 
              <Box>
                 <Heading size="sm" mb={4} color="mlc.greenDark">
-                  Unverified Therapist Profiles ({unverifiedTherapists.length})
+                  Unverified Profiles ({unverifiedTherapists.length})
                 </Heading>
                 <Text fontSize="xs" color="gray.500" mb={4}>
-                  These are therapists who signed up/onboarded but haven't been verified by MLC yet. 
-                  Verifying them grants them full access to the Therapist Dashboard.
+                  These are therapists who created a profile but haven't been vetted for the public directory.
                 </Text>
                 {unverifiedTherapists.length === 0 ? (
-                  <Text color="gray.500" fontSize="sm">No unverified profiles.</Text>
+                  <Text color="gray.500" fontSize="sm">All profiles verified.</Text>
                 ) : (
                   <VStack align="stretch" spacing={3}>
                     {unverifiedTherapists.map(t => (
@@ -4461,7 +4543,7 @@ export default function AdminDashboard() {
                         <HStack justify="space-between">
                           <VStack align="flex-start" spacing={1}>
                             <Text fontWeight="600">{t.name}</Text>
-                            <Text fontSize="xs" color="gray.500">{t.email}</Text>
+                            <Text fontSize="xs" color="gray.500">{t.email} • ID: {t.id}</Text>
                           </VStack>
                           <Button 
                             size="sm" 
@@ -4477,7 +4559,7 @@ export default function AdminDashboard() {
                               }
                             }}
                           >
-                            Verify Profile
+                            Mark Verified
                           </Button>
                         </HStack>
                       </Box>
