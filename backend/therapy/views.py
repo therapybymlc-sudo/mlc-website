@@ -1691,6 +1691,37 @@ class VerifyTherapistView(APIView):
 class TherapistMatchView(APIView):
     permission_classes = [AllowAny]
 
+    def get(self, request):
+        """Return the latest screening for the authenticated client."""
+        client = _resolve_client_from_request(request)
+        if not client:
+            return Response({"matches": []})
+            
+        latest = client.screenings.order_by("-created_at").first()
+        if not latest:
+            return Response({"matches": []})
+            
+        matches = []
+        for t in latest.recommended_therapists.all():
+            t_data = TherapistProfileSerializer(t).data
+            # In a real match, we'd recalculate or store the score. 
+            # For retrieval, we'll assume they were good matches.
+            t_data["match_score"] = 0 
+            matches.append(t_data)
+            
+        return Response({
+            "screening_id": latest.id,
+            "dass_summary": latest.summary_paragraph,
+            "dass_interpretations": {
+                "depression": latest.dass_depression_level,
+                "anxiety": latest.dass_anxiety_level,
+                "stress": latest.dass_stress_level
+            },
+            "risk_level": latest.risk_level,
+            "matches": matches,
+        })
+
+
     def post(self, request):
         data = request.data
         
@@ -1802,7 +1833,10 @@ class TherapistMatchView(APIView):
         others.sort(key=lambda x: x["match_score"], reverse=True)
         
         # 5. Save Screening
+        client = _resolve_client_from_request(request)
         screening = TherapistScreening.objects.create(
+            client=client,
+
             age=data.get("age"),
             gender=data.get("gender"),
             location=data.get("location", {}),
@@ -1851,6 +1885,7 @@ class TherapistMatchView(APIView):
         return Response({
             "screening_id": screening.id,
             "dass_summary": dass_summary,
+            "dass_interpretations": dass_levels,
             "risk_level": risk_level,
             "matches": matches[:5],
             "others": others[:10]
