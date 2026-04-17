@@ -24,6 +24,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiBell, FiCheckCircle, FiInfo, FiZap, FiTarget } from "react-icons/fi";
 import { apiGet, apiPut } from "../api.js";
+import { useAuth } from "../context/AuthContext";
 
 export default function NotificationCenter() {
   const [notifications, setNotifications] = useState([]);
@@ -31,7 +32,10 @@ export default function NotificationCenter() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
   const toast = useToast();
 
+  const { loading: authLoading, isAuthenticated } = useAuth();
+
   const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
     try {
       setLoading(true);
       const res = await apiGet("notifications/?is_read=false");
@@ -44,11 +48,15 @@ export default function NotificationCenter() {
   };
 
   useEffect(() => {
-    fetchNotifications();
-    // Poll every 5 minutes
-    const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
+    if (!authLoading && isAuthenticated) {
+        fetchNotifications();
+    }
+    // Poll every 5 minutes if authenticated
+    const interval = setInterval(() => {
+        if (isAuthenticated) fetchNotifications();
+    }, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   const markAllAsRead = async () => {
     try {

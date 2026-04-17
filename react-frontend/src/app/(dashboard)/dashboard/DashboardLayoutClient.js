@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }) {
         </Flex>
 
         {/* Dash Page Content */}
-        <Box p={{ base: 4, md: 8, lg: 10 }}>
+        <Box p={{ base: 4, md: 8, lg: 10 }} key={pathname}>
           {children}
         </Box>
       </Box>
