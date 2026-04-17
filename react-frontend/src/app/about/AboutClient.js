@@ -1,62 +1,41 @@
 'use client'
 
+import React, { useState, useEffect } from "react";
 import {
-  Box,
-  Container,
-  SimpleGrid,
-  Heading,
-  Text,
-  Image,
-  Button,
-  VStack,
+  Box, Container, SimpleGrid, Heading, Text, Image, Button, VStack, HStack, Icon, Divider, Badge, Stack, chakra, useColorModeValue,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { FiCheckCircle, FiShield, FiHeart, FiActivity, FiArrowRight, FiTarget, FiUsers } from "react-icons/fi";
 import { apiGet } from "../../api.js";
 import LinkButton from "../../components/LinkButton";
 
+const MotionBox = motion(Box);
+
 const defaultAboutContent = {
   hero: {
-    title: "Our Approach to Care",
-    body:
-      "<p>At MLC Therapy, we believe that sustainable systems create deeper healing. Our philosophy is rooted in three pillars: clinical clarity, relational depth, and ethical accountability. When care is structured and therapists are supported, clients receive consistent, high-quality therapy they can trust.</p>",
-    cta_label: "Meet the Team",
+    title: "Highest Quality Therapy, Vetted for Excellence.",
+    body: "At MLC Therapy, we don't just provide therapy; we curate it. Our collective is built on a foundation of rigorous clinical vetting, relational depth, and unwavering ethical standards. We believe that for therapy to be effective, it must be structured, safe, and deeply aligned with your unique story.",
+    cta_label: "Meet the Collective",
     cta_link: "/meettheteam",
-    image_url: "/approach_new.jpg",
-  },
-  why: {
-    title: "Why We Started MLC Therapy",
-    body:
-      "<p>MLC Therapy was born from witnessing systemic gaps in mental health care. Talented therapists were burning out, and clients were receiving inconsistent support. We envisioned a model that protects both clinical integrity and therapist sustainability, ensuring that client care never suffers.</p>",
+    image_url: "serene_therapy_office_1776423989664", // Using generated image
   },
   pillars: [
     {
-      title: "Clinical Clarity",
-      body:
-        "<p>Every therapist at MLC works from a defined therapeutic orientation. We do not blend methods without intention. Your work is guided by formulation, not improvisation.</p>",
+      title: "Vetted Clinicians",
+      icon: FiShield,
+      body: "Every therapist in our collective undergoes a multi-stage clinical review. We verify credentials, supervise practice, and ensure they meet our 'MLC Standard' of excellence.",
     },
     {
-      title: "Relational Depth",
-      body:
-        "<p>We prioritise attuned presence. Therapy is not mechanical. It is relational, safe, and human.</p>",
+      title: "Relational Safety",
+      icon: FiHeart,
+      body: "Beyond skills, we value attunement. Our process ensures you are paired with a human being who can hold your story with the respect and depth it deserves.",
     },
     {
-      title: "Ethical & Professional Standards",
-      body:
-        "<p>Supervision, documentation, and structured review processes ensure that your care remains aligned with international standards of mental health practice.</p>",
+      title: "Clinical Integrity",
+      icon: FiActivity,
+      body: "We move away from improvisation. Every session is grounded in evidence-informed frameworks like CBT, DBT, and Psychodynamic therapy, tailored to your needs.",
     },
   ],
-  message: {
-    title: "The Message Behind MLC",
-    body:
-      "<p><strong>MLC</strong> stands for <strong>Mentis, Lumine et Corpus</strong>, Latin for Mind, Light, and Body. This name captures our belief that healing is holistic, integrating mental, emotional, and physical well-being.</p><p>Every service we offer, from therapy and supervision to education, reflects that interconnected philosophy. We stand for integrity in care, safety in practice, and growth that holds space for both clients and clinicians.</p>",
-    image_url: "/about_illustration_new.jpg",
-  },
-};
-
-const richTextStyles = {
-  "p + p": { marginTop: "0.75rem" },
-  "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
-  li: { marginBottom: "0.35rem" },
 };
 
 export default function AboutClient() {
@@ -68,294 +47,140 @@ export default function AboutClient() {
         const res = await apiGet("about-content/");
         const data = res.results ?? res;
         if (Array.isArray(data) && data.length > 0) {
-          const entry = data[0];
-          setContent({
-            hero: { ...defaultAboutContent.hero, ...(entry.hero || {}) },
-            why: { ...defaultAboutContent.why, ...(entry.why || {}) },
-            pillars: Array.isArray(entry.pillars) ? entry.pillars : defaultAboutContent.pillars,
-            message: { ...defaultAboutContent.message, ...(entry.message || {}) },
-          });
+           // We'll merge with our new refined logic
+           setContent(prev => ({...prev, ...data[0]}));
         }
-      } catch {
-        setContent(defaultAboutContent);
+      } catch (err) {
+        console.error("Failed to fetch about content", err);
       }
     };
     fetchContent();
   }, []);
 
+  const bgGradient = "linear(to-br, #FDFBFA, #F5F9F7)";
+
   return (
-    <Box bg="#F9F9F9">
-      {/* HERO / INTRO */}
-      <Box py={24} px={8} bg="#F9F9F9">
-        <Container maxW="6xl">
-          <SimpleGrid
-            columns={{ base: 1, md: 2 }}
-            spacing={12}
-            alignItems="center"
-          >
-            <Box>
-              <Heading
-                fontFamily="'Playfair Display', var(--font-playfair), serif"
-                mb={4}
-                color="#2E2E2E"
-                fontWeight="600"
-                fontSize={{ base: "2xl", md: "3xl" }}
-              >
+    <Box bg="#FDFBFA" minH="100vh">
+      {/* 🌟 HERO SECTION */}
+      <Box pt={32} pb={20} px={6} bgGradient={bgGradient}>
+        <Container maxW="7xl">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={16} alignItems="center">
+            <VStack align="start" spacing={8}>
+              <Badge colorScheme="teal" px={4} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE MLC PROMISE</Badge>
+              <Heading as="h1" fontSize={{ base: "4xl", md: "5xl", lg: "6xl" }} fontFamily="'Playfair Display', serif" color="teal.900" lineHeight="1.1" fontWeight="600">
                 {content.hero.title}
               </Heading>
-              <Box
-                fontFamily="'Inter', var(--font-inter), sans-serif"
-                color="#2E2E2E"
-                lineHeight="1.8"
-                fontSize="lg"
-                sx={richTextStyles}
-                dangerouslySetInnerHTML={{ __html: content.hero.body }}
-              />
-
-              <LinkButton
-                href={content.hero.cta_link || "/meettheteam"}
-                mt={8}
-                bg="#56756D"
-                borderRadius="full"
-                color="white"
-                _hover={{ bg: "#C9A960", color: "white" }}
-                px={8}
-                py={5}
-                boxShadow="md"
-              >
-                {content.hero.cta_label || "Meet the Team"}
-              </LinkButton>
-            </Box>
-            <Image
-              src={content.hero.image_url || "/approach_new.jpg"}
-              alt="Therapy room at MLC"
-              borderRadius="2xl"
-              boxShadow="xl"
-              objectFit="cover"
-            />
-          </SimpleGrid>
-        </Container>
-      </Box>
-
-      {/* WHY WE STARTED */}
-      <Box bg="#E9F2ED" py={24} px={8}>
-        <Container maxW="5xl" textAlign="center">
-          <Heading
-            fontFamily="'Playfair Display', var(--font-playfair), serif"
-            mb={6}
-            color="#2E2E2E"
-            fontWeight="600"
-          >
-            {content.why.title}
-          </Heading>
-          <Box
-            color="#2E2E2E"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
-            fontSize="lg"
-            lineHeight="1.8"
-            maxW="3xl"
-            mx="auto"
-            sx={richTextStyles}
-            dangerouslySetInnerHTML={{ __html: content.why.body }}
-          />
-        </Container>
-      </Box>
-
-      {/* THREE PILLARS */}
-      <Box bg="#FFFFFF" py={24} px={8}>
-        <Container maxW="6xl">
-          <Heading
-            fontFamily="'Playfair Display', var(--font-playfair), serif"
-            mb={10}
-            color="#2E2E2E"
-            fontWeight="600"
-            textAlign="center"
-          >
-            Our Three Pillars of Care
-          </Heading>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
-            {content.pillars.map((pillar) => (
-              <Box key={pillar.title} bg="gray.50" p={6} borderRadius="xl" border="1px solid #E2E8F0">
-                <Heading size="md" mb={2} fontFamily="'Playfair Display', var(--font-playfair), serif">
-                  {pillar.title}
-                </Heading>
-                <Box
-                  fontFamily="'Inter', var(--font-inter), sans-serif"
-                  color="#2E2E2E"
-                  sx={richTextStyles}
-                  dangerouslySetInnerHTML={{ __html: pillar.body }}
-                />
-              </Box>
-            ))}
-          </SimpleGrid>
-        </Container>
-      </Box>
-
-      {/* MESSAGE BEHIND MLC */}
-      <Box bg="#FFFFFF" py={24} px={8}>
-        <Container maxW="6xl">
-          <SimpleGrid
-            columns={{ base: 1, md: 2 }}
-            spacing={12}
-            alignItems="center"
-          >
-            <Box>
-              <Heading
-                fontFamily="'Playfair Display', var(--font-playfair), serif"
-                mb={4}
-                color="#2E2E2E"
-                fontWeight="600"
-              >
-                {content.message.title}
-              </Heading>
-              <Box
-                fontFamily="'Inter', var(--font-inter), sans-serif"
-                color="#2E2E2E"
-                lineHeight="1.8"
-                fontSize="lg"
-                sx={richTextStyles}
-                dangerouslySetInnerHTML={{ __html: content.message.body }}
-              />
-            </Box>
-            <Image
-              src={content.message.image_url || "/about_illustration_new.jpg"}
-              alt="Abstract botanical illustration"
-              borderRadius="2xl"
-              boxShadow="xl"
-              objectFit="cover"
-            />
-          </SimpleGrid>
-        </Container>
-      </Box>
-
-      {/* FOUNDER MESSAGE */}
-      <Box bg="#E9F2ED" py={24} px={8}>
-        <Container maxW="6xl">
-          <SimpleGrid
-            columns={{ base: 1, md: 2 }}
-            spacing={12}
-            alignItems="center"
-          >
-            <Box>
-              <Heading
-                fontFamily="'Playfair Display', var(--font-playfair), serif"
-                mb={4}
-                color="#2E2E2E"
-                fontWeight="600"
-              >
-                A Message from the Founder
-              </Heading>
-              <Text
-                fontFamily="'Inter', var(--font-inter), sans-serif"
-                color="#2E2E2E"
-                lineHeight="1.8"
-                fontSize="lg"
-              >
-                “When I began my master’s, I saw countless passionate, skilled
-                therapists leave the field, not because they lacked ability or
-                passion, but because they lacked support. MLC Therapy was my
-                response to that; a model where therapists feel as held as the
-                clients they serve. I’m proud to be building a community where we
-                neither compromise on client care nor therapist well-being while
-                striving to uphold the highest ethical standards.
-                <br />
-                <br />
-                For clients, it means therapy that’s structured, ethical, and
-                deeply human. For therapists, it means community, mentorship, and
-                the security they deserve.”
-                <br />
-                <br />
-                <strong>— Asma Imadi, Founder</strong>
+              <Text fontSize="xl" color="gray.600" lineHeight="tall" maxW="xl">
+                {content.hero.body}
               </Text>
-            </Box>
-            <Image
-              src="/founder_portrait_new.jpg"
-              alt="Asma Imadi"
-              borderRadius="2xl"
-              boxShadow="2xl"
-              objectFit="cover"
-              maxH="420px"
-            />
+              <HStack spacing={4}>
+                <LinkButton href="/therapists/discovery" bg="teal.800" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "teal.900", transform: "translateY(-2px)" }} transition="all 0.3s">
+                  Find Your Match
+                </LinkButton>
+                <LinkButton href="/meettheteam" variant="ghost" color="teal.800" rightIcon={<FiArrowRight />}>
+                  Meet the Team
+                </LinkButton>
+              </HStack>
+            </VStack>
+            <MotionBox initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
+              <Image 
+                src={`/api/media_proxy?path=${encodeURIComponent('/Users/asma02/.gemini/antigravity/brain/2bfefee7-901c-4f8a-baad-d895398db39d/serene_therapy_office_1776423989664.png')}`} 
+                alt="MLC Serene Office" 
+                borderRadius="3rem" 
+                shadow="2xl" 
+                objectFit="cover"
+                h={{ base: "400px", md: "600px" }}
+                w="full"
+              />
+            </MotionBox>
           </SimpleGrid>
         </Container>
       </Box>
 
-      {/* VISION + MISSION */}
-      <Box bg="#FFFFFF" py={24} px={8} textAlign="center">
-        <Container maxW="5xl">
-          <Heading
-            fontFamily="'Playfair Display', var(--font-playfair), serif"
-            mb={6}
-            color="#2E2E2E"
-            fontWeight="600"
-          >
-            Our Vision
-          </Heading>
-          <Text
-            color="#2E2E2E"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
-            fontSize="lg"
-            lineHeight="1.8"
-            mb={10}
-            maxW="3xl"
-            mx="auto"
-          >
-            To redefine mental health care by building a system that supports
-            both the client and the clinician. We aim to bridge the gap between
-            passion and sustainability in mental healthcare, creating spaces
-            where quality, ethics, and compassion coexist.
-          </Text>
-
-          <Heading
-            fontFamily="'Playfair Display', var(--font-playfair), serif"
-            mb={6}
-            color="#2E2E2E"
-            fontWeight="600"
-          >
-            Our Mission
-          </Heading>
-          <Text
-            color="#2E2E2E"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
-            fontSize="lg"
-            lineHeight="1.8"
-            maxW="3xl"
-            mx="auto"
-          >
-            To make therapy accessible, ethical, and deeply human, ensuring that
-            every therapist feels valued and every client feels seen.
-          </Text>
-          <Text fontSize="sm" color="#56756D" fontFamily="'Inter', var(--font-inter), sans-serif" mt={6}>
-            We offer online therapy services to individuals, couples, and families across Mumbai,
-            Delhi, Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.
-          </Text>
+      {/* 🏛️ OUR PILLARS */}
+      <Box py={24} px={6}>
+        <Container maxW="7xl">
+          <VStack spacing={16}>
+            <VStack spacing={4} textAlign="center" maxW="3xl">
+              <Heading color="teal.900" fontFamily="'Playfair Display', serif" fontSize="4xl">The Pillars of Our Collective</Heading>
+              <Text color="gray.600" fontSize="lg">We’ve moved away from the 'marketplace' model to a supervised clinical collective. This is how we ensure the highest standard of care.</Text>
+            </VStack>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
+              {content.pillars.map((pillar, i) => (
+                <VStack key={i} align="start" p={10} bg="white" borderRadius="2rem" shadow="sm" border="1px solid" borderColor="teal.50" transition="all 0.3s" _hover={{ shadow: "xl", transform: "translateY(-5px)" }}>
+                  <Icon as={pillar.icon || FiCheckCircle} w={10} h={10} color="teal.500" mb={4} />
+                  <Heading size="md" color="teal.800" mb={2}>{pillar.title}</Heading>
+                  <Text color="gray.600" lineHeight="relaxed">{pillar.body}</Text>
+                </VStack>
+              ))}
+            </SimpleGrid>
+          </VStack>
         </Container>
       </Box>
 
-      {/* CTA */}
-      <Box bg="#56756D" py={20} textAlign="center">
-        <Heading
-          color="white"
-          fontFamily="'Playfair Display', var(--font-playfair), serif"
-          fontWeight="600"
-          mb={6}
-          letterSpacing="-0.5px"
-        >
-          Ready to Experience the MLC Approach?
-        </Heading>
-        <LinkButton
-          href="/book"
-          bg="white"
-          color="#2E2E2E"
-          borderRadius="full"
-          px={8}
-          py={6}
-          fontWeight="500"
-          _hover={{ bg: "#C9A960", color: "white" }}
-          boxShadow="md"
-        >
-          Book a Session
-        </LinkButton>
+      {/* 💡 THE MLC IDENTITY */}
+      <Box bg="teal.900" py={24} color="white" position="relative" overflow="hidden">
+        <Box position="absolute" top="-10%" right="-10%" w="40%" h="40%" bg="teal.800" borderRadius="full" filter="blur(100px)" opacity="0.3" />
+        <Container maxW="7xl">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={16} alignItems="center">
+            <MotionBox initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <VStack align="start" spacing={8}>
+                <Heading fontSize="4xl" fontFamily="'Playfair Display', serif">The Meaning Behind MLC</Heading>
+                <Text fontSize="lg" opacity="0.9" lineHeight="1.8">
+                  <b>MLC</b> stands for <b>Mentis, Lumine et Corpus</b>—Latin for Mind, Light, and Body. Our name encapsulates our philosophy: that true healing happens when we bring the <b>'Light'</b> of clinical clarity to the complexities of the <b>'Mind'</b> and the <b>'Body'</b>.
+                </Text>
+                <VStack align="start" spacing={4}>
+                  <HStack spacing={4}><Icon as={FiTarget} color="teal.300" /><Text fontWeight="600">Mind: Psychological and emotional structure.</Text></HStack>
+                  <HStack spacing={4}><Icon as={FiActivity} color="teal.300" /><Text fontWeight="600">Light: Clarity, insight, and clinical truth.</Text></HStack>
+                  <HStack spacing={4}><Icon as={FiHeart} color="teal.300" /><Text fontWeight="600">Body: Physical grounding and nervous system safety.</Text></HStack>
+                </VStack>
+              </VStack>
+            </MotionBox>
+            <MotionBox initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+               <Image 
+                 src={`/api/media_proxy?path=${encodeURIComponent('/Users/asma02/.gemini/antigravity/brain/2bfefee7-901c-4f8a-baad-d895398db39d/clinical_matching_graph_1776424018069.png')}`} 
+                 alt="Clinical Insight" 
+                 borderRadius="3rem"
+               />
+            </MotionBox>
+          </SimpleGrid>
+        </Container>
+      </Box>
+
+      {/* 👩‍💼 FOUNDER MESSAGE */}
+      <Box py={24} px={6}>
+        <Container maxW="7xl">
+          <Box p={{ base: 8, md: 16 }} bg="white" borderRadius="4rem" shadow="2xl" border="1px solid" borderColor="gray.100">
+             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={16} alignItems="center">
+                <Box order={{ base: 2, md: 1 }}>
+                  <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900" mb={8}>A Message from the Founder</Heading>
+                  <Text fontSize="lg" color="gray.600" lineHeight="1.8" fontStyle="italic">
+                    “I saw countless skilled therapists leave the field not because they lacked passion, but because they lacked support. MLC Therapy is a response to that; a community where therapists feel as held as the clients they serve. For you, it means therapy that is structured, ethical, and deeply human.”
+                  </Text>
+                  <Box mt={8}>
+                    <Text fontWeight="800" fontSize="xl" color="teal.800">Asma Imadi</Text>
+                    <Text color="gray.500" fontWeight="600">Founder, Psychologist & Clinical Lead</Text>
+                  </Box>
+                </Box>
+                <Box order={{ base: 1, md: 2 }}>
+                   <Image src="/founder_portrait_new.jpg" alt="Asma Imadi" borderRadius="3rem" shadow="xl" h="500px" w="full" objectFit="cover" />
+                </Box>
+             </SimpleGrid>
+          </Box>
+        </Container>
+      </Box>
+
+      {/* 🚀 CTA */}
+      <Box py={24} bgGradient="linear(to-r, teal.800, teal.900)" color="white" textAlign="center">
+         <Container maxW="3xl">
+            <VStack spacing={8}>
+              <Heading fontSize="4xl" fontFamily="'Playfair Display', serif">Ready to find the right care?</Heading>
+              <Text fontSize="lg" opacity="0.8">Start our clinical discovery quiz to be matched with a vetted specialist tailored to your specific needs.</Text>
+              <LinkButton href="/therapists/discovery" bg="white" color="teal.900" borderRadius="full" px={12} py={8} height="auto" fontWeight="800" fontSize="lg" _hover={{ bg: "teal.50", transform: "scale(1.05)" }}>
+                 Start Your Discovery
+              </LinkButton>
+            </VStack>
+         </Container>
       </Box>
     </Box>
   );
