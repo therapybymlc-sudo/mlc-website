@@ -5,7 +5,7 @@ import {
   Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, IconButton, Progress, Radio, RadioGroup, Checkbox, Stack, Input, Select, useToast, Divider, Icon, Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, AlertTitle, AlertDescription, Badge,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiArrowLeft, FiArrowRight, FiCheck, FiInfo, FiMapPin, FiHeart, FiStar, FiUser, FiActivity, FiShield, FiBriefcase } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiCheck, FiInfo, FiMapPin, FiHeart, FiStar, FiUser, FiActivity, FiShield, FiBriefcase, FiMail, FiPhone } from "react-icons/fi";
 import { apiPost } from "../../../api.js";
 import TherapistCard from "../../../components/TherapistCard";
 import { useAuth } from "../../../context/AuthContext";
@@ -32,7 +32,7 @@ const SECTIONS = [
 
 const LANGUAGES = ["English", "Arabic", "Hindi", "Urdu", "Malayalam", "Tamil", "Kannada", "Bengali", "Marathi", "Punjabi", "Gujarati", "French", "Spanish"];
 const GENDER_OPTIONS = ["Woman", "Man", "Non-binary", "Transgender", "Prefer not to say"];
-const SESSION_TYPES = ["Online Video (Individual)", "In-person (Select Locations)", "Couples Therapy (Online)"];
+const SESSION_TYPES = ["Online Video (Individual)", "In-person (Select Locations)", "No preference"];
 
 const MAJOR_CITIES = [
   "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata", "Surat", "Pune", "Jaipur", 
@@ -46,11 +46,23 @@ const CONCERNS = [
   "Obsessive Thoughts/Compulsions (OCD)", "Anger Management", "Phobias", "Postpartum Distress", "Eating-related concerns"
 ];
 
-const IDENTITY_CONTEXTS = [
-  { group: "Life Stage / Roles", options: ["New mother / postpartum", "Expecting parent", "Single parent", "Caregiver (elderly/disabled)", "Recently married", "Recently divorced / separated", "Blended family", "Only child dynamics"] },
-  { group: "Cultural / Social Context", options: ["First-generation individual", "Second-generation / bicultural", "Migrant / relocation adjustment", "Long-distance relationship", "Cross-cultural relationship", "Conservative family system", "Joint family system"] },
-  { group: "Identity / Lived Experience", options: ["LGBTQ+ identifying", "Living with Chronic Illness / Pain", "Career transition / Workplace distress", "Financial stress / anxiety", "Faith / Spiritual exploration", "Grief (Pet loss / ambiguous loss)"] }
-];
+const IDENTITY_OPTIONS = {
+  lifeStage: [
+    "Student (School/College)", "Early career professional", "Career growth/leadership phase", "Late career/Retirement navigation",
+    "New parent / Expecting parent", "Single parent", "Empty nester", "Caregiver role", "Recently married / Living together",
+    "Recently divorced / Separated", "Re-entering the workforce", "Navigating a major life loss"
+  ],
+  cultural: [
+    "First-generation individual", "Second-generation / Bicultural", "Migrant / Expat adjustment", "Domestic relocation (New city)",
+    "Interfaith / Intercaste background", "Socioeconomic transition", "Moving from Rural to Urban environment",
+    "Navigating traditional vs. western values", "Cross-cultural relationship dynamics"
+  ],
+  livedExperience: [
+    "LGBTQ+ identifying", "Neurodivergent (ADHD, Autism, etc.)", "Living with Chronic Illness / Disability",
+    "Financial stress or anxiety", "Body image journey", "Religious or Spiritual deconstruction", 
+    "Lived experience of a marginalized identity", "Navigating neurodivergent relationships"
+  ]
+};
 
 const DASS_ITEMS = [
   "I found it hard to wind down",
@@ -93,14 +105,19 @@ export default function DiscoveryClient() {
     gender: "",
     location: { country: "India", city: "", timezone: "" },
     languages: ["English"],
-    session_type_pref: "Online Video (Individual)",
+    session_type_pref: "No preference",
     therapist_gender_pref: "No preference",
     religion_pref: "Secular / No preference",
     therapy_style_pref: "Balanced",
     urgency: "Within the next week",
     
     presenting_concerns: [],
-    identity_contexts: [], 
+    // New Dropdown-based Identity Fields
+    life_stage_context: "",
+    cultural_social_context: "",
+    identity_lived_experience: "",
+    other_identity_details: "",
+    
     primary_concern: "",
     duration: "",
     impairment_level: "Moderately",
@@ -113,8 +130,8 @@ export default function DiscoveryClient() {
     health_factors: "No",
     health_factors_details: "",
     
-    sleep_quality: "No significant difficulty",
-    energy_level: "Managing well",
+    sleep_quality: "Good",
+    energy_level: "Steady",
     appetite_level: "Normal",
     support_level: "I have some support",
     support_sources: [],
@@ -125,7 +142,10 @@ export default function DiscoveryClient() {
     immediate_safety_concern: "No",
     dass_answers: {}, 
     
-    marketing_consent: true,
+    email: user?.email || "",
+    phone: "",
+    whatsapp_marketing_consent: false,
+    email_marketing_consent: false,
   });
 
   const progress = (currentSection / (SECTIONS.length - 1)) * 100;
@@ -262,19 +282,30 @@ export default function DiscoveryClient() {
         return (
           <VStack spacing={8} align="stretch">
               <Box><Heading size="md" color="teal.800" mb={2}>Life Context & Identity</Heading><Text fontSize="sm" color="gray.600">Tell us about any specific factors defining your identity or life stage.</Text></Box>
-              {IDENTITY_CONTEXTS.map(group => (
-                <Box key={group.group} pt={4}>
-                   <Text fontSize="xs" fontWeight="bold" color="teal.600" textTransform="uppercase" mb={3}>{group.group}</Text>
-                   <Wrap spacing={2}>
-                      {group.options.map(opt => (
-                        <Tag key={opt} borderRadius="full" cursor="pointer" variant={quizData.identity_contexts.includes(opt) ? "solid" : "outline"} colorScheme="teal" onClick={() => {
-                             const current = quizData.identity_contexts;
-                             setQuizData({...quizData, identity_contexts: current.includes(opt) ? current.filter(o => o !== opt) : [...current, opt]});
-                          }}>{opt}</Tag>
-                      ))}
-                   </Wrap>
-                </Box>
-              ))}
+              <VStack spacing={6} align="stretch">
+                 <FormControl>
+                    <FormLabel fontWeight="bold" fontSize="sm" color="teal.600">LIFE STAGE / ROLES</FormLabel>
+                    <Select placeholder="Select your current phase" borderRadius="xl" value={quizData.life_stage_context} onChange={(e) => setQuizData({...quizData, life_stage_context: e.target.value})}>
+                       {IDENTITY_OPTIONS.lifeStage.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </Select>
+                 </FormControl>
+                 <FormControl>
+                    <FormLabel fontWeight="bold" fontSize="sm" color="teal.600">CULTURAL / SOCIAL CONTEXT</FormLabel>
+                    <Select placeholder="Select cultural context" borderRadius="xl" value={quizData.cultural_social_context} onChange={(e) => setQuizData({...quizData, cultural_social_context: e.target.value})}>
+                       {IDENTITY_OPTIONS.cultural.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </Select>
+                 </FormControl>
+                 <FormControl>
+                    <FormLabel fontWeight="bold" fontSize="sm" color="teal.600">IDENTITY / LIVED EXPERIENCE</FormLabel>
+                    <Select placeholder="Select lived experience" borderRadius="xl" value={quizData.identity_lived_experience} onChange={(e) => setQuizData({...quizData, identity_lived_experience: e.target.value})}>
+                       {IDENTITY_OPTIONS.livedExperience.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </Select>
+                 </FormControl>
+                 <FormControl>
+                    <FormLabel fontWeight="bold" fontSize="sm" color="teal.600">OTHER CONTEXTS</FormLabel>
+                    <Textarea placeholder="Feel free to share any other identity or life details here..." borderRadius="xl" value={quizData.other_identity_details} onChange={(e) => setQuizData({...quizData, other_identity_details: e.target.value})} />
+                 </FormControl>
+              </VStack>
           </VStack>
         );
       case 3:
@@ -332,7 +363,15 @@ export default function DiscoveryClient() {
       case 7:
         return (
           <VStack spacing={8} align="stretch">
-              <Alert status="error" borderRadius="xl"><AlertIcon /><Text fontSize="sm">Please visit an emergency room immediately if in crisis.</Text></Alert>
+              <Alert status="error" borderRadius="xl" bg="red.50" color="red.800" border="1px solid" borderColor="red.100">
+                <AlertIcon />
+                <Box>
+                   <AlertTitle>Safety Notice</AlertTitle>
+                   <AlertDescription fontSize="sm" lineHeight="tall">
+                      MLC does not currently have emergency services. In case of emergencies please visit your nearest Hospital's emergency unit or Contact your countries national helplines for support. We hope that we can soon build our emergency services to provide more individuals the support they need during times of crisis.
+                   </AlertDescription>
+                </Box>
+              </Alert>
               <FormControl isRequired><FormLabel fontWeight="600">Thoughts of self-harm?</FormLabel><Select value={quizData.suicidal_thoughts} onChange={(e) => setQuizData({...quizData, suicidal_thoughts: e.target.value})} borderRadius="xl"><option value="No">No</option><option value="Passive">Passive thoughts</option><option value="Active">Active / I feel at risk</option></Select></FormControl>
               <FormControl isRequired><FormLabel fontWeight="600">Past history of self-harm?</FormLabel><RadioGroup value={quizData.past_self_harm} onChange={(v) => setQuizData({...quizData, past_self_harm: v})}><Stack direction="row" spacing={8}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></Stack></RadioGroup></FormControl>
               <FormControl isRequired><FormLabel fontWeight="600">Safe in your current environment?</FormLabel><RadioGroup value={quizData.feels_safe} onChange={(v) => setQuizData({...quizData, feels_safe: v})}><Stack direction="row" spacing={8}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></Stack></RadioGroup></FormControl>
@@ -366,10 +405,35 @@ export default function DiscoveryClient() {
         );
       case 9:
         return (
-          <VStack spacing={10} align="center" textAlign="center" py={12}>
-              <Box p={8} borderRadius="full" bg="teal.50" color="teal.500"><Icon as={FiCheck} w={16} h={16} /></Box>
-              <VStack spacing={4}><Heading size="lg">Matches are ready!</Heading><Text color="gray.600" maxW="lg">We've personalized our recommendations based on your history, context, and screening results.</Text></VStack>
-              <Checkbox isChecked={quizData.marketing_consent} onChange={(e) => setQuizData({...quizData, marketing_consent: e.target.checked})}>I'd like to receive mental health resources and updates from MLC via email.</Checkbox>
+          <VStack spacing={10} align="stretch" py={6}>
+              <Box textAlign="center">
+                 <Icon as={FiCheck} w={12} h={12} color="teal.500" mb={4}/>
+                 <Heading size="lg">One Final Step</Heading>
+                 <Text color="gray.600">Please provide your contact details so we can save your results and send you matches.</Text>
+              </Box>
+              
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                 <FormControl isRequired>
+                    <FormLabel fontWeight="600">Email Address</FormLabel>
+                    <InputGroup>
+                       <Input value={quizData.email} onChange={(e) => setQuizData({...quizData, email: e.target.value})} borderRadius="xl" placeholder="example@email.com" />
+                    </InputGroup>
+                 </FormControl>
+                 <FormControl isRequired>
+                    <FormLabel fontWeight="600">Phone Number (WhatsApp)</FormLabel>
+                    <Input value={quizData.phone} onChange={(e) => setQuizData({...quizData, phone: e.target.value})} borderRadius="xl" placeholder="+91 00000 00000" />
+                 </FormControl>
+              </SimpleGrid>
+
+              <VStack align="stretch" spacing={4} bg="teal.50" p={6} borderRadius="2xl">
+                 <Checkbox isChecked={quizData.whatsapp_marketing_consent} onChange={(e) => setQuizData({...quizData, whatsapp_marketing_consent: e.target.checked})}>
+                    <Text fontSize="sm">I'd like to receive mental health resources and updates via <b>WhatsApp</b>.</Text>
+                 </Checkbox>
+                 <Checkbox isChecked={quizData.email_marketing_consent} onChange={(e) => setQuizData({...quizData, email_marketing_consent: e.target.checked})}>
+                    <Text fontSize="sm">I'd like to receive mental health resources and updates via <b>Email</b>.</Text>
+                 </Checkbox>
+              </VStack>
+
               <Button size="xl" bg="teal.800" color="white" borderRadius="full" px={16} h={16} onClick={submitQuiz} isLoading={isLoading}>View Recommendations</Button>
           </VStack>
         );
@@ -424,14 +488,14 @@ export default function DiscoveryClient() {
 
              <VStack py={12} borderTop="1px solid" borderColor="gray.100" spacing={6}>
                 <Text color="gray.500" fontSize="sm">Not sure who to choose? Book a consultation with our Intake Coordinator.</Text>
-                <Button bg="teal.800" color="white" borderRadius="full" px={10} h={14} _hover={{ bg: "teal.900" }}>Book Intake Consultation</Button>
+                <Button as={NextLink} href="/book-now" bg="teal.800" color="white" borderRadius="full" px={10} h={14} _hover={{ bg: "teal.900" }}>Book Intake Consultation</Button>
              </VStack>
          </VStack>
       </Container>
     );
   };
 
-  if (view === "high_risk") return <Box py={20} textAlign="center"><Heading>Immediate Support Recommended</Heading><Text mt={4}>Please contact 1800-599-0019 (KIRAN India).</Text></Box>;
+  if (view === "high_risk") return <Box py={20} textAlign="center"><Heading>Immediate Support Recommended</Heading><Text mt={4}>Please contact your countries national helplines or nearest hospital ER.</Text></Box>;
   if (view === "results") return renderResults();
 
   return (
