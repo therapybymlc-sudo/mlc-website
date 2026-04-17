@@ -48,6 +48,7 @@ from therapy.models import (
     TherapistScreening,
     ContactMessage,
     QuickBooking,
+    SafetyPlan,
 )
 from therapy.utils import (
     calculate_dass_scores,
@@ -95,6 +96,8 @@ from therapy.serializers import (
     TherapistApplyContentSerializer,
     ContactMessageSerializer,
     QuickBookingSerializer,
+    SafetyPlanSerializer,
+    TherapeuticRelationshipSerializer,
 )
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,
@@ -1981,3 +1984,39 @@ class QuickBookingViewSet(viewsets.ModelViewSet):
         if self.action != 'create':
             _require_admin(self.request)
         return super().get_queryset()
+
+class SafetyPlanViewSet(viewsets.ModelViewSet):
+    serializer_class = SafetyPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        client = _resolve_client_from_request(self.request)
+        if not client: return SafetyPlan.objects.none()
+        return SafetyPlan.objects.filter(client=client)
+
+    def perform_create(self, serializer):
+        client = _resolve_client_from_request(self.request)
+        serializer.save(client=client)
+
+    @action(detail=False, methods=['get'])
+    def current(self, request):
+        client = _resolve_client_from_request(request)
+        if not client: return Response({"detail": "Client profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        plan, created = SafetyPlan.objects.get_or_create(client=client)
+        serializer = self.get_serializer(plan)
+        return Response(serializer.data)
+
+class TherapeuticRelationshipViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = TherapeuticRelationshipSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        client = _resolve_client_from_request(self.request)
+        if client:
+            return TherapeuticRelationship.objects.filter(client=client, status="active")
+        
+        therapist = _resolve_therapist_from_request(self.request)
+        if therapist:
+            return TherapeuticRelationship.objects.filter(therapist=therapist, status="active")
+            
+        return TherapeuticRelationship.objects.none()

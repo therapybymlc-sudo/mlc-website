@@ -54,10 +54,12 @@ export default function DashboardLayout({ children }) {
     { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
     { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
   ] : [
-    { label: 'Dashboard', icon: FiLayout, href: '/dashboard/client' },
+    { label: 'Overview', icon: FiLayout, href: '/dashboard/client' },
     { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
+    { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
     { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
-    { label: 'Resources', icon: FiBookOpen, href: '/dashboard/client/resources' },
+    { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
+    { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
   ];
 
   const SidebarContent = () => (

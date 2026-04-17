@@ -55,6 +55,8 @@ from therapy.views import (
     VerifyTherapistView,
     ContactMessageViewSet,
     QuickBookingViewSet,
+    SafetyPlanViewSet,
+    TherapeuticRelationshipViewSet,
 )
 
 # ----------------------------
@@ -98,6 +100,8 @@ router.register(r"therapist-apply-content", TherapistApplyContentViewSet, basena
 router.register(r"manage-therapist-applications", TherapistApplicationViewSet, basename="manage-therapist-applications")
 router.register(r"contact-messages", ContactMessageViewSet, basename="contact-messages")
 router.register(r"quick-bookings", QuickBookingViewSet, basename="quick-bookings")
+router.register(r"safety-plans", SafetyPlanViewSet, basename="safety-plans")
+router.register(r"therapist-relationships", TherapeuticRelationshipViewSet, basename="therapist-relationships")
 
 # ----------------------------
 # Small utility/test endpoints

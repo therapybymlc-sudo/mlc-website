@@ -36,6 +36,7 @@ from therapy.models import (
     TherapistApplyContent,
     ContactMessage,
     QuickBooking,
+    SafetyPlan,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -1001,4 +1002,17 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 class QuickBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickBooking
+        fields = "__all__"
+
+class SafetyPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SafetyPlan
+        fields = "__all__"
+
+class TherapeuticRelationshipSerializer(serializers.ModelSerializer):
+    therapist_name = serializers.ReadOnlyField(source="therapist.name")
+    client_name = serializers.ReadOnlyField(source="client.name")
+    
+    class Meta:
+        model = TherapeuticRelationship
         fields = "__all__"

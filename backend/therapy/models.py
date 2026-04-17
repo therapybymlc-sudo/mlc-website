@@ -1778,3 +1778,18 @@ class QuickBooking(models.Model):
 
     def __str__(self):
         return f"Booking inquiry from {self.full_name} ({self.created_at.date()})"
+
+class SafetyPlan(models.Model):
+    client = models.OneToOneField(ClientProfile, on_delete=models.CASCADE, related_name='safety_plan')
+    warning_signs = models.TextField(blank=True, help_text="How do I know when things are getting hard?")
+    coping_strategies = models.TextField(blank=True, help_text="Things I can do on my own")
+    social_distractions = models.TextField(blank=True, help_text="Places and people for distraction")
+    social_supports = models.TextField(blank=True, help_text="People I can ask for help")
+    professional_supports = models.TextField(blank=True, help_text="Professionals and agencies (MLC, Emergency)")
+    environment_safety = models.TextField(blank=True, help_text="How to make my environment safe")
+    reason_for_living = models.TextField(blank=True, help_text="One thing that is important to me")
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Safety Plan for {self.client.name}"
