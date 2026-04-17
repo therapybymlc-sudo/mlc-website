@@ -13,7 +13,7 @@ import {
 } from "react-icons/fi";
 import { apiUpload } from "../../api.js";
 import LinkButton from "../../components/LinkButton";
-import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { useUser, SignInButton } from "@clerk/nextjs";
 
 const MotionBox = motion(Box);
 const STORAGE_KEY = "mlc_therapist_apply_v2";
@@ -38,7 +38,7 @@ const STEPS = [
 ];
 
 export default function TherapistApplyClient() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const toast = useToast();
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -227,7 +227,7 @@ export default function TherapistApplyClient() {
       </Container>
 
       <Container maxW="4xl" pb={32}>
-        <SignedOut>
+        {!isSignedIn ? (
            <Box bg="white" p={16} borderRadius="3rem" shadow="xl" textAlign="center">
               <VStack spacing={6}>
                  <Icon as={FiShield} w={12} h={12} color="teal.800" />
@@ -238,9 +238,7 @@ export default function TherapistApplyClient() {
                  </SignInButton>
               </VStack>
            </Box>
-        </SignedOut>
-
-        <SignedIn>
+        ) : (
         <form onSubmit={handleApply}>
           <Box bg="white" p={{ base: 8, md: 16 }} borderRadius="3rem" shadow="xl" border="1px solid" borderColor="teal.50">
             <AnimatePresence mode="wait">
@@ -481,7 +479,7 @@ export default function TherapistApplyClient() {
             </HStack>
           </Box>
         </form>
-        </SignedIn>
+        )}
       </Container>
     </Box>
   );
