@@ -25,6 +25,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiAlertTriangle, FiHeart, FiPhone, FiShield, FiSave, FiInfo } from "react-icons/fi";
 import { apiGet, apiPut } from "../../../../../api.js";
+import { useAuth } from "../../../../../context/AuthContext";
 
 export default function SafetyClient() {
   const toast = useToast();
