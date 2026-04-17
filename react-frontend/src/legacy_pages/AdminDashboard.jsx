@@ -657,8 +657,16 @@ function RichTextEditor({ value, onChange }) {
 }
 
 export default function AdminDashboard() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const { isAuthenticated, isAdmin, login, loading } = useAuth();
   const toast = useToast();
+
+  if (!isMounted) return null;
+
   const [members, setMembers] = useState([]);
   const [draft, setDraft] = useState(emptyMember);
   const [editingId, setEditingId] = useState(null);
@@ -4448,13 +4456,21 @@ export default function AdminDashboard() {
                            <Box>
                               <Text fontSize="xs" color="gray.500" fontWeight="bold">LANGUAGES</Text>
                               <Wrap spacing={1} mt={1}>
-                                {Array.isArray(app.languages) ? app.languages.map(l => <Tag key={l} size="sm" variant="outline">{l}</Tag>) : <Text fontSize="sm">{app.languages}</Text>}
+                                {Array.isArray(app.languages) ? app.languages.map((l, idx) => (
+                                  <Tag key={idx} size="sm" variant="outline">
+                                    {typeof l === 'object' ? (l.name || JSON.stringify(l)) : String(l)}
+                                  </Tag>
+                                )) : <Text fontSize="sm">{String(app.languages || "")}</Text>}
                               </Wrap>
                            </Box>
                            <Box>
                               <Text fontSize="xs" color="gray.500" fontWeight="bold">POPULATIONS</Text>
                               <Wrap spacing={1} mt={1}>
-                                {Array.isArray(app.populations) ? app.populations.map(p => <Tag key={p} size="sm" variant="outline">{p}</Tag>) : <Text fontSize="sm">{app.populations}</Text>}
+                                {Array.isArray(app.populations) ? app.populations.map((p, idx) => (
+                                  <Tag key={idx} size="sm" variant="outline">
+                                    {typeof p === 'object' ? (p.name || JSON.stringify(p)) : String(p)}
+                                  </Tag>
+                                )) : <Text fontSize="sm">{String(app.populations || "")}</Text>}
                               </Wrap>
                            </Box>
                         </SimpleGrid>
