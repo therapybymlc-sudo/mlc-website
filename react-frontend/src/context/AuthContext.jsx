@@ -49,10 +49,18 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
-        const [tRes, cRes] = await Promise.all([
-          api.get("therapists/me/").catch(() => null),
-          api.get("clients/me/").catch(() => null)
-        ]);
+        const fetchTasks = [];
+        if (isTherapist) {
+          fetchTasks.push(api.get("therapists/me/").catch(() => null));
+        } else {
+          fetchTasks.push(Promise.resolve(null));
+        }
+        
+        // Always try client me as fallback or if client
+        fetchTasks.push(api.get("clients/me/").catch(() => null));
+
+        const [tRes, cRes] = await Promise.all(fetchTasks);
+        
         if (mounted) {
           if (tRes) setTherapistProfile(tRes.data);
           if (cRes) setClientProfile(cRes.data);
