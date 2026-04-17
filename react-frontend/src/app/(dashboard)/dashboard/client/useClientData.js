@@ -5,7 +5,7 @@ import { apiGet } from '../../../../api.js';
 import { useAuth } from '../../../../context/AuthContext';
 
 export function useClientData() {
-  const { isLoaded, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const [data, setData] = useState({
     goals: [],
     appointments: [],
@@ -45,12 +45,12 @@ export function useClientData() {
   };
 
   useEffect(() => {
-    if (isLoaded && isAuthenticated) {
+    if (!authLoading && isAuthenticated) {
         refreshData();
-    } else if (isLoaded && !isAuthenticated) {
+    } else if (!authLoading && !isAuthenticated) {
         setData(prev => ({ ...prev, loading: false }));
     }
-  }, [isLoaded, isAuthenticated]);
+  }, [authLoading, isAuthenticated]);
 
   return { ...data, refreshData };
 }

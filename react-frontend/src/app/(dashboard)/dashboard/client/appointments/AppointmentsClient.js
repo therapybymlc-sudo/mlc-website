@@ -26,7 +26,7 @@ import { useAuth } from "../../../../../context/AuthContext";
 
 export default function AppointmentsClient() {
   const toast = useToast();
-  const { isLoaded, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,12 +36,12 @@ export default function AppointmentsClient() {
   }, []);
 
   useEffect(() => {
-    if (isLoaded && isAuthenticated) {
+    if (!authLoading && isAuthenticated) {
         fetchAppointments();
-    } else if (isLoaded && !isAuthenticated) {
+    } else if (!authLoading && !isAuthenticated) {
         setLoading(false);
     }
-  }, [isLoaded, isAuthenticated]);
+  }, [authLoading, isAuthenticated]);
 
   if (!isMounted) return null;
 

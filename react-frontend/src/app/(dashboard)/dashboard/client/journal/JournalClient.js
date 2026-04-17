@@ -48,7 +48,7 @@ const MotionBox = motion(Box);
 
 export default function JournalClient() {
   const toast = useToast();
-  const { isLoaded, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [entries, setEntries] = useState([]);
@@ -76,10 +76,10 @@ export default function JournalClient() {
   }, []);
 
   useEffect(() => {
-    if (isLoaded && isAuthenticated) {
+    if (!authLoading && isAuthenticated) {
         fetchEntries();
     }
-  }, [isLoaded, isAuthenticated]);
+  }, [authLoading, isAuthenticated]);
 
   if (!isMounted) return null;
 

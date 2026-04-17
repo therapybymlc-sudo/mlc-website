@@ -1354,6 +1354,11 @@ class ClientJournal(models.Model):
 
 
 class ClientGoal(models.Model):
+    CATEGORY_CHOICES = [
+        ('daily', 'Daily'),
+        ('short_term', 'Short Term'),
+        ('long_term', 'Long Term'),
+    ]
     client = models.ForeignKey(
         ClientProfile, on_delete=models.CASCADE, related_name="goals"
     )
@@ -1365,6 +1370,9 @@ class ClientGoal(models.Model):
         related_name="client_goals",
     )
     title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='short_term')
+    color = models.CharField(max_length=20, default='#56756D')
     created_by = models.CharField(
         max_length=20,
         choices=[("client", "Client"), ("therapist", "Therapist")],

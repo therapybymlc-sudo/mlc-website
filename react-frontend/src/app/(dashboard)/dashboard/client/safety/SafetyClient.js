@@ -28,6 +28,7 @@ import { apiGet, apiPut } from "../../../../../api.js";
 
 export default function SafetyClient() {
   const toast = useToast();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,10 +57,12 @@ export default function SafetyClient() {
         setLoading(false);
       }
     };
-    if (isMounted) {
+    if (isMounted && !authLoading && isAuthenticated) {
       fetchPlan();
+    } else if (isMounted && !authLoading && !isAuthenticated) {
+        setLoading(false);
     }
-  }, [isMounted]);
+  }, [isMounted, authLoading, isAuthenticated]);
 
   if (!isMounted) return null;
 
