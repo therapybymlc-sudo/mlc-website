@@ -123,46 +123,52 @@ export default function HomeClient() {
       <MotionBox
         position="relative"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
-        bgSize="cover"
-        bgPosition={{ base: "center center", md: "center 20%" }}
+        bgSize={{ base: "contain", md: "contain" }}
+        bgPosition={{ base: "top center", md: "left center" }}
         bgRepeat="no-repeat"
-        minH={{ base: "100dvh", md: "100vh" }}
+        bgColor="#FDFBFA" // Matches the illustration's base color
+        minH={{ base: "80dvh", md: "100vh" }}
         display="flex"
         flexDirection="column"
-        alignItems="center"
+        alignItems={{ base: "center", md: "flex-end" }}
         justifyContent="center"
-        textAlign="center"
+        textAlign={{ base: "center", md: "left" }}
         overflow="hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
-        _before={{
-          content: '""',
-          position: "absolute",
-          inset: 0,
-          bg: "linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.85) 100%)",
-          zIndex: 1,
-        }}
+        px={{ base: 6, md: 20 }}
       >
-        <Box position="relative" zIndex={2} maxW="4xl" px={8} pb={12}>
+        {/* Subtle Fade for the right-aligned text area */}
+        <Box 
+          position="absolute"
+          inset={0}
+          bg={{ 
+            base: "linear-gradient(180deg, rgba(253,251,250,0.5) 0%, rgba(253,251,250,0.95) 100%)",
+            md: "linear-gradient(90deg, rgba(253,251,250,0) 0%, rgba(253,251,250,0.85) 50%, rgba(253,251,250,1) 100%)" 
+          }}
+          zIndex={1}
+        />
+
+        <Box position="relative" zIndex={2} maxW="3xl" w="full" pt={{ base: "40dvh", md: 0 }}>
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
-            boxSize={{ base: "90px", sm: "110px", md: "130px" }}
-            mb={{ base: 6, md: 8 }}
-            mx="auto"
+            boxSize={{ base: "80px", sm: "100px", md: "120px" }}
+            mb={8}
+            mx={{ base: "auto", md: "0" }}
           />
           <Heading
             as="h1"
             fontFamily="'Playfair Display', var(--font-playfair), serif"
             fontWeight="600"
-            fontSize={{ base: "2.5rem", md: "4.5rem", lg: "5.5rem" }}
+            fontSize={{ base: "2.5rem", md: "4rem", lg: "5rem" }}
             color="#2E2E2E"
-            letterSpacing="-0.02em"
-            lineHeight={{ base: "1.2", md: "1.1" }}
+            letterSpacing="-0.01em"
+            lineHeight="1.1"
             mb={6}
           >
-            Find the therapist meant for <Text as="span" color="mlc.green" whiteSpace="nowrap">your journey</Text>
+            Find the therapist meant for <Text as="span" color="mlc.green">your journey</Text>
           </Heading>
           
           <Text
@@ -171,9 +177,8 @@ export default function HomeClient() {
             color="#56756D"
             fontFamily="'Inter', var(--font-inter), sans-serif"
             fontWeight="700"
-            letterSpacing="0.15em"
+            letterSpacing="2px"
             textTransform="uppercase"
-            opacity={0.9}
           >
             {homeContent.hero.tagline}
           </Text>
@@ -185,13 +190,12 @@ export default function HomeClient() {
             fontSize={{ base: "md", md: "lg" }}
             lineHeight="1.8"
             maxW="2xl"
-            mx="auto"
-            fontWeight="400"
+            mx={{ base: "auto", md: "0" }}
           >
             {homeContent.hero.paragraph_one || "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through."}
           </Text>
 
-          <VStack spacing={6} mt={12} align="center">
+          <HStack spacing={6} mt={12} justify={{ base: "center", md: "flex-start" }} flexWrap="wrap">
             <Button
               as={NextLink}
               href="/therapists/discovery"
@@ -203,13 +207,13 @@ export default function HomeClient() {
               _hover={{ bg: "#C9A960", transform: "scale(1.05)", shadow: "dark-lg" }}
               fontWeight="600"
               fontSize="lg"
-              px={14}
+              px={12}
               py={8}
             >
               Take the Matching Quiz
             </Button>
-            <HStack spacing={4}>
-              <Text fontSize="xs" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>
+            <VStack align={{ base: "center", md: "flex-start" }} spacing={1}>
+              <Text fontSize="xs" color="gray.500" fontWeight="500">Know who you're looking for?</Text>
               <ChakraLink
                 as={NextLink}
                 href="/therapists"
@@ -220,12 +224,11 @@ export default function HomeClient() {
                 borderBottom="2px solid"
                 borderColor="mlc.green"
                 _hover={{ color: "mlc.gold", borderColor: "mlc.gold" }}
-                pb="1px"
               >
                 Browse all therapists
               </ChakraLink>
-            </HStack>
-          </VStack>
+            </VStack>
+          </HStack>
         </Box>
       </MotionBox>
 
