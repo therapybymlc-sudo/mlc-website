@@ -90,6 +90,19 @@ export default function TherapistApplyClient() {
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleFileChange = (key) => (e) => {
+    setFiles(prev => ({ ...prev, [key]: e.target.files?.[0] || null }));
+  };
+
+  const updateListItem = (list, setList, index, field, value) => {
+    const newList = [...list];
+    newList[index][field] = value;
+    setList(newList);
+  };
+
+  const addListItem = (list, setList, emptyObj) => setList([...list, { ...emptyObj }]);
+  const removeListItem = (list, setList, index) => setList(list.filter((_, i) => i !== index));
+
   const togglePopulation = (p) => {
     setSelectedPopulations(curr => curr.includes(p) ? curr.filter(x => x !== p) : [...curr, p]);
   };
