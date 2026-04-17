@@ -11,7 +11,7 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import { FiClock, FiVideo, FiMapPin, FiCheckCircle } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import NextLink from "next/link";
 
 export default function TherapistCard({ therapist, isMatch = false }) {
   return (
@@ -121,8 +121,8 @@ export default function TherapistCard({ therapist, isMatch = false }) {
 
           <HStack spacing={4}>
             <Button
-              as={Link}
-              to={`/therapists/${therapist.id}`}
+              as={NextLink}
+              href={`/therapists/${therapist.id}`}
               variant="outline"
               flex="1"
               borderRadius="full"
@@ -134,8 +134,8 @@ export default function TherapistCard({ therapist, isMatch = false }) {
               View Profile
             </Button>
             <Button
-              as={Link}
-              to={`/booking?therapist=${therapist.id}`}
+              as={NextLink}
+              href={`/book?therapist=${therapist.id}`}
               flex="1"
               borderRadius="full"
               fontSize="sm"
