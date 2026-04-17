@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { apiGet } from '../../../../api.js';
+import { useAuth } from '../../../../context/AuthContext';
 
 export function useClientData() {
+  const { isLoaded, isAuthenticated } = useAuth();
   const [data, setData] = useState({
     goals: [],
     appointments: [],
@@ -15,6 +17,8 @@ export function useClientData() {
   });
 
   const refreshData = async () => {
+    if (!isAuthenticated) return;
+    
     try {
       const [goals, appts, journals, checkins, resources, relations] = await Promise.all([
         apiGet("client-goals/"),
@@ -41,8 +45,12 @@ export function useClientData() {
   };
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (isLoaded && isAuthenticated) {
+        refreshData();
+    } else if (isLoaded && !isAuthenticated) {
+        setData(prev => ({ ...prev, loading: false }));
+    }
+  }, [isLoaded, isAuthenticated]);
 
   return { ...data, refreshData };
 }
