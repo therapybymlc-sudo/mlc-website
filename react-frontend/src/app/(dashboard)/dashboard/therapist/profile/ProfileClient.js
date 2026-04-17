@@ -17,7 +17,16 @@ import { apiGet, apiPut, apiPost } from "../../../../../api.js";
 const CATEGORIES = {
   AGE_GROUPS: ["Children", "Pre-teens", "Adolescents", "Young adults", "Adults", "Older adults", "Couples", "Families", "Parents"],
   CLINICAL_ROLES: ["Counselling Psychologist", "Clinical Psychologist", "Psychotherapist", "Psychologist in training", "Marriage and Family Therapist", "Counsellor"],
-  MODALITIES: ["CBT", "DBT-informed", "Psychodynamic", "Humanistic", "ACT", "REBT", "Attachment-based", "Trauma-informed", "Gottman Method", "Narrative Therapy", "Existential", "EMDR", "IFS", "Schema Therapy"],
+  MODALITIES_GROUPS: {
+    "Core Evidence-Based": ["CBT", "DBT (Full)", "ACT", "Cognitive Processing Therapy (CPT)", "Prolonged Exposure (PE)", "Behavioral Activation (BA)", "Compassion-Focused Therapy (CFT)", "Metacognitive Therapy (MCT)", "MBCT", "MBSR", "ERP (for OCD)"],
+    "Trauma-Specific": ["TF-CBT", "EMDR", "Internal Family Systems (IFS)", "Somatic Experiencing (SE)", "Sensorimotor Psychotherapy", "Narrative Exposure Therapy (NET)", "Brainspotting", "Polyvagal-Informed"],
+    "Humanistic / Experiential": ["Person-Centered", "Gestalt Therapy", "Emotion-Focused (Individual)", "Existential Therapy", "Logotherapy"],
+    "Relationship & Family": ["Emotion-Focused (Couples)", "Gottman Method", "Imago Relationship Therapy", "Structural Family Therapy", "Bowen Family Systems", "Relational Therapy"],
+    "Psychodynamic / Depth": ["Psychoanalytic Therapy", "Short-term Psychodynamic", "Object Relations", "Jungian Therapy", "Relational Psychoanalysis"],
+    "Somatic / Body-Based": ["Somatic Therapy (General)", "Body Psychotherapy", "Hakomi Method", "Mind-Body Therapy", "Breathwork-Informed"],
+    "Integrative / Holistic": ["Integrative Psychotherapy", "Eclectic Therapy", "Solution-Focused (SFBT)", "Narrative Therapy", "Motivational Interviewing (MI)", "Positive Psychology"],
+    "Child & Adolescent": ["Play Therapy", "Sand Tray Therapy", "Art Therapy", "Expressive Arts Therapy", "DBT-A"]
+  },
   LANGUAGES: ["English", "Arabic", "Hindi", "Urdu", "Malayalam", "Tamil", "French", "Spanish"],
   POPULATIONS: ["Women", "Men", "LGBTQ+", "Non-binary", "Expats in foreign countries", "Digital Nomads", "International Students", "Working Professionals", "Neurodivergent (ADHD/Autism)", "South Asian Diaspora", "Interfaith Families"],
   CONCERNS: [
@@ -390,44 +399,102 @@ export default function ProfileClient() {
           <TabPanel>
             <VStack align="stretch" spacing={10}>
                <Box>
-                  <FormLabel fontWeight="800">Therapeutic Orientation</FormLabel>
-                  <Text fontSize="xs" color="gray.500" mb={4}>Select only modalities you have been <b>trained and supervised in</b>. Generic profiles with too many specialisations get indexed lower.</Text>
+                  <Heading size="md" mb={4} color="mlc.greenDark">Therapeutic Orientation & Modalities</Heading>
                   
-                  <Wrap spacing={2} mb={8}>
-                     {CATEGORIES.MODALITIES.map(m => (
-                       <Tag key={m} cursor="pointer" variant={profile.modalities_info?.find(mi => mi.name === m) ? "solid" : "outline"} colorScheme="teal" onClick={() => {
-                          const exists = profile.modalities_info?.find(mi => mi.name === m);
-                          const updated = exists ? profile.modalities_info.filter(mi => mi.name !== m) : [...(profile.modalities_info || []), { name: m, training: "", supervision: "" }];
-                          setProfile({...profile, modalities_info: updated});
-                       }} borderRadius="full">{m}</Tag>
-                     ))}
-                  </Wrap>
+                  <Box p={6} bg="orange.50" borderRadius="2rem" border="1px solid" borderColor="orange.100" mb={8}>
+                     <HStack color="orange.800" mb={3}><Icon as={FiAlertCircle}/><Text fontWeight="bold">Clinical Advisory & Ethics</Text></HStack>
+                     <VStack align="stretch" spacing={3}>
+                        <Text fontSize="xs" fontWeight="500">
+                          1. Select only modalities you have been <b>practically trained and supervised in</b>. 
+                        </Text>
+                        <Text fontSize="xs" fontWeight="500">
+                          2. <b>Limit your selection to 8 total.</b> Generic profiles with too many orientations dilute your clinical authority and are indexed lower by search engines.
+                        </Text>
+                        <Text fontSize="xs" color="orange.700" fontStyle="italic">
+                          * Non-practical trainings with no supervised follow-through will be flagged to maintain MLC standards.
+                        </Text>
+                     </VStack>
+                  </Box>
 
-                  <Alert status="info" size="sm" mb={6} borderRadius="xl" bg="teal.50" border="1px solid" borderColor="teal.100">
-                     <AlertIcon />
-                     <Text fontSize="xs">Non-practical trainings with no supervised follow through will be periodically reviewed and flagged in order to maintain MLC standards of treatment.</Text>
-                  </Alert>
+                  <VStack align="stretch" spacing={8} mb={10}>
+                     <FormControl isRequired>
+                        <FormLabel fontWeight="800">Primary Therapeutic Modality</FormLabel>
+                        <Text fontSize="xs" color="gray.500" mb={2}>Your "Main Lens" – the modality that informs your case formulation most strongly.</Text>
+                        <Select 
+                          placeholder="Select Primary Modality" variant="filled" borderRadius="xl"
+                          value={profile.primary_orientation}
+                          onChange={(e) => setProfile({...profile, primary_orientation: e.target.value})}
+                        >
+                           {profile.modalities_info?.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                        </Select>
+                     </FormControl>
 
+                     <Box>
+                        <HStack justify="space-between" mb={4}>
+                           <FormLabel fontWeight="800" mb={0}>Clinical Modalities (Max 8 Total)</FormLabel>
+                           <Badge colorScheme={profile.modalities_info?.length > 8 ? "red" : "teal"} borderRadius="full" px={3}>
+                              {profile.modalities_info?.length || 0} / 8 Selected
+                           </Badge>
+                        </HStack>
+
+                        <VStack align="stretch" spacing={6}>
+                           {Object.entries(CATEGORIES.MODALITIES_GROUPS).map(([category, items]) => (
+                             <Box key={category}>
+                                <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="widest" mb={3}>{category}</Text>
+                                <Wrap spacing={2}>
+                                   {items.map(m => {
+                                      const isSelected = profile.modalities_info?.find(mi => mi.name === m);
+                                      return (
+                                        <Tag 
+                                           key={m} cursor="pointer" borderRadius="full" px={4} py={2}
+                                           variant={isSelected ? "solid" : "outline"}
+                                           colorScheme={isSelected ? "teal" : "gray"}
+                                           onClick={() => {
+                                              if (!isSelected && (profile.modalities_info?.length || 0) >= 8) {
+                                                 toast({ title: "Selection limit reached", description: "Please select a maximum of 8 modalities to maintain profile specificity.", status: "warning" });
+                                                 return;
+                                              }
+                                              const updated = isSelected 
+                                                ? profile.modalities_info.filter(mi => mi.name !== m) 
+                                                : [...(profile.modalities_info || []), { name: m, training: "", supervision: "" }];
+                                              setProfile({...profile, modalities_info: updated});
+                                           }}
+                                        >
+                                           <TagLabel fontSize="xs">{m}</TagLabel>
+                                        </Tag>
+                                      );
+                                   })}
+                                </Wrap>
+                             </Box>
+                           ))}
+                        </VStack>
+                     </Box>
+                  </VStack>
+
+                  <Heading size="xs" mb={6} textTransform="uppercase" letterSpacing="widest" color="teal.700">Detailed Training & Supervision Logs</Heading>
                   <VStack align="stretch" spacing={6}>
                      {profile.modalities_info?.map((info, idx) => (
-                       <Box key={info.name} p={6} bg="white" border="1px solid" borderColor="gray.100" borderRadius="2xl" shadow="sm">
-                          <Heading size="xs" mb={4} color="teal.700">{info.name} Details</Heading>
-                          <SimpleGrid columns={1} spacing={4}>
-                             <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Training Background</FormLabel>
-                                <Input placeholder="Certification, Institution, Hours" value={info.training} onChange={(e) => {
+                       <Box key={info.name} p={8} bg="teal.50" border="1px solid" borderColor="teal.100" borderRadius="2.5rem" shadow="sm">
+                          <HStack mb={4} justify="space-between">
+                             <Heading size="sm" color="teal.800">{info.name}</Heading>
+                             <Badge colorScheme="teal" variant="solid" borderRadius="full">Mandatory Log</Badge>
+                          </HStack>
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                             <FormControl isRequired>
+                                <FormLabel fontSize="xs" fontWeight="bold">Training Institution & Year</FormLabel>
+                                <Input bg="white" placeholder="Institution name, certification details..." value={info.training} onChange={(e) => {
                                    const updated = [...profile.modalities_info];
                                    updated[idx].training = e.target.value;
                                    setProfile({...profile, modalities_info: updated});
-                                }} borderRadius="lg" />
+                                }} borderRadius="xl" />
                              </FormControl>
-                             <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Supervision Received</FormLabel>
-                                <Textarea placeholder="Supervisor Name, How long, Position, Preferred Contact Details" value={info.supervision} onChange={(e) => {
+                             <FormControl isRequired>
+                                <FormLabel fontSize="xs" fontWeight="bold">Clinical Supervision Details</FormLabel>
+                                <Textarea bg="white" placeholder="Supervisor Name, How long, Contact / Position" value={info.supervision} onChange={(e) => {
                                    const updated = [...profile.modalities_info];
                                    updated[idx].supervision = e.target.value;
                                    setProfile({...profile, modalities_info: updated});
-                                }} borderRadius="lg" />
+                                }} borderRadius="xl" />
                              </FormControl>
                           </SimpleGrid>
                        </Box>
@@ -438,8 +505,8 @@ export default function ProfileClient() {
                <Divider />
 
                <Box>
-                  <FormLabel fontWeight="800">Therapy Dynamics</FormLabel>
-                  <SimpleGrid columns={1} spacing={8} p={8} bg="gray.50" borderRadius="3xl">
+                  <FormLabel fontWeight="800">Therapy Dynamics (Matching Sliders)</FormLabel>
+                  <SimpleGrid columns={1} spacing={8} p={10} bg="gray.50" borderRadius="3rem">
                      <Box>
                         <HStack justify="space-between" mb={2}><Text fontSize="xs">More Structured</Text><Text fontSize="xs">More Exploratory</Text></HStack>
                         <Slider value={profile.structure} onChange={(v) => setProfile({...profile, structure: v})} colorScheme="teal"><SliderTrack><SliderFilledTrack/></SliderTrack><SliderThumb/></Slider>
