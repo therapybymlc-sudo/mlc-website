@@ -38,11 +38,20 @@ import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { useState, useEffect } from 'react';
+
 export default function DashboardLayout({ children }) {
+  const [isMounted, setIsMounted] = useState(false);
   const { user } = useUser();
   const { signOut } = useClerk();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
 
   const isTherapist = user?.publicMetadata?.roles?.includes('therapist') || user?.publicMetadata?.roles?.includes('admin');
 
