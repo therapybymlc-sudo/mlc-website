@@ -133,20 +133,36 @@ export default function JournalClient() {
                 <Heading size="xl" color="#2E2E2E" fontWeight="900">{config.label}</Heading>
             </VStack>
             
-            <Center position="relative" w="240px" h="240px">
+            <Center position="relative" w="280px" h="280px">
+                {/* Secondary Ripple/Echo */}
                 <MotionBox
                     animate={{ 
-                        scale: [1, 1.05, 1],
-                        rotate: [0, 5, -5, 0]
+                        scale: [1, 1.4, 1],
+                        opacity: [0.3, 0.1, 0.3]
                     }}
-                    transition={{ duration: 6, repeat: Infinity }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    position="absolute"
                     w="180px"
                     h="180px"
                     borderRadius="full"
-                    bg={config.color}
-                    boxShadow={`0 0 60px ${config.glow}`}
+                    border="2px solid"
+                    borderColor={config.color}
                 />
-                <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient={`radial(circle, transparent 30%, white 75%)`} />
+                
+                {/* Primary Breathing Pulse */}
+                <MotionBox
+                    animate={{ 
+                        scale: [1, 1.15, 1],
+                        borderRadius: ["50%", "40% 60% 50% 50% / 50% 50% 60% 40%", "50%"]
+                    }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    w="180px"
+                    h="180px"
+                    bg={config.color}
+                    boxShadow={`0 0 70px ${config.glow}`}
+                    zIndex={1}
+                />
+                <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient={`radial(circle, transparent 20%, white 80%)`} zIndex={2} pointerEvents="none" />
             </Center>
 
             <VStack w="full" maxW="320px" spacing={8}>
