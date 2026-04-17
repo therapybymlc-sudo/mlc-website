@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, IconButton, Progress, Radio, RadioGroup, Checkbox, Stack, Input, Select, useToast, Divider, Icon, Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, AlertTitle, AlertDescription, Badge,
+  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, IconButton, Progress, Radio, RadioGroup, Checkbox, Stack, Input, Select, useToast, Divider, Icon, Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, AlertTitle, AlertDescription, Badge, InputGroup, InputLeftElement,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiInfo, FiMapPin, FiHeart, FiStar, FiUser, FiActivity, FiShield, FiBriefcase, FiMail, FiPhone } from "react-icons/fi";
