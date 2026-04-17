@@ -942,7 +942,7 @@ export default function AdminDashboard() {
 
   const fetchTrainingContent = async () => {
     try {
-      const data = await apiGet("training-content/");
+      const data = await apiGet("training-programs-content/");
       if (Array.isArray(data) && data.length > 0) {
         setTrainingId(data[0].id);
         const mergedPrograms = { ...defaultTrainingDraft.programs, ...(data[0].programs || {}) };
@@ -1007,7 +1007,7 @@ export default function AdminDashboard() {
 
   const fetchUnverifiedTherapists = async () => {
     try {
-      const data = await apiGet("therapists/unverified/");
+      const data = await apiGet("therapists/?is_verified=false");
       setUnverifiedTherapists(Array.isArray(data) ? data : (data.results || []));
     } catch (err) {
       console.error("Failed to fetch unverified therapists", err);
