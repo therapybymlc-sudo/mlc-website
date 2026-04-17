@@ -76,27 +76,6 @@ const TangledBall = () => (
   </Box>
 );
 
-const TherapyCatSVG = () => (
-  <Box w="140px" h="140px" mb={4}>
-    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-       {/* 🐱 IMPROVED MINIMALIST CAT - MORE RECOGNIZABLE */}
-       <path 
-         d="M30 80 C30 70 35 55 45 45 C45 45 40 35 40 25 C40 15 45 10 50 10 C55 10 60 15 60 25 C60 35 55 45 55 45 C65 55 70 70 70 80 L70 90 L30 90 Z" 
-         stroke="#56756D" strokeWidth="2.5" strokeLinecap="round" strokeJoin="round" 
-       />
-       {/* Ears */}
-       <path d="M43 28 L38 15 L48 20" stroke="#56756D" strokeWidth="2" strokeLinecap="round" />
-       {/* Other Ear */}
-       <path d="M57 28 L62 15 L52 20" stroke="#56756D" strokeWidth="2" strokeLinecap="round" />
-       {/* Tail */}
-       <path d="M70 85 C85 85 95 75 90 60 C85 45 75 50 70 65" stroke="#56756D" strokeWidth="2.5" strokeLinecap="round" />
-       {/* Eyes */}
-       <circle cx="46" cy="35" r="1" fill="#56756D" />
-       <circle cx="54" cy="35" r="1" fill="#56756D" />
-    </svg>
-  </Box>
-);
-
 const FlowSection = ({ label, index }) => (
   <HStack spacing={6} align="center" py={4}>
     <TangledBall />
@@ -132,7 +111,7 @@ export default function TherapistsClient() {
             w="full" 
             h="full" 
             objectFit="cover"
-            opacity="0.8" // Slightly reduced image opacity
+            opacity="0.8"
           />
         </Box>
         
@@ -140,7 +119,7 @@ export default function TherapistsClient() {
         <Box 
           position="absolute"
           inset={0}
-          bg="rgba(255, 255, 255, 0.88)" // More white/less transparent sheen
+          bg="rgba(255, 255, 255, 0.92)" // Even more white/less transparent
           zIndex={1}
         />
 
@@ -164,10 +143,18 @@ export default function TherapistsClient() {
               </HStack>
             </VStack>
 
-            {/* 📊 ARTISTIC FLOW CHART (Refined SVG Cat) */}
+            {/* 📊 ARTISTIC FLOW CHART (The User-provided Cat & String) */}
             <VStack align="center" spacing={0} position="relative">
-               {/* REFINED SVG CAT - MORE RECOGNIZABLE SITTING POSTURE */}
-               <TherapyCatSVG />
+               {/* USER PROVIDED CAT IMAGE - TINTED TO MATCH GREEN FLOW */}
+               <Box w="300px" mb={-4}>
+                 <Image 
+                    src="/therapy_cat_final.png" 
+                    alt="Therapy Cat" 
+                    w="full" 
+                    filter="brightness(0) saturate(100%) invert(43%) sepia(16%) saturate(693%) hue-rotate(117deg) brightness(96%) contrast(88%)"
+                    opacity="0.9"
+                 />
+               </Box>
                
                {/* THE STRING FLOW */}
                <VStack align="stretch" spacing={2} position="relative" mt={-4}>
