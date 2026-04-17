@@ -5,18 +5,14 @@ import {
   Flex,
   HStack,
   IconButton,
-  VStack,
-  Text,
   useDisclosure,
   Drawer,
   DrawerOverlay,
   DrawerContent,
   DrawerHeader,
   DrawerBody,
-  Divider,
   Icon,
-  Link as ChakraLink,
-  Button,
+  Text,
   Spinner,
   Center,
 } from '@chakra-ui/react'
@@ -26,7 +22,6 @@ import {
   FiUsers, 
   FiCalendar, 
   FiFileText, 
-  FiLogOut,
   FiHome,
   FiBookOpen,
   FiHeart,
@@ -37,68 +32,9 @@ import {
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react';
+import SidebarContent from './SidebarContent';
 import NotificationCenter from '../../../components/NotificationCenter';
-
-import { useState, useEffect } from 'react';
-
-// Simplified Sidebar
-function SidebarContent({ links, pathname, signOut, onClose }) {
-  return (
-    <VStack align="stretch" spacing={2} p={4}>
-      <HStack spacing={3} mb={8} px={2} as={NextLink} href="/">
-        <Box bg="#56756C" p={2} borderRadius="xl">
-          <Icon as={FiHome} color="white" />
-        </Box>
-        <VStack align="start" spacing={0}>
-          <Text fontWeight="700" color="#2E2E2E" fontSize="sm">MLC Portal</Text>
-          <Text fontSize="xs" color="gray.500">Mental Health Org</Text>
-        </VStack>
-      </HStack>
-
-      {links.map((link) => {
-        const isActive = pathname === link.href;
-        return (
-          <ChakraLink
-            as={NextLink}
-            key={link.label}
-            href={link.href}
-            _hover={{ textDecoration: 'none' }}
-            onClick={onClose}
-          >
-            <HStack
-              spacing={3}
-              p={3}
-              borderRadius="xl"
-              bg={isActive ? 'rgba(86, 117, 109, 0.08)' : 'transparent'}
-              color={isActive ? '#56756D' : 'gray.600'}
-              fontWeight={isActive ? '700' : '500'}
-              transition="all 0.2s"
-              _hover={{ bg: 'rgba(86, 117, 109, 0.04)', color: '#56756D' }}
-            >
-              <Icon as={link.icon} boxSize={5} />
-              <Text fontSize="sm">{link.label}</Text>
-            </HStack>
-          </ChakraLink>
-        )
-      })}
-
-      <Divider my={4} />
-      
-      <Button
-        variant="ghost"
-        color="red.500"
-        justifyContent="flex-start"
-        leftIcon={<FiLogOut />}
-        onClick={() => signOut()}
-        borderRadius="xl"
-        fontSize="sm"
-        _hover={{ bg: 'red.50' }}
-      >
-        Sign Out
-      </Button>
-    </VStack>
-  );
-}
 
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
@@ -111,17 +47,12 @@ export default function DashboardLayout({ children }) {
     setMounted(true);
   }, []);
 
-  if (!mounted || !isLoaded) {
-    return (
-        <Center h="100vh">
-            <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
-        </Center>
-    );
-  }
+  const isTherapist = useMemo(() => {
+    if (!user) return false;
+    return user.publicMetadata?.roles?.includes('therapist') || user.publicMetadata?.roles?.includes('admin');
+  }, [user]);
 
-  const isTherapist = user?.publicMetadata?.roles?.includes('therapist') || user?.publicMetadata?.roles?.includes('admin');
-
-  const links = isTherapist ? [
+  const links = useMemo(() => isTherapist ? [
     { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
     { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
     { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
@@ -136,7 +67,15 @@ export default function DashboardLayout({ children }) {
     { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
     { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
     { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
-  ];
+  ], [isTherapist]);
+
+  if (!mounted || !isLoaded) {
+    return (
+        <Center h="100vh">
+            <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
+        </Center>
+    );
+  }
 
   return (
     <Flex minH="100vh" bg="#F9FAFB">
