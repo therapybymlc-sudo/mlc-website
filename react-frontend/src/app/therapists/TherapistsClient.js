@@ -63,78 +63,117 @@ const GROWTH_FEATURES = [
   }
 ];
 
+// --- Custom Components for the artistic flow ---
+
+const TangledBall = () => (
+  <Box position="relative" w="60px" h="60px">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 10 C20 20 10 50 40 70 C70 90 90 60 60 40 C30 20 20 80 50 90 C80 100 100 30 70 10 C40 -10 10 30 30 60 C50 90 90 70 80 40 C70 10 20 20 10 50" 
+            stroke="#56756D" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+      <path d="M30 30 C10 50 40 90 70 60 C90 40 60 10 30 20 C10 40 50 80 80 50" 
+            stroke="#C9A960" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+    </svg>
+  </Box>
+);
+
+const FlowSection = ({ label, index }) => (
+  <HStack spacing={6} align="center" py={4}>
+    <TangledBall />
+    <VStack align="start" spacing={0}>
+       <Text fontSize="xs" fontWeight="900" color="teal.800" letterSpacing="widest">SECTION 0{index}</Text>
+       <Text fontSize="md" fontWeight="700" color="teal.900" fontFamily="'Playfair Display', serif">{label}</Text>
+    </VStack>
+  </HStack>
+);
+
 export default function TherapistsClient() {
   return (
-    <Box bg="#FDFBFA" minH="100vh">
-      {/* 🌿 VISIONARY HERO WITH BACKGROUND */}
+    <Box bg="#FDFBFA" minH="100vh" overflowX="hidden">
+      {/* 🌿 VISIONARY HERO WITH BACKDROP IMAGE FIX */}
       <Box 
         position="relative" 
         pt={{ base: 32, md: 48 }} 
         pb={{ base: 20, md: 32 }} 
         px={6} 
-        minH="80vh"
+        minH="90vh"
         display="flex"
         alignItems="center"
-        overflow="hidden"
       >
-        {/* Background Image */}
+        {/* Actual Image Layer */}
         <Box 
           position="absolute"
           inset={0}
-          bgImage="url('/serene_therapy_office_1776423989664.png')"
-          bgSize="cover"
-          bgPosition="center"
-          zIndex={-2}
-        />
-        {/* Translucent Sheen Overlay */}
+          zIndex={0}
+        >
+          <Image 
+            src="/serene_therapy_office_1776423989664.png" 
+            alt="" 
+            w="full" 
+            h="full" 
+            objectFit="cover"
+            opacity="0.85" // Ensure image is visible
+          />
+        </Box>
+        
+        {/* Sheen Overlay Layer */}
         <Box 
           position="absolute"
           inset={0}
-          bg="linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.4) 100%)"
-          zIndex={-1}
+          bg="rgba(255, 255, 255, 0.75)" // Translucent white sheen
+          zIndex={1}
         />
 
-        <Container maxW="7xl">
+        <Container maxW="7xl" position="relative" zIndex={2}>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={20} alignItems="center">
-            <VStack align="start" spacing={8} zIndex={1}>
-              <Badge colorScheme="teal" px={4} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE THERAPY ECOSYSTEM</Badge>
+            <VStack align="start" spacing={8}>
+              <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE THERAPY ECOSYSTEM</Badge>
               <Heading as="h1" fontSize={{ base: "4xl", md: "5xl", lg: "6xl" }} fontFamily="'Playfair Display', serif" color="teal.900" lineHeight="1.1" fontWeight="600">
                 Holding Space for You.
               </Heading>
-              <Text fontSize="xl" color="gray.700" lineHeight="tall" maxW="xl">
-                MLC is a structured clinical home designed to support your growth, protect your well-being, and elevate your practice. We hold space for therapists just as deeply as we do for clients.
+              <Text fontSize="xl" color="teal.900" fontWeight="500" lineHeight="tall" maxW="xl">
+                MLC is a structured clinical home designed to support your growth, protect your well-being, and elevate your practice.
               </Text>
               <HStack spacing={4}>
                 <LinkButton href="/therapist-apply" bg="teal.800" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "teal.900" }}>
                   Join the Collective
                 </LinkButton>
-                <LinkButton href="/login/therapist" variant="ghost" color="teal.800">
+                <LinkButton href="/login/therapist" variant="ghost" color="teal.800" fontWeight="700">
                   Therapist Sign In
                 </LinkButton>
               </HStack>
             </VStack>
 
-            {/* 📊 ECOSYSTEM FLOW CHART */}
-            <VStack align="stretch" spacing={4} zIndex={1}>
-               <Text fontWeight="800" color="teal.800" fontSize="xs" letterSpacing="2px" textAlign="center" mb={2}>EXPLORE THE ECOSYSTEM</Text>
-               <MotionBox whileHover={{ scale: 1.02 }} transition={{ duration: 0.3 }}>
-                 <VStack bg="rgba(255, 255, 255, 0.7)" backdropFilter="blur(10px)" p={8} borderRadius="3rem" border="2px solid white" shadow="xl" spacing={6}>
-                    <HStack w="full" bg="white" p={4} borderRadius="2xl" shadow="sm"><Circle size="30px" bg="teal.800" color="white" fontSize="xs" fontWeight="900">1</Circle><Text fontWeight="700" fontSize="sm" color="teal.900">Advanced Admin & Clinical Suite</Text></HStack>
-                    <Icon as={FiChevronDown} color="teal.300" boxSize={6} />
-                    <HStack w="full" bg="white" p={4} borderRadius="2xl" shadow="sm"><Circle size="30px" bg="teal.800" color="white" fontSize="xs" fontWeight="900">2</Circle><Text fontWeight="700" fontSize="sm" color="teal.900">Shared Client Journey Dashboard</Text></HStack>
-                    <Icon as={FiChevronDown} color="teal.300" boxSize={6} />
-                    <HStack w="full" bg="white" p={4} borderRadius="2xl" shadow="sm"><Circle size="30px" bg="teal.800" color="white" fontSize="xs" fontWeight="900">3</Circle><Text fontWeight="700" fontSize="sm" color="teal.900">Therapist Well-being & Self-Care</Text></HStack>
-                    <Icon as={FiChevronDown} color="teal.300" boxSize={6} />
-                    <HStack w="full" bg="white" px={4} py={6} borderRadius="2xl" shadow="inner" bgGradient="linear(to-r, teal.800, teal.900)" color="white"><Text fontWeight="800" fontSize="md" w="full" textAlign="center">Professional Growth & Community</Text></HStack>
-                 </VStack>
-               </MotionBox>
+            {/* 📊 ARTISTIC FLOW CHART (The Cat and String) */}
+            <VStack align="center" spacing={0} position="relative" py={10}>
+               <Box w="240px" mb={-4}>
+                 <Image src="/therapy_cat.png" alt="Therapy Cat" w="full" />
+               </Box>
+               
+               {/* THE STRING FLOW */}
+               <VStack align="stretch" spacing={2} position="relative">
+                  {/* Vertical String Line */}
+                  <Box position="absolute" left="30px" top="0" bottom="0" w="2px" bg="rgba(86, 117, 109, 0.3)" zIndex={0} />
+                  
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+                    <FlowSection index={1} label="Clinical Admin & Suite" />
+                  </MotionBox>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}>
+                    <FlowSection index={2} label="Shared Client Journey" />
+                  </MotionBox>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 }}>
+                    <FlowSection index={3} label="Well-being & Self-Care" />
+                  </MotionBox>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.1 }}>
+                    <FlowSection index={4} label="Community & Growth" />
+                  </MotionBox>
+               </VStack>
             </VStack>
           </SimpleGrid>
         </Container>
       </Box>
 
       {/* 💠 THE CLINICAL DASHBOARD SUITE */}
-      <Box py={24} px={6}>
+      <Box py={24} px={6} bg="white">
         <Container maxW="7xl">
           <VStack spacing={16}>
              <VStack spacing={4} textAlign="center" maxW="3xl">
@@ -143,7 +182,7 @@ export default function TherapistsClient() {
              </VStack>
              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10} w="full">
                 {ECOSYSTEM_FEATURES.map((f, i) => (
-                  <HStack key={i} align="start" p={10} bg="white" borderRadius="2rem" shadow="sm" border="1px solid" borderColor="teal.50" spacing={6} transition="all 0.3s" _hover={{ shadow: "xl" }}>
+                  <HStack key={i} align="start" p={10} bg="#FDFBFA" borderRadius="2rem" shadow="sm" border="1px solid" borderColor="teal.50" spacing={6} transition="all 0.3s" _hover={{ shadow: "xl" }}>
                     <Circle size="60px" bg="teal.50" color="teal.700"><Icon as={f.icon} w={6} h={6} /></Circle>
                     <VStack align="start" spacing={2}>
                       <Heading size="md" color="teal.800">{f.title}</Heading>
@@ -172,7 +211,7 @@ export default function TherapistsClient() {
                   
                   {/* 🧘 SELF-CARE LIBRARY SUB-SECTION */}
                   <VStack align="start" spacing={6} w="full">
-                    <Text fontWeight="800" color="teal.300" textTransform="uppercase" letterSpacing="widest" fontSize="sm">Self-Care Library</Text>
+                    <Text fontWeight="800" color="teal.300" textTransform="uppercase" letterSpacing="widest" fontSize="sm">Self-Care & Resource Library</Text>
                     <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} w="full">
                        {SELF_CARE_TOOLS.map((tool, idx) => (
                          <HStack key={idx} p={4} bg="rgba(255,255,255,0.05)" borderRadius="xl" border="1px solid rgba(255,255,255,0.1)">
@@ -188,24 +227,30 @@ export default function TherapistsClient() {
          </Container>
       </Box>
 
-      {/* 🏡 DETAILED SELF-CARE & MHP SUPPORT (NEW) */}
-      <Box py={24} px={6} bg="#F5F9F7">
+      {/* 🏡 DETAILED SELF-CARE & MHP SUPPORT CIRCLES */}
+      <Box py={24} px={6} bg="#F5F9F7" borderBottom="1px solid" borderColor="teal.50">
         <Container maxW="7xl">
            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
-              {SELF_CARE_TOOLS.slice(0, 3).map((tool, i) => (
-                <VStack key={i} align="start" p={10} bg="white" borderRadius="2rem" shadow="sm">
+              {[
+                { title: "Mindfulness & Meditations", desc: "Breath-work, guided auditory journeys, and presence tools to anchor yourself between sessions.", icon: FiWind },
+                { title: "Somatic Check-ins", desc: "Body scans and grounding techniques to release physical tension held from complex clinical hours.", icon: FiActivity },
+                { title: "Resource Arsenal", desc: "Build your own toolkit of support frameworks and client-ready exercises, ready at your fingertips.", icon: FiShield }
+              ].map((tool, i) => (
+                <VStack key={i} align="start" p={10} bg="white" borderRadius="2rem" shadow="sm" transition="all 0.3s" _hover={{ shadow: "xl" }}>
                    <Circle size="50px" bg="teal.50" color="teal.800" mb={4}><Icon as={tool.icon} /></Circle>
                    <Heading size="md" color="teal.900" mb={2}>{tool.title}</Heading>
-                   <Text color="gray.500" fontSize="sm">{tool.desc} Essential for both your clients and your own presence.</Text>
+                   <Text color="gray.500" fontSize="sm" lineHeight="relaxed">{tool.desc}</Text>
                 </VStack>
               ))}
            </SimpleGrid>
-           <Box mt={10} p={10} bg="teal.800" borderRadius="2rem" color="white">
-              <HStack spacing={6} align="center" direction={{ base: "column", md: "row" }}>
-                 <Circle size="80px" bg="teal.700" color="teal.300"><Icon as={FiUsers} w={10} h={10} /></Circle>
-                 <VStack align="start" spacing={2}>
-                    <Heading size="lg" fontFamily="'Playfair Display', serif">MHP Support Events</Heading>
-                    <Text opacity="0.9">Interactive sessions and peer circles focused on holding space for YOU. Because practitioners need community as much as they need tools.</Text>
+           <Box mt={10} p={10} bg="teal.800" borderRadius="3rem" color="white" position="relative" overflow="hidden">
+              <HStack spacing={10} align="center" direction={{ base: "column", md: "row" }}>
+                 <Circle size="100px" bg="teal.700" color="teal.300" shadow="xl"><Icon as={FiUsers} w={12} h={12} /></Circle>
+                 <VStack align="start" spacing={4}>
+                    <Heading size="lg" fontFamily="'Playfair Display', serif">MHP Support Events & Circles</Heading>
+                    <Text fontSize="lg" opacity="0.9" maxW="2xl">
+                      Interactive sessions and peer circles focused on <b>holding space for YOU</b>. Practice what you preach with structured self-care sessions, peer learning, and community support built for the modern therapist.
+                    </Text>
                  </VStack>
               </HStack>
            </Box>
@@ -222,7 +267,7 @@ export default function TherapistsClient() {
                </VStack>
                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
                   {GROWTH_FEATURES.map((f, i) => (
-                    <VStack key={i} align="center" textAlign="center" p={10} bg="gray.50" borderRadius="2rem" transition="all 0.3s" _hover={{ bg: "teal.50", transform: "translateY(-5px)" }}>
+                    <VStack key={i} align="center" textAlign="center" p={10} bg="#FDFBFA" borderRadius="2rem" transition="all 0.3s" _hover={{ bg: "teal.50", transform: "translateY(-5px)" }}>
                        <Circle size="70px" bg="white" color="teal.800" shadow="md" mb={6}><Icon as={f.icon} w={8} h={8} /></Circle>
                        <Heading size="md" color="teal.900" mb={4}>{f.title}</Heading>
                        <Text color="gray.600" fontSize="sm" lineHeight="relaxed">{f.desc}</Text>
