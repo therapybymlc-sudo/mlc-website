@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { apiGet } from '../../../api.js';
+import { apiGet } from '../../../../api.js';
 
 export function useClientData() {
   const [data, setData] = useState({
