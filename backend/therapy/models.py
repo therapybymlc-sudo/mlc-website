@@ -272,17 +272,34 @@ class TherapistApplication(models.Model):
     highest_qualification = models.CharField(max_length=255, blank=True, null=True)
     supervised_years = models.CharField(max_length=50, blank=True, null=True)
     supervisor_name = models.CharField(max_length=255, blank=True, null=True)
+    
+    # New detailed fields
+    supervisions_detailed = models.JSONField(default=list, blank=True)
+    trainings_detailed = models.JSONField(default=list, blank=True)
+    licenses_held = models.TextField(blank=True, null=True)
+    
     expertise_areas = models.JSONField(default=list, blank=True)
     therapeutic_approach = models.TextField(blank=True, null=True)
+    therapeutic_stance = models.TextField(blank=True, null=True)
+    clinical_philosophy = models.TextField(blank=True, null=True)
+    
     whatsapp_community = models.CharField(max_length=20, blank=True, null=True)
+    email_updates = models.CharField(max_length=20, blank=True, null=True)
     has_licenses = models.CharField(max_length=20, blank=True, null=True)
     interested_in_spaces = models.CharField(max_length=20, blank=True, null=True)
     languages = models.JSONField(default=list, blank=True)
-    treat_minors = models.CharField(max_length=20)
-    youngest_age = models.CharField(max_length=50)
+    
+    treat_minors = models.CharField(max_length=20, blank=True, null=True)
+    youngest_age = models.CharField(max_length=50, blank=True, null=True)
     referral_source = models.CharField(max_length=100)
     referral_name = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Files
     resume = models.FileField(upload_to="therapist_applications/resumes/", blank=True, null=True)
+    bachelors = models.FileField(upload_to="therapist_applications/bachelors/", blank=True, null=True)
+    masters = models.FileField(upload_to="therapist_applications/masters/", blank=True, null=True)
+    license_doc = models.FileField(upload_to="therapist_applications/licenses/", blank=True, null=True)
+    
     subscribe = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     review_notes = models.TextField(blank=True, null=True)
