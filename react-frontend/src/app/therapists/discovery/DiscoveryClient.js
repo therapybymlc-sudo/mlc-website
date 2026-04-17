@@ -122,8 +122,66 @@ export default function DiscoveryClient() {
 
   const submitQuiz = async () => {
     setIsLoading(true);
+
+    // DASS-21 Scoring Logic (0-indexed to match DASS_ITEMS array)
+    const D_IDX = [2, 4, 9, 12, 15, 16, 20];
+    const A_IDX = [1, 3, 6, 8, 14, 18, 19];
+    const S_IDX = [0, 5, 7, 10, 11, 13, 17];
+
+    const calculateScore = (indices) => {
+      let total = 0;
+      indices.forEach(idx => {
+        total += quizData.dass_answers[idx] || 0;
+      });
+      return total * 2; // Multiply by 2 for DASS-42 parity
+    };
+
+    const d_score = calculateScore(D_IDX);
+    const a_score = calculateScore(A_IDX);
+    const s_score = calculateScore(S_IDX);
+
+    // Interpretations
+    const interpret = (score, scale) => {
+      if (scale === "D") {
+         if (score <= 9) return "Normal";
+         if (score <= 13) return "Mild";
+         if (score <= 20) return "Moderate";
+         if (score <= 27) return "Severe";
+         return "Extremely Severe";
+      }
+      if (scale === "A") {
+         if (score <= 7) return "Normal";
+         if (score <= 9) return "Mild";
+         if (score <= 14) return "Moderate";
+         if (score <= 19) return "Severe";
+         return "Extremely Severe";
+      }
+      if (scale === "S") {
+         if (score <= 14) return "Normal";
+         if (score <= 18) return "Mild";
+         if (score <= 25) return "Moderate";
+         if (score <= 33) return "Severe";
+         return "Extremely Severe";
+      }
+    };
+
+    const payload = {
+       ...quizData,
+       dass_scores: {
+         depression: d_score,
+         anxiety: a_score,
+         stress: s_score
+       },
+       dass_interpretations: {
+         depression: interpret(d_score, "D"),
+         anxiety: interpret(a_score, "A"),
+         stress: interpret(s_score, "S")
+       },
+       summary: `DASS-21 Results: D:${d_score}(${interpret(d_score, "D")}), A:${a_score}(${interpret(a_score, "A")}), S:${s_score}(${interpret(s_score, "S")})`
+    };
+
     try {
-      const res = await apiPost("therapists/match/", quizData);
+      const res = await apiPost("therapists/match/", payload);
       setResults(res);
       setView("results");
       window.scrollTo(0, 0);
