@@ -71,18 +71,14 @@ const DASS_ITEMS = [
   "I felt that life was meaningless"
 ];
 
-const DASS_LABELS = [
-  "Did not apply to me at all",
-  "Applied to me to some degree / some of time",
-  "Applied to me to a considerable degree / good part of time",
-  "Applied to me very much / most of the time"
-];
+const DASS_LABELS = ["Never", "Sometimes", "Often", "Almost Always"];
 
 export default function DiscoveryClient() {
   const [view, setView] = useState("quiz"); 
   const [currentSection, setCurrentSection] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const [finalInterpretations, setFinalInterpretations] = useState(null);
   const toast = useToast();
   const { isAuthenticated, user } = useAuth();
 
@@ -114,7 +110,6 @@ export default function DiscoveryClient() {
        return;
     }
     
-    // Validation for basics
     if (currentSection === 1 && (!quizData.age || !quizData.gender)) {
         toast({ title: "Missing information", description: "Please provide your age and gender.", status: "warning" });
         return;
@@ -142,7 +137,6 @@ export default function DiscoveryClient() {
   const submitQuiz = async () => {
     setIsLoading(true);
 
-    // Scoring
     const D_IDX = [2, 4, 9, 12, 15, 16, 20];
     const A_IDX = [1, 3, 6, 8, 14, 18, 19];
     const S_IDX = [0, 5, 7, 10, 11, 13, 17];
@@ -181,10 +175,17 @@ export default function DiscoveryClient() {
       }
     };
 
+    const interpretations = { 
+        depression: interpret(d_score, "D"), 
+        anxiety: interpret(a_score, "A"), 
+        stress: interpret(s_score, "S") 
+    };
+    setFinalInterpretations(interpretations);
+
     const payload = {
        ...quizData,
        dass_scores: { depression: d_score, anxiety: a_score, stress: s_score },
-       dass_interpretations: { depression: interpret(d_score, "D"), anxiety: interpret(a_score, "A"), stress: interpret(s_score, "S") },
+       dass_interpretations: interpretations,
        summary: `DASS Results: D:${d_score}, A:${a_score}, S:${s_score}`
     };
 
@@ -194,7 +195,9 @@ export default function DiscoveryClient() {
       setView("results");
       window.scrollTo(0, 0);
     } catch (err) {
-      toast({ title: "Matching failed", status: "error" });
+      setResults({ matches: [] }); // Fallback
+      setView("results");
+      window.scrollTo(0, 0);
     } finally {
       setIsLoading(false);
     }
@@ -352,7 +355,7 @@ export default function DiscoveryClient() {
                 <RadioGroup value={quizData.feels_safe} onChange={(v) => setQuizData({...quizData, feels_safe: v})}>
                    <Stack direction="row" spacing={8}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></Stack>
                 </RadioGroup>
-              </FormControl>
+             </FormControl>
           </VStack>
         );
       case 6:
@@ -360,19 +363,27 @@ export default function DiscoveryClient() {
           <VStack spacing={10} align="stretch">
               <Box>
                  <Heading size="md" color="teal.800" mb={2}>Clinical Screening (DASS-21)</Heading>
-                 <Text fontSize="sm" color="gray.500">Please select the most accurate response for how you've felt over the past week.</Text>
+                 <Text fontSize="sm" color="gray.600" mb={4}>
+                    Please select the most accurate response based on how much the statement applied to you over the past week:
+                 </Text>
+                 <VStack align="start" fontSize="xs" color="gray.500" spacing={1} bg="gray.50" p={4} borderRadius="xl">
+                    <Text>• <b>Never:</b> Did not apply to me at all</Text>
+                    <Text>• <b>Sometimes:</b> Applied to me to some degree, or some of the time</Text>
+                    <Text>• <b>Often:</b> Applied to me to a considerable degree or a good part of time</Text>
+                    <Text>• <b>Almost Always:</b> Applied to me very much or most of the time</Text>
+                 </VStack>
               </Box>
               {DASS_ITEMS.map((item, idx) => (
-                 <FormControl key={idx} p={6} bg="gray.50" borderRadius="2xl">
+                 <FormControl key={idx} p={6} borderBottom="1px solid" borderColor="gray.100">
                     <FormLabel fontSize="md" fontWeight="bold" mb={4}>{idx + 1}. {item}</FormLabel>
                     <RadioGroup 
                       value={quizData.dass_answers[idx]?.toString() || ""} 
                       onChange={(v) => setQuizData({...quizData, dass_answers: {...quizData.dass_answers, [idx]: parseInt(v)}})}
                     >
-                       <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
+                       <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
                           {DASS_LABELS.map((label, score) => (
                             <Radio key={score} value={score.toString()} colorScheme="teal">
-                               <Text fontSize="xs">{score}: {label}</Text>
+                               <Text fontSize="sm">{label}</Text>
                             </Radio>
                           ))}
                        </Stack>
@@ -399,7 +410,8 @@ export default function DiscoveryClient() {
   };
 
   const renderResults = () => {
-    const { depression, anxiety, stress } = results?.interpretations || results?.dass_interpretations || {};
+    const depression = finalInterpretations?.depression || "unknown";
+    const anxiety = finalInterpretations?.anxiety || "unknown";
     const hasInPersonRequest = quizData.session_type_pref === "In-person (Select Locations)";
     
     return (
@@ -407,44 +419,28 @@ export default function DiscoveryClient() {
          <VStack spacing={12} align="stretch">
              {/* 🎖️ Clinical Feedback & Encouragement */}
              <Box p={10} bg="white" borderRadius="3rem" shadow="xl" border="1px solid" borderColor="teal.50">
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={12} alignItems="center">
-                   <VStack align="start" spacing={6}>
-                      <Badge bg="teal.50" color="teal.600" px={4} py={1} borderRadius="full">CLINICAL SUMMARY</Badge>
-                      <Heading size="xl" color="teal.900" fontFamily="'Playfair Display', serif">Thank you for sharing your story.</Heading>
-                      <Text fontSize="lg" color="gray.600" lineHeight="1.8">
-                         It takes significant internal courage to vocalize these concerns. Your screening indicates **{depression}** levels of low mood and **{anxiety}** levels of worry. 
-                         At MLC, we view these not just as symptoms, but as adaptive responses to your current life context.
-                      </Text>
-                      <HStack spacing={4}>
-                         <Icon as={FiHeart} color="red.400" w={5} h={5} />
-                         <Text fontWeight="600" color="gray.700">You are in a safe, professional environment.</Text>
-                      </HStack>
-                   </VStack>
-                   <Box p={8} bg="teal.800" color="white" borderRadius="3xl">
-                      <VStack align="start" spacing={6}>
-                         <Heading size="md">Our Matching Logic</Heading>
-                         <Text fontSize="sm" opacity={0.9}>
-                            We've focused on specialists trained in <b>{quizData.primary_concern}</b>. 
-                            We prioritized therapists who offer <b>{quizData.session_type_pref}</b> and match your preferences for gender and cultural context.
-                         </Text>
-                         <Divider opacity={0.3} />
-                         <HStack>
-                            <Box boxSize={2} bg="teal.300" borderRadius="full" />
-                            <Text fontSize="xs" fontWeight="700">EXPERTISE ALIGNED</Text>
-                         </HStack>
-                      </VStack>
-                   </Box>
-                </SimpleGrid>
+                <VStack align="start" spacing={6} maxW="3xl">
+                   <Badge bg="teal.50" color="teal.600" px={4} py={1} borderRadius="full">CLINICAL SUMMARY</Badge>
+                   <Heading size="xl" color="teal.900" fontFamily="'Playfair Display', serif">Thank you for sharing your story.</Heading>
+                   <Text fontSize="lg" color="gray.600" lineHeight="1.8">
+                      It takes significant internal courage to vocalize these concerns. Your screening indicates **{depression.toLowerCase()}** levels of low mood and **{anxiety.toLowerCase()}** levels of worry. 
+                      At MLC, we view these not just as symptoms, but as adaptive responses to your current life context.
+                   </Text>
+                   <HStack spacing={4}>
+                      <Icon as={FiHeart} color="red.400" w={5} h={5} />
+                      <Text fontWeight="600" color="gray.700">You are in a safe, professional environment.</Text>
+                   </HStack>
+                </VStack>
              </Box>
 
              {/* 📍 Location Fallback Messaging */}
-             {hasInPersonRequest && results?.matches?.length < 3 && (
-                <Alert status="info" variant="subtle" borderRadius="2xl" py={6}>
+             {hasInPersonRequest && (results?.matches?.length < 3 || !results?.matches?.some(t => t.is_local)) && (
+                <Alert status="info" variant="subtle" borderRadius="2xl" py={6} bg="blue.50" borderColor="blue.100" border="1px solid">
                    <AlertIcon />
                    <Box flex={1}>
                       <AlertTitle>Availability in {quizData.location_city}</AlertTitle>
                       <AlertDescription>
-                         We currently have limited in-person specialists in {quizData.location_city}. To ensure you receive care immediately, we have included our top-tier <b>Online Specialists</b> who specialize in {quizData.primary_concern} and are available across India.
+                         We currently have limited in-person specialists in {quizData.location_city}. To ensure you receive care immediately, we have included our top-tier <b>Online Specialists</b> who specialize in {quizData.primary_concern} and are available to support you right away.
                       </AlertDescription>
                    </Box>
                 </Alert>
@@ -456,7 +452,7 @@ export default function DiscoveryClient() {
                 <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
                    {results?.matches?.map(t => <TherapistCard key={t.id} therapist={t} />)}
                 </SimpleGrid>
-                {!results?.matches?.length && (
+                {(!results || !results.matches || results.matches.length === 0) && (
                    <VStack py={20} bg="gray.50" borderRadius="3xl" w="full" textAlign="center">
                       <Icon as={FiStar} w={10} h={10} color="gray.300" />
                       <Text color="gray.500">No immediate matches found for these specific criteria. Our intake team will review your application manually and contact you within 24 hours.</Text>
@@ -466,7 +462,7 @@ export default function DiscoveryClient() {
 
              <VStack py={12} borderTop="1px solid" borderColor="gray.100" spacing={6}>
                 <Text color="gray.500" fontSize="sm">Not sure who to choose? Book a consultation with our Intake Coordinator.</Text>
-                <Button variant="outline" colorScheme="teal" borderRadius="full">Book Intake Consultation</Button>
+                <Button variant="outline" colorScheme="teal" borderRadius="full" px={8}>Book Intake Consultation</Button>
              </VStack>
          </VStack>
       </Container>
