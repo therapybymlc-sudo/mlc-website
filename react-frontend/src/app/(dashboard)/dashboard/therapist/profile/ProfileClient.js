@@ -40,69 +40,81 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import { 
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
-  FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe 
+  FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiInfo 
 } from "react-icons/fi";
 import { apiGet, apiPut, apiPost } from "../../../../../api.js";
 
-const CATEGORIES = {
-  AGE_GROUPS: ["Children", "Pre-teens", "Adolescents", "Young adults", "Adults", "Older adults", "Couples", "Families"],
-  MODALITIES: ["CBT", "DBT-informed", "Psychodynamic", "Humanistic", "ACT", "REBT", "Attachment-based", "Trauma-informed", "Gottman Method", "Narrative Therapy", "Existential"],
-  LANGUAGES: ["English", "Arabic", "Hindi", "Urdu", "French", "Spanish"],
-  POPULATIONS: ["Women", "Men", "LGBTQ+", "Neurodivergent", "Expats", "Working Professionals", "University Students"],
-};
+const CLINICAL_MODALITIES = [
+  "CBT", "DBT-informed", "Psychodynamic", "Humanistic", "ACT", "REBT", 
+  "Attachment-based", "Trauma-informed", "Gottman Method", "Narrative Therapy", 
+  "Existential", "EMDR", "Internal Family Systems (IFS)", "Schema Therapy"
+];
+
+const IDENTITY_CONTEXTS = [
+  "Expats in foreign countries", "Digital Nomads", "Third Culture Kids (TCKs)",
+  "South Asian Diaspora", "LGBTQ+ / Queer Identity", "Neurodivergent (ADHD/Autism)",
+  "Interfaith / Mixed Heritage Families", "International Students",
+  "High-Stakes Professionals", "Survivors of Relational Trauma"
+];
+
+const PRESET_KEYWORDS = ["Anxiety", "Depression", "Trauma", "Mindfulness", "Self-Worth", "Burnout"];
+
+const CURRENCIES = [
+  { code: "KD", label: "Kuwaiti Dinar" },
+  { code: "INR", label: "Indian Rupee" },
+  { code: "USD", label: "US Dollar" },
+  { code: "AED", label: "UAE Dirham" },
+  { code: "GBP", label: "British Pound" }
+];
+
+const ALL_LANGUAGES = [
+  "English", "Arabic", "Hindi", "Urdu", "Malayalam", "Tamil", "French", "Spanish", "German", "Mandarin", "Portuguese", "Bengali", "Telugu", "Marathi"
+];
+
+const FLUENCY_LEVELS = ["Conversational", "Professional Working Proficiency", "Fluent / Native"];
 
 export default function ProfileClient() {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [keywordInput, setKeywordInput] = useState("");
   
   const [profile, setProfile] = useState({
-    // 1. Core Identity
     name: "",
     title: "",
     pronouns: "",
     headline: "",
-    
-    // 2. Credentials
     education: "",
     experience_years: 0,
-    certifications: [],
     
-    // 3. Populations
+    // Complex structures
+    languages_info: [], // [{ lang: string, fluency: string }]
+    modalities_info: [], // [{ name: string, training: string, supervision: string }]
+    
     populations_served: [],
+    identity_contexts: [],
     age_groups: [],
-    languages: [],
     
-    // 4. Clinical Scope
-    concerns: [], // Array of objects { topic: string, level: 'often'|'comfortable'|'limited' }
-    exclusions: [],
-    complexity_level: "Moderate",
+    concerns_levels: {}, // { "Anxiety": "Works Often" }
+    exclusions: "",
     
-    // 5. Approach
-    modalities: [],
-    session_style: "", // Long text
-    style_sliders: {
-      structure: 50, // structured vs exploratory
-      action: 50,    // reflective vs action-oriented
-      pacing: 50,    // gentle vs direct
-    },
+    session_style: "",
+    style_sliders: { structure: 50, pacing: 50, orientation: 50 },
     
-    // 6. Availability & Fees
     is_accepting_new: true,
+    currency: "KD",
     hourly_rate: 0,
-    cancellation_policy: "24-hour notice required",
     
-    // 7. Media & Bio
     bio: "",
     welcome_message: "",
-    faqs: [],
+    keywords: [],
     
-    // 8. Internal (Ideally sent to a different endpoint or handled server-side)
     internal_risk_level: "Moderate",
-    best_fit_cases: "",
+    risk_protocols: { psychiatrist: "", hospital: "", location: "", contact: "", notes: "" }
   });
 
   useEffect(() => {
@@ -129,18 +141,37 @@ export default function ProfileClient() {
         toast({ title: "Profile Initialized", status: "success" });
       }
     } catch (error) {
-      toast({ title: "Sync failed", status: "error", description: "Please ensure all required fields are filled." });
+      toast({ title: "Sync failed", status: "error" });
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleArrayItem = (field, item) => {
-    setProfile(prev => {
-      const current = prev[field] || [];
-      const updated = current.includes(item) ? current.filter(i => i !== item) : [...current, item];
-      return { ...prev, [field]: updated };
-    });
+  const handleAddKeyword = () => {
+    if (!keywordInput.trim() || profile.keywords.length >= 6) return;
+    const corrected = keywordInput.trim().charAt(0).toUpperCase() + keywordInput.trim().slice(1).toLowerCase();
+    if (!profile.keywords.includes(corrected)) {
+      setProfile({...profile, keywords: [...profile.keywords, corrected]});
+    }
+    setKeywordInput("");
+  };
+
+  const toggleModality = (name) => {
+    const exists = profile.modalities_info.find(m => m.name === name);
+    if (exists) {
+      setProfile({...profile, modalities_info: profile.modalities_info.filter(m => m.name !== name)});
+    } else {
+      setProfile({...profile, modalities_info: [...profile.modalities_info, { name, training: "", supervision: "" }]});
+    }
+  };
+
+  const toggleLanguage = (lang) => {
+    const exists = profile.languages_info.find(l => l.lang === lang);
+    if (exists) {
+      setProfile({...profile, languages_info: profile.languages_info.filter(l => l.lang !== lang)});
+    } else {
+      setProfile({...profile, languages_info: [...profile.languages_info, { lang, fluency: "Fluent / Native" }]});
+    }
   };
 
   return (
@@ -148,130 +179,125 @@ export default function ProfileClient() {
       <VStack align="stretch" spacing={6} mb={10}>
         <HStack justify="space-between">
            <Box>
-              <Heading size="xl" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">Clinical Identity Editor</Heading>
-              <Text color="gray.500" mt={1}>Define your professional presence and matching parameters.</Text>
+              <Heading size="xl" color="#2E2E2E" fontFamily="'Playfair Display', serif">Expertise & Public Profile</Heading>
+              <Text color="gray.500" mt={1}>Manage your clinical presence and matching parameters.</Text>
            </Box>
-           <Button 
-            leftIcon={<FiSave />} 
-            bg="#56756D" 
-            color="white" 
-            px={8} 
-            borderRadius="full" 
-            onClick={handleSave} 
-            isLoading={loading}
-            _hover={{ bg: '#C9A960' }}
-            shadow="lg"
-           >
-            Sync Profile
-           </Button>
+           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={8} borderRadius="full" onClick={handleSave} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl">Sync Profile</Button>
         </HStack>
       </VStack>
 
-      <Tabs variant="enclosed" onChange={(index) => setActiveTab(index)} colorScheme="teal">
-        <TabList overflowX="auto" border="none" mb={8} sx={{ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUser} mr={2}/> Identity</Tab>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiAward} mr={2}/> Credentials</Tab>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUsers} mr={2}/> Populations</Tab>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiTarget} mr={2}/> Clinical Scope</Tab>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiHeart} mr={2}/> Approach</Tab>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiClock} mr={2}/> Availability</Tab>
-          <Tab _selected={{ color: '#56756D', borderColor: '#56756D', bg: 'white', fontWeight: 'bold' }} borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
-          <Tab _selected={{ color: 'red.500', borderColor: 'red.200', bg: 'red.50', fontWeight: 'bold' }} borderRadius="xl" px={6} border="1px solid" borderColor="gray.100"><Icon as={FiSettings} mr={2}/> Internal</Tab>
+      <Tabs variant="enclosed" colorScheme="teal">
+        <TabList overflowX="auto" border="none" mb={8}>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUser} mr={2}/> Identity</Tab>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiAward} mr={2}/> Credentials</Tab>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUsers} mr={2}/> Populations</Tab>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiTarget} mr={2}/> Clinical Scope</Tab>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiHeart} mr={2}/> Approach</Tab>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiClock} mr={2}/> Availability</Tab>
+          <Tab borderRadius="xl" px={6} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiBook} mr={2}/> Bio & Content</Tab>
+          <Tab _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={6} border="1px solid" borderColor="gray.100"><Icon as={FiSettings} mr={2}/> Internal</Tab>
         </TabList>
 
         <TabPanels bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
           {/* 1. Identity */}
           <TabPanel>
-            <VStack align="stretch" spacing={8}>
-              <HStack spacing={10}>
-                <VStack position="relative">
-                  <Avatar size="2xl" name={profile.name} src={profile.imageUrl} bg="#56756D" />
-                  <IconButton icon={<FiCamera />} size="sm" borderRadius="full" position="absolute" bottom={0} right={0} colorScheme="teal" aria-label="Upload Photo" />
-                </VStack>
-                <VStack align="stretch" flex={1} spacing={4}>
-                  <SimpleGrid columns={2} spacing={4}>
+             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
+                <VStack align="stretch" spacing={4}>
                     <FormControl isRequired>
                       <FormLabel fontSize="sm" fontWeight="700">Full Name</FormLabel>
                       <Input value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
                     </FormControl>
                     <FormControl>
-                      <FormLabel fontSize="sm" fontWeight="700">Pronouns</FormLabel>
-                      <Input placeholder="e.g. She/Her" value={profile.pronouns} onChange={(e) => setProfile({...profile, pronouns: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
+                      <FormLabel fontSize="sm" fontWeight="700">Professional Headline (Public)</FormLabel>
+                      <Input placeholder="e.g. Trauma-informed therapist specializing in Diaspora identity" value={profile.headline} onChange={(e) => setProfile({...profile, headline: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
                     </FormControl>
-                  </SimpleGrid>
-                  <FormControl isRequired>
-                    <FormLabel fontSize="sm" fontWeight="700">Professional Title</FormLabel>
-                    <Input placeholder="e.g. Counselling Psychologist" value={profile.title} onChange={(e) => setProfile({...profile, title: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
-                  </FormControl>
                 </VStack>
-              </HStack>
-              <FormControl isRequired>
-                <FormLabel fontSize="sm" fontWeight="700">Short Headline</FormLabel>
-                <Input placeholder="e.g. Working with anxiety, trauma, and relationship concerns" value={profile.headline} onChange={(e) => setProfile({...profile, headline: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
-              </FormControl>
-            </VStack>
+                <VStack align="center" justify="center">
+                   <Avatar size="2xl" name={profile.name} src={profile.imageUrl} bg="#56756D" />
+                   <Button leftIcon={<FiCamera />} size="xs" variant="ghost" mt={2}>Change Photo</Button>
+                </VStack>
+             </SimpleGrid>
           </TabPanel>
 
           {/* 2. Credentials */}
           <TabPanel>
-            <VStack align="stretch" spacing={6}>
-              <SimpleGrid columns={2} spacing={4}>
-                 <FormControl>
-                    <FormLabel fontSize="sm" fontWeight="700">Highest Qualification</FormLabel>
-                    <Input value={profile.qualification} onChange={(e) => setProfile({...profile, qualification: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
-                 </FormControl>
-                 <FormControl>
-                    <FormLabel fontSize="sm" fontWeight="700">Years of Post-Qual Experience</FormLabel>
-                    <Input type="number" value={profile.experience_years} onChange={(e) => setProfile({...profile, experience_years: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
-                 </FormControl>
-              </SimpleGrid>
-              <Box p={6} border="2px dashed" borderColor="gray.200" borderRadius="2xl" textAlign="center">
-                 <Icon as={FiAward} boxSize={10} color="gray.300" mb={2} />
-                 <Text fontWeight="600" color="gray.500">Internal Credentialing (Visible to Admins Only)</Text>
-                 <Text fontSize="xs" color="gray.400" mb={4}>Upload Degrees, Licenses, and Certifications</Text>
-                 <Button leftIcon={<FiPlus />} size="sm" variant="outline" colorScheme="teal">Add Document</Button>
-              </Box>
-            </VStack>
+             <VStack align="stretch" spacing={6}>
+                 <SimpleGrid columns={2} spacing={4}>
+                    <FormControl>
+                      <FormLabel fontSize="sm" fontWeight="700">Highest Degree</FormLabel>
+                      <Input value={profile.education} onChange={(e) => setProfile({...profile, education: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="sm" fontWeight="700">Years of Experience</FormLabel>
+                      <Input type="number" value={profile.experience_years} onChange={(e) => setProfile({...profile, experience_years: e.target.value})} borderRadius="xl" bg="gray.50" border="none" />
+                    </FormControl>
+                 </SimpleGrid>
+             </VStack>
           </TabPanel>
 
-          {/* 3. Populations */}
+          {/* 3. Populations & Languages */}
           <TabPanel>
             <VStack align="stretch" spacing={8}>
-              <Alert status="info" variant="subtle" borderRadius="2xl" bg="rgba(86, 117, 109, 0.05)" color="mlc.greenDark">
+              <Alert status="info" variant="subtle" borderRadius="2xl" bg="rgba(86, 117, 109, 0.05)">
                 <AlertIcon color="mlc.green" />
                 <Box>
-                  <AlertTitle fontSize="sm">Specificity Improves Matching</AlertTitle>
+                  <AlertTitle fontSize="sm">Intentional Matching</AlertTitle>
                   <AlertDescription fontSize="xs">
-                    Choosing the <b>3-4 populations</b> you are most experienced with helps our algorithm find your ideal clients. Profiles that claim to treat everyone often rank lower in specialized search results.
+                    Choose only the populations you are <b>most experienced</b> with. This helps our algorithm find your ideal clients. Profiles that claim to treat everyone often rank lower in specialized search results.
                   </AlertDescription>
                 </Box>
               </Alert>
 
               <Box>
-                <FormLabel fontWeight="700">Age Groups Served</FormLabel>
-                <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
-                  {CATEGORIES.AGE_GROUPS.map(age => (
-                    <Checkbox key={age} isChecked={profile.age_groups?.includes(age)} onChange={() => toggleArrayItem('age_groups', age)}>{age}</Checkbox>
+                <FormLabel fontWeight="700">Identity Contexts</FormLabel>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                  {IDENTITY_CONTEXTS.map(ctx => (
+                    <Checkbox key={ctx} isChecked={profile.identity_contexts?.includes(ctx)} onChange={(e) => {
+                       const current = profile.identity_contexts || [];
+                       const updated = e.target.checked ? [...current, ctx] : current.filter(c => c !== ctx);
+                       setProfile({...profile, identity_contexts: updated});
+                    }}>{ctx}</Checkbox>
                   ))}
                 </SimpleGrid>
               </Box>
-              <Divider/>
+
+              <Divider />
+
               <Box>
-                <FormLabel fontWeight="700">Languages (Fluency Required)</FormLabel>
-                <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
-                  {CATEGORIES.LANGUAGES.map(lang => (
-                    <Checkbox key={lang} isChecked={profile.languages?.includes(lang)} onChange={() => toggleArrayItem('languages', lang)}>{lang}</Checkbox>
+                <FormLabel fontWeight="700">Language Proficiency</FormLabel>
+                <Text fontSize="xs" color="gray.500" mb={4}>Select languages and indicate your fluency level for session conduct.</Text>
+                <VStack align="stretch" spacing={4}>
+                  <Wrap spacing={2}>
+                    {ALL_LANGUAGES.map(lang => (
+                      <Tag 
+                        key={lang} 
+                        cursor="pointer" 
+                        variant={profile.languages_info.find(l => l.lang === lang) ? "solid" : "outline"}
+                        colorScheme={profile.languages_info.find(l => l.lang === lang) ? "teal" : "gray"}
+                        onClick={() => toggleLanguage(lang)}
+                        borderRadius="full"
+                      >
+                        {lang}
+                      </Tag>
+                    ))}
+                  </Wrap>
+                  {profile.languages_info.map((linfo, idx) => (
+                    <HStack key={linfo.lang} bg="gray.50" p={3} borderRadius="xl" justify="space-between">
+                       <Text fontWeight="bold" fontSize="sm">{linfo.lang}</Text>
+                       <Select 
+                        size="sm" bg="white" w="200px" borderRadius="lg"
+                        value={linfo.fluency}
+                        onChange={(e) => {
+                          const updated = [...profile.languages_info];
+                          updated[idx].fluency = e.target.value;
+                          setProfile({...profile, languages_info: updated});
+                        }}
+                       >
+                         {FLUENCY_LEVELS.map(f => <option key={f} value={f}>{f}</option>)}
+                       </Select>
+                    </HStack>
                   ))}
-                </SimpleGrid>
-              </Box>
-              <Divider/>
-              <Box>
-                <FormLabel fontWeight="700">Identity Contexts (Select top 3-4)</FormLabel>
-                <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
-                  {CATEGORIES.POPULATIONS.map(p => (
-                    <Checkbox key={p} isChecked={profile.populations_served?.includes(p)} onChange={() => toggleArrayItem('populations_served', p)}>{p}</Checkbox>
-                  ))}
-                </SimpleGrid>
+                </VStack>
               </Box>
             </VStack>
           </TabPanel>
@@ -279,25 +305,28 @@ export default function ProfileClient() {
           {/* 4. Clinical Scope */}
           <TabPanel>
             <VStack align="stretch" spacing={8}>
-              <Alert status="warning" variant="subtle" borderRadius="2xl" border="1px solid" borderColor="orange.100">
+              <Alert status="warning" variant="subtle" borderRadius="2xl">
                 <AlertIcon />
                 <Box>
-                  <AlertTitle fontSize="sm">SEO Advisory: Avoid "Generic" Profiles</AlertTitle>
+                  <AlertTitle fontSize="sm">Avoid Generic Profiles</AlertTitle>
                   <AlertDescription fontSize="xs">
-                    Search engines (and clients) value depth over breadth. <b>Intentionality matters.</b> Profiles that select too many specializations are often indexed lower. Focus on your core expertise for maximum visibility.
+                    We (and clients) value depth over breadth. <b>Intentionality matters.</b> Profiles that select too many specializations are often indexed lower. Focus on your core expertise for maximum visibility.
                   </AlertDescription>
                 </Box>
               </Alert>
 
               <Box>
                 <FormLabel fontWeight="700">Presenting Concerns Management</FormLabel>
-                <Text fontSize="xs" color="gray.500" mb={4}>Which concerns do you actively work with? Be specific for better matching.</Text>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                  {["Anxiety", "Depression", "Trauma", "Relationships", "Grief", "Work Stress", "Self-Esteem", "Parenting"].map(topic => (
+                  {["Anxiety", "Depression", "Trauma", "Relationships", "Stress / Burnout", "Grief", "Self-Esteem", "Parenting"].map(topic => (
                     <HStack key={topic} justify="space-between" p={3} bg="gray.50" borderRadius="xl">
-                      <Text fontWeight="600">{topic}</Text>
-                      <Select size="xs" variant="filled" bg="white" w="120px" borderRadius="lg">
-                        <option>Choose Level</option>
+                      <Text fontWeight="600" fontSize="sm">{topic}</Text>
+                      <Select 
+                        size="xs" variant="filled" bg="white" w="120px" borderRadius="lg"
+                        value={profile.concerns_levels?.[topic] || ""}
+                        onChange={(e) => setProfile({...profile, concerns_levels: { ...profile.concerns_levels, [topic]: e.target.value }})}
+                      >
+                        <option value="">Select Level</option>
                         <option>Works Often</option>
                         <option>Comfortable</option>
                         <option>Limited</option>
@@ -306,153 +335,187 @@ export default function ProfileClient() {
                   ))}
                 </SimpleGrid>
               </Box>
-              <FormControl>
-                <FormLabel fontWeight="700" color="red.500">Exclusions (Internal Matching)</FormLabel>
-                <Textarea placeholder="List specific presentations you DO NOT TREAT (e.g. active suicidality, forensic cases). This ensures safe and appropriate referrals." borderRadius="xl" />
-              </FormControl>
             </VStack>
           </TabPanel>
 
-          {/* 5. Approach */}
+          {/* 5. Therapeutic Approach */}
           <TabPanel>
             <VStack align="stretch" spacing={10}>
               <Box>
-                <FormLabel fontWeight="700">Therapeutic Modalities</FormLabel>
-                <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3}>
-                  {CATEGORIES.MODALITIES.map(m => (
-                    <Checkbox key={m} isChecked={profile.modalities?.includes(m)} onChange={() => toggleArrayItem('modalities', m)}>{m}</Checkbox>
+                <FormLabel fontWeight="700">Clinical Modalities</FormLabel>
+                <Text fontSize="xs" color="gray.500" mb={4}>
+                  Choose only modalities you have been <b>trained and supervised in</b>. 
+                  Selecting too many will lead to lower indexing due to generic profile.
+                </Text>
+                <Wrap spacing={3} mb={8}>
+                  {CLINICAL_MODALITIES.map(m => (
+                    <Tag 
+                       key={m} cursor="pointer" borderRadius="full" px={4} py={2}
+                       variant={profile.modalities_info.find(mi => mi.name === m) ? "solid" : "outline"}
+                       colorScheme="teal"
+                       onClick={() => toggleModality(m)}
+                    >
+                      {m}
+                    </Tag>
                   ))}
-                </SimpleGrid>
-              </Box>
-              
-              <Box bg="#F9FAFB" p={8} borderRadius="3xl">
-                <Heading size="sm" mb={6}>Therapy Dynamics (Matching Sliders)</Heading>
-                <VStack spacing={8}>
-                   <Box w="100%">
-                      <HStack justify="space-between" mb={2}><Text fontSize="xs" color="gray.500">Structured</Text><Text fontSize="xs" color="gray.500">Exploratory</Text></HStack>
-                      <Slider defaultValue={50} colorScheme="teal"><SliderTrack><SliderFilledTrack/></SliderTrack><SliderThumb /></Slider>
-                   </Box>
-                   <Box w="100%">
-                      <HStack justify="space-between" mb={2}><Text fontSize="xs" color="gray.500">Gentle Pacing</Text><Text fontSize="xs" color="gray.500">Direct / Challenging</Text></HStack>
-                      <Slider defaultValue={50} colorScheme="teal"><SliderTrack><SliderFilledTrack/></SliderTrack><SliderThumb /></Slider>
-                   </Box>
-                   <Box w="100%">
-                      <HStack justify="space-between" mb={2}><Text fontSize="xs" color="gray.500">Past-Focused</Text><Text fontSize="xs" color="gray.500">Present-Focused</Text></HStack>
-                      <Slider defaultValue={50} colorScheme="teal"><SliderTrack><SliderFilledTrack/></SliderTrack><SliderThumb /></Slider>
-                   </Box>
+                </Wrap>
+
+                <Alert status="info" variant="left-accent" mb={6} borderRadius="md" size="sm">
+                   <AlertIcon />
+                   <Text fontSize="xs">Non-practical trainings with no supervised follow-through will be periodically reviewed to maintain MLC standards.</Text>
+                </Alert>
+
+                <VStack align="stretch" spacing={6}>
+                   {profile.modalities_info.map((mi, idx) => (
+                     <Box key={mi.name} p={6} border="1px solid" borderColor="teal.100" bg="teal.50" borderRadius="2xl">
+                        <HStack mb={4} justify="space-between">
+                           <Heading size="sm" color="teal.800">{mi.name}</Heading>
+                           <Badge colorScheme="teal">Mandatory Internal Log</Badge>
+                        </HStack>
+                        <SimpleGrid columns={1} spacing={4}>
+                           <FormControl>
+                              <FormLabel fontSize="xs" fontWeight="bold">Training Background</FormLabel>
+                              <Textarea 
+                                bg="white" placeholder="Institutions, certification details, hours..." fontSize="sm"
+                                value={mi.training}
+                                onChange={(e) => {
+                                   const updated = [...profile.modalities_info];
+                                   updated[idx].training = e.target.value;
+                                   setProfile({...profile, modalities_info: updated});
+                                }}
+                              />
+                           </FormControl>
+                           <FormControl>
+                              <FormLabel fontSize="xs" fontWeight="bold">Supervision Received</FormLabel>
+                              <Textarea 
+                                bg="white" placeholder="Supervisor Name, Duration, Position, Contact Details..." fontSize="sm"
+                                value={mi.supervision}
+                                onChange={(e) => {
+                                   const updated = [...profile.modalities_info];
+                                   updated[idx].supervision = e.target.value;
+                                   setProfile({...profile, modalities_info: updated});
+                                }}
+                              />
+                           </FormControl>
+                        </SimpleGrid>
+                     </Box>
+                   ))}
                 </VStack>
               </Box>
             </VStack>
           </TabPanel>
 
-          {/* 6. Availability */}
+          {/* 6. Availability & Fees */}
           <TabPanel>
-            <VStack align="stretch" spacing={6}>
-              <FormControl display="flex" alignItems="center">
-                <FormLabel mb="0" fontWeight="700">Accepting New Clients</FormLabel>
-                <Checkbox size="lg" colorScheme="teal" isChecked={profile.is_accepting_new} onChange={(e) => setProfile({...profile, is_accepting_new: e.target.checked})}/>
-              </FormControl>
-              <SimpleGrid columns={2} spacing={4}>
-                 <FormControl>
-                    <FormLabel fontWeight="700">Standard Session Fee</FormLabel>
-                    <HStack>
-                       <Text fontWeight="bold">KD</Text>
-                       <Input type="number" value={profile.hourly_rate} onChange={(e) => setProfile({...profile, hourly_rate: e.target.value})} borderRadius="xl" />
-                    </HStack>
-                 </FormControl>
-                 <FormControl>
-                    <FormLabel fontWeight="700">Sliding Scale Available?</FormLabel>
-                    <Select borderRadius="xl"><option>No</option><option>Yes (Limited slots)</option><option>Yes (Waitlist only)</option></Select>
-                 </FormControl>
-              </SimpleGrid>
-            </VStack>
+             <VStack align="stretch" spacing={8}>
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                   <FormControl>
+                      <FormLabel fontWeight="700">Currency</FormLabel>
+                      <Select value={profile.currency} onChange={(e) => setProfile({...profile, currency: e.target.value})} borderRadius="xl">
+                         {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label} ({c.code})</option>)}
+                      </Select>
+                   </FormControl>
+                   <FormControl>
+                      <FormLabel fontWeight="700">Individual Session Fee</FormLabel>
+                      <Input type="number" value={profile.hourly_rate} onChange={(e) => setProfile({...profile, hourly_rate: e.target.value})} borderRadius="xl" />
+                   </FormControl>
+                   <FormControl>
+                      <FormLabel fontWeight="700">Sliding Scale</FormLabel>
+                      <Select bg="gray.100" cursor="not-allowed"><option>Coming Soon (In Development)</option></Select>
+                   </FormControl>
+                </SimpleGrid>
+             </VStack>
           </TabPanel>
 
           {/* 7. Bio & Content */}
           <TabPanel>
-             <VStack align="stretch" spacing={6}>
-               <FormControl>
-                 <FormLabel fontWeight="700">Professional Bio (Public)</FormLabel>
-                 <Textarea value={profile.bio} onChange={(e) => setProfile({...profile, bio: e.target.value})} borderRadius="2xl" rows={8} />
-               </FormControl>
-               <FormControl>
-                 <FormLabel fontWeight="700">Welcome Message (For first-timers)</FormLabel>
-                 <Textarea placeholder="Reassure someone who is new to therapy..." value={profile.welcome_message} onChange={(e) => setProfile({...profile, welcome_message: e.target.value})} borderRadius="2xl" />
-               </FormControl>
+             <VStack align="stretch" spacing={8}>
+                <FormControl>
+                   <FormLabel fontWeight="700">Clinical Bio (Public)</FormLabel>
+                   <Textarea value={profile.bio} onChange={(e) => setProfile({...profile, bio: e.target.value})} borderRadius="2xl" rows={8} placeholder="Write something meaningful for your clients..." />
+                </FormControl>
+
+                <Box bg="#F9FBFA" p={8} borderRadius="3xl">
+                   <HStack justify="space-between" mb={4}>
+                      <Heading size="sm">Search Keywords / Skill Tags</Heading>
+                      <Badge borderRadius="full" px={3}>{profile.keywords.length} / 6</Badge>
+                   </HStack>
+                   <Text fontSize="xs" color="gray.500" mb={4}>These appear as bubbles on your public profile to boost SEO. Click to add presets or type your own.</Text>
+                   
+                   <Wrap spacing={2} mb={6}>
+                      {PRESET_KEYWORDS.map(kw => (
+                        <Tag 
+                          key={kw} cursor="pointer" variant="subtle" colorScheme="gray" borderRadius="full"
+                          onClick={() => {
+                             if (!profile.keywords.includes(kw) && profile.keywords.length < 6) {
+                               setProfile({...profile, keywords: [...profile.keywords, kw]});
+                             }
+                          }}
+                        >
+                           <Icon as={FiPlus} mr={1} boxSize={3}/>{kw}
+                        </Tag>
+                      ))}
+                   </Wrap>
+
+                   <HStack mb={4}>
+                      <Input 
+                        placeholder="Type a clinical keyword..." 
+                        value={keywordInput} 
+                        onChange={(e) => setKeywordInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddKeyword()}
+                      />
+                      <Button colorScheme="teal" onClick={handleAddKeyword} isDisabled={profile.keywords.length >= 6}>Add</Button>
+                   </HStack>
+
+                   <Wrap spacing={3}>
+                      {profile.keywords.map(kw => (
+                        <Tag key={kw} size="lg" colorScheme="teal" borderRadius="full">
+                           <TagLabel>{kw}</TagLabel>
+                           <TagCloseButton onClick={() => setProfile({...profile, keywords: profile.keywords.filter(k => k !== kw)})}/>
+                        </Tag>
+                      ))}
+                   </Wrap>
+                </Box>
              </VStack>
           </TabPanel>
 
-          {/* 8. Internal Matching */}
+          {/* 8. Internal Clinical Governance */}
           <TabPanel>
-            <VStack align="stretch" spacing={8}>
-              <Box bg="red.50" p={8} borderRadius="3xl" border="1px solid" borderColor="red.100" shadow="sm">
-                <HStack color="red.600" mb={6}><Icon as={FiAlertCircle} boxSize={5}/><Text fontWeight="bold" fontSize="lg">Internal Clinical Governance</Text></HStack>
-                
-                <VStack align="stretch" spacing={8}>
-                   <Box>
-                      <Heading size="xs" mb={4} textTransform="uppercase" letterSpacing="widest" color="red.700">Risk Thresholds</Heading>
-                      <FormControl>
-                          <FormLabel fontSize="sm">Maximum Risk Level Capacity</FormLabel>
-                          <Select variant="filled" bg="white" value={profile.internal_risk_level} onChange={(e) => setProfile({...profile, internal_risk_level: e.target.value})}>
-                            <option value="Mild">Mild Presentation only (Standard cases)</option>
-                            <option value="Moderate">Moderate (Stable presentations)</option>
-                            <option value="High">High Risk (Requires specialized monitoring)</option>
-                          </Select>
+             <VStack align="stretch" spacing={8}>
+                <Box bg="red.50" p={8} borderRadius="3xl" border="1px solid" borderColor="red.100" shadow="sm">
+                   <HStack color="red.600" mb={6}><Icon as={FiAlertCircle} boxSize={5}/><Heading size="sm">Escalation & Ethics Log</Heading></HStack>
+                   
+                   <Alert status="error" variant="left-accent" mb={8} bg="white">
+                      <AlertIcon />
+                      <Text fontSize="xs" color="red.700">
+                        Information in this section is <b>periodically reviewed</b> to maintain ethical standards. 
+                        False or incomplete risk protocols may lead to profile removal.
+                      </Text>
+                   </Alert>
+
+                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">Collaborating Psychiatrist</FormLabel>
+                        <Input bg="white" placeholder="Dr. Name" value={profile.risk_protocols.psychiatrist} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, psychiatrist: e.target.value}})} />
                       </FormControl>
-                   </Box>
-
-                   <Divider borderColor="red.200" />
-
-                   <Box>
-                      <Heading size="xs" mb={2} textTransform="uppercase" letterSpacing="widest" color="red.700">Emergency Risk Protocols</Heading>
-                      <Text fontSize="xs" color="red.600" mb={6}>Please provide exact details for your clinical escalation path. This is mandatory for therapist verification.</Text>
-                      
-                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                         <FormControl isRequired>
-                            <FormLabel fontSize="xs" fontWeight="bold">Collaborating Psychiatrist Name</FormLabel>
-                            <Input bg="white" placeholder="Dr. Full Name" />
-                         </FormControl>
-                         <FormControl isRequired>
-                            <FormLabel fontSize="xs" fontWeight="bold">Primary Emergency Hospital</FormLabel>
-                            <Input bg="white" placeholder="Hospital Name" />
-                         </FormControl>
-                         <FormControl isRequired>
-                            <FormLabel fontSize="xs" fontWeight="bold">Hospital Location / Branch</FormLabel>
-                            <Input bg="white" placeholder="City, Area" />
-                         </FormControl>
-                         <FormControl isRequired>
-                            <FormLabel fontSize="xs" fontWeight="bold">Emergency Contact Number</FormLabel>
-                            <Input bg="white" placeholder="+91 / +965 ..." />
-                         </FormControl>
-                      </SimpleGrid>
-                      <FormControl mt={4}>
-                         <FormLabel fontSize="xs" fontWeight="bold">Additional Escalation Notes</FormLabel>
-                         <Textarea bg="white" placeholder="Specific steps for high-risk referrals..." borderRadius="xl" />
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">Primary Emergency Hospital</FormLabel>
+                        <Input bg="white" placeholder="Hospital Name" value={profile.risk_protocols.hospital} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, hospital: e.target.value}})} />
                       </FormControl>
-                   </Box>
-
-                   <Divider borderColor="red.200" />
-
-                   <FormControl>
-                      <FormLabel fontSize="sm">Internal Matching Notes</FormLabel>
-                      <Textarea bg="white" placeholder="e.g. Best with high-functioning executives, avoid court-involved cases..." borderRadius="xl" />
-                   </FormControl>
-                </VStack>
-              </Box>
-            </VStack>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">Hospital Location</FormLabel>
+                        <Input bg="white" placeholder="City / Branch" value={profile.risk_protocols.location} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, location: e.target.value}})} />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">Emergency Contact</FormLabel>
+                        <Input bg="white" placeholder="Phone No." value={profile.risk_protocols.contact} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, contact: e.target.value}})} />
+                      </FormControl>
+                   </SimpleGrid>
+                </Box>
+             </VStack>
           </TabPanel>
         </TabPanels>
       </Tabs>
-
-      <Box mt={12} p={8} bg="#56756D" borderRadius="3xl" color="white">
-         <HStack justify="space-between">
-            <VStack align="start" spacing={0}>
-               <Text fontWeight="bold" fontSize="lg">Ready to update your public profile?</Text>
-               <Text fontSize="sm" opacity="0.8">Click sync to push all changes to the MLC therapist directory and matching engine.</Text>
-            </VStack>
-            <Button size="lg" bg="white" color="#56756D" borderRadius="full" px={10} isLoading={loading} onClick={handleSave} _hover={{ bg: '#C9A960', color: 'white' }}>Finalize & Sync</Button>
-         </HStack>
-      </Box>
     </Box>
   );
 }
