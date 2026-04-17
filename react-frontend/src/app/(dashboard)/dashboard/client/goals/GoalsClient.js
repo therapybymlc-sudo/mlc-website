@@ -17,7 +17,7 @@ import {
   Tag,
   Divider,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiPlus, FiTrash2, FiTarget, FiCheck } from "react-icons/fi";
 import { apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useClientData } from "../useClientData";
