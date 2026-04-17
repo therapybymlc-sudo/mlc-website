@@ -119,42 +119,38 @@ export default function HomeClient() {
   return (
     <Box>
       {/* HERO SECTION */}
+      {/* HERO SECTION */}
       <MotionBox
         position="relative"
-        minH={{ base: "100svh", md: "100vh" }}
+        bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
+        bgSize="cover"
+        bgPosition="center"
+        bgRepeat="no-repeat"
+        bgAttachment={{ base: "scroll", md: "fixed" }}
+        minH={{ base: "100svh", md: "110vh" }}
         display="flex"
         alignItems="center"
         justifyContent="center"
         textAlign="center"
-        overflow="hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
+        _before={{
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          bg: "linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.9))",
+          zIndex: 1,
+        }}
       >
-        {/* Optimized Next.js Background Image */}
-        <Image
-          as={require('next/image').default}
-          src={homeContent.hero.background_image || "/hero-bg.jpg"}
-          alt="Healing background"
-          fill
-          priority
-          style={{ objectFit: 'cover', objectPosition: 'center' }}
-          quality={100}
-        />
-
-        {/* Dynamic Gradient Overlay */}
-        <Box 
-          position="absolute"
-          top={0} left={0} right={0} bottom={0}
-          bg="linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.85))"
-          zIndex={1}
-        />
-
         <Box position="relative" zIndex={2} maxW="4xl" px={6} py={20}>
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
-            boxSize={{ base: "80px", sm: "100px", md: "120px" }}
+            boxSize={{ base: "100px", sm: "120px", md: "140px" }}
             mb={8}
             mx="auto"
           />
