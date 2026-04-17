@@ -121,35 +121,40 @@ export default function HomeClient() {
       {/* HERO SECTION */}
       <MotionBox
         position="relative"
-        bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
-        bgSize="cover"
-        bgPosition="center"
-        minH={{ base: "100svh", md: "110vh" }}
+        minH={{ base: "100svh", md: "100vh" }}
         display="flex"
         alignItems="center"
         justifyContent="center"
         textAlign="center"
-        px={6}
-        py={20}
+        overflow="hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
-        _before={{
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bg: "linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.85))",
-          zIndex: 1,
-        }}
       >
-        <Box position="relative" zIndex={2} maxW="4xl">
+        {/* Optimized Next.js Background Image */}
+        <Image
+          as={require('next/image').default}
+          src={homeContent.hero.background_image || "/hero-bg.jpg"}
+          alt="Healing background"
+          fill
+          priority
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          quality={100}
+        />
+
+        {/* Dynamic Gradient Overlay */}
+        <Box 
+          position="absolute"
+          top={0} left={0} right={0} bottom={0}
+          bg="linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.85))"
+          zIndex={1}
+        />
+
+        <Box position="relative" zIndex={2} maxW="4xl" px={6} py={20}>
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
-            boxSize={{ base: "100px", sm: "120px", md: "140px" }}
+            boxSize={{ base: "80px", sm: "100px", md: "120px" }}
             mb={8}
             mx="auto"
           />
@@ -167,11 +172,11 @@ export default function HomeClient() {
           </Heading>
           <Text
             mt={4}
-            fontSize={{ base: "lg", md: "xl" }}
+            fontSize={{ base: "sm", md: "md" }}
             color="#56756D"
             fontFamily="'Inter', var(--font-inter), sans-serif"
-            fontWeight="500"
-            letterSpacing="1px"
+            fontWeight="600"
+            letterSpacing="2px"
             textTransform="uppercase"
           >
             {homeContent.hero.tagline}
@@ -185,7 +190,7 @@ export default function HomeClient() {
             maxW="2xl"
             mx="auto"
           >
-            Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.
+            {homeContent.hero.paragraph_one || "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through."}
           </Text>
 
           <VStack spacing={6} mt={12} align="center">
@@ -206,13 +211,13 @@ export default function HomeClient() {
               Take the Matching Quiz
             </Button>
             <HStack spacing={4}>
-              <Text fontSize="sm" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>
+              <Text fontSize="xs" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>
               <ChakraLink
                 as={NextLink}
                 href="/therapists"
                 color="mlc.greenDark"
                 fontWeight="600"
-                fontSize="sm"
+                fontSize="xs"
                 textDecoration="underline"
                 _hover={{ color: "mlc.gold" }}
               >
@@ -221,7 +226,7 @@ export default function HomeClient() {
             </HStack>
           </VStack>
         </Box>
-      </MotionBox>
+      </MotionBox>Box>
 
       {/* HOW TO START SECTION */}
       <Box py={24} bg="white">
