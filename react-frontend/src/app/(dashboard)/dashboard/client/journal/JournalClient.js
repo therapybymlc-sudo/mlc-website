@@ -23,11 +23,10 @@ import {
   Center,
   Wrap,
   WrapItem,
-  AnimatePresence,
   Tag,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { FiSave, FiClock, FiActivity, FiDownload, FiPlusCircle, FiMessageCircle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
 import RichTextEditor from "../../../../../components/RichTextEditor.jsx";
