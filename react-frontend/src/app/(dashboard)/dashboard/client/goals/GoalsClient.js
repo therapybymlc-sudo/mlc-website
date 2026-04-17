@@ -23,10 +23,17 @@ import { apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useClientData } from "../useClientData";
 
 export default function GoalsClient() {
+  const [isMounted, setIsMounted] = useState(false);
   const toast = useToast();
   const { goals, loading, refreshData } = useClientData();
   const [newGoal, setNewGoal] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
 
   const handleAddGoal = async () => {
     if (!newGoal.trim()) return;

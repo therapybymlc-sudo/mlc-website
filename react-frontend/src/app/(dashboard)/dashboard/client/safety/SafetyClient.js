@@ -28,6 +28,7 @@ import { apiGet, apiPut } from "../../../../../api.js";
 
 export default function SafetyClient() {
   const toast = useToast();
+  const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [plan, setPlan] = useState({
@@ -41,6 +42,10 @@ export default function SafetyClient() {
   });
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     const fetchPlan = async () => {
       try {
         const res = await apiGet("safety-plans/current/");
@@ -51,8 +56,12 @@ export default function SafetyClient() {
         setLoading(false);
       }
     };
-    fetchPlan();
-  }, []);
+    if (isMounted) {
+      fetchPlan();
+    }
+  }, [isMounted]);
+
+  if (!isMounted) return null;
 
   const handleSave = async () => {
     setSaving(true);
