@@ -41,7 +41,7 @@ export default function ClientsClient() {
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const res = await apiGet("therapists/clients/");
+      const res = await apiGet("clients/");
       setClients(Array.isArray(res) ? res : res.results || []);
     } catch (e) {
       toast({ title: "Error fetching clients", status: "error" });

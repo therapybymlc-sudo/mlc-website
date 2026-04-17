@@ -61,8 +61,12 @@ export default function ProfileClient() {
     try {
       if (profile.id) {
         await apiPut(`therapists/${profile.id}/`, profile);
+        toast({ title: "Profile Updated", status: "success" });
+      } else {
+        const created = await apiPost("therapists/", profile);
+        setProfile(created);
+        toast({ title: "Profile Created", status: "success" });
       }
-      toast({ title: "Profile Synced", status: "success" });
     } catch (error) {
       toast({ title: "Sync failed", status: "error" });
     } finally {
@@ -112,6 +116,34 @@ export default function ProfileClient() {
                   />
                 </FormControl>
               </SimpleGrid>
+              <SimpleGrid columns={2} spacing={4}>
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="700">Education (Degrees)</FormLabel>
+                  <Input 
+                    bg="gray.50" border="none" borderRadius="xl"
+                    value={profile.education || ""}
+                    onChange={(e) => setProfile({...profile, education: e.target.value})}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="700">Years of Experience</FormLabel>
+                  <Input 
+                    type="number"
+                    bg="gray.50" border="none" borderRadius="xl"
+                    value={profile.experience_years || 0}
+                    onChange={(e) => setProfile({...profile, experience_years: parseInt(e.target.value) || 0})}
+                  />
+                </FormControl>
+              </SimpleGrid>
+              <FormControl>
+                <FormLabel fontSize="sm" fontWeight="700">Professional Bio</FormLabel>
+                <textarea 
+                  style={{ width: '100%', padding: '12px', borderRadius: '12px', background: '#F9FAFB', border: 'none', minHeight: '120px' }}
+                  value={profile.bio || ""}
+                  onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                  placeholder="Share your therapeutic approach..."
+                />
+              </FormControl>
             </VStack>
           </HStack>
         </Box>

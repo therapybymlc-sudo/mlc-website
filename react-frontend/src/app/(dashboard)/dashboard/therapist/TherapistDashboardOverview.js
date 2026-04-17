@@ -33,8 +33,8 @@ export default function TherapistDashboardOverview() {
     const fetchData = async () => {
       try {
         const [clientData, apptData] = await Promise.all([
-          apiGet("therapists/clients/"),
-          apiGet("therapist-appointments/"),
+          apiGet("clients/"),
+          apiGet("appointments/"),
         ]);
         setStats({
           clients: clientData?.length || 0,

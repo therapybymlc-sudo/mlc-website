@@ -1,10 +1,10 @@
-import CareClient from './CareClient';
+import CareClient from "./CareClient";
 
 export const metadata = {
-  title: 'Care Space & Documentation | MLC Health',
-  description: 'Manage clinical notes, session documentation, and treatment planning in your secure Care Space.',
-};
+  title: 'Care Space | Therapist Dashboard | MLC Health',
+  description: 'Self-care and reflection tools for practitioners.',
+}
 
-export default function Page() {
+export default function TherapistCarePage() {
   return <CareClient />;
 }

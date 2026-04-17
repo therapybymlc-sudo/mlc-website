@@ -1,10 +1,10 @@
-import ResourcesClient from './ResourcesClient';
+import TherapistResourcesClient from "./ResourcesClient";
 
 export const metadata = {
-  title: 'Clinical Resources | MLC Health',
-  description: 'Access therapeutic tools, clinical guides, and shared resources for your practice.',
-};
+  title: 'Clinical Resources | Therapist Dashboard | MLC Health',
+  description: 'Access organizational and therapeutic resources.',
+}
 
-export default function Page() {
-  return <ResourcesClient />;
+export default function TherapistResourcesPage() {
+  return <TherapistResourcesClient />;
 }
