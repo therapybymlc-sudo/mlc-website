@@ -16,7 +16,9 @@ import {
   Divider,
   Icon,
   Link as ChakraLink,
-  Button
+  Button,
+  Spinner,
+  Center,
 } from '@chakra-ui/react'
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons'
 import { 
@@ -39,6 +41,7 @@ import NotificationCenter from '../../../components/NotificationCenter';
 
 import { useState, useEffect } from 'react';
 
+// Simplified Sidebar
 function SidebarContent({ links, pathname, signOut, onClose }) {
   return (
     <VStack align="stretch" spacing={2} p={4}>
@@ -98,17 +101,23 @@ function SidebarContent({ links, pathname, signOut, onClose }) {
 }
 
 export default function DashboardLayout({ children }) {
-  const [isMounted, setIsMounted] = useState(false);
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
 
-  if (!isMounted || !isLoaded) return null;
+  if (!mounted || !isLoaded) {
+    return (
+        <Center h="100vh">
+            <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
+        </Center>
+    );
+  }
 
   const isTherapist = user?.publicMetadata?.roles?.includes('therapist') || user?.publicMetadata?.roles?.includes('admin');
 
@@ -156,7 +165,7 @@ export default function DashboardLayout({ children }) {
           bg="transparent" 
           display={{ base: 'none', lg: 'flex' }}
         >
-           <Box /> {/* Left spacer */}
+           <Box /> 
            <HStack spacing={4}>
               <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
            </HStack>
