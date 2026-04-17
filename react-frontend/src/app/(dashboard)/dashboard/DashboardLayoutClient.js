@@ -98,12 +98,17 @@ function SidebarContent({ links, pathname, signOut, onClose }) {
 }
 
 export default function DashboardLayout({ children }) {
+  const [isMounted, setIsMounted] = useState(false);
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
 
-  if (!isLoaded) return null;
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || !isLoaded) return null;
 
   const isTherapist = user?.publicMetadata?.roles?.includes('therapist') || user?.publicMetadata?.roles?.includes('admin');
 
@@ -153,7 +158,7 @@ export default function DashboardLayout({ children }) {
         >
            <Box /> {/* Left spacer */}
            <HStack spacing={4}>
-              <NotificationCenter isAuthenticated={!!user} authLoading={!user} />
+              <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
            </HStack>
         </Flex>
 
