@@ -122,6 +122,8 @@ const DASS_ITEMS = [
 ];
 
 export default function TherapistDiscovery() {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
   const [view, setView] = useState("quiz"); // quiz, results, high_risk
   const [currentSection, setCurrentSection] = useState(0);
   const location = (() => {
@@ -1039,6 +1041,8 @@ DASS Interpretation based on Lovibond & Lovibond (1995).
   // ===========================
   // 🔹 High Risk View
   // ===========================
+
+  if (!isMounted) return <Box minH="100vh" bg="#FDFBFA" />;
 
   if (view === "high_risk") {
     return (
