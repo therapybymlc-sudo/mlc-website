@@ -38,10 +38,17 @@ import NextLink from 'next/link';
 import { useClientData } from "./useClientData";
 
 export default function ClientDashboardOverview() {
+  const [isMounted, setIsMounted] = useState(false);
   const { user } = useUser();
   const toast = useToast();
   const { goals, appointments, journals, checkins, relationships, loading, refreshData } = useClientData();
   const [mood, setMood] = useState("Balanced");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
 
   const [stats, setStats] = useState({
     journalStreak: 0,
