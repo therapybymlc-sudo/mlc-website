@@ -304,9 +304,11 @@ class TherapistApplication(models.Model):
     youngest_age = models.CharField(max_length=50, blank=True, null=True)
     referral_source = models.CharField(max_length=100)
     referral_name = models.CharField(max_length=255, blank=True, null=True)
+    linkedin = models.URLField(max_length=500, blank=True, null=True)
     
     # Files
     resume = models.FileField(upload_to="therapist_applications/resumes/", blank=True, null=True)
+    qualification_doc = models.FileField(upload_to="therapist_applications/qualifications/", blank=True, null=True)
     bachelors = models.FileField(upload_to="therapist_applications/bachelors/", blank=True, null=True)
     masters = models.FileField(upload_to="therapist_applications/masters/", blank=True, null=True)
     license_doc = models.FileField(upload_to="therapist_applications/licenses/", blank=True, null=True)

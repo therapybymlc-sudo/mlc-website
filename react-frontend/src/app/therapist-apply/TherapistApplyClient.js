@@ -1,20 +1,7 @@
-'use client'
-
-import React, { useState, useMemo, useEffect } from "react";
-import {
-  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, Icon, Image, Badge, 
-  FormControl, FormLabel, Input, Select, Checkbox, Textarea, useToast, Circle, Stack,
-  Divider, Text as ChakraText, IconButton, Tooltip, Radio, RadioGroup
-} from "@chakra-ui/react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FiUser, FiShield, FiCheck, FiUpload, FiArrowRight, FiAward, FiBookOpen, FiGlobe, 
-  FiBriefcase, FiPlus, FiTrash2, FiMail, FiMapPin, FiLinkedin
-} from "react-icons/fi";
-import { apiUpload } from "../../api.js";
-import LinkButton from "../../components/LinkButton";
+import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const MotionBox = motion(Box);
+const STORAGE_KEY = "mlc_therapist_apply_v2";
 
 const COUNTRIES = ["India", "United Kingdom", "United States", "Canada", "Australia", "Singapore", "United Arab Emirates", "Other"];
 const PROFICIENCIES = ["Native", "Fluent", "Conversational", "Basic"];
@@ -31,20 +18,18 @@ const STEPS = [
   { title: "Clinical Depth", icon: FiAward },
   { title: "Logistics", icon: FiMapPin },
   { title: "Docs", icon: FiUpload },
+  { title: "Review", icon: FiBookOpen },
   { title: "Final", icon: FiCheck }
 ];
 
 export default function TherapistApplyClient() {
+  const { user, isLoaded } = useUser();
   const toast = useToast();
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-  
-  // Files
+  // Files (not saved in localStorage)
   const [files, setFiles] = useState({
     resume: null, bachelors: null, masters: null, license: null, qualification_doc: null, additional_docs: null
   });
@@ -65,30 +50,42 @@ export default function TherapistApplyClient() {
     referral_source: "", whatsapp_community: "No", email_updates: "No"
   });
 
-  const nextStep = () => {
-    // Basic validation for mandatory sections
-    if (activeStep === 1) {
-       if (languages.length === 0 || !languages[0].name) {
-          toast({ title: "Incomplete", description: "At least one language is mandatory.", status: "warning" });
-          return;
-       }
+  // Hydration & Resume Progress
+  useEffect(() => {
+    setIsMounted(true);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+       try {
+          const data = JSON.parse(saved);
+          if (data.form) setForm(curr => ({ ...curr, ...data.form }));
+          if (data.languages) setLanguages(data.languages);
+          if (data.supervisions) setSupervisions(data.supervisions);
+          if (data.trainings) setTrainings(data.trainings);
+          if (data.selectedPopulations) setSelectedPopulations(data.selectedPopulations);
+          if (data.activeStep) setActiveStep(data.activeStep);
+       } catch (e) { console.error("Failed to load draft"); }
     }
-    if (activeStep === 2) {
-       if (supervisions.length === 0 || !supervisions[0].name) {
-          toast({ title: "Clinical Grounding Required", description: "Please provide at least one supervision entry.", status: "warning" });
-          return;
-       }
-    }
-    setActiveStep(prev => Math.min(prev + 1, STEPS.length - 1));
-    if (typeof window !== "undefined") window.scrollTo(0, 0);
-  };
-  
-  const prevStep = () => setActiveStep(prev => Math.max(prev - 1, 0));
+  }, []);
 
-  const handleChange = (key) => (e) => {
-    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setForm(prev => ({ ...prev, [key]: value }));
-  };
+  // Sync with user if available
+  useEffect(() => {
+    if (user && !form.first_name) {
+      setForm(prev => ({
+        ...prev,
+        first_name: user.firstName || "",
+        last_name: user.lastName || "",
+        email: user.primaryEmailAddress?.emailAddress || ""
+      }));
+    }
+  }, [user]);
+
+  // Save Progress on change
+  useEffect(() => {
+     if (isMounted) {
+        const data = { form, languages, supervisions, trainings, selectedPopulations, activeStep };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+     }
+  }, [form, languages, supervisions, trainings, selectedPopulations, activeStep, isMounted]);
 
   const handleFileChange = (key) => (e) => {
     setFiles(prev => ({ ...prev, [key]: e.target.files?.[0] || null }));
@@ -107,6 +104,42 @@ export default function TherapistApplyClient() {
     setSelectedPopulations(curr => curr.includes(p) ? curr.filter(x => x !== p) : [...curr, p]);
   };
 
+  const nextStep = () => {
+    if (activeStep === 0) {
+      if (!form.first_name || !form.last_name) {
+        toast({ title: "Name required", status: "warning" });
+        return;
+      }
+    }
+    if (activeStep === 1) {
+       if (languages.length === 0 || !languages[0].name) {
+          toast({ title: "Incomplete", description: "At least one language is mandatory.", status: "warning" });
+          return;
+       }
+    }
+    if (activeStep === 2) {
+       if (supervisions.length === 0 || !supervisions[0].name) {
+          toast({ title: "Clinical Grounding Required", description: "Please provide at least one supervision entry.", status: "warning" });
+          return;
+       }
+    }
+    if (activeStep === 4) {
+      if (!files.resume || !files.qualification_doc) {
+        toast({ title: "Documents Missing", description: "CV and Degree proof are mandatory.", status: "warning" });
+        return;
+      }
+    }
+    setActiveStep(prev => Math.min(prev + 1, STEPS.length - 1));
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+  };
+  
+  const prevStep = () => setActiveStep(prev => Math.max(prev - 1, 0));
+
+  const handleChange = (key) => (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setForm(prev => ({ ...prev, [key]: value }));
+  };
+
   const handleApply = async (e) => {
     e.preventDefault();
     if (activeStep < STEPS.length - 1) {
@@ -114,16 +147,6 @@ export default function TherapistApplyClient() {
       return;
     }
     
-    // Final check for mandatory docs
-    if (!files.resume) {
-      toast({ title: "CV Missing", description: "Your clinical resume is mandatory.", status: "error" });
-      return;
-    }
-    if (!files.qualification_doc) {
-      toast({ title: "Degree Document Missing", description: `Please upload proof of your ${form.highest_qualification}.`, status: "error" });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
       const payload = new FormData();
@@ -143,24 +166,25 @@ export default function TherapistApplyClient() {
       payload.append("licensed_countries", JSON.stringify([form.home_country]));
 
       await apiUpload("therapist-applications/", payload);
+      localStorage.removeItem(STORAGE_KEY);
       toast({ title: "Application Submitted", status: "success" });
       setActiveStep(STEPS.length); 
     } catch (err) {
-      toast({ title: "Submission Failed", status: "error" });
+      toast({ title: "Submission Failed", description: "Vetting error. Please ensure all mandatory fields are filled.", status: "error" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isMounted) return null;
+  if (!isMounted || !isLoaded) return null;
 
   if (activeStep === STEPS.length) {
     return (
       <Container maxW="4xl" py={40} textAlign="center">
          <VStack spacing={8}>
             <Circle size="100px" bg="teal.50" color="teal.500"><Icon as={FiCheck} w={10} h={10} /></Circle>
-            <Heading fontFamily="'Playfair Display', serif" size="2xl">Verification Pending.</Heading>
-            <Text fontSize="xl" color="gray.600">Our clinical team will review your credentials and reach out within 7-10 days.</Text>
+            <Heading fontFamily="'Playfair Display', serif" size="2xl">Application Verified.</Heading>
+            <Text fontSize="xl" color="gray.600">Our clinical team is now reviewing your credentials. We'll be in touch soon.</Text>
             <LinkButton href="/therapists" variant="ghost">Return to Ecosystem</LinkButton>
          </VStack>
       </Container>
@@ -174,8 +198,8 @@ export default function TherapistApplyClient() {
           <Image src="/serene_therapy_office_1776423989664.png" alt="" w="full" h="full" objectFit="cover" opacity="0.08" />
         </Box>
         <Container maxW="5xl" position="relative" zIndex={1} textAlign="center">
-          <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" mb={6}>RIGOROUS CLINICAL VETTING</Badge>
-          <Heading as="h1" fontSize={{ base: "4xl", md: "5xl" }} fontFamily="'Playfair Display', serif" color="teal.900" mb={4}>Join the Collective</Heading>
+          <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" mb={6}>THERAPIST ECOSYSTEM ENTRANCE</Badge>
+          <Heading as="h1" fontSize={{ base: "4xl", md: "5xl" }} fontFamily="'Playfair Display', serif" color="teal.900" mb={4}>Clinician Application</Heading>
         </Container>
       </Box>
 
@@ -188,6 +212,20 @@ export default function TherapistApplyClient() {
       </Container>
 
       <Container maxW="4xl" pb={32}>
+        <SignedOut>
+           <Box bg="white" p={16} borderRadius="3rem" shadow="xl" textAlign="center">
+              <VStack spacing={6}>
+                 <Icon as={FiShield} w={12} h={12} color="teal.800" />
+                 <Heading size="lg" fontFamily="'Playfair Display', serif">Secure Vetting Environment</Heading>
+                 <Text color="gray.600">Please sign up or sign in to start your rigorous clinical application. Your progress will be saved automatically.</Text>
+                 <SignInButton mode="modal">
+                    <Button bg="teal.800" color="white" h={14} px={10} borderRadius="full" _hover={{ bg: "teal.900" }}>Begin Application Journey</Button>
+                 </SignInButton>
+              </VStack>
+           </Box>
+        </SignedOut>
+
+        <SignedIn>
         <form onSubmit={handleApply}>
           <Box bg="white" p={{ base: 8, md: 16 }} borderRadius="3rem" shadow="xl" border="1px solid" borderColor="teal.50">
             <AnimatePresence mode="wait">
@@ -197,7 +235,7 @@ export default function TherapistApplyClient() {
                   <VStack align="stretch" spacing={8}>
                      <Box>
                         <Heading size="md" fontFamily="'Playfair Display', serif" mb={2}>01. Professional Identification</Heading>
-                        <Text fontSize="sm" color="gray.500" fontStyle="italic">Application Advisory: Please use your legal name as it appears on your clinical licenses.</Text>
+                        <Text fontSize="sm" color="gray.500" fontStyle="italic">Advisory: Use your legal name as it appears on clinical licenses.</Text>
                      </Box>
                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                         <FormControl isRequired><FormLabel fontSize="xs" fontWeight="900">FIRST NAME</FormLabel>
@@ -217,7 +255,6 @@ export default function TherapistApplyClient() {
                            <option value="">Select Qualification</option>
                            {QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
                         </Select>
-                        <Text fontSize="xs" color="gray.500" mt={2}>Advisory: Proof of this degree will be required in the final step.</Text>
                      </FormControl>
                   </VStack>
                 </MotionBox>
@@ -243,13 +280,10 @@ export default function TherapistApplyClient() {
                      <Input borderRadius="xl" value={form.licenses_held} onChange={handleChange("licenses_held")} /></FormControl>
                      
                      <VStack align="stretch" spacing={4}>
-                        <Box>
-                           <FormLabel fontSize="xs" fontWeight="900" mb={1}>LANGUAGES & PROFICIENCY *</FormLabel>
-                           <Text fontSize="xs" color="gray.500" fontStyle="italic">Advisory: At least one language is required for client matching.</Text>
-                        </Box>
+                        <FormLabel fontSize="xs" fontWeight="900" mb={1}>LANGUAGES & PROFICIENCY *</FormLabel>
                         {languages.map((l, i) => (
                            <HStack key={i} spacing={3}>
-                              <Input placeholder="e.g. English" borderRadius="xl" value={l.name} onChange={(e) => updateListItem(languages, setLanguages, i, "name", e.target.value)} />
+                              <Input placeholder="Language" borderRadius="xl" value={l.name} onChange={(e) => updateListItem(languages, setLanguages, i, "name", e.target.value)} />
                               <Select borderRadius="xl" value={l.level} onChange={(e) => updateListItem(languages, setLanguages, i, "level", e.target.value)}>
                                  <option value="">Level</option>
                                  {PROFICIENCIES.map(p => <option key={p} value={p}>{p}</option>)}
@@ -279,29 +313,24 @@ export default function TherapistApplyClient() {
                      <Heading size="md" fontFamily="'Playfair Display', serif" mb={2}>03. Clinical Stance & Grounding</Heading>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="900">RELEVANT EXPERIENCE & JOURNEY</FormLabel>
-                        <Textarea borderRadius="xl" rows={4} placeholder="Summarize your professional experience and key clinical milestones..." value={form.relevant_experience} onChange={handleChange("relevant_experience")} />
+                        <Textarea borderRadius="xl" rows={4} placeholder="Summarize your journey..." value={form.relevant_experience} onChange={handleChange("relevant_experience")} />
                      </FormControl>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="900">THERAPEUTIC STANCE & PHILOSOPHY</FormLabel>
-                        <Textarea borderRadius="xl" rows={4} placeholder="Describe your philosophy on healing and growth..." value={form.therapeutic_stance} onChange={handleChange("therapeutic_stance")} />
-                        <Text fontSize="xs" color="gray.500" mt={2}>Advisory: This helps us understand how you "show up" in the room with a client.</Text>
+                        <Textarea borderRadius="xl" rows={4} placeholder="Philosophy on healing..." value={form.therapeutic_stance} onChange={handleChange("therapeutic_stance")} />
                      </FormControl>
                      
                      <VStack align="stretch" spacing={6}>
-                        <Box>
-                           <Badge colorScheme="teal" px={3} py={1} borderRadius="md" mb={2}>SUPERVISION HISTORY *</Badge>
-                           <Text fontSize="xs" color="gray.500" fontStyle="italic">Advisory: At least one entry is mandatory. You can add all the supervisors you've had throughout your journey.</Text>
-                        </Box>
+                        <Badge colorScheme="teal" alignSelf="start">SUPERVISION HISTORY *</Badge>
                         {supervisions.map((s, i) => (
                            <Box key={i} p={6} border="1px solid" borderColor="gray.100" borderRadius="2xl">
                               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
                                  <Input placeholder="Supervisor Name" borderRadius="xl" value={s.name} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "name", e.target.value)} />
-                                 <Input placeholder="Worksite/Organization" borderRadius="xl" value={s.work} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "work", e.target.value)} />
+                                 <Input placeholder="Worksite" borderRadius="xl" value={s.work} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "work", e.target.value)} />
                                  <Input placeholder="Title/Credentials" borderRadius="xl" value={s.title} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "title", e.target.value)} />
-                                 <Input placeholder="Email Address" borderRadius="xl" value={s.email} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "email", e.target.value)} />
-                                 <Input placeholder="Supervision Duration" borderRadius="xl" value={s.duration} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "duration", e.target.value)} />
+                                 <Input placeholder="Email" borderRadius="xl" value={s.email} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "email", e.target.value)} />
                               </SimpleGrid>
-                              <Textarea placeholder="Core area of focus during this supervision..." borderRadius="xl" value={s.focus} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "focus", e.target.value)} />
+                              <Textarea placeholder="Focus..." borderRadius="xl" value={s.focus} onChange={(e) => updateListItem(supervisions, setSupervisions, i, "focus", e.target.value)} />
                               <IconButton mt={4} icon={<FiTrash2 />} onClick={() => removeListItem(supervisions, setSupervisions, i)} size="sm" colorScheme="red" variant="ghost" />
                            </Box>
                         ))}
@@ -316,40 +345,35 @@ export default function TherapistApplyClient() {
                 <MotionBox key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <VStack align="stretch" spacing={8}>
                      <Heading size="md" fontFamily="'Playfair Display', serif" mb={2}>04. Practice Logistics</Heading>
-                     
                      <Box p={6} bg="gray.50" borderRadius="2xl">
                         <FormControl mb={8}>
-                           <FormLabel fontWeight="700">Do you have a professional private space to conduct online therapy sessions?</FormLabel>
+                           <FormLabel fontWeight="700">Private online space?</FormLabel>
                            <RadioGroup onChange={(v) => setForm(p => ({ ...p, has_private_online_space: v }))} value={form.has_private_online_space}>
-                              <HStack spacing={6}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></HStack>
+                              <HStack spacing={6}><Radio value="Yes">Yes</Radio><Radio value="No">No</Radio></HStack>
                            </RadioGroup>
                         </FormControl>
-                        
                         <FormControl mb={6}>
-                           <FormLabel fontWeight="700">Do you have a private therapy room for in-person therapy sessions?</FormLabel>
+                           <FormLabel fontWeight="700">In-person therapy room?</FormLabel>
                            <RadioGroup onChange={(v) => setForm(p => ({ ...p, has_in_person_space: v }))} value={form.has_in_person_space}>
-                              <HStack spacing={6}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></HStack>
+                              <HStack spacing={6}><Radio value="Yes">Yes</Radio><Radio value="No">No</Radio></HStack>
                            </RadioGroup>
                         </FormControl>
-                        
                         {form.has_in_person_space === "Yes" && (
                            <FormControl mb={8} isRequired>
-                              <FormLabel fontSize="xs" fontWeight="900">IN-PERSON LOCATION (CITY)</FormLabel>
-                              <Input borderRadius="xl" bg="white" placeholder="e.g. Mumbai, London, etc." value={form.in_person_city} onChange={handleChange("in_person_city")} />
+                              <FormLabel fontSize="xs" fontWeight="900">IN-PERSON CITY</FormLabel>
+                              <Input borderRadius="xl" bg="white" value={form.in_person_city} onChange={handleChange("in_person_city")} />
                            </FormControl>
                         )}
-
                         <FormControl>
-                           <FormLabel fontWeight="700">Would you like to receive information about therapy spaces available in your area for in-person sessions?</FormLabel>
+                           <FormLabel fontWeight="700">Receive info about available spaces?</FormLabel>
                            <RadioGroup onChange={(v) => setForm(p => ({ ...p, opt_in_spaces: v }))} value={form.opt_in_spaces}>
-                              <HStack spacing={6}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></HStack>
+                              <HStack spacing={6}><Radio value="Yes">Yes</Radio><Radio value="No">No</Radio></HStack>
                            </RadioGroup>
                         </FormControl>
-
                         {form.opt_in_spaces === "Yes" && (
                            <FormControl mt={6} isRequired>
                               <FormLabel fontSize="xs" fontWeight="900">CITY OF INTEREST</FormLabel>
-                              <Input borderRadius="xl" bg="white" placeholder="Where are you looking for a space?" value={form.interested_city} onChange={handleChange("interested_city")} />
+                              <Input borderRadius="xl" bg="white" value={form.interested_city} onChange={handleChange("interested_city")} />
                            </FormControl>
                         )}
                      </Box>
@@ -364,35 +388,19 @@ export default function TherapistApplyClient() {
                      <Heading size="md" fontFamily="'Playfair Display', serif" mb={2}>05. Clinical Verification Documents</Heading>
                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
                         <VStack align="stretch" spacing={2}>
-                           <FormLabel fontSize="xs" fontWeight="900" mb={0}>CLINICAL CV / RESUME *</FormLabel>
-                           <Box border="2px dashed" borderColor="teal.500" p={6} borderRadius="2xl" position="relative" textAlign="center" _hover={{ bg: "teal.50" }}>
-                              <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" isRequired onChange={handleFileChange("resume")} />
-                              <Icon as={FiUpload} color="teal.600" mb={2} />
-                              <Text fontSize="xs" fontWeight="700">{files.resume ? files.resume.name : "Upload Resume (Mandatory)"}</Text>
+                           <FormLabel fontSize="xs" fontWeight="900">CLINICAL CV / RESUME *</FormLabel>
+                           <Box border="2px dashed" borderColor="teal.500" p={6} borderRadius="2xl" position="relative" textAlign="center">
+                              <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" onChange={handleFileChange("resume")} />
+                              <Icon as={FiUpload} color="teal.500" mb={1} />
+                              <Text fontSize="xs">{files.resume ? files.resume.name : "Upload Resume"}</Text>
                            </Box>
                         </VStack>
                         <VStack align="stretch" spacing={2}>
-                           <FormLabel fontSize="xs" fontWeight="900" mb={0}>{form.highest_qualification ? form.highest_qualification.toUpperCase() : "QUALIFICATION"} DOC *</FormLabel>
-                           <Box border="2px dashed" borderColor="teal.500" p={6} borderRadius="2xl" position="relative" textAlign="center" _hover={{ bg: "teal.50" }}>
-                              <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" isRequired onChange={handleFileChange("qualification_doc")} />
-                              <Icon as={FiUpload} color="teal.600" mb={2} />
-                              <Text fontSize="xs" fontWeight="700">{files.qualification_doc ? files.qualification_doc.name : "Upload Degree Proof (Mandatory)"}</Text>
-                           </Box>
-                        </VStack>
-                        <VStack align="stretch" spacing={2}>
-                           <FormLabel fontSize="xs" fontWeight="900" mb={0}>ADDITIONAL CLINICAL DOCUMENTS</FormLabel>
-                           <Box border="2px dashed" borderColor="teal.100" p={6} borderRadius="2xl" position="relative" textAlign="center" _hover={{ bg: "teal.50" }}>
-                              <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" onChange={handleFileChange("additional_docs")} />
-                              <Icon as={FiUpload} color="teal.200" mb={2} />
-                              <Text fontSize="xs" fontWeight="700">{files.additional_docs ? files.additional_docs.name : "Upload Other Docs"}</Text>
-                           </Box>
-                        </VStack>
-                        <VStack align="stretch" spacing={2}>
-                           <FormLabel fontSize="xs" fontWeight="900" mb={0}>LICENSE DOCUMENT (IF APPLICABLE)</FormLabel>
-                           <Box border="2px dashed" borderColor="teal.100" p={6} borderRadius="2xl" position="relative" textAlign="center" _hover={{ bg: "teal.50" }}>
-                              <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" onChange={handleFileChange("license")} />
-                              <Icon as={FiUpload} color="teal.200" mb={2} />
-                              <Text fontSize="xs" fontWeight="700">{files.license ? files.license.name : "Upload License"}</Text>
+                           <FormLabel fontSize="xs" fontWeight="900">DEGREE PROOF *</FormLabel>
+                           <Box border="2px dashed" borderColor="teal.500" p={6} borderRadius="2xl" position="relative" textAlign="center">
+                              <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" onChange={handleFileChange("qualification_doc")} />
+                              <Icon as={FiUpload} color="teal.500" mb={1} />
+                              <Text fontSize="xs">{files.qualification_doc ? files.qualification_doc.name : "Upload Degree"}</Text>
                            </Box>
                         </VStack>
                      </SimpleGrid>
@@ -400,39 +408,65 @@ export default function TherapistApplyClient() {
                 </MotionBox>
               )}
 
-              {/* final */}
+              {/* review */}
               {activeStep === 5 && (
                 <MotionBox key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                   <VStack align="stretch" spacing={8}>
+                      <Heading size="md" fontFamily="'Playfair Display', serif">06. Review Your Application</Heading>
+                      <Box p={8} bg="teal.50" borderRadius="2xl">
+                         <SimpleGrid columns={2} spacing={6} mb={8}>
+                            <Box><Text fontWeight="700">Full Name</Text><Text>{form.first_name} {form.last_name}</Text></Box>
+                            <Box><Text fontWeight="700">Credential</Text><Text>{form.highest_qualification}</Text></Box>
+                         </SimpleGrid>
+                         <Divider borderColor="teal.200" mb={8} />
+                         <Box mb={8}>
+                            <Text fontWeight="700" mb={2}>Clinical Grounding</Text>
+                            <Text fontSize="sm">{supervisions.length} Supervisor(s) listed.</Text>
+                            <Text fontSize="sm" fontStyle="italic">"{form.therapeutic_stance.substring(0, 100)}..."</Text>
+                         </Box>
+                         <Box>
+                            <Text fontWeight="700" mb={2}>Docs Uploaded</Text>
+                            <HStack spacing={4}>
+                               {files.resume && <Badge colorScheme="green">CV</Badge>}
+                               {files.qualification_doc && <Badge colorScheme="green">Degree</Badge>}
+                               {files.license && <Badge>License</Badge>}
+                            </HStack>
+                         </Box>
+                      </Box>
+                      <Text fontSize="xs" color="gray.500">Please ensure all details are accurate. Once submitted, your credentials will enter the formal vetting queue.</Text>
+                   </VStack>
+                </MotionBox>
+              )}
+
+              {/* final */}
+              {activeStep === 6 && (
+                <MotionBox key="step6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <VStack align="stretch" spacing={8}>
-                     <Heading size="md" fontFamily="'Playfair Display', serif">06. Final Alignment</Heading>
+                     <Heading size="md" fontFamily="'Playfair Display', serif">07. Final Alignment</Heading>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="900">WHERE DID YOU HEAR ABOUT MLC?</FormLabel>
                         <Select borderRadius="xl" value={form.referral_source} onChange={handleChange("referral_source")}>
                            <option value="">Select Option</option>
-                           <option value="Google">Google Search</option>
-                           <option value="Colleague">Through a Colleague</option>
-                           <option value="Event">Events/Webinars</option>
-                           <option value="Other">Other</option>
+                           <option value="Google">Google</option><option value="Colleague">Colleague</option>
                         </Select>
                      </FormControl>
-                     <Stack spacing={4} bg="gray.50" p={8} borderRadius="2xl">
-                        <HStack justify="space-between"><Text fontWeight="700">Join Therapist WhatsApp Community?</Text><RadioGroup onChange={(v) => setForm(p => ({ ...p, whatsapp_community: v }))} value={form.whatsapp_community}><HStack spacing={4}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></HStack></RadioGroup></HStack>
-                        <HStack justify="space-between"><Text fontWeight="700">Receive emails with clinical resources?</Text><RadioGroup onChange={(v) => setForm(p => ({ ...p, email_updates: v }))} value={form.email_updates}><HStack spacing={4}><Radio value="Yes" colorScheme="teal">Yes</Radio><Radio value="No" colorScheme="teal">No</Radio></HStack></RadioGroup></HStack>
-                     </Stack>
-                     <Checkbox colorScheme="teal" isRequired><Text fontSize="sm" fontWeight="500">I certify that all provided clinical documentation is accurate and verifiable.</Text></Checkbox>
+                     <Box bg="gray.100" p={6} borderRadius="2xl">
+                        <Checkbox colorScheme="teal" isRequired><Text fontSize="sm" fontWeight="700">I certify that all documentation is accurate.</Text></Checkbox>
+                     </Box>
                   </VStack>
                 </MotionBox>
               )}
             </AnimatePresence>
 
             <HStack spacing={4} mt={16} pt={8} borderTop="1px solid" borderColor="teal.50">
-               {activeStep > 0 && <Button variant="ghost" color="teal.800" h={14} px={10} borderRadius="full" onClick={prevStep}>Back</Button>}
-               <Button type="submit" bg="teal.800" color="white" flex={1} h={14} borderRadius="full" isLoading={isSubmitting} _hover={{ bg: "teal.900" }} rightIcon={activeStep < STEPS.length - 1 ? <FiArrowRight /> : <FiCheck />}>
-                  {activeStep === STEPS.length - 1 ? "Submit Rigorous Application" : "Continue to Next Section"}
+               {activeStep > 0 && <Button variant="ghost" h={14} px={10} borderRadius="full" onClick={prevStep}>Back</Button>}
+               <Button type="submit" bg="teal.800" color="white" flex={1} h={14} borderRadius="full" isLoading={isSubmitting} rightIcon={activeStep < STEPS.length - 1 ? <FiArrowRight /> : <FiCheck />}>
+                  {activeStep === STEPS.length - 1 ? "Submit Rigorous Application" : "Continue"}
                </Button>
             </HStack>
           </Box>
         </form>
+        </SignedIn>
       </Container>
     </Box>
   );
