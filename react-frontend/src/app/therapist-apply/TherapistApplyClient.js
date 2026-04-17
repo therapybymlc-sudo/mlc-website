@@ -1,3 +1,18 @@
+'use client'
+
+import React, { useState, useEffect } from "react";
+import {
+  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, Icon, Image, Badge, 
+  FormControl, FormLabel, Input, Select, Checkbox, Textarea, useToast, Circle, 
+  Divider, IconButton, Radio, RadioGroup
+} from "@chakra-ui/react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  FiUser, FiShield, FiCheck, FiUpload, FiArrowRight, FiAward, FiBookOpen, 
+  FiBriefcase, FiPlus, FiTrash2, FiMapPin
+} from "react-icons/fi";
+import { apiUpload } from "../../api.js";
+import LinkButton from "../../components/LinkButton";
 import { useUser, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 const MotionBox = motion(Box);
