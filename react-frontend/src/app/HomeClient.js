@@ -226,7 +226,7 @@ export default function HomeClient() {
             </HStack>
           </VStack>
         </Box>
-      </MotionBox>Box>
+      </MotionBox>
 
       {/* HOW TO START SECTION */}
       <Box py={24} bg="white">
