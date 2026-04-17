@@ -33,6 +33,7 @@ import {
 import NextLink from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const logoSrc = "/logo_tra.png";
 
@@ -49,9 +50,14 @@ const navLinks = [
 
 export default function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const { signOut } = useClerk();
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <Box
@@ -150,149 +156,153 @@ export default function Navbar() {
 
         {/* 👤 Right Section: Auth & Mobile Menu */}
         <HStack spacing={{ base: 2, md: 4 }} flexShrink={0}>
-          {isSignedIn ? (
-            <Menu gutter={12} placement="bottom-end">
-              <MenuButton
-                as={Button}
-                variant="ghost"
-                borderRadius="full"
-                height="auto"
-                py={1.5}
-                px={{ base: 1, md: 2 }}
-                _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
-              >
-                <HStack spacing={2}>
-                  <Avatar 
-                    size="sm" 
-                    name={user?.fullName || "User"} 
-                    src={user?.imageUrl} 
-                    border="2px solid"
-                    borderColor="#A9CBB7"
-                  />
-                  <Text 
-                    fontSize="sm" 
-                    fontWeight="600" 
-                    color="#2E2E2E"
-                    display={{ base: "none", md: "block" }}
-                  >
-                    {user?.firstName || "Account"}
-                  </Text>
-                  <ChevronDownIcon color="gray.400" />
-                </HStack>
-              </MenuButton>
+          {(isMounted && isLoaded) ? (
+            isSignedIn ? (
+              <Menu gutter={12} placement="bottom-end">
+                <MenuButton
+                  as={Button}
+                  variant="ghost"
+                  borderRadius="full"
+                  height="auto"
+                  py={1.5}
+                  px={{ base: 1, md: 2 }}
+                  _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
+                >
+                  <HStack spacing={2}>
+                    <Avatar 
+                      size="sm" 
+                      name={user?.fullName || "User"} 
+                      src={user?.imageUrl} 
+                      border="2px solid"
+                      borderColor="#A9CBB7"
+                    />
+                    <Text 
+                      fontSize="sm" 
+                      fontWeight="600" 
+                      color="#2E2E2E"
+                      display={{ base: "none", md: "block" }}
+                    >
+                      {user?.firstName || "Account"}
+                    </Text>
+                    <ChevronDownIcon color="gray.400" />
+                  </HStack>
+                </MenuButton>
 
-              <MenuList
-                boxShadow="0 10px 30px rgba(0,0,0,0.1)"
-                border="1px solid"
-                borderColor="gray.100"
-                borderRadius="xl"
-                p={2}
-                minW="240px"
-              >
-                <Box px={4} py={3}>
-                  <Text fontWeight="700" color="#2E2E2E" fontSize="sm">
-                    {user?.fullName || "User Account"}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500" mt={0.5}>
-                    {user?.primaryEmailAddress?.emailAddress}
-                  </Text>
-                </Box>
-                
-                <MenuDivider />
-                
-                {(() => {
-                  const roles = user?.publicMetadata?.roles || [];
-                  const dashboardBase = roles.includes("therapist") || roles.includes("admin") ? "/dashboard/therapist" : "/dashboard/client";
+                <MenuList
+                  boxShadow="0 10px 30px rgba(0,0,0,0.1)"
+                  border="1px solid"
+                  borderColor="gray.100"
+                  borderRadius="xl"
+                  p={2}
+                  minW="240px"
+                >
+                  <Box px={4} py={3}>
+                    <Text fontWeight="700" color="#2E2E2E" fontSize="sm">
+                      {user?.fullName || "User Account"}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500" mt={0.5}>
+                      {user?.primaryEmailAddress?.emailAddress}
+                    </Text>
+                  </Box>
                   
-                  return (
-                    <>
-                <MenuItem
-                  as={NextLink}
-                  href="/dashboard"
-                  borderRadius="lg"
-                  icon={<Icon as={FiLayout} boxSize={4} color="#56756D" />}
-                  _hover={{ bg: "gray.50", color: "#C9A960" }}
-                  fontSize="sm"
-                  fontWeight="600"
-                  py={3}
-                >
-                  My Dashboard
-                </MenuItem>
-                
-                <MenuItem
-                  as={NextLink}
-                  href={`${dashboardBase}/appointments`}
-                  borderRadius="lg"
-                  icon={<Icon as={FiClock} boxSize={4} color="#56756D" />}
-                  _hover={{ bg: "gray.50", color: "#C9A960" }}
-                  fontSize="sm"
-                  fontWeight="600"
-                  py={3}
-                >
-                  My Appointments
-                </MenuItem>
+                  <MenuDivider />
+                  
+                  {(() => {
+                    const roles = user?.publicMetadata?.roles || [];
+                    const dashboardBase = roles.includes("therapist") || roles.includes("admin") ? "/dashboard/therapist" : "/dashboard/client";
+                    
+                    return (
+                      <>
+                  <MenuItem
+                    as={NextLink}
+                    href="/dashboard"
+                    borderRadius="lg"
+                    icon={<Icon as={FiLayout} boxSize={4} color="#56756D" />}
+                    _hover={{ bg: "gray.50", color: "#C9A960" }}
+                    fontSize="sm"
+                    fontWeight="600"
+                    py={3}
+                  >
+                    My Dashboard
+                  </MenuItem>
+                  
+                  <MenuItem
+                    as={NextLink}
+                    href={`${dashboardBase}/appointments`}
+                    borderRadius="lg"
+                    icon={<Icon as={FiClock} boxSize={4} color="#56756D" />}
+                    _hover={{ bg: "gray.50", color: "#C9A960" }}
+                    fontSize="sm"
+                    fontWeight="600"
+                    py={3}
+                  >
+                    My Appointments
+                  </MenuItem>
 
-                <MenuItem
+                  <MenuItem
+                    as={NextLink}
+                    href={`${dashboardBase}/resources`}
+                    borderRadius="lg"
+                    icon={<Icon as={FiBookOpen} boxSize={4} color="#56756D" />}
+                    _hover={{ bg: "gray.50", color: "#C9A960" }}
+                    fontSize="sm"
+                    fontWeight="600"
+                    py={3}
+                  >
+                    Resources & Tools
+                  </MenuItem>
+                  </>
+                  )
+                })()}
+                  
+                  <MenuDivider />
+                  
+                  <MenuItem
+                    onClick={() => signOut()}
+                    borderRadius="lg"
+                    icon={<Icon as={FiLogOut} boxSize={4} />}
+                    color="red.500"
+                    _hover={{ bg: "red.50" }}
+                    fontSize="sm"
+                    fontWeight="600"
+                    py={2.5}
+                  >
+                    Sign Out
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            ) : (
+              <HStack spacing={3} display={{ base: "none", md: "flex" }}>
+                <Button
                   as={NextLink}
-                  href={`${dashboardBase}/resources`}
-                  borderRadius="lg"
-                  icon={<Icon as={FiBookOpen} boxSize={4} color="#56756D" />}
-                  _hover={{ bg: "gray.50", color: "#C9A960" }}
-                  fontSize="sm"
+                  href="/login"
+                  variant="ghost"
                   fontWeight="600"
-                  py={3}
-                >
-                  Resources & Tools
-                </MenuItem>
-                </>
-                )
-              })()}
-                
-                <MenuDivider />
-                
-                <MenuItem
-                  onClick={() => signOut()}
-                  borderRadius="lg"
-                  icon={<Icon as={FiLogOut} boxSize={4} />}
-                  color="red.500"
-                  _hover={{ bg: "red.50" }}
                   fontSize="sm"
-                  fontWeight="600"
-                  py={2.5}
+                  color="#2E2E2E"
+                  borderRadius="full"
+                  _hover={{ bg: "gray.50" }}
                 >
-                  Sign Out
-                </MenuItem>
-              </MenuList>
-            </Menu>
+                  Sign In
+                </Button>
+                <Button
+                  as={NextLink}
+                  href="/signup/client"
+                  bg="#56756D"
+                  color="white"
+                  fontWeight="600"
+                  fontSize="sm"
+                  borderRadius="full"
+                  px={6}
+                  _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
+                  transition="all 0.2s"
+                >
+                  Join MLC
+                </Button>
+              </HStack>
+            )
           ) : (
-            <HStack spacing={3} display={{ base: "none", md: "flex" }}>
-              <Button
-                as={NextLink}
-                href="/login"
-                variant="ghost"
-                fontWeight="600"
-                fontSize="sm"
-                color="#2E2E2E"
-                borderRadius="full"
-                _hover={{ bg: "gray.50" }}
-              >
-                Sign In
-              </Button>
-              <Button
-                as={NextLink}
-                href="/signup/client"
-                bg="#56756D"
-                color="white"
-                fontWeight="600"
-                fontSize="sm"
-                borderRadius="full"
-                px={6}
-                _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
-                transition="all 0.2s"
-              >
-                Join MLC
-              </Button>
-            </HStack>
+            <Box w="100px" /> 
           )}
 
           <IconButton

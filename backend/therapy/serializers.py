@@ -906,14 +906,17 @@ class TherapistApplicationSerializer(serializers.ModelSerializer):
         languages = self._coerce_list(attrs.get("languages"))
         expertise = self._coerce_list(attrs.get("expertise_areas"))
         populations = self._coerce_list(attrs.get("populations"))
+        supervisions = self._coerce_list(attrs.get("supervisions_detailed"))
+        trainings = self._coerce_list(attrs.get("trainings_detailed"))
         
         attrs["licensed_countries"] = licensed
         attrs["languages"] = languages
         attrs["expertise_areas"] = expertise
         attrs["populations"] = populations
+        attrs["supervisions_detailed"] = supervisions
+        attrs["trainings_detailed"] = trainings
 
         if not licensed:
-            # Fallback to home country if list is empty
             hc = attrs.get("home_country")
             if hc:
                 attrs["licensed_countries"] = [hc]

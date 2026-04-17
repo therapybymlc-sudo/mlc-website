@@ -302,7 +302,7 @@ class TherapistApplication(models.Model):
     
     treat_minors = models.CharField(max_length=20, blank=True, null=True)
     youngest_age = models.CharField(max_length=50, blank=True, null=True)
-    referral_source = models.CharField(max_length=100)
+    referral_source = models.CharField(max_length=100, blank=True, null=True)
     referral_name = models.CharField(max_length=255, blank=True, null=True)
     linkedin = models.URLField(max_length=500, blank=True, null=True)
     
