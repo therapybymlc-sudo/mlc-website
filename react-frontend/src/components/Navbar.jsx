@@ -85,23 +85,26 @@ export default function Navbar() {
             alt="MLC Logo"
             boxSize={{ base: "40px", md: "50px" }}
           />
-          <Box lineHeight="1.1" display={{ base: "none", sm: "block" }}>
+          <Box lineHeight="1.0" display={{ base: "none", sm: "block" }}>
             <Text
               fontFamily="'Inter', var(--font-inter), sans-serif"
-              fontWeight="600"
-              fontSize={{ base: "sm", md: "md" }}
+              fontWeight="700"
+              fontSize={{ base: "sm", md: "15px" }}
               color="#2E2E2E"
               letterSpacing="-0.2px"
+              mb={0.5}
             >
-              MLC Health
+              MLC Health and Wellness Centre
             </Text>
             <Text
               fontFamily="'Inter', var(--font-inter), sans-serif"
-              fontSize="xs"
+              fontSize="10px"
               color="#56756D"
               fontWeight="500"
+              letterSpacing="0.5px"
+              textTransform="uppercase"
             >
-              Wellness Centre
+              A place to feel, to heal, to become
             </Text>
           </Box>
         </HStack>
