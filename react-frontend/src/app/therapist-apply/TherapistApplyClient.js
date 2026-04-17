@@ -179,6 +179,10 @@ export default function TherapistApplyClient() {
       payload.append("home_city", "N/A");
       payload.append("home_postal_code", "N/A");
       payload.append("licensed_countries", JSON.stringify([form.home_country]));
+      
+      // Mapping for mandatory model fields
+      payload.append("has_private_practice", form.has_private_online_space);
+      payload.append("open_to_in_person", form.has_in_person_space);
 
       await apiUpload("therapist-applications/", payload);
       localStorage.removeItem(STORAGE_KEY);
