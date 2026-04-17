@@ -42,26 +42,17 @@ export default function ClientDashboardOverview() {
   const { user } = useUser();
   const toast = useToast();
   const { goals, appointments, journals, checkins, relationships, loading, refreshData } = useClientData();
-  const [mood, setMood] = useState("Balanced");
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) return null;
-
   const [stats, setStats] = useState({
     journalStreak: 0,
     checkinsThisWeek: 0,
     activeGoals: 0
   });
 
-  const moodColors = {
-    'Calm': { bg: '#E9F2ED', text: '#56756D', icon: FiHeart },
-    'Balanced': { bg: '#F2F1ED', text: '#2E2E2E', icon: FiActivity },
-    'Low': { bg: '#F8F4F1', text: '#D68C45', icon: FiMoon },
-    'Anxious': { bg: '#FDF2F2', text: '#E53E3E', icon: FiZap },
-  };
+  const [mood, setMood] = useState("Balanced");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!loading) {
@@ -82,6 +73,15 @@ export default function ClientDashboardOverview() {
        });
     }
   }, [loading, goals, journals, checkins]);
+
+  if (!isMounted) return null;
+
+  const moodColors = {
+    'Calm': { bg: '#E9F2ED', text: '#56756D', icon: FiHeart },
+    'Balanced': { bg: '#F2F1ED', text: '#2E2E2E', icon: FiActivity },
+    'Low': { bg: '#F8F4F1', text: '#D68C45', icon: FiMoon },
+    'Anxious': { bg: '#FDF2F2', text: '#E53E3E', icon: FiZap },
+  };
 
   const progressValue = goals.length > 0 
     ? (goals.filter(g => g.is_completed).length / goals.length) * 100 
