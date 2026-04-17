@@ -31,7 +31,8 @@ import {
   FiBookOpen,
   FiHeart,
   FiClock,
-  FiUser
+  FiUser,
+  FiCheckCircle
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'

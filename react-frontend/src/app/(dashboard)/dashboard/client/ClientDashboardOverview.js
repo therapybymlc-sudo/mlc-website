@@ -29,7 +29,8 @@ import {
   FiHeart,
   FiZap,
   FiMoon,
-  FiSun
+  FiSun,
+  FiUsers
 } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
 import { apiGet, apiPost } from "../../../../api.js";
