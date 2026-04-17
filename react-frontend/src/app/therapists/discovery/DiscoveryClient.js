@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, IconButton, Progress, Radio, RadioGroup, Checkbox, Stack, Input, Select, useToast, Divider, Icon, Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, AlertTitle, AlertDescription, Badge, InputGroup, InputLeftElement,
+  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, IconButton, Progress, Radio, RadioGroup, Checkbox, Stack, Input, Select, useToast, Divider, Icon, Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, AlertTitle, AlertDescription, Badge, InputGroup, InputLeftElement, Spinner,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiArrowLeft, FiArrowRight, FiCheck, FiInfo, FiMapPin, FiHeart, FiStar, FiUser, FiActivity, FiShield, FiBriefcase, FiMail, FiPhone } from "react-icons/fi";
-import { apiPost } from "../../../api.js";
+import { FiArrowLeft, FiArrowRight, FiCheck, FiInfo, FiMapPin, FiHeart, FiStar, FiUser, FiActivity, FiShield, FiBriefcase, FiMail, FiPhone, FiRefreshCw } from "react-icons/fi";
+import { apiPost, apiGet } from "../../../api.js";
 import TherapistCard from "../../../components/TherapistCard";
 import { useAuth } from "../../../context/AuthContext";
 import NextLink from "next/link";
@@ -91,7 +91,7 @@ const DASS_ITEMS = [
 const DASS_LABELS = ["Never", "Sometimes", "Often", "Almost Always"];
 
 export default function DiscoveryClient() {
-  const [view, setView] = useState("quiz"); 
+  const [view, setView] = useState("checking"); // checking, welcome_back, quiz, results, high_risk
   const [currentSection, setCurrentSection] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -112,7 +112,6 @@ export default function DiscoveryClient() {
     urgency: "Within the next week",
     
     presenting_concerns: [],
-    // New Dropdown-based Identity Fields
     life_stage_context: "",
     cultural_social_context: "",
     identity_lived_experience: "",
@@ -147,6 +146,30 @@ export default function DiscoveryClient() {
     whatsapp_marketing_consent: false,
     email_marketing_consent: false,
   });
+
+  // Check for existing screening on mount
+  useEffect(() => {
+    async function checkExisting() {
+       if (isAuthenticated) {
+          try {
+             const res = await apiGet("therapists/match/"); // Assuming this returns matches if previous submission exists
+             if (res && res.matches && res.matches.length > 0) {
+                setResults(res);
+                setFinalInterpretations(res.dass_interpretations || null);
+                setView("welcome_back");
+             } else {
+                setView("quiz");
+             }
+          } catch (err) {
+             console.error("Existing discovery check failed", err);
+             setView("quiz");
+          }
+       } else {
+          setView("quiz");
+       }
+    }
+    checkExisting();
+  }, [isAuthenticated]);
 
   const progress = (currentSection / (SECTIONS.length - 1)) * 100;
 
@@ -489,12 +512,33 @@ export default function DiscoveryClient() {
              <VStack py={12} borderTop="1px solid" borderColor="gray.100" spacing={6}>
                 <Text color="gray.500" fontSize="sm">Not sure who to choose? Book a consultation with our Intake Coordinator.</Text>
                 <Button as={NextLink} href="/book-now" bg="teal.800" color="white" borderRadius="full" px={10} h={14} _hover={{ bg: "teal.900" }}>Book Intake Consultation</Button>
+                <Button variant="link" color="teal.600" leftIcon={<FiRefreshCw />} onClick={() => setView("quiz")}>Update my needs / Retake Screening</Button>
              </VStack>
          </VStack>
       </Container>
     );
   };
 
+  const renderWelcomeBack = () => {
+    return (
+      <Container maxW="3xl" py={20}>
+         <VStack spacing={10} align="center" textAlign="center" p={12} bg="white" borderRadius="3rem" shadow="2xl">
+            <Icon as={FiCheck} w={16} h={16} color="teal.500" />
+            <VStack spacing={4}>
+               <Heading size="xl" color="teal.900">Welcome Back</Heading>
+               <Text fontSize="lg" color="gray.600">You have already completed your clinical screening. How would you like to proceed?</Text>
+            </VStack>
+            <Stack direction={{ base: "column", md: "row" }} spacing={4} w="full">
+               <Button flex={1} bg="teal.800" color="white" borderRadius="full" height="14" onClick={() => setView("results")}>View My Recommended Matches</Button>
+               <Button flex={1} variant="outline" borderColor="teal.800" color="teal.800" borderRadius="full" height="14" leftIcon={<FiRefreshCw />} onClick={() => setView("quiz")}>Update My Needs</Button>
+            </Stack>
+         </VStack>
+      </Container>
+    );
+  };
+
+  if (view === "checking") return <Box py={40} textAlign="center"><Spinner size="xl" color="teal.500" /><Text mt={4} color="gray.500">Retrieving your profile...</Text></Box>;
+  if (view === "welcome_back") return renderWelcomeBack();
   if (view === "high_risk") return <Box py={20} textAlign="center"><Heading>Immediate Support Recommended</Heading><Text mt={4}>Please contact your countries national helplines or nearest hospital ER.</Text></Box>;
   if (view === "results") return renderResults();
 
