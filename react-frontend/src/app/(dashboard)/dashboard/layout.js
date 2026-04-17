@@ -1,8 +1,5 @@
-import dynamic from 'next/dynamic';
-
-const DashboardLayoutClient = dynamic(() => import('./DashboardLayoutClient'), {
-  ssr: false,
-});
+import DashboardLayoutClient from './DashboardLayoutClient';
+import ClientOnly from '../../../components/ClientOnly';
 
 export const metadata = {
   title: {
@@ -13,5 +10,9 @@ export const metadata = {
 }
 
 export default function Layout({ children }) {
-  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
+  return (
+    <ClientOnly>
+      <DashboardLayoutClient>{children}</DashboardLayoutClient>
+    </ClientOnly>
+  );
 }
