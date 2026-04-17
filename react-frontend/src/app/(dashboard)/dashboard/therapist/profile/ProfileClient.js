@@ -233,6 +233,16 @@ export default function ProfileClient() {
           {/* 3. Populations */}
           <TabPanel>
             <VStack align="stretch" spacing={8}>
+              <Alert status="info" variant="subtle" borderRadius="2xl" bg="rgba(86, 117, 109, 0.05)" color="mlc.greenDark">
+                <AlertIcon color="mlc.green" />
+                <Box>
+                  <AlertTitle fontSize="sm">Specificity Improves Matching</AlertTitle>
+                  <AlertDescription fontSize="xs">
+                    Choosing the <b>3-4 populations</b> you are most experienced with helps our algorithm find your ideal clients. Profiles that claim to treat everyone often rank lower in specialized search results.
+                  </AlertDescription>
+                </Box>
+              </Alert>
+
               <Box>
                 <FormLabel fontWeight="700">Age Groups Served</FormLabel>
                 <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
@@ -252,7 +262,7 @@ export default function ProfileClient() {
               </Box>
               <Divider/>
               <Box>
-                <FormLabel fontWeight="700">Identity Contexts</FormLabel>
+                <FormLabel fontWeight="700">Identity Contexts (Select top 3-4)</FormLabel>
                 <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
                   {CATEGORIES.POPULATIONS.map(p => (
                     <Checkbox key={p} isChecked={profile.populations_served?.includes(p)} onChange={() => toggleArrayItem('populations_served', p)}>{p}</Checkbox>
@@ -265,9 +275,19 @@ export default function ProfileClient() {
           {/* 4. Clinical Scope */}
           <TabPanel>
             <VStack align="stretch" spacing={8}>
+              <Alert status="warning" variant="subtle" borderRadius="2xl" border="1px solid" borderColor="orange.100">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle fontSize="sm">SEO Advisory: Avoid "Generic" Profiles</AlertTitle>
+                  <AlertDescription fontSize="xs">
+                    Search engines (and clients) value depth over breadth. <b>Intentionality matters.</b> Profiles that select too many specializations are often indexed lower. Focus on your core expertise for maximum visibility.
+                  </AlertDescription>
+                </Box>
+              </Alert>
+
               <Box>
                 <FormLabel fontWeight="700">Presenting Concerns Management</FormLabel>
-                <Text fontSize="xs" color="gray.500" mb={4}>Which concerns do you actively work with?</Text>
+                <Text fontSize="xs" color="gray.500" mb={4}>Which concerns do you actively work with? Be specific for better matching.</Text>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {["Anxiety", "Depression", "Trauma", "Relationships", "Grief", "Work Stress", "Self-Esteem", "Parenting"].map(topic => (
                     <HStack key={topic} justify="space-between" p={3} bg="gray.50" borderRadius="xl">
@@ -284,7 +304,7 @@ export default function ProfileClient() {
               </Box>
               <FormControl>
                 <FormLabel fontWeight="700" color="red.500">Exclusions (Internal Matching)</FormLabel>
-                <Textarea placeholder="List specific presentations you DO NOT TREAT (e.g. active suicidality, forensic cases)" borderRadius="xl" />
+                <Textarea placeholder="List specific presentations you DO NOT TREAT (e.g. active suicidality, forensic cases). This ensures safe and appropriate referrals." borderRadius="xl" />
               </FormControl>
             </VStack>
           </TabPanel>
@@ -360,21 +380,58 @@ export default function ProfileClient() {
 
           {/* 8. Internal Matching */}
           <TabPanel>
-            <VStack align="stretch" spacing={6}>
-              <Box bg="red.50" p={6} borderRadius="3xl" border="1px solid" borderColor="red.100">
-                <HStack color="red.600" mb={4}><Icon as={FiAlertCircle}/><Text fontWeight="bold">Internal Reference Only (Not Public)</Text></HStack>
-                <VStack align="stretch" spacing={4}>
+            <VStack align="stretch" spacing={8}>
+              <Box bg="red.50" p={8} borderRadius="3xl" border="1px solid" borderColor="red.100" shadow="sm">
+                <HStack color="red.600" mb={6}><Icon as={FiAlertCircle} boxSize={5}/><Text fontWeight="bold" fontSize="lg">Internal Clinical Governance</Text></HStack>
+                
+                <VStack align="stretch" spacing={8}>
+                   <Box>
+                      <Heading size="xs" mb={4} textTransform="uppercase" letterSpacing="widest" color="red.700">Risk Thresholds</Heading>
+                      <FormControl>
+                          <FormLabel fontSize="sm">Maximum Risk Level Capacity</FormLabel>
+                          <Select variant="filled" bg="white" value={profile.internal_risk_level} onChange={(e) => setProfile({...profile, internal_risk_level: e.target.value})}>
+                            <option value="Mild">Mild Presentation only (Standard cases)</option>
+                            <option value="Moderate">Moderate (Stable presentations)</option>
+                            <option value="High">High Risk (Requires specialized monitoring)</option>
+                          </Select>
+                      </FormControl>
+                   </Box>
+
+                   <Divider borderColor="red.200" />
+
+                   <Box>
+                      <Heading size="xs" mb={2} textTransform="uppercase" letterSpacing="widest" color="red.700">Emergency Risk Protocols</Heading>
+                      <Text fontSize="xs" color="red.600" mb={6}>Please provide exact details for your clinical escalation path. This is mandatory for therapist verification.</Text>
+                      
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                         <FormControl isRequired>
+                            <FormLabel fontSize="xs" fontWeight="bold">Collaborating Psychiatrist Name</FormLabel>
+                            <Input bg="white" placeholder="Dr. Full Name" />
+                         </FormControl>
+                         <FormControl isRequired>
+                            <FormLabel fontSize="xs" fontWeight="bold">Primary Emergency Hospital</FormLabel>
+                            <Input bg="white" placeholder="Hospital Name" />
+                         </FormControl>
+                         <FormControl isRequired>
+                            <FormLabel fontSize="xs" fontWeight="bold">Hospital Location / Branch</FormLabel>
+                            <Input bg="white" placeholder="City, Area" />
+                         </FormControl>
+                         <FormControl isRequired>
+                            <FormLabel fontSize="xs" fontWeight="bold">Emergency Contact Number</FormLabel>
+                            <Input bg="white" placeholder="+91 / +965 ..." />
+                         </FormControl>
+                      </SimpleGrid>
+                      <FormControl mt={4}>
+                         <FormLabel fontSize="xs" fontWeight="bold">Additional Escalation Notes</FormLabel>
+                         <Textarea bg="white" placeholder="Specific steps for high-risk referrals..." borderRadius="xl" />
+                      </FormControl>
+                   </Box>
+
+                   <Divider borderColor="red.200" />
+
                    <FormControl>
-                      <FormLabel fontSize="sm">Maximum Risk Level Capacity</FormLabel>
-                      <Select variant="filled" value={profile.internal_risk_level} onChange={(e) => setProfile({...profile, internal_risk_level: e.target.value})}>
-                         <option value="Mild">Mild Presentation only</option>
-                         <option value="Moderate">Moderate (Non-crisis)</option>
-                         <option value="High">High (Requires psych collab)</option>
-                      </Select>
-                   </FormControl>
-                   <FormControl>
-                      <FormLabel fontSize="sm">Best Fit Case Observations</FormLabel>
-                      <Textarea placeholder="e.g. Good with emotionally avoidant men, helpful for structured work..." />
+                      <FormLabel fontSize="sm">Internal Matching Notes</FormLabel>
+                      <Textarea bg="white" placeholder="e.g. Best with high-functioning executives, avoid court-involved cases..." borderRadius="xl" />
                    </FormControl>
                 </VStack>
               </Box>
