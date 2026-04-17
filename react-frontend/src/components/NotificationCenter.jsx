@@ -24,15 +24,12 @@ import {
 import { useState, useEffect } from "react";
 import { FiBell, FiCheckCircle, FiInfo, FiZap, FiTarget } from "react-icons/fi";
 import { apiGet, apiPut } from "../api.js";
-import { useAuth } from "../context/AuthContext";
 
-export default function NotificationCenter() {
+export default function NotificationCenter({ isAuthenticated, authLoading }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
   const toast = useToast();
-
-  const { loading: authLoading, isAuthenticated } = useAuth();
 
   const fetchNotifications = async () => {
     if (!isAuthenticated) return;

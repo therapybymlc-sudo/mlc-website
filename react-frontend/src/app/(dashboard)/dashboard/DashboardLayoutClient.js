@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }) {
         >
            <Box /> {/* Left spacer */}
            <HStack spacing={4}>
-              <NotificationCenter />
+              <NotificationCenter isAuthenticated={!!user} authLoading={!user} />
            </HStack>
         </Flex>
 
