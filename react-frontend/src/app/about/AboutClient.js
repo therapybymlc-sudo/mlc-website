@@ -83,7 +83,7 @@ export default function AboutClient() {
             <MotionBox initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
               {/* IMAGE FIX: Using relative path from public folder if possible, or correct absolute path for dev proxy */}
               <Image 
-                src={`/api/media_proxy?path=${encodeURIComponent('/Users/asma02/.gemini/antigravity/brain/2bfefee7-901c-4f8a-baad-d895398db39d/serene_therapy_office_1776423989664.png')}`} 
+                src="/serene_therapy_office_1776423989664.png" 
                 alt="MLC Serene Office" 
                 borderRadius="3rem" 
                 shadow="2xl" 
@@ -157,7 +157,7 @@ export default function AboutClient() {
             <MotionBox initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
                {/* IMAGE FIX */}
                <Image 
-                 src={`/api/media_proxy?path=${encodeURIComponent('/Users/asma02/.gemini/antigravity/brain/2bfefee7-901c-4f8a-baad-d895398db39d/clinical_matching_graph_1776424018069.png')}`} 
+                 src="/clinical_matching_graph_1776424018069.png" 
                  alt="Clinical Insight" 
                  borderRadius="3rem"
                  shadow="2xl"

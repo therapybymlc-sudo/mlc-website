@@ -81,7 +81,7 @@ export default function ServicesClient() {
                </VStack>
                <MotionBox initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
                  <Image 
-                   src={`/api/media_proxy?path=${encodeURIComponent('/Users/asma02/.gemini/antigravity/brain/2bfefee7-901c-4f8a-baad-d895398db39d/human_connection_therapy_1776424085531.png')}`} 
+                   src="/human_connection_therapy_1776424085531.png" 
                    alt="Clinical Session" 
                    borderRadius="3rem" 
                    shadow="2xl" 
