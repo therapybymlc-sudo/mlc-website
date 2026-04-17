@@ -299,6 +299,14 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             return qs
         return TherapistProfile.objects.filter(id=therapist.id)
 
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return Response({"detail": "Therapist profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(therapist)
+        return Response(serializer.data)
+
     def update(self, request, *args, **kwargs):
         kwargs["partial"] = True
         return super().update(request, *args, **kwargs)
@@ -325,6 +333,14 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client_ids = _active_client_ids_for_therapist(therapist)
         return ClientProfile.objects.filter(id__in=client_ids).order_by("name")
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        client = _resolve_client_from_request(request)
+        if not client:
+            return Response({"detail": "Client profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(client)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
