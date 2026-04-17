@@ -66,6 +66,13 @@ export default function JournalClient() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Load fallback from localStorage for instant UI
+    const cached = localStorage.getItem("mlc_journal_cache");
+    if (cached) {
+      try {
+        setEntries(JSON.parse(cached));
+      } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
@@ -79,7 +86,10 @@ export default function JournalClient() {
   const fetchEntries = async () => {
     try {
       const res = await apiGet("client-journals/");
-      setEntries(Array.isArray(res) ? res : res.results || []);
+      const data = Array.isArray(res) ? res : res.results || [];
+      setEntries(data);
+      // Update cache
+      localStorage.setItem("mlc_journal_cache", JSON.stringify(data));
     } catch (err) {
       console.warn("Could not fetch journal entries");
     }
@@ -98,7 +108,9 @@ export default function JournalClient() {
           impacts: selectedImpacts
         }
       });
-      setEntries([saved, ...entries]);
+      const newEntries = [saved, ...entries];
+      setEntries(newEntries);
+      localStorage.setItem("mlc_journal_cache", JSON.stringify(newEntries));
       resetForm();
       toast({ title: "Journal Entry Saved", status: "success" });
     } catch (err) {
