@@ -184,14 +184,14 @@ export default function ProfileClient() {
 
       <Tabs variant="enclosed" colorScheme="teal" isLazy>
         <TabList overflowX="auto" border="none" mb={8} sx={{ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUser} mr={2}/> Identity</Tab>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiAward} mr={2}/> Credentials</Tab>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUsers} mr={2}/> Populations</Tab>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiTarget} mr={2}/> Scope</Tab>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiHeart} mr={2}/> Approach</Tab>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiClock} mr={2}/> Availability</Tab>
-          <Tab borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
-          <Tab _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={8} border="1px solid" borderColor="gray.100"><Icon as={FiSettings} mr={2}/> Internal</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUser} mr={2}/> Identity</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiAward} mr={2}/> Credentials</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUsers} mr={2}/> Populations</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiTarget} mr={2}/> Clinical Scope</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiHeart} mr={2}/> Therapeutic Approach</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiClock} mr={2}/> Availability</Tab>
+          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
+          <Tab whiteSpace="nowrap" _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={8} border="1px solid" borderColor="gray.100"><Icon as={FiSettings} mr={2}/> Internal Matching</Tab>
         </TabList>
 
         <TabPanels bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
@@ -380,15 +380,15 @@ export default function ProfileClient() {
             </VStack>
           </TabPanel>
 
-          {/* 4. Scope */}
+          {/* 4. Clinical Scope */}
           <TabPanel>
             <VStack align="stretch" spacing={10}>
-               <Alert status="warning" variant="subtle" borderRadius="2xl">
+               <Alert status="warning" variant="subtle" borderRadius="2rem" border="1px solid" borderColor="orange.100" bg="orange.50">
                   <AlertIcon />
                   <Box>
                     <AlertTitle fontSize="sm">Avoid Generic Profiles</AlertTitle>
                     <AlertDescription fontSize="xs">
-                      We (and clients) value depth over breadth. Intentionality matters. Profiles that select too many specializations are often indexed lower. Focus on your core expertise for maximum visibility.
+                      We (and clients) value depth over breadth. Intentionality matters. Profiles that select too many specializations often rank lower in specific search results. Focus on your core expertise for maximum visibility.
                     </AlertDescription>
                   </Box>
                </Alert>
@@ -624,7 +624,7 @@ export default function ProfileClient() {
           <TabPanel>
             <VStack align="stretch" spacing={8}>
                <FormControl>
-                  <FormLabel fontWeight="800">Professional Bio (Minimum 150 words for SEO)</FormLabel>
+                  <FormLabel fontWeight="800">Professional Bio (150+ words recommended for visibility)</FormLabel>
                   <Textarea value={profile.bio} onChange={(e) => setProfile({...profile, bio: e.target.value})} borderRadius="2xl" rows={10} placeholder="Talk about your journey, style, and approach..." />
                </FormControl>
                
@@ -633,7 +633,7 @@ export default function ProfileClient() {
                     <Heading size="xs" textTransform="uppercase">Skill Keywords (Max 6)</Heading>
                     <Badge colorScheme="teal">{profile.keywords?.length} / 6</Badge>
                   </HStack>
-                  <Text fontSize="xs" color="gray.500" mb={6}>Type and press enter. Keywords are auto-corrected for uniform SEO consistency.</Text>
+                  <Text fontSize="xs" color="gray.500" mb={6}>Type and press enter. Keywords are auto-corrected for uniform profile consistency.</Text>
                   
                   <HStack mb={6}>
                      <Input placeholder="e.g. Trauma-sensitive" value={keywordInput} onChange={(e) => setKeywordInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleKeywordAdd()} />
