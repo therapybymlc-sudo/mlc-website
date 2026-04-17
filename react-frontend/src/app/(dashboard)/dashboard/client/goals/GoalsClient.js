@@ -206,7 +206,7 @@ export default function GoalsClient() {
                 onChange={(e) => setNewGoalTitle(e.target.value)}
               />
               <Menu>
-                <MenuButton as={Button} rightIcon={<FiChevronDown />} h="60px" borderRadius="xl" px={6} bg="gray.50">
+                <MenuButton as={Button} rightIcon={<FiChevronDown />} h="60px" borderRadius="xl" px={6} bg="gray.50" minW="180px">
                   {CATEGORIES.find(c => c.id === activeCategory)?.label}
                 </MenuButton>
                 <MenuList borderRadius="xl" shadow="xl" border="none">

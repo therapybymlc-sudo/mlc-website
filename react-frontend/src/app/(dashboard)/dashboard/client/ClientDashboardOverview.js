@@ -505,17 +505,22 @@ export default function ClientDashboardOverview() {
 }
 
 function ActivityItem({ icon, title, desc, time }) {
+    // Basic HTML tag stripping for preview if it's too long
+    const cleanDesc = desc?.replace(/<[^>]*>?/gm, '').substring(0, 100) + (desc?.length > 100 ? '...' : '');
+    
     return (
-        <HStack spacing={4} align="start">
+        <HStack spacing={4} align="start" w="full">
             <Box bg="#F2F1ED" p={3} borderRadius="xl">
                 <Icon as={icon} color="#56756D" />
             </Box>
-            <VStack align="start" spacing={0} flex="1">
+            <VStack align="start" spacing={0} flex="1" overflow="hidden">
                 <HStack justify="space-between" w="full">
                     <Text fontWeight="700" color="#2E2E2E" fontSize="sm">{title}</Text>
                     <Text fontSize="xs" color="gray.400">{time}</Text>
                 </HStack>
-                <Text fontSize="sm" color="gray.500">{desc}</Text>
+                <Text fontSize="sm" color="gray.500" noOfLines={2} title={cleanDesc}>
+                    {cleanDesc}
+                </Text>
             </VStack>
         </HStack>
     );
