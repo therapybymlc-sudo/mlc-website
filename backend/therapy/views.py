@@ -46,6 +46,8 @@ from therapy.models import (
     CareersContent,
     TherapistApplyContent,
     TherapistScreening,
+    ContactMessage,
+    QuickBooking,
 )
 from therapy.utils import (
     calculate_dass_scores,
@@ -91,6 +93,8 @@ from therapy.serializers import (
     TrainingProgramsContentSerializer,
     CareersContentSerializer,
     TherapistApplyContentSerializer,
+    ContactMessageSerializer,
+    QuickBookingSerializer,
 )
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,
@@ -1949,3 +1953,31 @@ class TherapistMatchView(APIView):
             "others": others[:10]
         })
 
+
+class ContactMessageViewSet(viewsets.ModelViewSet):
+    queryset = ContactMessage.objects.all().order_by("-created_at")
+    serializer_class = ContactMessageSerializer
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.action != 'create':
+            _require_admin(self.request)
+        return super().get_queryset()
+
+class QuickBookingViewSet(viewsets.ModelViewSet):
+    queryset = QuickBooking.objects.all().order_by("-created_at")
+    serializer_class = QuickBookingSerializer
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.action != 'create':
+            _require_admin(self.request)
+        return super().get_queryset()

@@ -18,14 +18,8 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
-import emailjs from "@emailjs/browser";
-import {
-  EMAIL_SERVICE_ID,
-  EMAIL_TEMPLATE_ID,
-  EMAIL_PUBLIC_KEY,
-} from "../../emailConfig";
+import { apiGet, apiPost } from "../../api.js";
 import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
-import { apiGet } from "../../api.js";
 
 const defaultContactContent = {
   hero: {
@@ -93,29 +87,30 @@ export default function ContactClient() {
     })();
   }, []);
 
-  const sendEmail = (e) => {
+  const sendEmail = async (e) => {
     e.preventDefault();
-    emailjs
-      .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, form.current, EMAIL_PUBLIC_KEY)
-      .then(() => {
-        toast({
-          title: "Message Sent!",
-          description: "We’ll get back to you within 2–4 days 🌿",
-          status: "success",
-          duration: 5000,
-          isClosable: true,
-        });
-        form.current.reset();
-      })
-      .catch(() => {
-        toast({
-          title: "Error",
-          description: "Something went wrong, please try again.",
-          status: "error",
-          duration: 4000,
-          isClosable: true,
-        });
+    const formData = new FormData(form.current);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      await apiPost("contact-messages/", data);
+      toast({
+        title: "Message Sent!",
+        description: "We’ll get back to you within 2–4 days 🌿",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
       });
+      form.current.reset();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Something went wrong, please try again.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
   return (

@@ -34,6 +34,8 @@ from therapy.models import (
     TrainingProgramsContent,
     CareersContent,
     TherapistApplyContent,
+    ContactMessage,
+    QuickBooking,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -989,4 +991,14 @@ class CareersContentSerializer(serializers.ModelSerializer):
 class TherapistApplyContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TherapistApplyContent
+        fields = "__all__"
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = "__all__"
+
+class QuickBookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuickBooking
         fields = "__all__"

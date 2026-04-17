@@ -53,6 +53,8 @@ from therapy.views import (
     TherapistMatchView,
     TherapistApplicationViewSet,
     VerifyTherapistView,
+    ContactMessageViewSet,
+    QuickBookingViewSet,
 )
 
 # ----------------------------
@@ -94,6 +96,8 @@ router.register(r"training-programs-content", TrainingProgramsContentViewSet, ba
 router.register(r"careers-content", CareersContentViewSet, basename="careers-content")
 router.register(r"therapist-apply-content", TherapistApplyContentViewSet, basename="therapist-apply-content")
 router.register(r"manage-therapist-applications", TherapistApplicationViewSet, basename="manage-therapist-applications")
+router.register(r"contact-messages", ContactMessageViewSet, basename="contact-messages")
+router.register(r"quick-bookings", QuickBookingViewSet, basename="quick-bookings")
 
 # ----------------------------
 # Small utility/test endpoints

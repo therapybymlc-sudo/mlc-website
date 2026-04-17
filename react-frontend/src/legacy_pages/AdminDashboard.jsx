@@ -708,6 +708,7 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
       p={6} 
       align="stretch" 
       spacing={8}
+      overflowY="auto"
       display={{ base: "none", lg: "flex" }}
     >
       <VStack align="flex-start" spacing={1}>
@@ -720,9 +721,15 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
       </VStack>
 
       <VStack align="stretch" spacing={1}>
+        <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>LEADS & INQUIRIES</Text>
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Mail} label="Contact Inquiries" id="messages" />
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={FileCheck} label="Booking Leads" id="bookings" />
+      </VStack>
+
+      <VStack align="stretch" spacing={1}>
         <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>VERIFICATION</Text>
-        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={FileCheck} label="Vetting Portal" id="vetting" />
-        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={UserCheck} label="Profile Verification" id="profiles" />
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Users} label="Vetting Portal" id="vetting" />
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={UserCheck} label="Therapist Signups" id="profiles" />
       </VStack>
 
       <VStack align="stretch" spacing={1}>
@@ -788,6 +795,23 @@ export default function AdminDashboard() {
 
   const [unverifiedTherapists, setUnverifiedTherapists] = useState([]);
   const [therapistApplications, setTherapistApplications] = useState([]);
+
+  const [contactMessages, setContactMessages] = useState([]);
+  const [quickBookings, setQuickBookings] = useState([]);
+
+  const fetchContactMessages = async () => {
+    try {
+      const data = await apiGet("contact-messages/");
+      setContactMessages(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchQuickBookings = async () => {
+    try {
+      const data = await apiGet("quick-bookings/");
+      setQuickBookings(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) { console.error(err); }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -1037,6 +1061,8 @@ export default function AdminDashboard() {
       fetchTherapistApplyContent();
       fetchUnverifiedTherapists();
       fetchTherapistApplications();
+      fetchContactMessages();
+      fetchQuickBookings();
     }
   }, [isAuthenticated, isAdmin]);
 
@@ -1344,7 +1370,62 @@ export default function AdminDashboard() {
            </VStack>
         )}
 
+        {activeTab === "messages" && (
+           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
+              <Heading size="md" mb={6}>Contact Inquiries</Heading>
+              {contactMessages.length === 0 ? <Text color="gray.500">No messages yet.</Text> : (
+                <VStack align="stretch" spacing={4}>
+                  {contactMessages.map(m => (
+                    <Box key={m.id} p={5} border="1px solid" borderColor="gray.100" borderRadius="xl">
+                      <HStack justify="space-between" mb={2}>
+                        <VStack align="flex-start" spacing={0}>
+                          <Text fontWeight="700">{m.full_name}</Text>
+                          <Text fontSize="sm" color="gray.500">{m.email} {m.phone && `• ${m.phone}`}</Text>
+                        </VStack>
+                        <Text fontSize="xs" color="gray.400">{new Date(m.created_at).toLocaleDateString()}</Text>
+                      </HStack>
+                      <Text fontSize="sm" bg="gray.50" p={3} borderRadius="md">{m.message}</Text>
+                    </Box>
+                  ))}
+                </VStack>
+              )}
+           </Box>
+        )}
+
+        {activeTab === "bookings" && (
+           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
+              <Heading size="md" mb={6}>Booking Leads</Heading>
+              {quickBookings.length === 0 ? <Text color="gray.500">No leads yet.</Text> : (
+                <VStack align="stretch" spacing={4}>
+                  {quickBookings.map(b => (
+                    <Box key={b.id} p={5} border="1px solid" borderColor="gray.100" borderRadius="xl">
+                      <HStack justify="space-between" mb={4}>
+                        <VStack align="flex-start" spacing={0}>
+                          <Text fontWeight="700">{b.full_name}</Text>
+                          <Text fontSize="sm" color="gray.500">{b.email} • {b.phone}</Text>
+                        </VStack>
+                        <Tag colorScheme="teal">{b.service_type}</Tag>
+                      </HStack>
+                      <HStack spacing={10} mb={4} p={3} bg="gray.50" borderRadius="md">
+                         <Box>
+                            <Text fontSize="xs" color="gray.400" fontWeight="bold">PREFERRED DATE</Text>
+                            <Text fontSize="sm">{b.preferred_date || 'N/A'}</Text>
+                         </Box>
+                         <Box>
+                            <Text fontSize="xs" color="gray.400" fontWeight="bold">PREFERRED TIME</Text>
+                            <Text fontSize="sm">{b.preferred_time || 'N/A'}</Text>
+                         </Box>
+                      </HStack>
+                      <Text fontSize="sm" fontStyle="italic">"{b.notes || 'No extra notes'}"</Text>
+                    </Box>
+                  ))}
+                </VStack>
+              )}
+           </Box>
+        )}
+
         {activeTab === "services_list" && (
+
            <VStack align="stretch" spacing={8}>
               <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
                 <Heading size="md" mb={6}>{editingServiceId ? "Edit service card" : "Add service card"}</Heading>

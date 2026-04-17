@@ -21,6 +21,9 @@ import {
   AccordionIcon,
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { useToast } from "@chakra-ui/react";
+import { apiGet, apiPost } from "../../api.js";
+import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
 
 export default function BookNowClient() {
   const [formData, setFormData] = useState({
@@ -33,10 +36,44 @@ export default function BookNowClient() {
     notes: "",
   });
 
-  const handleSubmit = (e) => {
+  const toast = useToast();
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Implementation for booking submission can be added here
-    console.log("Booking submitted:", formData);
+    try {
+      await apiPost("quick-bookings/", {
+        full_name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        preferred_date: formData.date || null,
+        preferred_time: formData.time || null,
+        service_type: formData.service,
+        notes: formData.notes,
+      });
+      toast({
+        title: "Booking Request Sent!",
+        description: "Our coordination team will reach out to you soon 🌿",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        date: "",
+        time: "",
+        service: "",
+        notes: "",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Something went wrong, please try again.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
