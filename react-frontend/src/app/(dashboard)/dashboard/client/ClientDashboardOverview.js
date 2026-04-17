@@ -62,8 +62,54 @@ export default function ClientDashboardOverview() {
           if (moodColors[latestMood]) setMood(latestMood);
        }
 
+       // Real streak calculation
+       const calculateStreak = () => {
+         const allActivities = [
+           ...journals.map(j => new Date(j.created_at)),
+           ...checkins.map(c => new Date(c.created_at || c.checkin_date))
+         ].sort((a, b) => b - a);
+
+         if (allActivities.length === 0) return 0;
+
+         const uniqueDates = [];
+         const seen = new Set();
+         allActivities.forEach(d => {
+           const dateStr = d.toDateString();
+           if (!seen.has(dateStr)) {
+             seen.add(dateStr);
+             uniqueDates.push(new Date(dateStr));
+           }
+         });
+
+         let streak = 0;
+         let today = new Date();
+         today.setHours(0,0,0,0);
+         
+         let yesterday = new Date(today);
+         yesterday.setDate(yesterday.getDate() - 1);
+
+         // If latest activity is not today or yesterday, streak is broken
+         if (uniqueDates[0] < yesterday) return 0;
+
+         let currentCheck = uniqueDates[0];
+         streak = 1;
+
+         for (let i = 1; i < uniqueDates.length; i++) {
+           const prevDate = new Date(currentCheck);
+           prevDate.setDate(prevDate.getDate() - 1);
+           
+           if (uniqueDates[i].getTime() === prevDate.getTime()) {
+             streak++;
+             currentCheck = uniqueDates[i];
+           } else {
+             break;
+           }
+         }
+         return streak;
+       };
+
        setStats({
-          journalStreak: journals.length > 2 ? 3 : journals.length,
+          journalStreak: calculateStreak(),
           checkinsThisWeek: checkins.filter(c => {
              const d = new Date(c.checkin_date);
              const now = new Date();
