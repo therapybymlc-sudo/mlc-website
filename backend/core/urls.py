@@ -158,11 +158,12 @@ def healthz(request):
     return JsonResponse({"status": "ok"})
 
 urlpatterns = [
+    # Admin & simple test/probe routes
+    path("admin/", admin.site.urls),
+    
     # Serve your built React (optional for local dev at 5173)
     path("", TemplateView.as_view(template_name="index.html"), name="frontend-home"),
 
-    # Admin & simple test/probe routes
-    path("admin/", admin.site.urls),
     path("auth-test/", auth_test, name="auth_test"),
     path("auth-login/", auth_login, name="auth_login"),
     path("api/onboard/", OnboardUserRoleView.as_view(), name="onboard_role"),
