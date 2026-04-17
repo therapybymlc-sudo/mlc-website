@@ -124,45 +124,42 @@ export default function HomeClient() {
         position="relative"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
         bgSize={{ base: "contain", md: "contain" }}
-        bgPosition={{ base: "top center", md: "left center" }}
+        bgPosition="center"
         bgRepeat="no-repeat"
-        bgColor="#FDFBFA" // Matches the illustration's base color
-        minH={{ base: "80dvh", md: "100vh" }}
+        bgColor="#FDFBFA" 
+        minH={{ base: "90dvh", md: "110vh" }}
         display="flex"
         flexDirection="column"
-        alignItems={{ base: "center", md: "flex-end" }}
+        alignItems="center"
         justifyContent="center"
-        textAlign={{ base: "center", md: "left" }}
+        textAlign="center"
         overflow="hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
-        px={{ base: 6, md: 20 }}
+        px={6}
       >
-        {/* Subtle Fade for the right-aligned text area */}
+        {/* Dynamic Gradient Overlay */}
         <Box 
           position="absolute"
           inset={0}
-          bg={{ 
-            base: "linear-gradient(180deg, rgba(253,251,250,0.5) 0%, rgba(253,251,250,0.95) 100%)",
-            md: "linear-gradient(90deg, rgba(253,251,250,0) 0%, rgba(253,251,250,0.85) 50%, rgba(253,251,250,1) 100%)" 
-          }}
+          bg="linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.85))"
           zIndex={1}
         />
 
-        <Box position="relative" zIndex={2} maxW="3xl" w="full" pt={{ base: "40dvh", md: 0 }}>
+        <Box position="relative" zIndex={2} maxW="4xl" w="full">
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
-            boxSize={{ base: "80px", sm: "100px", md: "120px" }}
+            boxSize={{ base: "90px", sm: "110px", md: "130px" }}
             mb={8}
-            mx={{ base: "auto", md: "0" }}
+            mx="auto"
           />
           <Heading
             as="h1"
             fontFamily="'Playfair Display', var(--font-playfair), serif"
             fontWeight="600"
-            fontSize={{ base: "2.5rem", md: "4rem", lg: "5rem" }}
+            fontSize={{ base: "2.8rem", md: "4.5rem", lg: "5.5rem" }}
             color="#2E2E2E"
             letterSpacing="-0.01em"
             lineHeight="1.1"
@@ -190,12 +187,12 @@ export default function HomeClient() {
             fontSize={{ base: "md", md: "lg" }}
             lineHeight="1.8"
             maxW="2xl"
-            mx={{ base: "auto", md: "0" }}
+            mx="auto"
           >
             {homeContent.hero.paragraph_one || "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through."}
           </Text>
 
-          <HStack spacing={6} mt={12} justify={{ base: "center", md: "flex-start" }} flexWrap="wrap">
+          <VStack spacing={6} mt={12} align="center">
             <Button
               as={NextLink}
               href="/therapists/discovery"
@@ -207,13 +204,13 @@ export default function HomeClient() {
               _hover={{ bg: "#C9A960", transform: "scale(1.05)", shadow: "dark-lg" }}
               fontWeight="600"
               fontSize="lg"
-              px={12}
+              px={14}
               py={8}
             >
               Take the Matching Quiz
             </Button>
-            <VStack align={{ base: "center", md: "flex-start" }} spacing={1}>
-              <Text fontSize="xs" color="gray.500" fontWeight="500">Know who you're looking for?</Text>
+            <HStack spacing={4}>
+              <Text fontSize="xs" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>
               <ChakraLink
                 as={NextLink}
                 href="/therapists"
@@ -227,8 +224,8 @@ export default function HomeClient() {
               >
                 Browse all therapists
               </ChakraLink>
-            </VStack>
-          </HStack>
+            </HStack>
+          </VStack>
         </Box>
       </MotionBox>
 
