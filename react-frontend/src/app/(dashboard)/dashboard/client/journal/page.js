@@ -1,4 +1,5 @@
-import JournalClient from './JournalClient';
+import dynamic from 'next/dynamic';
+const JournalClient = dynamic(() => import('./JournalClient'), { ssr: false });
 
 export const metadata = {
   title: 'Private Journal | MLC Health',

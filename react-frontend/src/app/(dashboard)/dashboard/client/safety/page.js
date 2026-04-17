@@ -1,4 +1,5 @@
-import SafetyClient from './SafetyClient';
+import dynamic from 'next/dynamic';
+const SafetyClient = dynamic(() => import('./SafetyClient'), { ssr: false });
 
 export const metadata = {
   title: 'Safety Plan | MLC Health',

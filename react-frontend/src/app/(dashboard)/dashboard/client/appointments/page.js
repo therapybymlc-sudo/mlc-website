@@ -1,4 +1,5 @@
-import AppointmentsClient from './AppointmentsClient';
+import dynamic from 'next/dynamic';
+const AppointmentsClient = dynamic(() => import('./AppointmentsClient'), { ssr: false });
 
 export const metadata = {
   title: 'My Appointments | MLC Health',
