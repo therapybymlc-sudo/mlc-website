@@ -22,26 +22,40 @@ import { useState, useEffect } from "react";
 import { FiCalendar, FiClock, FiVideo } from "react-icons/fi";
 import { apiGet } from "../../../../../api.js";
 import NextLink from 'next/link';
+import { useAuth } from "../../../../../context/AuthContext";
 
 export default function AppointmentsClient() {
   const toast = useToast();
+  const { isLoaded, isAuthenticated } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        setLoading(true);
-        const res = await apiGet("client-appointments/");
-        setAppointments(Array.isArray(res) ? res : res.results || []);
-      } catch (err) {
-        toast({ title: "Could not load appointments", status: "error" });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAppointments();
+    setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isLoaded && isAuthenticated) {
+        fetchAppointments();
+    } else if (isLoaded && !isAuthenticated) {
+        setLoading(false);
+    }
+  }, [isLoaded, isAuthenticated]);
+
+  if (!isMounted) return null;
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const res = await apiGet("client-appointments/");
+      setAppointments(Array.isArray(res) ? res : res.results || []);
+    } catch (err) {
+      toast({ title: "Could not load appointments", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box maxW="1200px" mx="auto">
@@ -54,7 +68,7 @@ export default function AppointmentsClient() {
           </VStack>
           <Button 
             as={NextLink}
-            href="/discovery"
+            href="/therapists/discovery"
             bg="#56756D" 
             color="white" 
             borderRadius="full" 

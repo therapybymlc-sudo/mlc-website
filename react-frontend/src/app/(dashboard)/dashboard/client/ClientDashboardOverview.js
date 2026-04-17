@@ -367,7 +367,7 @@ export default function ClientDashboardOverview() {
                     <Text fontSize="sm" opacity={0.9}>You don't have any sessions scheduled currently.</Text>
                     <Button 
                         as={NextLink} 
-                        href="/discovery" 
+                        href="/therapists/discovery" 
                         size="md" 
                         bg="white" 
                         color="#56756D" 
@@ -403,7 +403,7 @@ export default function ClientDashboardOverview() {
                 </VStack>
                 <Button 
                     as={NextLink}
-                    href="/discovery"
+                    href="/therapists/discovery"
                     bg="#56756D" 
                     color="white" 
                     size="lg" 
