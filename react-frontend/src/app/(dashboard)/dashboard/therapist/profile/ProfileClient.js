@@ -27,8 +27,17 @@ const CATEGORIES = {
     "Integrative / Holistic": ["Integrative Psychotherapy", "Eclectic Therapy", "Solution-Focused (SFBT)", "Narrative Therapy", "Motivational Interviewing (MI)", "Positive Psychology"],
     "Child & Adolescent": ["Play Therapy", "Sand Tray Therapy", "Art Therapy", "Expressive Arts Therapy", "DBT-A"]
   },
-  LANGUAGES: ["English", "Arabic", "Hindi", "Urdu", "Malayalam", "Tamil", "French", "Spanish"],
-  POPULATIONS: ["Women", "Men", "LGBTQ+", "Non-binary", "Expats in foreign countries", "Digital Nomads", "International Students", "Working Professionals", "Neurodivergent (ADHD/Autism)", "South Asian Diaspora", "Interfaith Families"],
+  ALL_LANGUAGES: ["English", "Arabic", "Hindi", "Urdu", "Malayalam", "Tamil", "French", "Spanish", "Bengali", "Telugu", "Marathi", "Gujarati", "Kannada", "Punjabi", "Odia", "Assamese", "Maithili", "Sanskrit", "German", "Mandarin", "Japanese", "Russian", "Portuguese", "Italian", "Turkish", "Korean", "Vietnamese", "Greek", "Hebrew", "Persian", "Thai", "Dutch", "Swedish"],
+  IDENTITY_CONTEXTS_GROUPS: {
+    "Life Stages & Roles": ["New mothers / Postpartum", "Expecting parents", "Single parents", "Caregivers (elderly / disabled)", "Recently married", "Recently divorced / separated", "Blended families", "Only children / Sibling dynamics"],
+    "Cultural & Identity": ["First-generation individuals", "Second-generation / Bicultural", "Migrants / Relocation adjustment", "Expats in foreign countries", "Joint family systems", "Intercaste / Intercultural relationships", "South Asian Diaspora", "LGBTQ+ / Queer Identity", "Neurodivergent (ADHD/Autism)"],
+    "Work & Academic": ["Students (School-level)", "University / College students", "High-achieving / Perfectionistic", "Corporate professionals", "Healthcare professionals", "Entrepreneurs / Business owners", "Creatives / Artists", "Unemployed / Career transition"],
+    "Emotional & Personality Patterns": ["High-functioning anxiety", "People-pleasing patterns", "Emotional avoidance", "Overthinking / Rumination", "Low self-worth patterns", "Burnout-prone", "Highly sensitive persons (HSP)"],
+    "Relationship Contexts": ["Dating / Early relationship stage", "Premarital counselling", "Marital conflict", "Infidelity recovery", "Attachment-related concerns", "Boundary-setting difficulties", "Toxic relationship recovery"],
+    "Health & Life Challenges": ["Chronic illness", "Chronic pain", "Fertility struggles", "Pregnancy-related concerns", "Body image concerns", "Loss / Grief"],
+    "Trauma & Adversity": ["Childhood emotional neglect", "Abuse survivors (Emotional/Physical/Sexual)", "Family dysfunction", "Bullying history", "High-conflict households"],
+    "Faith & Spirituality": ["Muslim clients", "Hindu clients", "Christian clients", "Spiritually inclined clients", "Faith crisis / Doubt", "Religion-related guilt or fear"]
+  },
   CONCERNS: [
     "Anxiety (Generalized, Panic, Social)", 
     "Depression & Low Mood", 
@@ -283,36 +292,90 @@ export default function ProfileClient() {
 
                <Box>
                   <FormLabel fontWeight="800" mb={4}>Language Proficiency</FormLabel>
-                  <Wrap spacing={2} mb={4}>
-                    {CATEGORIES.LANGUAGES.map(lang => (
-                      <Tag key={lang} cursor="pointer" variant={profile.languages_info?.find(l => l.lang === lang) ? "solid" : "outline"} colorScheme="teal" onClick={() => {
-                         const exists = profile.languages_info?.find(l => l.lang === lang);
-                         const updated = exists ? profile.languages_info.filter(l => l.lang !== lang) : [...(profile.languages_info || []), { lang, fluency: "Fluent" }];
-                         setProfile({...profile, languages_info: updated});
-                      }} borderRadius="full">{lang}</Tag>
+                  <Text fontSize="xs" color="gray.500" mb={4}>Select languages you are comfortable conducting therapy in. Proficiency details help match client comprehension needs.</Text>
+                  
+                  <HStack mb={6}>
+                    <Select 
+                      placeholder="Add a language..." variant="filled" borderRadius="xl"
+                      onChange={(e) => {
+                        const lang = e.target.value;
+                        if (!lang) return;
+                        const exists = profile.languages_info?.find(l => l.lang === lang);
+                        if (!exists) {
+                          setProfile({...profile, languages_info: [...(profile.languages_info || []), { lang, fluency: "Fluent / Native" }]});
+                        }
+                        e.target.value = "";
+                      }}
+                    >
+                      {CATEGORIES.ALL_LANGUAGES.map(l => (
+                        <option key={l} value={l} disabled={profile.languages_info?.find(li => li.lang === l)}>{l}</option>
+                      ))}
+                    </Select>
+                  </HStack>
+
+                  <VStack align="stretch" spacing={3}>
+                    {profile.languages_info?.map((info, idx) => (
+                      <HStack key={info.lang} bg="gray.50" p={4} borderRadius="2rem" justify="space-between" border="1px solid" borderColor="gray.100">
+                         <HStack spacing={3}>
+                           <Icon as={FiGlobe} color="teal.500" />
+                           <Text fontWeight="bold" fontSize="sm">{info.lang}</Text>
+                         </HStack>
+                         <HStack spacing={4}>
+                           <Select size="sm" bg="white" w="220px" borderRadius="lg" value={info.fluency} onChange={(e) => {
+                              const updated = [...profile.languages_info];
+                              updated[idx].fluency = e.target.value;
+                              setProfile({...profile, languages_info: updated});
+                           }}>
+                             {FLUENCY_LEVELS.map(f => <option key={f} value={f}>{f}</option>)}
+                           </Select>
+                           <IconButton 
+                            icon={<TagCloseButton />} 
+                            size="xs" variant="ghost" colorScheme="red"
+                            onClick={() => setProfile({...profile, languages_info: profile.languages_info.filter(l => l.lang !== info.lang)})}
+                           />
+                         </HStack>
+                      </HStack>
                     ))}
-                  </Wrap>
-                  {profile.languages_info?.map((info, idx) => (
-                    <HStack key={info.lang} bg="gray.50" p={3} borderRadius="xl" justify="space-between" mb={2}>
-                       <Text fontWeight="bold" fontSize="sm">{info.lang}</Text>
-                       <Select size="sm" bg="white" w="220px" borderRadius="lg" value={info.fluency} onChange={(e) => {
-                          const updated = [...profile.languages_info];
-                          updated[idx].fluency = e.target.value;
-                          setProfile({...profile, languages_info: updated});
-                       }}>
-                         {FLUENCY_LEVELS.map(f => <option key={f} value={f}>{f}</option>)}
-                       </Select>
-                    </HStack>
-                  ))}
+                  </VStack>
                </Box>
 
+               <Divider />
+
                <Box>
-                  <FormLabel fontWeight="800" mb={4}>Identity Contexts & Experiences</FormLabel>
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                     {CATEGORIES.POPULATIONS.map(p => (
-                       <Checkbox key={p} isChecked={profile.identity_contexts?.includes(p)} onChange={() => toggleArray('identity_contexts', p)}>{p}</Checkbox>
+                  <HStack justify="space-between" mb={4}>
+                    <FormLabel fontWeight="800" mb={0}>Identity Contexts & Experiences (Max 10)</FormLabel>
+                    <Badge colorScheme={profile.identity_contexts?.length > 10 ? "red" : "teal"} borderRadius="full" px={3}>
+                       {profile.identity_contexts?.length || 0} / 10 Selected
+                    </Badge>
+                  </HStack>
+                  <Text fontSize="xs" color="gray.500" mb={8}>Choose the contexts you have deep clinical experience with. Avoid vague tags like "general population" to ensure high-quality matching.</Text>
+
+                  <VStack align="stretch" spacing={8}>
+                     {Object.entries(CATEGORIES.IDENTITY_CONTEXTS_GROUPS).map(([category, items]) => (
+                       <Box key={category}>
+                          <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="widest" mb={4}>{category}</Text>
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                             {items.map(ctx => {
+                               const isChecked = profile.identity_contexts?.includes(ctx);
+                               return (
+                                 <Checkbox 
+                                   key={ctx} isChecked={isChecked} 
+                                   onChange={(e) => {
+                                      if (e.target.checked && (profile.identity_contexts?.length || 0) >= 10) {
+                                         toast({ title: "Limit reached", description: "Please select maximum 10 identity contexts.", status: "warning" });
+                                         return;
+                                      }
+                                      toggleArray('identity_contexts', ctx);
+                                   }}
+                                 >
+                                   <Text fontSize="sm">{ctx}</Text>
+                                 </Checkbox>
+                               );
+                             })}
+                          </SimpleGrid>
+                       </Box>
                      ))}
-                  </SimpleGrid>
+                  </VStack>
                </Box>
             </VStack>
           </TabPanel>
