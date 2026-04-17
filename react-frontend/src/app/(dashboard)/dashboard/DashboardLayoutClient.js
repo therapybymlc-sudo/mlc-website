@@ -37,7 +37,7 @@ import {
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
-import NotificationCenter from '../../components/NotificationCenter';
+import NotificationCenter from '../../../components/NotificationCenter';
 
 import { useState, useEffect } from 'react';
 
