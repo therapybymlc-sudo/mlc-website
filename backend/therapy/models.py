@@ -1047,6 +1047,7 @@ class Notification(models.Model):
         APPOINTMENT_COMPLETED = "appointment_completed", "Appointment completed"
         APPOINTMENT_RESCHEDULED = "appointment_rescheduled", "Appointment rescheduled"
         RESOURCE_ASSIGNED = "resource_assigned", "Resource assigned"
+        STREAK_REMINDER = "streak_reminder", "Streak reminder"
 
     recipient_user_profile = models.ForeignKey(
         User,

@@ -247,6 +247,41 @@ export default function ClientDashboardOverview() {
         </HStack>
       </Flex>
 
+      {/* STREAK NUDGE IF NOT CHECKED IN TODAY */}
+      {!loading && !journals.some(j => new Date(j.created_at).toDateString() === new Date().toDateString()) && !checkins.some(c => new Date(c.checkin_date).toDateString() === new Date().toDateString()) && (
+        <Box 
+          bgGradient="linear(to-r, #C9A960, #D68C45)" 
+          p={6} 
+          borderRadius="3xl" 
+          mb={10} 
+          color="white" 
+          shadow="lg"
+        >
+          <HStack justify="space-between" flexWrap="wrap" gap={4}>
+            <HStack spacing={6}>
+              <Box bg="white" p={3} borderRadius="2xl">
+                <Icon as={FiZap} color="#D68C45" boxSize={6} />
+              </Box>
+              <VStack align="start" spacing={0}>
+                <Heading size="sm">Protect your {stats.journalStreak}-day streak!</Heading>
+                <Text fontSize="sm" opacity={0.9}>You haven't checked in with your healing tools today. Take a moment for a quick reflection.</Text>
+              </VStack>
+            </HStack>
+            <Button 
+              as={NextLink}
+              href="/dashboard/client/journal"
+              bg="white" 
+              color="#D68C45" 
+              borderRadius="full" 
+              px={8}
+              _hover={{ bg: 'whiteAlpha.900' }}
+            >
+              Log Reflection
+            </Button>
+          </HStack>
+        </Box>
+      )}
+
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8} mb={10}>
         {/* Mood Card - Enhanced */}
         <Box 

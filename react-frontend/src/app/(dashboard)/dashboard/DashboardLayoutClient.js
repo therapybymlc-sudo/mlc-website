@@ -37,6 +37,7 @@ import {
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
 import { usePathname } from 'next/navigation'
+import NotificationCenter from '../../components/NotificationCenter';
 
 import { useState, useEffect } from 'react';
 
@@ -143,8 +144,23 @@ export default function DashboardLayout({ children }) {
         <SidebarContent />
       </Box>
 
-      {/* Mobile Nav */}
-      <Box flex="1">
+      {/* Mobile Nav and Main Content */}
+      <Box flex="1" overflowX="hidden">
+        {/* Top Header Bar */}
+        <Flex 
+          h="70px" 
+          px={8} 
+          align="center" 
+          justify="space-between" 
+          bg="transparent" 
+          display={{ base: 'none', lg: 'flex' }}
+        >
+           <Box /> {/* Left spacer */}
+           <HStack spacing={4}>
+              <NotificationCenter />
+           </HStack>
+        </Flex>
+
         <Flex
           display={{ base: 'flex', lg: 'none' }}
           align="center"

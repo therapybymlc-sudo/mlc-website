@@ -812,6 +812,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         Notification.Type.APPOINTMENT_COMPLETED,
         Notification.Type.APPOINTMENT_RESCHEDULED,
         Notification.Type.RESOURCE_ASSIGNED,
+        Notification.Type.STREAK_REMINDER,
     }
 
     def get_queryset(self):
