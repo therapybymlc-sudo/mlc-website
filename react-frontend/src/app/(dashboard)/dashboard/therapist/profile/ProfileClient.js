@@ -6,7 +6,7 @@ import {
 } from "@chakra-ui/react";
 import { 
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
-  FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap
+  FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX
 } from "react-icons/fi";
 import { apiGet, apiPut, apiPost } from "../../../../../api.js";
 
@@ -329,7 +329,7 @@ export default function ProfileClient() {
                              {FLUENCY_LEVELS.map(f => <option key={f} value={f}>{f}</option>)}
                            </Select>
                            <IconButton 
-                            icon={<TagCloseButton />} 
+                            icon={<FiX />} 
                             size="xs" variant="ghost" colorScheme="red"
                             onClick={() => setProfile({...profile, languages_info: profile.languages_info.filter(l => l.lang !== info.lang)})}
                            />
