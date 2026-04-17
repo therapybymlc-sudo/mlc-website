@@ -278,6 +278,17 @@ class TherapistApplication(models.Model):
     trainings_detailed = models.JSONField(default=list, blank=True)
     licenses_held = models.TextField(blank=True, null=True)
     
+    # Clinical Context
+    populations = models.JSONField(default=list, blank=True)
+    relevant_experience = models.TextField(blank=True, null=True)
+    
+    # Space Logistics
+    has_private_online_space = models.CharField(max_length=20, blank=True, null=True)
+    has_in_person_space = models.CharField(max_length=20, blank=True, null=True)
+    in_person_city = models.CharField(max_length=100, blank=True, null=True)
+    opt_in_spaces = models.CharField(max_length=20, blank=True, null=True)
+    interested_city = models.CharField(max_length=100, blank=True, null=True)
+    
     expertise_areas = models.JSONField(default=list, blank=True)
     therapeutic_approach = models.TextField(blank=True, null=True)
     therapeutic_stance = models.TextField(blank=True, null=True)
@@ -299,6 +310,7 @@ class TherapistApplication(models.Model):
     bachelors = models.FileField(upload_to="therapist_applications/bachelors/", blank=True, null=True)
     masters = models.FileField(upload_to="therapist_applications/masters/", blank=True, null=True)
     license_doc = models.FileField(upload_to="therapist_applications/licenses/", blank=True, null=True)
+    additional_docs = models.FileField(upload_to="therapist_applications/extra/", blank=True, null=True)
     
     subscribe = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")

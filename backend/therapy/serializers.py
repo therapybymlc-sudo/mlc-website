@@ -905,21 +905,19 @@ class TherapistApplicationSerializer(serializers.ModelSerializer):
         licensed = self._coerce_list(attrs.get("licensed_countries"))
         languages = self._coerce_list(attrs.get("languages"))
         expertise = self._coerce_list(attrs.get("expertise_areas"))
+        populations = self._coerce_list(attrs.get("populations"))
         
         attrs["licensed_countries"] = licensed
         attrs["languages"] = languages
         attrs["expertise_areas"] = expertise
+        attrs["populations"] = populations
 
         if not licensed:
-            raise serializers.ValidationError(
-                {"licensed_countries": "Select at least one country of licensure."}
-            )
-        if not attrs.get("home_country"):
-            raise serializers.ValidationError({"home_country": "Home country is required."})
-        if not attrs.get("home_city"):
-            raise serializers.ValidationError({"home_city": "Home city is required."})
-        if not attrs.get("home_postal_code"):
-            raise serializers.ValidationError({"home_postal_code": "Postal code is required."})
+            # Fallback to home country if list is empty
+            hc = attrs.get("home_country")
+            if hc:
+                attrs["licensed_countries"] = [hc]
+        
         return attrs
 
 
