@@ -29,7 +29,9 @@ import {
   FiLogOut,
   FiHome,
   FiBookOpen,
-  FiHeart
+  FiHeart,
+  FiClock,
+  FiUser
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
