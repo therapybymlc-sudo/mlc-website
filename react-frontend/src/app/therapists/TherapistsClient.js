@@ -77,24 +77,22 @@ const TangledBall = () => (
 );
 
 const TherapyCatSVG = () => (
-  <Box w="180px" h="180px">
-    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-       {/* Minimalist Cat Path */}
+  <Box w="140px" h="140px" mb={4}>
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+       {/* 🐱 IMPROVED MINIMALIST CAT - MORE RECOGNIZABLE */}
        <path 
-         d="M140 160 C140 160 160 160 160 140 C160 120 150 90 130 70 C130 70 140 50 140 40 C140 30 130 20 120 20 C110 20 100 30 100 40 C100 50 110 70 110 70 C90 90 80 120 80 140 C80 160 100 160 100 160 M90 140 C90 140 70 140 60 150 C50 160 50 180 80 180 C110 180 140 180 170 180 C190 180 190 160 180 150 C170 140 150 140 150 140"
-         stroke="#56756D" 
-         strokeWidth="2.5" 
-         strokeLinecap="round" 
-         strokeJoin="round"
+         d="M30 80 C30 70 35 55 45 45 C45 45 40 35 40 25 C40 15 45 10 50 10 C55 10 60 15 60 25 C60 35 55 45 55 45 C65 55 70 70 70 80 L70 90 L30 90 Z" 
+         stroke="#56756D" strokeWidth="2.5" strokeLinecap="round" strokeJoin="round" 
        />
-       {/* String coming from tail/paw area */}
-       <path 
-         d="M170 180 C180 180 190 190 180 200" 
-         stroke="#56756D" 
-         strokeWidth="2.5" 
-         strokeDasharray="5 5"
-         opacity="0.5"
-       />
+       {/* Ears */}
+       <path d="M43 28 L38 15 L48 20" stroke="#56756D" strokeWidth="2" strokeLinecap="round" />
+       {/* Other Ear */}
+       <path d="M57 28 L62 15 L52 20" stroke="#56756D" strokeWidth="2" strokeLinecap="round" />
+       {/* Tail */}
+       <path d="M70 85 C85 85 95 75 90 60 C85 45 75 50 70 65" stroke="#56756D" strokeWidth="2.5" strokeLinecap="round" />
+       {/* Eyes */}
+       <circle cx="46" cy="35" r="1" fill="#56756D" />
+       <circle cx="54" cy="35" r="1" fill="#56756D" />
     </svg>
   </Box>
 );
@@ -112,7 +110,7 @@ const FlowSection = ({ label, index }) => (
 export default function TherapistsClient() {
   return (
     <Box bg="#FDFBFA" minH="100vh" overflowX="hidden">
-      {/* 🌿 VISIONARY HERO WITH BACKDROP IMAGE FIX */}
+      {/* 🌿 VISIONARY HERO WITH ADJUSTED OVERLAY */}
       <Box 
         position="relative" 
         pt={{ base: 32, md: 48 }} 
@@ -134,15 +132,15 @@ export default function TherapistsClient() {
             w="full" 
             h="full" 
             objectFit="cover"
-            opacity="0.9"
+            opacity="0.8" // Slightly reduced image opacity
           />
         </Box>
         
-        {/* Sheen Overlay Layer */}
+        {/* Sheen Overlay Layer - MORE OPAQUE AS REQUESTED */}
         <Box 
           position="absolute"
           inset={0}
-          bg="rgba(255, 255, 255, 0.75)" 
+          bg="rgba(255, 255, 255, 0.88)" // More white/less transparent sheen
           zIndex={1}
         />
 
@@ -166,9 +164,9 @@ export default function TherapistsClient() {
               </HStack>
             </VStack>
 
-            {/* 📊 ARTISTIC FLOW CHART (SVG Cat & String Flow) */}
+            {/* 📊 ARTISTIC FLOW CHART (Refined SVG Cat) */}
             <VStack align="center" spacing={0} position="relative">
-               {/* CUSTOM SVG CAT IN THE SAME GREEN LINE */}
+               {/* REFINED SVG CAT - MORE RECOGNIZABLE SITTING POSTURE */}
                <TherapyCatSVG />
                
                {/* THE STRING FLOW */}
