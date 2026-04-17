@@ -40,7 +40,7 @@ import { useClientData } from "./useClientData";
 export default function ClientDashboardOverview() {
   const { user } = useUser();
   const toast = useToast();
-  const { goals, appointments, journals, checkins, loading, refreshData } = useClientData();
+  const { goals, appointments, journals, checkins, relationships, loading, refreshData } = useClientData();
   const [mood, setMood] = useState("Balanced");
 
   const [stats, setStats] = useState({
