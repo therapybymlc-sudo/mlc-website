@@ -23,7 +23,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiBell, FiCheckCircle, FiInfo, FiZap, FiTarget } from "react-icons/fi";
-import { apiGet, apiPut } from "../../../api.js";
+import { apiGet, apiPut } from "../api.js";
 
 export default function NotificationCenter() {
   const [notifications, setNotifications] = useState([]);
