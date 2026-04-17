@@ -69,9 +69,32 @@ const TangledBall = () => (
   <Box position="relative" w="60px" h="60px">
     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M50 10 C20 20 10 50 40 70 C70 90 90 60 60 40 C30 20 20 80 50 90 C80 100 100 30 70 10 C40 -10 10 30 30 60 C50 90 90 70 80 40 C70 10 20 20 10 50" 
-            stroke="#56756D" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+            stroke="#56756D" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
       <path d="M30 30 C10 50 40 90 70 60 C90 40 60 10 30 20 C10 40 50 80 80 50" 
-            stroke="#C9A960" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+            stroke="#C9A960" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  </Box>
+);
+
+const TherapyCatSVG = () => (
+  <Box w="180px" h="180px">
+    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+       {/* Minimalist Cat Path */}
+       <path 
+         d="M140 160 C140 160 160 160 160 140 C160 120 150 90 130 70 C130 70 140 50 140 40 C140 30 130 20 120 20 C110 20 100 30 100 40 C100 50 110 70 110 70 C90 90 80 120 80 140 C80 160 100 160 100 160 M90 140 C90 140 70 140 60 150 C50 160 50 180 80 180 C110 180 140 180 170 180 C190 180 190 160 180 150 C170 140 150 140 150 140"
+         stroke="#56756D" 
+         strokeWidth="2.5" 
+         strokeLinecap="round" 
+         strokeJoin="round"
+       />
+       {/* String coming from tail/paw area */}
+       <path 
+         d="M170 180 C180 180 190 190 180 200" 
+         stroke="#56756D" 
+         strokeWidth="2.5" 
+         strokeDasharray="5 5"
+         opacity="0.5"
+       />
     </svg>
   </Box>
 );
@@ -95,7 +118,7 @@ export default function TherapistsClient() {
         pt={{ base: 32, md: 48 }} 
         pb={{ base: 20, md: 32 }} 
         px={6} 
-        minH="90vh"
+        minH="95vh"
         display="flex"
         alignItems="center"
       >
@@ -111,7 +134,7 @@ export default function TherapistsClient() {
             w="full" 
             h="full" 
             objectFit="cover"
-            opacity="0.85" // Ensure image is visible
+            opacity="0.9"
           />
         </Box>
         
@@ -119,7 +142,7 @@ export default function TherapistsClient() {
         <Box 
           position="absolute"
           inset={0}
-          bg="rgba(255, 255, 255, 0.75)" // Translucent white sheen
+          bg="rgba(255, 255, 255, 0.75)" 
           zIndex={1}
         />
 
@@ -127,43 +150,42 @@ export default function TherapistsClient() {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={20} alignItems="center">
             <VStack align="start" spacing={8}>
               <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE THERAPY ECOSYSTEM</Badge>
-              <Heading as="h1" fontSize={{ base: "4xl", md: "5xl", lg: "6xl" }} fontFamily="'Playfair Display', serif" color="teal.900" lineHeight="1.1" fontWeight="600">
-                Holding Space for You.
+              <Heading as="h1" fontSize={{ base: "4xl", md: "5xl", lg: "7xl" }} fontFamily="'Playfair Display', serif" color="teal.900" lineHeight="1" fontWeight="600">
+                Holding Space <br /> for You.
               </Heading>
-              <Text fontSize="xl" color="teal.900" fontWeight="500" lineHeight="tall" maxW="xl">
-                MLC is a structured clinical home designed to support your growth, protect your well-being, and elevate your practice.
+              <Text fontSize="xl" color="teal.900" fontWeight="600" lineHeight="tall" maxW="xl">
+                A structured clinical home designed to support your growth, protect your well-being, and elevate your practice.
               </Text>
               <HStack spacing={4}>
                 <LinkButton href="/therapist-apply" bg="teal.800" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "teal.900" }}>
                   Join the Collective
                 </LinkButton>
-                <LinkButton href="/login/therapist" variant="ghost" color="teal.800" fontWeight="700">
+                <LinkButton href="/login/therapist" variant="ghost" color="teal.800" fontWeight="900">
                   Therapist Sign In
                 </LinkButton>
               </HStack>
             </VStack>
 
-            {/* 📊 ARTISTIC FLOW CHART (The Cat and String) */}
-            <VStack align="center" spacing={0} position="relative" py={10}>
-               <Box w="240px" mb={-4}>
-                 <Image src="/therapy_cat.png" alt="Therapy Cat" w="full" />
-               </Box>
+            {/* 📊 ARTISTIC FLOW CHART (SVG Cat & String Flow) */}
+            <VStack align="center" spacing={0} position="relative">
+               {/* CUSTOM SVG CAT IN THE SAME GREEN LINE */}
+               <TherapyCatSVG />
                
                {/* THE STRING FLOW */}
-               <VStack align="stretch" spacing={2} position="relative">
+               <VStack align="stretch" spacing={2} position="relative" mt={-4}>
                   {/* Vertical String Line */}
-                  <Box position="absolute" left="30px" top="0" bottom="0" w="2px" bg="rgba(86, 117, 109, 0.3)" zIndex={0} />
+                  <Box position="absolute" left="30px" top="0" bottom="0" w="2.5px" bg="#56756D" opacity="0.4" zIndex={0} />
                   
-                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
                     <FlowSection index={1} label="Clinical Admin & Suite" />
                   </MotionBox>
-                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
                     <FlowSection index={2} label="Shared Client Journey" />
                   </MotionBox>
-                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 }}>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.7 }}>
                     <FlowSection index={3} label="Well-being & Self-Care" />
                   </MotionBox>
-                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 1.1 }}>
+                  <MotionBox initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.9 }}>
                     <FlowSection index={4} label="Community & Growth" />
                   </MotionBox>
                </VStack>
