@@ -16,6 +16,7 @@ import LinkButton from "../../components/LinkButton";
 
 const MotionBox = motion(Box);
 
+const COUNTRIES = ["India", "United Kingdom", "United States", "Canada", "Australia", "Singapore", "United Arab Emirates", "Other"];
 const PROFICIENCIES = ["Native", "Fluent", "Conversational", "Basic"];
 const POPULATIONS = ["Children (6-12)", "Adolescents (13-17)", "Adults (18-64)", "Older Adults (65+)", "Couples", "Families", "Groups", "LGBTQIA+", "Neurodivergent"];
 const QUALIFICATIONS = [
