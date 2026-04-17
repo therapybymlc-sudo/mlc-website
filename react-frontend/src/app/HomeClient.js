@@ -124,67 +124,69 @@ export default function HomeClient() {
         position="relative"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
         bgSize="cover"
-        bgPosition="center"
+        bgPosition={{ base: "center center", md: "center 20%" }}
         bgRepeat="no-repeat"
-        bgAttachment={{ base: "scroll", md: "fixed" }}
-        minH={{ base: "100svh", md: "110vh" }}
+        minH={{ base: "100dvh", md: "100vh" }}
         display="flex"
+        flexDirection="column"
         alignItems="center"
         justifyContent="center"
         textAlign="center"
+        overflow="hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
         _before={{
           content: '""',
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bg: "linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.9))",
+          inset: 0,
+          bg: "linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.85) 100%)",
           zIndex: 1,
         }}
       >
-        <Box position="relative" zIndex={2} maxW="4xl" px={6} py={20}>
+        <Box position="relative" zIndex={2} maxW="4xl" px={8} pb={12}>
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Therapy Logo"
-            boxSize={{ base: "100px", sm: "120px", md: "140px" }}
-            mb={8}
+            boxSize={{ base: "90px", sm: "110px", md: "130px" }}
+            mb={{ base: 6, md: 8 }}
             mx="auto"
           />
           <Heading
             as="h1"
             fontFamily="'Playfair Display', var(--font-playfair), serif"
             fontWeight="600"
-            fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
+            fontSize={{ base: "2.5rem", md: "4.5rem", lg: "5.5rem" }}
             color="#2E2E2E"
-            letterSpacing="-0.5px"
-            lineHeight="1.1"
+            letterSpacing="-0.02em"
+            lineHeight={{ base: "1.2", md: "1.1" }}
             mb={6}
           >
-            Find the therapist meant for <Text as="span" color="mlc.green">your journey</Text>
+            Find the therapist meant for <Text as="span" color="mlc.green" whiteSpace="nowrap">your journey</Text>
           </Heading>
+          
           <Text
             mt={4}
-            fontSize={{ base: "sm", md: "md" }}
+            fontSize={{ base: "xs", md: "sm" }}
             color="#56756D"
             fontFamily="'Inter', var(--font-inter), sans-serif"
-            fontWeight="600"
-            letterSpacing="2px"
+            fontWeight="700"
+            letterSpacing="0.15em"
             textTransform="uppercase"
+            opacity={0.9}
           >
             {homeContent.hero.tagline}
           </Text>
+
           <Text
-            mt={6}
-            color="rgba(46, 46, 46, 0.8)"
+            mt={8}
+            color="rgba(46, 46, 46, 0.85)"
             fontFamily="'Inter', var(--font-inter), sans-serif"
             fontSize={{ base: "md", md: "lg" }}
             lineHeight="1.8"
             maxW="2xl"
             mx="auto"
+            fontWeight="400"
           >
             {homeContent.hero.paragraph_one || "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through."}
           </Text>
@@ -193,7 +195,7 @@ export default function HomeClient() {
             <Button
               as={NextLink}
               href="/therapists/discovery"
-              size="xl"
+              size="lg"
               bg="#56756D"
               color="white"
               borderRadius="full"
@@ -201,7 +203,7 @@ export default function HomeClient() {
               _hover={{ bg: "#C9A960", transform: "scale(1.05)", shadow: "dark-lg" }}
               fontWeight="600"
               fontSize="lg"
-              px={12}
+              px={14}
               py={8}
             >
               Take the Matching Quiz
@@ -212,10 +214,13 @@ export default function HomeClient() {
                 as={NextLink}
                 href="/therapists"
                 color="mlc.greenDark"
-                fontWeight="600"
+                fontWeight="700"
                 fontSize="xs"
-                textDecoration="underline"
-                _hover={{ color: "mlc.gold" }}
+                textDecoration="none"
+                borderBottom="2px solid"
+                borderColor="mlc.green"
+                _hover={{ color: "mlc.gold", borderColor: "mlc.gold" }}
+                pb="1px"
               >
                 Browse all therapists
               </ChakraLink>
