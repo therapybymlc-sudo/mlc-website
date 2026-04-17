@@ -24,6 +24,8 @@ import {
   Wrap,
   WrapItem,
   Tag,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -125,29 +127,29 @@ export default function JournalClient() {
     switch(step) {
       case 1:
         return (
-          <VStack spacing={12} py={10} w="full">
-            <VStack spacing={4}>
-                <Heading size="md" color="gray.500">How are you feeling?</Heading>
-                <Heading size="2xl" color="#2E2E2E">{config.label}</Heading>
+          <VStack spacing={8} py={4} w="full">
+            <VStack spacing={2} textAlign="center">
+                <Text fontSize="sm" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="widest">How are you feeling?</Text>
+                <Heading size="xl" color="#2E2E2E" fontWeight="900">{config.label}</Heading>
             </VStack>
             
-            <Center position="relative" w="300px" h="300px">
+            <Center position="relative" w="240px" h="240px">
                 <MotionBox
                     animate={{ 
-                        scale: [1, 1.1, 1],
-                        rotate: [0, 10, -10, 0]
+                        scale: [1, 1.05, 1],
+                        rotate: [0, 5, -5, 0]
                     }}
                     transition={{ duration: 6, repeat: Infinity }}
-                    w="200px"
-                    h="200px"
+                    w="180px"
+                    h="180px"
                     borderRadius="full"
                     bg={config.color}
-                    boxShadow={`0 0 80px ${config.glow}`}
+                    boxShadow={`0 0 60px ${config.glow}`}
                 />
-                <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient={`radial(circle, transparent 40%, white 70%)`} />
+                <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient={`radial(circle, transparent 30%, white 75%)`} />
             </Center>
 
-            <VStack w="full" maxW="400px" spacing={6}>
+            <VStack w="full" maxW="320px" spacing={8}>
               <Box position="relative" w="full" px={4}>
                   <input 
                     type="range" 
@@ -156,11 +158,11 @@ export default function JournalClient() {
                     step="1" 
                     value={moodLevel} 
                     onChange={(e) => setMoodLevel(parseInt(e.target.value))}
-                    style={{ width: "100%", height: "8px", borderRadius: "10px", background: "#E2E8F0", outline: "none", appearance: "none" }}
+                    style={{ width: "100%", height: "6px", borderRadius: "10px", background: "#EDF2F7", outline: "none", appearance: "none" }}
                   />
                   <HStack justify="space-between" w="full" mt={4}>
-                      <Text fontSize="xs" fontWeight="700" color="gray.400">UNPLEASANT</Text>
-                      <Text fontSize="xs" fontWeight="700" color="gray.400">PLEASANT</Text>
+                      <Text fontSize="10px" fontWeight="800" color="gray.400">UNPLEASANT</Text>
+                      <Text fontSize="10px" fontWeight="800" color="gray.400">PLEASANT</Text>
                   </HStack>
               </Box>
               <Button 
@@ -168,8 +170,11 @@ export default function JournalClient() {
                 bg="#2E2E2E" 
                 color="white" 
                 borderRadius="full" 
-                px={10} 
+                px={12} 
+                h={12}
                 onClick={() => setStep(2)}
+                _hover={{ bg: '#56756D', transform: 'scale(1.05)' }}
+                transition="all 0.2s"
               >
                 Continue
               </Button>
@@ -275,20 +280,27 @@ export default function JournalClient() {
   };
 
   return (
-    <Box maxW="1200px" mx="auto" px={4}>
-        <SimpleGrid columns={{ base: 1, xl: 3 }} spacing={10}>
-            {/* Capture Area */}
-            <Box colSpan={{ xl: 2 }}>
+    <Box maxW="1200px" mx="auto" px={{ base: 4, lg: 8 }} py={6}>
+        <Grid 
+            templateColumns={{ base: "1fr", lg: "repeat(3, 1fr)" }} 
+            gap={10}
+            alignItems="start"
+        >
+            {/* Capture Area - Takes 2/3 on large screens */}
+            <GridItem colSpan={{ base: 1, lg: 2 }}>
                 <MotionBox 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     bg="white" 
-                    p={8} 
+                    p={{ base: 6, md: 10 }} 
                     borderRadius="4xl" 
                     shadow="xl" 
                     border="1px solid" 
                     borderColor="gray.50"
                     minH="700px"
+                    display="flex"
+                    flexDirection="column"
+                    justifyContent="center"
                 >
                     <AnimatePresence mode="wait">
                         <MotionBox
@@ -302,46 +314,64 @@ export default function JournalClient() {
                         </MotionBox>
                     </AnimatePresence>
                 </MotionBox>
-            </Box>
+            </GridItem>
 
-            {/* History Rail */}
-            <VStack align="stretch" spacing={6}>
-                <HStack justify="space-between">
-                    <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">Recent reflections</Heading>
-                    <Icon as={FiClock} color="gray.400" />
-                </HStack>
-                <VStack align="stretch" spacing={4} maxH="750px" overflowY="auto" pr={2}>
-                    {entries.map((entry) => (
-                        <Box 
-                            key={entry.id} 
-                            p={5} 
-                            borderRadius="3xl" 
-                            bg="gray.50" 
-                            border="1px solid" 
-                            borderColor="gray.100"
-                            cursor="pointer"
-                            onClick={() => { setSelectedEntry(entry); onOpen(); }}
-                            _hover={{ borderColor: '#C9A960', bg: 'white', shadow: 'md' }}
-                            transition="all 0.2s"
-                        >
-                            <HStack justify="space-between" mb={3}>
-                                <Text fontSize="xs" fontWeight="800" color="gray.400">
-                                    {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                </Text>
-                                <Badge colorScheme="teal" borderRadius="full" fontSize="10px" px={2}>{entry.mood}</Badge>
-                            </HStack>
+            {/* History Rail - Takes 1/3 */}
+            <GridItem colSpan={1}>
+                <VStack align="stretch" spacing={6} position={{ lg: "sticky" }} top="24px">
+                    <HStack justify="space-between">
+                        <VStack align="start" spacing={0}>
+                            <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">Recent reflections</Heading>
+                            <Text fontSize="xs" color="gray.400">Your documented journey</Text>
+                        </VStack>
+                        <Icon as={FiClock} color="gray.400" />
+                    </HStack>
+                    
+                    <VStack align="stretch" spacing={4} maxH={{ base: "400px", lg: "700px" }} overflowY="auto" pr={2} sx={{
+                        "&::-webkit-scrollbar": { width: "4px" },
+                        "&::-webkit-scrollbar-track": { background: "transparent" },
+                        "&::-webkit-scrollbar-thumb": { background: "gray.100", borderRadius: "10px" }
+                    }}>
+                        {entries.length > 0 ? entries.map((entry) => (
                             <Box 
-                                fontSize="sm" 
-                                color="gray.600" 
-                                noOfLines={2}
-                                dangerouslySetInnerHTML={{ __html: entry.entry }}
-                                sx={{ "img": { display: 'none' } }}
-                            />
-                        </Box>
-                    ))}
+                                key={entry.id} 
+                                p={5} 
+                                borderRadius="2xl" 
+                                bg="white" 
+                                border="1px solid" 
+                                borderColor="gray.100"
+                                cursor="pointer"
+                                onClick={() => { setSelectedEntry(entry); onOpen(); }}
+                                _hover={{ borderColor: '#C9A960', transform: 'translateY(-2px)', shadow: 'md' }}
+                                transition="all 0.2s"
+                            >
+                                <HStack justify="space-between" mb={3}>
+                                    <Text fontSize="xs" fontWeight="800" color="#C9A960">
+                                        {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                    </Text>
+                                    <Badge colorScheme="teal" borderRadius="full" fontSize="10px" px={2} variant="subtle">{entry.mood}</Badge>
+                                </HStack>
+                                <Box 
+                                    fontSize="sm" 
+                                    color="gray.600" 
+                                    lineHeight="1.6"
+                                    noOfLines={2}
+                                    dangerouslySetInnerHTML={{ __html: entry.entry }}
+                                    sx={{ "img": { display: 'none' } }}
+                                />
+                            </Box>
+                        )) : (
+                            <Center py={20} border="2px dashed" borderColor="gray.100" borderRadius="3xl">
+                                <VStack spacing={2}>
+                                    <Icon as={FiMessageCircle} boxSize={6} color="gray.200" />
+                                    <Text color="gray.400" fontSize="sm">No reflections yet.</Text>
+                                </VStack>
+                            </Center>
+                        )}
+                    </VStack>
                 </VStack>
-            </VStack>
-        </SimpleGrid>
+            </GridItem>
+        </Grid>
 
         {/* Modal for Details (Same as before but with mood visualization) */}
         <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
