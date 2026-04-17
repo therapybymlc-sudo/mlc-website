@@ -26,12 +26,17 @@ import {
   Tag,
   Grid,
   GridItem,
+  Spinner,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSave, FiClock, FiActivity, FiDownload, FiPlusCircle, FiMessageCircle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
-import RichTextEditor from "../../../../../components/RichTextEditor.jsx";
+import dynamic from 'next/dynamic';
+const RichTextEditor = dynamic(() => import("../../../../../components/RichTextEditor.jsx"), {
+  ssr: false,
+  loading: () => <Box h="400px" bg="gray.50" borderRadius="3xl" animate={{ opacity: [0.5, 1, 0.5] }} />
+});
 import { useAuth } from "../../../../../context/AuthContext";
 
 const MOOD_CONFIG = {
@@ -81,7 +86,14 @@ export default function JournalClient() {
     }
   }, [authLoading, isAuthenticated]);
 
-  if (!isMounted) return null;
+  if (!isMounted) return (
+    <Center h="70vh">
+        <VStack spacing={4}>
+            <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
+            <Text color="gray.500" fontWeight="500">Preparing your healing space...</Text>
+        </VStack>
+    </Center>
+  );
 
   const fetchEntries = async () => {
     try {
