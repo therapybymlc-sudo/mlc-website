@@ -1069,6 +1069,27 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
             serializer.save(client=client, therapist=client.therapist)
 
 
+    @action(detail=True, methods=["post"])
+    def add_update(self, request, pk=None):
+        journal = self.get_object()
+        text = request.data.get("text")
+        if not text:
+            return Response({"error": "No text provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        update = {
+            "text": text,
+            "created_at": timezone.now().isoformat(),
+            "author": "Therapist" if _resolve_therapist_from_request(request) else "Client"
+        }
+        
+        updates = journal.updates or []
+        updates.append(update)
+        journal.updates = updates
+        journal.save()
+        
+        return Response(self.get_serializer(journal).data)
+
+
 class ClientGoalViewSet(viewsets.ModelViewSet):
     serializer_class = ClientGoalSerializer
     permission_classes = [IsAuthenticated]

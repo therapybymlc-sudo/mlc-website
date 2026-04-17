@@ -21,6 +21,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiCalendar, FiClock, FiVideo } from "react-icons/fi";
 import { apiGet } from "../../../../../api.js";
+import NextLink from 'next/link';
 
 export default function AppointmentsClient() {
   const toast = useToast();
@@ -51,7 +52,17 @@ export default function AppointmentsClient() {
             </Heading>
             <Text color="gray.500">Manage your upcoming and past therapeutic appointments.</Text>
           </VStack>
-          <Button bg="#56756D" color="white" borderRadius="full" px={8} _hover={{ bg: '#C9A960' }}>Book New Session</Button>
+          <Button 
+            as={NextLink}
+            href="/discovery"
+            bg="#56756D" 
+            color="white" 
+            borderRadius="full" 
+            px={8} 
+            _hover={{ bg: '#C9A960' }}
+          >
+            Book New Session
+          </Button>
         </HStack>
 
         <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">

@@ -89,6 +89,40 @@ export default function ClientDashboardOverview() {
 
   const nextAppt = appointments.length > 0 ? appointments[0] : null;
 
+  const weeklyPrompts = [
+    {
+      quote: "Self-compassion is simply giving ourselves the same kindness we would give others.",
+      author: "Christopher Germer",
+      tip: "Take 3 minutes to notice five things you see, four things you feel, three things you hear, two things you smell, and one thing you taste."
+    },
+    {
+      quote: "You don't have to see the whole staircase, just take the first step.",
+      author: "Martin Luther King Jr.",
+      tip: "Identify one small, manageable task you can complete today that aligns with your healing goals."
+    },
+    {
+      quote: "The curious paradox is that when I accept myself just as I am, then I can change.",
+      author: "Carl Rogers",
+      tip: "Write down three things you appreciate about yourself today, no matter how small they may seem."
+    },
+    {
+      quote: "Healing is not linear. It's a journey of layers, not a straight path to the finish line.",
+      author: "Anonymous",
+      tip: "If you're feeling a setback today, remind yourself that it's a natural part of progress. Practice gentle breathing for 5 minutes."
+    }
+  ];
+
+  const getWeeklyIndex = () => {
+    if (typeof window === 'undefined') return 0;
+    const now = new Date();
+    const oneJan = new Date(now.getFullYear(), 0, 1);
+    const numberOfDays = Math.floor((now - oneJan) / (24 * 60 * 60 * 1000));
+    const weekNumber = Math.ceil((now.getDay() + 1 + numberOfDays) / 7);
+    return weekNumber % weeklyPrompts.length;
+  };
+
+  const currentPrompt = weeklyPrompts[getWeeklyIndex()];
+
   const handleMoodUpdate = async (newMood) => {
     setMood(newMood);
     try {
@@ -333,7 +367,7 @@ export default function ClientDashboardOverview() {
                     <Text fontSize="sm" opacity={0.9}>You don't have any sessions scheduled currently.</Text>
                     <Button 
                         as={NextLink} 
-                        href="/dashboard/client/appointments" 
+                        href="/discovery" 
                         size="md" 
                         bg="white" 
                         color="#56756D" 
@@ -441,14 +475,14 @@ export default function ClientDashboardOverview() {
                     <Icon as={FiHeart} boxSize={8} opacity={0.3} />
                     <VStack align="start" spacing={2}>
                         <Text fontSize="xl" fontWeight="700" lineHeight="1.4">
-                            "Self-compassion is simply giving ourselves the same kindness we would give others."
+                            "{currentPrompt.quote}"
                         </Text>
-                        <Text fontSize="sm" opacity={0.7}>— Christopher Germer</Text>
+                        <Text fontSize="sm" opacity={0.7}>— {currentPrompt.author}</Text>
                     </VStack>
                     <Box w="full" bg="rgba(255,255,255,0.1)" p={5} borderRadius="2xl">
                         <Text fontWeight="600" mb={2} fontSize="sm">Try this today:</Text>
                         <Text fontSize="sm" opacity={0.9}>
-                            Take 3 minutes to notice five things you see, four things you feel, three things you hear, two things you smell, and one thing you taste.
+                            {currentPrompt.tip}
                         </Text>
                     </Box>
                     <Button 

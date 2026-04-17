@@ -59,7 +59,6 @@ export default function RichTextEditor({
   if (!editor) return null;
 
   const setLink = () => {
-    if (!isPremium) return;
     const previousUrl = editor.getAttributes("link").href;
     const url = window.prompt("Enter a link URL", previousUrl || "");
     if (url === null) return;
@@ -110,25 +109,18 @@ export default function RichTextEditor({
         </ToolbarButton>
         <ToolbarButton
           active={editor.isActive("underline")}
-          disabled={!isPremium}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
           U
         </ToolbarButton>
-        <ToolbarButton disabled={!isPremium} onClick={setLink}>
+        <ToolbarButton onClick={setLink}>
           Link
         </ToolbarButton>
         <ToolbarButton
-          disabled={!allowImages}
           onClick={() => fileInputRef.current?.click()}
         >
           Image
         </ToolbarButton>
-        {!isPremium && (
-          <Text fontSize="xs" color="purple.500">
-            Premium unlocks underline & links
-          </Text>
-        )}
       </HStack>
 
       <input

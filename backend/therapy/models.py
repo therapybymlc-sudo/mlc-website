@@ -1345,6 +1345,8 @@ class ClientJournal(models.Model):
     entry = models.TextField()
     mood = models.CharField(max_length=50, blank=True, null=True)
     shared_with_therapist = models.BooleanField(default=False)
+    extra_data = models.JSONField(default=dict, blank=True)
+    updates = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
