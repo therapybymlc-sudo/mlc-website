@@ -20,7 +20,23 @@ const CATEGORIES = {
   MODALITIES: ["CBT", "DBT-informed", "Psychodynamic", "Humanistic", "ACT", "REBT", "Attachment-based", "Trauma-informed", "Gottman Method", "Narrative Therapy", "Existential", "EMDR", "IFS", "Schema Therapy"],
   LANGUAGES: ["English", "Arabic", "Hindi", "Urdu", "Malayalam", "Tamil", "French", "Spanish"],
   POPULATIONS: ["Women", "Men", "LGBTQ+", "Non-binary", "Expats in foreign countries", "Digital Nomads", "International Students", "Working Professionals", "Neurodivergent (ADHD/Autism)", "South Asian Diaspora", "Interfaith Families"],
-  CONCERNS: ["Anxiety", "Depression", "Trauma", "Relationships", "Grief", "Work Stress", "Self-Esteem", "Parenting", "Panic", "Identity Concerns", "Emotional Regulation", "Anger", "Attachment Issues", "Loneliness", "Perfectionism"],
+  CONCERNS: [
+    "Anxiety (Generalized, Panic, Social)", 
+    "Depression & Low Mood", 
+    "Complex Trauma (CPTSD)", 
+    "Childhood / Developmental Trauma",
+    "Identity & Self-Esteem", 
+    "Relationships & Attachment", 
+    "Neurodivergence (ADHD/Autism Support)",
+    "Workplace Burnout & High-Performance Stress",
+    "Grief, Loss & Life Transitions",
+    "Personality-related Difficulties (e.g. BPD traits)",
+    "Body Image & Eating Concerns",
+    "Sleep & Psychosomatic Symptoms",
+    "Postpartum & Women's Mental Health",
+    "Addiction & Substance Use Recovery",
+    "Acute Stress & Crisis Intervention"
+  ],
   SKILL_PRESETS: ["Trauma-Informed", "LGBTQ+ Affirming", "Neurodiversity-Affirming", "Crisis Intervention", "Goal-Oriented", "Deep Reflection"]
 };
 
@@ -337,16 +353,31 @@ export default function ProfileClient() {
                </Box>
 
                <Box>
-                  <FormLabel fontWeight="800" mb={4}>Presenting Concerns (Matching Matrix)</FormLabel>
+                  <FormLabel fontWeight="800" mb={2}>Presenting Concerns Matrix</FormLabel>
+                  <Box p={4} bg="gray.50" borderRadius="xl" mb={6} border="1px solid" borderColor="gray.100">
+                    <Heading size="xs" mb={3} textTransform="uppercase" color="gray.500">Choosing the right level:</Heading>
+                    <VStack align="stretch" spacing={2}>
+                       <HStack fontSize="xs"><Badge colorScheme="teal" variant="solid" w="110px">Core Focus</Badge><Text color="gray.600">Primary expertise. You work with this daily and have advanced training.</Text></HStack>
+                       <HStack fontSize="xs"><Badge colorScheme="teal" variant="outline" w="110px">Experienced</Badge><Text color="gray.600">Substantial clinical experience and supervised follow-through.</Text></HStack>
+                       <HStack fontSize="xs"><Badge colorScheme="gray" variant="subtle" w="110px">Foundational</Badge><Text color="gray.600">Foundational knowledge; take occasionally but not a core focus.</Text></HStack>
+                       <HStack fontSize="xs"><Badge colorScheme="red" variant="ghost" w="110px">Refer Out</Badge><Text color="gray.600">Choose this if you <b>do not</b> treat this presentation.</Text></HStack>
+                    </VStack>
+                  </Box>
+
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                     {CATEGORIES.CONCERNS.slice(0, 10).map(topic => (
-                       <HStack key={topic} justify="space-between" p={3} bg="gray.50" borderRadius="xl">
-                          <Text fontWeight="600" fontSize="sm">{topic}</Text>
-                          <Select size="xs" bg="white" w="130px" value={profile.concerns_levels?.[topic] || ""} onChange={(e) => setProfile({...profile, concerns_levels: {...profile.concerns_levels, [topic]: e.target.value}})}>
+                     {CATEGORIES.CONCERNS.map(topic => (
+                       <HStack key={topic} justify="space-between" p={3} borderBottom="1px solid" borderColor="gray.50" _hover={{ bg: 'gray.50' }} transition="0.2s">
+                          <Text fontWeight="600" fontSize="xs" color="gray.700">{topic}</Text>
+                          <Select 
+                            size="xs" bg="white" w="140px" borderRadius="md"
+                            value={profile.concerns_levels?.[topic] || ""} 
+                            onChange={(e) => setProfile({...profile, concerns_levels: {...profile.concerns_levels, [topic]: e.target.value}})}
+                          >
                              <option value="">Choose Level</option>
-                             <option>Works Often</option>
-                             <option>Comfortable</option>
-                             <option>Limited</option>
+                             <option value="Core Focus">Core Focus</option>
+                             <option value="Experienced">Experienced</option>
+                             <option value="Foundational">Foundational</option>
+                             <option value="Refer Out">Refer Out</option>
                           </Select>
                        </HStack>
                      ))}
