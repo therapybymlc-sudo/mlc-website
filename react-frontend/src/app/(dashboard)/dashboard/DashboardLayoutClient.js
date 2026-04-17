@@ -98,10 +98,12 @@ function SidebarContent({ links, pathname, signOut, onClose }) {
 }
 
 export default function DashboardLayout({ children }) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
+
+  if (!isLoaded) return null;
 
   const isTherapist = user?.publicMetadata?.roles?.includes('therapist') || user?.publicMetadata?.roles?.includes('admin');
 
