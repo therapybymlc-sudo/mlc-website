@@ -31,12 +31,6 @@ export default function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Underline,
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
-      }),
       Image.configure({ allowBase64: true }),
       Placeholder.configure({ placeholder: placeholder || "Start writing..." }),
     ],

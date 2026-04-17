@@ -30,6 +30,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiSave, FiClock, FiActivity, FiDownload, FiPlusCircle, FiMessageCircle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
 import RichTextEditor from "../../../../../components/RichTextEditor.jsx";
+import { useAuth } from "../../../../../context/AuthContext";
 
 const MOOD_CONFIG = {
   1: { label: "Very Unpleasant", color: "#4A4E69", glow: "rgba(74, 78, 105, 0.4)", tags: ["Angry", "Anxious", "Scared", "Overwhelmed", "Ashamed", "Sad", "Lonely", "Hopeless"] },
@@ -45,6 +46,8 @@ const MotionBox = motion(Box);
 
 export default function JournalClient() {
   const toast = useToast();
+  const { isLoaded, isAuthenticated } = useAuth();
+  const [isMounted, setIsMounted] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [entries, setEntries] = useState([]);
   const [step, setStep] = useState(1); // 1: Valence, 2: Tags, 3: Writing
@@ -60,8 +63,16 @@ export default function JournalClient() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchEntries();
+    setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isLoaded && isAuthenticated) {
+        fetchEntries();
+    }
+  }, [isLoaded, isAuthenticated]);
+
+  if (!isMounted) return null;
 
   const fetchEntries = async () => {
     try {
