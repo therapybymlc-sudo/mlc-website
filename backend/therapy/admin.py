@@ -11,6 +11,32 @@ class TherapistApplicationAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at", "home_country")
     search_fields = ("first_name", "last_name", "email")
     readonly_fields = ("created_at", "approved_at")
+    
+    fieldsets = (
+        ("Status & Critical Metadata", {
+            "fields": ("status", "created_at", "approved_at", "referral_source")
+        }),
+        ("Professional Identity", {
+            "fields": ("first_name", "last_name", "email", "phone", "linkedin", "home_country")
+        }),
+        ("Clinical Vetting & Experience", {
+            "fields": ("highest_qualification", "years_experience", "languages", "populations", "therapeutic_stance", "relevant_experience")
+        }),
+        ("Supervision & Trainings (JSON)", {
+            "fields": ("supervisions_detailed", "trainings_detailed"),
+            "classes": ("collapse",),
+            "description": "Raw clinical data from the multi-step vetting portal."
+        }),
+        ("Logistics & Space", {
+            "fields": ("has_private_practice", "open_to_in_person", "in_person_city", "opt_in_spaces", "interested_city")
+        }),
+        ("Verified Documentation", {
+            "fields": ("resume", "qualification_doc", "license_doc", "additional_docs")
+        }),
+        ("Internal Review", {
+            "fields": ("review_notes",)
+        }),
+    )
 
     def save_model(self, request, obj, form, change):
         previous_status = None
