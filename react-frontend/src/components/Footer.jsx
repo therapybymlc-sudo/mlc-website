@@ -82,8 +82,23 @@ export default function Footer() {
             <HStack spacing={4}>
               <Image src={logoSrc} alt="MLC Logo" boxSize="60px" filter="brightness(1.2)" />
               <VStack align="start" spacing={0}>
-                <Heading size="sm" fontFamily="'Playfair Display', serif" letterSpacing="1px">MLC HEALTH</Heading>
-                <Text fontSize="10px" color="#56756D" fontWeight="700" letterSpacing="2px">WELLNESS CENTRE</Text>
+                <Heading 
+                  size="md" 
+                  fontFamily="'Forum', serif" 
+                  letterSpacing="1px" 
+                  fontWeight="400"
+                  textTransform="none"
+                >
+                  MLC Health and Wellness Centre
+                </Heading>
+                <Text 
+                  fontSize="sm" 
+                  color="#56756D" 
+                  fontFamily="'Forum', serif" 
+                  letterSpacing="1px"
+                >
+                  a place to feel, to heal, to become
+                </Text>
               </VStack>
             </HStack>
             <Text color="whiteAlpha.700" fontSize="md" lineHeight="tall" maxW="320px">
@@ -197,9 +212,7 @@ export default function Footer() {
             <Link fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Terms of Service</Link>
             <Link fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Cookie Settings</Link>
           </HStack>
-          <Text fontSize="10px" color="whiteAlpha.300" textTransform="uppercase" letterSpacing="2px">
-            A space to feel, to heal, to become
-          </Text>
+          <Box />
         </Stack>
       </Container>
     </Box>

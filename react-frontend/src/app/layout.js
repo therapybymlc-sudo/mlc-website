@@ -1,12 +1,13 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from './providers'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Inter, Playfair_Display, Forum } from 'next/font/google'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import ClientWrapper from '../components/ClientWrapper'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
+const forum = Forum({ weight: '400', subsets: ['latin'], variable: '--font-forum' })
 
 export const metadata = {
   title: {
@@ -19,7 +20,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+      <html lang="en" className={`${inter.variable} ${playfair.variable} ${forum.variable}`}>
         <body>
           <Providers>
             <ClientWrapper>
