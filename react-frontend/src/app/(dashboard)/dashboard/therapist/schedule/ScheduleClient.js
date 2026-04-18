@@ -180,9 +180,18 @@ export default function ScheduleClient() {
     fetchData();
   }, []);
 
-  const [slotHeight, setSlotHeight] = useState(2);
+  const [slotHeight, setSlotHeight] = useState(2); 
 
-  if (!mounted) return null;
+  if (!mounted) {
+      return (
+          <Center minH="100vh" bg="#FDFDFD">
+              <VStack spacing={4}>
+                  <Spinner size="xl" color="#56756C" thickness="4px" />
+                  <Text color="gray.500" fontWeight="600">Initializing Workspace...</Text>
+              </VStack>
+          </Center>
+      );
+  }
 
   const toLocalISO = (date) => {
       if (!date) return "";
