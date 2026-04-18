@@ -35,6 +35,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react';
 import SidebarContent from './SidebarContent';
 import NotificationCenter from '../../../components/NotificationCenter';
+import WelcomeOnboarding from '../../../components/WelcomeOnboarding';
 
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
@@ -138,6 +139,9 @@ export default function DashboardLayout({ children }) {
           {children}
         </Box>
       </Box>
+
+      {/* Aesthetic Intro for Clients */}
+      {!isTherapist && <WelcomeOnboarding />}
 
       {/* Mobile Sidebar Drawer */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>

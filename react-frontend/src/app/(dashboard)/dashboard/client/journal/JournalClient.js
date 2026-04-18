@@ -372,15 +372,27 @@ export default function JournalClient() {
                             <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">Recent reflections</Heading>
                             <Text fontSize="xs" color="gray.400">Your documented journey</Text>
                         </VStack>
-                        <IconButton 
-                            icon={<FiBookOpen />} 
-                            variant="ghost" 
-                            color="mlc.greenDark" 
-                            aria-label="View as Book"
-                            onClick={() => setShowBook(true)}
-                            isDisabled={entries.length === 0}
-                            _hover={{ bg: 'teal.50', color: 'mlc.gold' }}
-                        />
+                        <VStack spacing={2} align="center">
+                            <IconButton 
+                                icon={<FiBookOpen fontSize="24px" />} 
+                                variant="ghost" 
+                                color="mlc.greenDark" 
+                                aria-label="View as Book"
+                                onClick={() => setShowBook(true)}
+                                isDisabled={entries.length === 0}
+                                _hover={{ bg: 'teal.50', color: 'mlc.gold', transform: 'scale(1.1)' }}
+                                transition="all 0.2s"
+                                size="lg"
+                                h="56px"
+                                w="56px"
+                                borderRadius="full"
+                                shadow="sm"
+                                bg="white"
+                                border="1px solid"
+                                borderColor="gray.100"
+                            />
+                            <Text fontSize="10px" fontWeight="800" color="mlc.greenDark" letterSpacing="wider">BOOK VIEW</Text>
+                        </VStack>
                     </HStack>
                     
                     <VStack align="stretch" spacing={4} maxH={{ base: "400px", lg: "700px" }} overflowY="auto" pr={2} sx={{
