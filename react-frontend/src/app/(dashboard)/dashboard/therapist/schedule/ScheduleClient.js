@@ -26,12 +26,14 @@ import {
   Icon,
   SimpleGrid,
   Center,
+  Divider,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText } from "react-icons/fi";
+import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings } from "react-icons/fi";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useUser } from "@clerk/nextjs";
+import { useAuth } from "../../../../../context/AuthContext";
 
 // Dynamic import for FullCalendar to avoid SSR hydration issues
 const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
@@ -45,12 +47,15 @@ const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
 
 export default function ScheduleClient() {
   const { user } = useUser();
+  const { isAdmin } = useAuth();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const typeModal = useDisclosure(); // New modal for creating event types
   const [mounted, setMounted] = useState(false);
   
   const [events, setEvents] = useState([]);
   const [clients, setClients] = useState([]);
+  const [eventTypes, setEventTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [businessHours, setBusinessHours] = useState(null);
   const [currentTherapistId, setCurrentTherapistId] = useState(null);
@@ -60,38 +65,51 @@ export default function ScheduleClient() {
   const [form, setForm] = useState({
     title: "",
     client: "",
+    event_type: "",
     start_time: "",
     end_time: "",
     notes: "",
   });
 
+  const [newType, setNewType] = useState({ name: "", color: "#56756D" });
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [eventRes, clientRes, therapistRes] = await Promise.all([
+      const [eventRes, clientRes, therapistRes, typesRes] = await Promise.all([
         apiGet("schedule-events/"),
         apiGet("clients/"),
-        apiGet("therapists/me/").catch(err => {
-            console.warn("Me endpoint not found, falling back to profile fetch", err);
-            return null;
-        })
+        apiGet("therapists/me/").catch(() => null),
+        apiGet("event-types/").catch(() => [])
       ]);
+
+      // Normalize event types
+      const normalizedTypes = Array.isArray(typesRes) ? typesRes : typesRes.results || [];
+      setEventTypes(normalizedTypes);
+
+      // Map types for fast access
+      const typeMap = {};
+      normalizedTypes.forEach(t => { typeMap[t.id] = t; });
 
       // Normalize events
       const eventData = Array.isArray(eventRes) ? eventRes : eventRes.results || [];
-      setEvents(eventData.map(ev => ({
-        id: ev.id,
-        title: ev.title,
-        start: ev.start_time,
-        end: ev.end_time,
-        backgroundColor: ev.color || "#56756D",
-        borderColor: ev.color || "#56756D",
-        extendedProps: {
-            client_id: ev.client,
-            client_name: ev.client_name,
-            notes: ev.notes,
-        }
-      })));
+      setEvents(eventData.map(ev => {
+        const typeInfo = typeMap[ev.event_type] || {};
+        return {
+          id: ev.id,
+          title: ev.title,
+          start: ev.start_time,
+          end: ev.end_time,
+          backgroundColor: ev.color || typeInfo.color || "#56756D",
+          borderColor: ev.color || typeInfo.color || "#56756D",
+          extendedProps: {
+              client_id: ev.client,
+              client_name: ev.client_name,
+              event_type: ev.event_type,
+              notes: ev.notes,
+          }
+        };
+      }));
 
       // Normalize clients
       setClients(Array.isArray(clientRes) ? clientRes : clientRes.results || []);
@@ -142,6 +160,7 @@ export default function ScheduleClient() {
     setForm({
       title: "",
       client: "",
+      event_type: "",
       start_time: toLocalISO(start),
       end_time: toLocalISO(end),
       notes: "",
@@ -164,11 +183,25 @@ export default function ScheduleClient() {
     setForm({
       title: event.title,
       client: event.extendedProps.client_id || "",
+      event_type: event.extendedProps.event_type || "",
       start_time: toLocalISO(event.start),
       end_time: toLocalISO(event.end),
       notes: event.extendedProps.notes || "",
     });
     onOpen();
+  };
+
+  const handleCreateType = async () => {
+    if (!newType.name.trim()) return;
+    try {
+        await apiPost("event-types/", newType);
+        toast({ title: "Event type created", status: "success" });
+        setNewType({ name: "", color: "#56756D" });
+        typeModal.onClose();
+        fetchData();
+    } catch (err) {
+        toast({ title: "Failed to create type", status: "error" });
+    }
   };
 
   const handleCreate = async () => {
@@ -178,13 +211,17 @@ export default function ScheduleClient() {
     }
     try {
       const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
+      const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
+      
       const payload = {
-        title: form.title || (selectedClientObj ? `Session with ${selectedClientObj.name}` : "Clinical Session"),
-        therapist: currentTherapistId, // CRITICAL FIX: Add therapist to payload
+        title: form.title || (selectedClientObj ? `${selectedClientObj.name} — ${selectedTypeObj?.name || 'Session'}` : (selectedTypeObj?.name || "Clinical Session")),
+        therapist: currentTherapistId,
         client: form.client ? Number(form.client) : null,
+        event_type: form.event_type ? Number(form.event_type) : null,
         start_time: form.start_time,
         end_time: form.end_time,
         notes: form.notes,
+        color: selectedTypeObj?.color || "#56756C",
       };
       await apiPost("schedule-events/", payload);
       toast({ title: "Appointment created", status: "success" });
@@ -199,13 +236,16 @@ export default function ScheduleClient() {
   const handleUpdate = async () => {
     if (!selectedEvent || !currentTherapistId) return;
     try {
+      const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
       const payload = {
         title: form.title,
-        therapist: currentTherapistId, // CRITICAL FIX: Add therapist to payload
+        therapist: currentTherapistId,
         client: form.client ? Number(form.client) : null,
+        event_type: form.event_type ? Number(form.event_type) : null,
         start_time: form.start_time,
         end_time: form.end_time,
         notes: form.notes,
+        color: selectedTypeObj?.color || selectedEvent.backgroundColor,
       };
       await apiPut(`schedule-events/${selectedEvent.id}/`, payload);
       toast({ title: "Appointment updated", status: "success" });
@@ -238,21 +278,34 @@ export default function ScheduleClient() {
           </Heading>
           <Text color="gray.500">Manage your therapeutic sessions and availability.</Text>
         </VStack>
-        <Button 
-          leftIcon={<FiPlus />} 
-          bg="#56756D" 
-          color="white" 
-          borderRadius="full" 
-          px={6}
-          onClick={() => {
-              setIsEditMode(false);
-              setForm({ title: "", client: "", start_time: "", end_time: "", notes: "" });
-              onOpen();
-          }}
-          _hover={{ bg: '#C9A960' }}
-        >
-          Add Session
-        </Button>
+        <HStack spacing={4}>
+            {isAdmin && (
+                <Button 
+                    leftIcon={<FiSettings />} 
+                    variant="outline"
+                    borderRadius="full" 
+                    px={6}
+                    onClick={typeModal.onOpen}
+                >
+                    Manage Types
+                </Button>
+            )}
+            <Button 
+              leftIcon={<FiPlus />} 
+              bg="#56756D" 
+              color="white" 
+              borderRadius="full" 
+              px={6}
+              onClick={() => {
+                  setIsEditMode(false);
+                  setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "" });
+                  onOpen();
+              }}
+              _hover={{ bg: '#C9A960' }}
+            >
+              Add Session
+            </Button>
+        </HStack>
       </HStack>
 
       <Box 
@@ -290,6 +343,21 @@ export default function ScheduleClient() {
           <ModalCloseButton mt={6} mr={6} />
           <ModalBody>
             <VStack spacing={6}>
+                <FormControl isRequired>
+                    <FormLabel fontWeight="700" color="gray.600">Event Type</FormLabel>
+                    <Select 
+                        placeholder="Select type" 
+                        value={form.event_type}
+                        onChange={(e) => setForm({ ...form, event_type: e.target.value })}
+                        borderRadius="xl"
+                        h={12}
+                    >
+                        {eventTypes.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                    </Select>
+                </FormControl>
+
                 <FormControl>
                     <FormLabel fontWeight="700" color="gray.600">Patient</FormLabel>
                     <Select 
@@ -374,6 +442,58 @@ export default function ScheduleClient() {
                 </HStack>
             </HStack>
           </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Event Type Management Modal (Admin Only) */}
+      <Modal isOpen={typeModal.isOpen} onClose={typeModal.onClose}>
+        <ModalOverlay backdropFilter="blur(5px)" />
+        <ModalContent borderRadius="3xl" p={4}>
+          <ModalHeader>Manage Event Types</ModalHeader>
+          <ModalCloseButton mt={6} mr={6} />
+          <ModalBody>
+            <VStack spacing={6} align="stretch">
+                <Box>
+                    <Text fontWeight="700" mb={3} fontSize="sm" color="gray.500">EXISTING TYPES</Text>
+                    <VStack align="stretch" spacing={2}>
+                        {eventTypes.map(t => (
+                            <HStack key={t.id} justify="space-between" p={3} bg="gray.50" borderRadius="xl">
+                                <HStack>
+                                    <Box w={3} h={3} borderRadius="full" bg={t.color} />
+                                    <Text fontWeight="600">{t.name}</Text>
+                                </HStack>
+                            </HStack>
+                        ))}
+                    </VStack>
+                </Box>
+
+                <Divider />
+
+                <VStack spacing={4} align="stretch">
+                    <Text fontWeight="700" fontSize="sm" color="gray.500">CREATE NEW</Text>
+                    <FormControl>
+                        <FormLabel>Type Name</FormLabel>
+                        <Input 
+                            placeholder="e.g. Art Therapy" 
+                            value={newType.name}
+                            onChange={(e) => setNewType({ ...newType, name: e.target.value })}
+                        />
+                    </FormControl>
+                    <FormControl>
+                        <FormLabel>Category Color (Hex)</FormLabel>
+                        <Input 
+                            type="color" 
+                            h={12}
+                            value={newType.color}
+                            onChange={(e) => setNewType({ ...newType, color: e.target.value })}
+                        />
+                    </FormControl>
+                    <Button bg="#56756D" color="white" borderRadius="full" onClick={handleCreateType}>
+                        Create Event Type
+                    </Button>
+                </VStack>
+            </VStack>
+          </ModalBody>
         </ModalContent>
       </Modal>
 

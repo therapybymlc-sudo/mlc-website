@@ -182,8 +182,8 @@ export default function DashboardLayout({ children }) {
         </Box>
       </Box>
 
-      {/* Aesthetic Intro for Clients & Admins */}
-      <WelcomeOnboarding />
+      {/* Dashboard Walkthrough */}
+      <WelcomeOnboarding links={links} />
 
       {/* Mobile Sidebar Drawer */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>

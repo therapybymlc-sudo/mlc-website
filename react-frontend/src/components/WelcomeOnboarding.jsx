@@ -1,389 +1,404 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalBody,
-  Button,
-  VStack,
-  HStack,
-  Heading,
-  Text,
   Box,
-  Icon,
-  useDisclosure,
-  Progress,
+  Button,
   Center,
-} from "@chakra-ui/react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiChevronRight, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
-import dynamic from 'next/dynamic';
-
-// Use a dynamic import to avoid SSR issues with react-joyride which accesses 'window'
-const Joyride = dynamic(() => import('react-joyride').then(mod => mod.Joyride), { ssr: false });
-
-// Import constants for events/status if needed, but we can also use strings to be safe against SSR
-const EVENTS = {
-  TOUR_END: 'tour:end',
-  TARGET_NOT_FOUND: 'error:target_not_found'
-};
-const STATUS = {
-  SKIPPED: 'skipped',
-  FINISHED: 'finished'
-};
+  Divider,
+  Heading,
+  HStack,
+  Icon,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalOverlay,
+  Progress,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { FiChevronLeft, FiChevronRight, FiX } from 'react-icons/fi';
 
 const MotionBox = motion(Box);
 
-const AESTHETIC_STEPS = [
-  {
-    id: 'welcome',
-    title: "Welcome to MLC",
-    description: "Welcome to your private healing space. We've designed this environment to support your journey with beauty, privacy, and clinical insight.",
-    icon: FiActivity,
-    color: "#56756D",
-    image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=2672&auto=format&fit=crop",
-    path: '/dashboard/client',
-  },
-  {
-    id: 'journal',
-    title: "The Living Manuscript",
-    description: "Your Journal isn't just a list—it's a story. Use our unique 'Book View' to see your reflections transformed into a digital manuscript of your growth.",
-    icon: FiBookOpen,
-    color: "#C9A960",
-    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=2574&auto=format&fit=crop",
-    path: '/dashboard/client/journal',
-  },
-  {
-    id: 'goals',
-    title: "Guided Milestones",
-    description: "Set and track goals with your therapist. Every step forward is captured, visualized, and celebrated as you build resilience.",
-    icon: FiTarget,
-    color: "#84A59D",
-    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2670&auto=format&fit=crop",
-    path: '/dashboard/client/goals',
-  },
-  {
-    id: 'safety',
-    title: "Safety & Sovereignty",
-    description: "Your safety plan is always a click away. We prioritize your well-being with tools that ensure you're supported even between sessions.",
-    icon: FiShield,
-    color: "#4A4E69",
-    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=2670&auto=format&fit=crop",
-    path: '/dashboard/client/safety',
-  },
-];
+function getSlideContent(link) {
+  const href = link?.href || '';
+  const label = link?.label || 'Page';
 
-const PAGE_SPOTLIGHT_TOURS = [
-  [
-    {
-      target: '#tour-welcome-heading',
-      content: 'Your command center. This header greets you and anchors the whole dashboard.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-mood-card',
-      content: 'Tap a mood to log how you are arriving today.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-goals-card',
-      content: 'A live preview of your intentions.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-appt-card',
-      content: 'Join your clinical sessions directly from this card.',
-      placement: 'top',
-      skipBeacon: true,
-    },
-  ],
-  [
-    {
-      target: '#tour-journal-capture',
-      content: 'The step-by-step reflection flow.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-journal-history',
-      content: 'Your past reflections stacked by date.',
-      placement: 'left',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-book-view-btn',
-      content: 'Read your journey as a beautiful digital book.',
-      placement: 'left',
-      skipBeacon: true,
-    },
-  ],
-  [
-    {
-      target: '#tour-goals-header',
-      content: 'Manage your long-arc intentions here.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-goals-stats',
-      content: 'Progress scores for each of your tiers.',
-      placement: 'top',
-      skipBeacon: true,
-    },
-  ],
-  [
-    {
-      target: '#tour-safety-header',
-      content: 'Your private, clinician-vetted safety plan.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-safety-sections',
-      content: 'Proactive coping strategies and supports.',
-      placement: 'top',
-      skipBeacon: true,
-    },
-  ],
-];
-
-const JOYRIDE_OPTIONS = {
-  zIndex: 100000,
-  primaryColor: '#56756C',
-  overlayColor: 'rgba(15, 23, 42, 0.85)',
-  textColor: '#2E2E2E',
-  showProgress: true,
-  scrollOffset: 120,
-  targetWaitTimeout: 10000, // Be more patient
-  blockTargetInteraction: true,
-};
-
-export default function WelcomeOnboarding() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const [currentAestheticIdx, setCurrentAestheticIdx] = useState(0);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [pendingRoute, setPendingRoute] = useState(null);
-  const [runSpotlight, setRunSpotlight] = useState(false);
-  const [spotlightKey, setSpotlightKey] = useState(0);
-  const [spotlightSteps, setSpotlightSteps] = useState(PAGE_SPOTLIGHT_TOURS[0]);
-
-  const spotlightPhaseRef = useRef(0);
-
-  const finishOnboarding = () => {
-    localStorage.setItem('mlc_onboarding_visited', 'true');
-    setIsModalVisible(false);
-    setRunSpotlight(false);
-    onClose();
+  const base = {
+    key: href || label,
+    title: label,
+    subtitle: 'What this page is for',
+    body: [],
+    tips: [],
+    href: href || null,
+    icon: link?.icon || null,
   };
+
+  // Client pages
+  if (href === '/dashboard/client') {
+    return {
+      ...base,
+      title: 'Overview',
+      subtitle: 'Your home base',
+      body: [
+        'Use this page to get oriented in seconds: what’s happening next, what needs attention, and what to do today.',
+        'It’s designed to reduce decision fatigue by surfacing the essentials first.',
+      ],
+      tips: [
+        'Treat Overview as your reset point when you feel scattered.',
+        'Open it before sessions to review what you want to bring into the room.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/client/appointments') {
+    return {
+      ...base,
+      title: 'Appointments',
+      subtitle: 'Sessions and scheduling',
+      body: [
+        'Find upcoming sessions, join links, and session details without hunting through email.',
+        'Use this page as your single source of truth for what’s scheduled and what’s next.',
+      ],
+      tips: [
+        'Open this page a few minutes before a session so you’re not rushing.',
+        'If something looks incorrect, capture a screenshot and send it to support.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/client/goals') {
+    return {
+      ...base,
+      title: 'My Goals',
+      subtitle: 'Progress you can feel',
+      body: [
+        'Goals translate therapy into practical, trackable steps so progress stays visible.',
+        'This page helps you keep sessions focused and reinforces what you are building toward.',
+      ],
+      tips: [
+        'Update goals after a session while it’s fresh.',
+        'Aim for clarity over ambition: smaller goals move faster.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/client/journal') {
+    return {
+      ...base,
+      title: 'Journal',
+      subtitle: 'A private space to reflect',
+      body: [
+        'Capture thoughts, patterns, and wins between sessions. This is your space to be honest, not perfect.',
+        'Over time, your entries become a record of what is shifting and what is repeating.',
+      ],
+      tips: [
+        'Write the first sentence only. Momentum usually follows.',
+        'When something matters, jot it down right away, even if it is brief.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/client/resources') {
+    return {
+      ...base,
+      title: 'Care Tools',
+      subtitle: 'Skills and materials',
+      body: [
+        'Use this page for therapist-approved tools, worksheets, and practice materials.',
+        'Think of it as your between-sessions practice space: the small reps that change outcomes.',
+      ],
+      tips: [
+        'Pick one tool for the week instead of trying everything at once.',
+        'Practice when you are steady enough to learn, not only when you feel overwhelmed.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/client/safety') {
+    return {
+      ...base,
+      title: 'Safety Plan',
+      subtitle: 'Support when things feel urgent',
+      body: [
+        'This page is built for clarity in the moment: steps, resources, and grounding actions you can follow quickly.',
+        'It is most useful when it is familiar, so review it once when you are calm.',
+      ],
+      tips: [
+        'If you ever feel unsafe, use local emergency services immediately.',
+        'Keep this page easy to reach so you do not have to think when you are stressed.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/client/premium') {
+    return {
+      ...base,
+      subtitle: 'Deeper structure and support',
+      body: [
+        'This space contains premium features and deeper tools for momentum between sessions.',
+        'Use it when you want more structure, more insight, and a clearer weekly rhythm.',
+      ],
+      tips: ['Use premium tools as a weekly routine, not a one-time binge.'],
+    };
+  }
+
+  // Practitioner/Admin areas (fallback copy)
+  if (href.startsWith('/dashboard/therapist')) {
+    return {
+      ...base,
+      subtitle: 'Clinical workflow',
+      body: [
+        'These pages are optimized for practitioner workflow: client context, scheduling, and care delivery.',
+      ],
+      tips: ['A simple rhythm: Overview, then Schedule, then Clients.'],
+    };
+  }
+
+  if (href.startsWith('/admin')) {
+    return {
+      ...base,
+      subtitle: 'Administration',
+      body: ['These pages are for site and operations management.'],
+      tips: [],
+    };
+  }
+
+  return {
+    ...base,
+    body: ['Use this page to complete the tasks described in the sidebar.'],
+    tips: [],
+  };
+}
+
+function buildWalkthroughSlides(links) {
+  const cleanedLinks = Array.isArray(links) ? links.filter((l) => l && !l.type && l.href) : [];
+
+  const intro = {
+    key: 'intro',
+    title: 'Orientation',
+    subtitle: 'A clean map of your dashboard',
+    body: [
+      'This walkthrough explains each page in the sidebar, one by one.',
+      'You can restart it any time from the ORIENTATION button.',
+    ],
+    tips: ['Go page by page. Clarity beats speed.', 'If you feel lost, return to Overview.'],
+    href: null,
+    icon: null,
+  };
+
+  const outro = {
+    key: 'outro',
+    title: 'You are set',
+    subtitle: 'Use the dashboard at your pace',
+    body: [
+      'You do not need to remember everything today. Start with Overview, then move one page at a time.',
+      'If anything feels confusing, use ORIENTATION again or message support with a screenshot.',
+    ],
+    tips: [],
+    href: null,
+    icon: null,
+  };
+
+  const pageSlides = cleanedLinks.map((l) => getSlideContent(l));
+  return [intro, ...pageSlides, outro];
+}
+
+export default function WelcomeOnboarding({ links = [] }) {
+  const router = useRouter();
+  const currentPath = usePathname();
+
+  const slides = useMemo(() => buildWalkthroughSlides(links), [links]);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('mlc_onboarding_visited');
-    if (hasSeenOnboarding) return;
-    if (!pathname?.startsWith('/dashboard/client')) return;
+    let timer = null;
+    if (!hasSeenOnboarding) {
+      timer = setTimeout(() => {
+        setSlideIdx(0);
+        setIsOpen(true);
+      }, 800);
+    }
 
-    const t = window.setTimeout(() => {
-      setIsModalVisible(true);
-      onOpen();
-    }, 2000);
-    return () => window.clearTimeout(t);
-  }, [pathname, onOpen]);
-
-  useEffect(() => {
-    const handleStartTour = () => {
-      setCurrentAestheticIdx(0);
-      setRunSpotlight(false);
-      setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[0]);
-      setIsModalVisible(true);
-      onOpen();
+    const handleStart = () => {
+      setSlideIdx(0);
+      setIsOpen(true);
     };
-    window.addEventListener('mlc-start-tour', handleStartTour);
-    return () => window.removeEventListener('mlc-start-tour', handleStartTour);
-  }, [onOpen]);
+    window.addEventListener('mlc-start-tour', handleStart);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('mlc-start-tour', handleStart);
+    };
+  }, []);
 
-  useEffect(() => {
-    if (!pendingRoute) return;
-    if (pathname !== pendingRoute) return;
-
-    // We reached the target page, wait for it to settle
-    const t = window.setTimeout(() => {
-      setPendingRoute(null);
-      setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[spotlightPhaseRef.current]);
-      setSpotlightKey((k) => k + 1);
-      setRunSpotlight(true);
-    }, 1200);
-
-    return () => window.clearTimeout(t);
-  }, [pathname, pendingRoute]);
-
-  const advanceAfterSpotlight = (skipped) => {
-    setRunSpotlight(false);
-    if (skipped) {
-      finishOnboarding();
-      return;
-    }
-
-    if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
-      setCurrentAestheticIdx(idx => idx + 1);
-      setTimeout(() => {
-        setIsModalVisible(true);
-        onOpen();
-      }, 500);
-    } else {
-      finishOnboarding();
-    }
+  const close = () => {
+    setIsOpen(false);
+    localStorage.setItem('mlc_onboarding_visited', 'true');
   };
 
-  const handleJoyrideEvent = (data) => {
-    const { type, status } = data;
+  const goPrev = () => setSlideIdx((i) => Math.max(0, i - 1));
+  const goNext = () => setSlideIdx((i) => Math.min(slides.length - 1, i + 1));
 
-    if (type === EVENTS.TARGET_NOT_FOUND) {
-        // Silently advance if a target isn't available to prevent blocking
-        advanceAfterSpotlight(false);
-    }
-
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      advanceAfterSpotlight(status === STATUS.SKIPPED);
-    }
-  };
-
-  const handleModalContinue = () => {
-    const route = AESTHETIC_STEPS[currentAestheticIdx].path;
-    spotlightPhaseRef.current = currentAestheticIdx;
-    
-    setIsModalVisible(false);
-    onClose();
-
-    if (pathname === route) {
-      setTimeout(() => {
-        setSpotlightKey(k => k + 1);
-        setRunSpotlight(true);
-      }, 600); // Give modal time to finish closing
-    } else {
-      setPendingRoute(route);
-      router.push(route);
-    }
-  };
-
-  const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
-  const isLastSlide = currentAestheticIdx === AESTHETIC_STEPS.length - 1;
-
-  if (typeof window === 'undefined') return null;
+  const currentSlide = slides[slideIdx] || slides[0];
+  const progress = slides.length > 1 ? (slideIdx / (slides.length - 1)) * 100 : 0;
 
   return (
-    <>
-      <Joyride
-        key={`joyride-${spotlightKey}`}
-        steps={spotlightSteps}
-        run={runSpotlight && !isModalVisible}
-        continuous
-        scrollToFirstStep
-        {...JOYRIDE_OPTIONS}
-        callback={handleJoyrideEvent}
-        styles={{
-          options: {
-            zIndex: 100000,
-            primaryColor: '#56756C',
-            overlayColor: 'rgba(15, 23, 42, 0.85)',
-          },
-          tooltip: {
-            borderRadius: '24px',
-            padding: '20px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          },
-          tooltipContainer: { textAlign: 'left' },
-          buttonPrimary: {
-            borderRadius: '12px',
-            padding: '12px 20px',
-            backgroundColor: '#56756C',
-            fontWeight: 'bold',
-          },
-          spotlight: {
-            borderRadius: '20px',
-            border: '2px solid #C9A960',
-          },
-        }}
-      />
+    <Modal isOpen={isOpen} onClose={close} size="full" motionPreset="none">
+      <ModalOverlay bg="blackAlpha.250" backdropFilter="blur(6px)" />
+      <ModalContent bg="white" shadow="xl">
+        <ModalBody p={0}>
+          <VStack h="100vh" align="stretch" spacing={0}>
+            <Box px={{ base: 6, md: 10 }} pt={{ base: 6, md: 10 }} pb={6}>
+              <HStack justify="space-between" align="start">
+                <Box>
+                  <Text fontSize="xs" fontWeight="700" color="gray.500" letterSpacing="0.18em">
+                    DASHBOARD WALKTHROUGH
+                  </Text>
+                  <Heading mt={2} size={{ base: 'lg', md: 'xl' }} fontFamily="'Playfair Display', serif" color="#2E2E2E">
+                    {currentSlide?.title || 'Orientation'}
+                  </Heading>
+                  <Text mt={2} color="gray.600" maxW="2xl" fontSize={{ base: 'md', md: 'lg' }}>
+                    {currentSlide?.subtitle || ''}
+                  </Text>
+                </Box>
+                <Button variant="ghost" onClick={close} leftIcon={<Icon as={FiX} />} color="gray.500">
+                  Close
+                </Button>
+              </HStack>
 
-      <Modal isOpen={isOpen && isModalVisible} onClose={finishOnboarding} size="full" motionPreset="none">
-        <ModalOverlay bg="blackAlpha.900" backdropFilter="blur(20px)" />
-        <ModalContent bg="transparent" shadow="none">
-          <ModalBody p={0}>
-            <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
-              <Box flex="1" position="relative" display={{ base: 'none', lg: 'block' }}>
-                <AnimatePresence mode="wait">
-                  <MotionBox
-                    key={currentAestheticIdx}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.8 }}
-                    position="absolute" top="0" left="0" w="full" h="full"
-                    bgImage={`url(${currentAesthetic.image})`}
-                    bgSize="cover" bgPosition="center"
-                  >
-                    <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient="linear(to-r, transparent, rgba(0,0,0,0.4))" />
-                  </MotionBox>
-                </AnimatePresence>
-              </Box>
+              <Progress mt={6} value={progress} size="xs" bg="gray.100" colorScheme="teal" borderRadius="full" />
+              <HStack mt={3} justify="space-between">
+                <Text fontSize="xs" color="gray.500">
+                  Step {Math.min(slideIdx + 1, slides.length)} of {slides.length}
+                </Text>
+                {currentSlide?.href ? (
+                  <Text fontSize="xs" color="gray.500">
+                    {currentSlide.href}
+                  </Text>
+                ) : (
+                  <Box />
+                )}
+              </HStack>
+            </Box>
 
-              <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }}>
-                <VStack spacing={12} w="full" maxW="400px" align="start">
-                  <Box w="full">
-                    <Progress value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} size="xs" colorScheme="teal" borderRadius="full" />
-                    <Text mt={4} fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="widest">
-                      PHASE {currentAestheticIdx + 1} OF {AESTHETIC_STEPS.length}
-                    </Text>
-                  </Box>
+            <Divider />
 
-                  <AnimatePresence mode="wait">
-                    <MotionBox
-                      key={currentAestheticIdx}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      w="full"
-                    >
-                      <Icon as={currentAesthetic.icon} boxSize={12} color={currentAesthetic.color} mb={6} />
-                      <Heading size="2xl" color="#2E2E2E" fontFamily="'Playfair Display', serif" mb={4}>
-                        {currentAesthetic.title}
-                      </Heading>
-                      <Text fontSize="lg" color="gray.500" lineHeight="tall">
-                        {currentAesthetic.description}
+            <Box flex="1" overflowY="auto" px={{ base: 6, md: 10 }} py={{ base: 8, md: 10 }}>
+              <AnimatePresence mode="wait">
+                <MotionBox
+                  key={currentSlide?.key || slideIdx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <HStack spacing={4} align="center" mb={8}>
+                    {currentSlide?.icon ? (
+                      <Center w="44px" h="44px" borderRadius="10px" bg="gray.50" border="1px solid" borderColor="gray.100">
+                        <Icon as={currentSlide.icon} boxSize={5} color="#56756D" />
+                      </Center>
+                    ) : (
+                      <Box />
+                    )}
+                    <Box>
+                      <Text fontSize="sm" fontWeight="700" color="gray.500">
+                        What to do here
                       </Text>
-                    </MotionBox>
-                  </AnimatePresence>
-
-                  <HStack w="full" justify="space-between" pt={10}>
-                    <HStack spacing={2}>
-                      {AESTHETIC_STEPS.map((_, i) => (
-                        <Box key={i} w={i === currentAestheticIdx ? "30px" : "8px"} h="8px" borderRadius="full" 
-                        bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"} />
-                      ))}
-                    </HStack>
-                    <Button
-                      rightIcon={<FiChevronRight />}
-                      bg={currentAesthetic.color} color="white" borderRadius="full" px={10} h={14}
-                      onClick={handleModalContinue}
-                      _hover={{ transform: 'scale(1.05)' }}
-                    >
-                      {isLastSlide ? 'Begin Journey' : 'Next Spotlight'}
-                    </Button>
+                      <Text fontSize="lg" fontWeight="700" color="#2E2E2E">
+                        {currentSlide?.title}
+                      </Text>
+                    </Box>
                   </HStack>
-                </VStack>
-              </Center>
-            </HStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </>
+
+                  <VStack align="start" spacing={4} maxW="3xl">
+                    {(currentSlide?.body || []).map((p, idx) => (
+                      <Text key={idx} color="gray.700" fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
+                        {p}
+                      </Text>
+                    ))}
+
+                    {(currentSlide?.tips || []).length > 0 ? (
+                      <Box w="full" mt={4} p={5} borderRadius="12px" bg="gray.50" border="1px solid" borderColor="gray.100">
+                        <Text fontSize="sm" fontWeight="800" color="gray.600" mb={3}>
+                          Quick tips
+                        </Text>
+                        <VStack align="start" spacing={2}>
+                          {currentSlide.tips.map((t, idx) => (
+                            <Text key={idx} color="gray.700">
+                              {t}
+                            </Text>
+                          ))}
+                        </VStack>
+                      </Box>
+                    ) : null}
+                  </VStack>
+                </MotionBox>
+              </AnimatePresence>
+            </Box>
+
+            <Divider />
+
+            <Box px={{ base: 6, md: 10 }} py={6}>
+              <HStack justify="space-between">
+                <Button
+                  onClick={goPrev}
+                  leftIcon={<Icon as={FiChevronLeft} />}
+                  isDisabled={slideIdx === 0}
+                  variant="outline"
+                  borderRadius="10px"
+                >
+                  Back
+                </Button>
+
+                <HStack spacing={3}>
+                  {currentSlide?.href ? (
+                    <Button
+                      variant="outline"
+                      borderRadius="10px"
+                      onClick={() => {
+                        close();
+                        if (currentSlide.href && currentPath !== currentSlide.href) {
+                          router.push(currentSlide.href);
+                        }
+                      }}
+                    >
+                      Open Page
+                    </Button>
+                  ) : null}
+
+                  {slideIdx < slides.length - 1 ? (
+                    <Button
+                      onClick={goNext}
+                      rightIcon={<Icon as={FiChevronRight} />}
+                      bg="#56756D"
+                      color="white"
+                      borderRadius="10px"
+                      _hover={{ bg: '#2E2E2E' }}
+                    >
+                      Next
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={close}
+                      bg="#56756D"
+                      color="white"
+                      borderRadius="10px"
+                      _hover={{ bg: '#2E2E2E' }}
+                    >
+                      Done
+                    </Button>
+                  )}
+                </HStack>
+              </HStack>
+            </Box>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 }
