@@ -202,11 +202,18 @@ def _resolve_client_from_request(request):
         
     display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
     safe_email = email or f"client_{user.pk or 'nouser'}@local"
-    client = ClientProfile.objects.create(
+    
+    client, created = ClientProfile.objects.get_or_create(
         user=user,
-        name=display_name,
-        email=safe_email,
+        defaults={
+            "name": display_name,
+            "email": safe_email,
+        }
     )
+    if not created and email and client.email.lower() != email.lower():
+        client.email = email
+        client.save(update_fields=["email"])
+        
     return client
 
 
@@ -1062,12 +1069,16 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
         return ClientJournal.objects.none()
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
-        if therapist:
-            serializer.save(therapist=therapist)
-        elif client:
-            serializer.save(client=client, therapist=client.therapist)
+        if not client:
+            raise exceptions.PermissionDenied("You must have a client profile to create a journal entry.")
+        
+        therapist = _resolve_therapist_from_request(self.request) or client.therapist
+        try:
+            serializer.save(client=client, therapist=therapist)
+        except Exception as e:
+            # Re-wrap as a ValidationError to avoid 500 and show real error in console
+            raise exceptions.ValidationError({"detail": str(e)})
 
 
     @action(detail=True, methods=["post"])
@@ -1147,12 +1158,12 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
         return ClientCheckin.objects.none()
 
     def perform_create(self, serializer):
-        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
-        if therapist:
-            serializer.save(therapist=therapist)
-        elif client:
-            serializer.save(client=client, therapist=client.therapist)
+        if not client:
+            raise exceptions.PermissionDenied("You must have a client profile to perform a check-in.")
+        
+        therapist = _resolve_therapist_from_request(self.request) or client.therapist
+        serializer.save(client=client, therapist=therapist)
 
 
 class TherapistMaterialViewSet(viewsets.ModelViewSet):
