@@ -22,7 +22,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronRight, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
 
-const Joyride = dynamic(() => import('react-joyride').then((mod) => mod.default), { ssr: false });
+const Joyride = dynamic(
+  () => import('react-joyride').then((mod) => mod.Joyride),
+  { ssr: false }
+);
 
 const MotionBox = motion(Box);
 
