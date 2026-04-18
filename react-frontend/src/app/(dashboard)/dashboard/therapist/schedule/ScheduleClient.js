@@ -445,7 +445,14 @@ export default function ScheduleClient() {
               },
               ".fc-toolbar-title": { fontSize: { base: "0.8rem", sm: "0.9rem", md: "1.1rem" }, fontWeight: "800", color: "#2E2E2E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
               ".fc-button": { padding: { base: "4px 6px", md: "8px 16px" }, fontSize: { base: "0.6rem", md: "0.85rem" }, whiteSpace: "nowrap" },
-              ".fc-header-toolbar": { gap: { base: 1, md: 4 }, flexWrap: "nowrap !important", overflow: "hidden" }
+              ".fc-header-toolbar": { gap: { base: 1, md: 4 }, flexWrap: "nowrap !important", overflow: "hidden" },
+              ".fc-col-header-cell-cushion": { 
+                  whiteSpace: "nowrap !important", 
+                  fontSize: { base: "0.6rem", sm: "0.75rem", md: "0.85rem" },
+                  padding: "2px !important",
+                  display: "block !important"
+              },
+              ".fc-timegrid-axis-cushion": { fontSize: { base: "0.6rem", md: "0.8rem" } }
           }}
       >
           <FullCalendarComponent 
@@ -453,6 +460,13 @@ export default function ScheduleClient() {
               onSelect={handleSelect}
               onEventClick={handleEventClick}
               businessHours={businessHours}
+              initialView={typeof window !== 'undefined' && window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek'}
+              dayHeaderFormat={{ 
+                weekday: typeof window !== 'undefined' && window.innerWidth < 768 ? 'narrow' : 'short', 
+                day: 'numeric', 
+                month: 'numeric', 
+                omitCommas: true 
+              }}
               eventContent={(arg) => {
                   const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
