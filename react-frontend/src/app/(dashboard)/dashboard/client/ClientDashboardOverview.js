@@ -371,7 +371,6 @@ export default function ClientDashboardOverview() {
             )}
         </Box>
       </SimpleGrid>
-      </SimpleGrid>
 
       {relationships.length === 0 && !loading && (
         <Box 
