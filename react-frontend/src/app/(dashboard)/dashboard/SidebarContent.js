@@ -54,6 +54,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
           >
             <HStack
               id={`tour-${link.label.toLowerCase().replace(/\s+/g, '-')}${link.isClient ? '-client' : ''}`}
+              data-tour={link.label === 'Overview' && link.isClient ? "overview-link" : undefined}
               spacing={3}
               p={3}
               borderRadius="xl"
