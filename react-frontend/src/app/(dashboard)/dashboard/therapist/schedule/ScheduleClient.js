@@ -167,7 +167,7 @@ export default function ScheduleClient() {
     fetchData();
   }, []);
 
-  const [slotHeight, setSlotHeight] = useState(2); // Top-level hook
+  const [slotHeight, setSlotHeight] = useState(2);
 
   if (!mounted) return null;
 
@@ -213,14 +213,32 @@ export default function ScheduleClient() {
   const handleCreateType = async () => {
     if (!newType.name.trim()) return;
     try {
-        await apiPost("event-types/", newType);
-        toast({ title: "Event type created", status: "success" });
-        setNewType({ name: "", color: "#56756D", default_duration: 50, is_paid: true, requires_client: true, default_notes: "" });
+        if (editingType) {
+            await apiPut(`event-types/${editingType.id}/`, newType);
+            toast({ title: "Event type updated", status: "success" });
+        } else {
+            await apiPost("event-types/", newType);
+            toast({ title: "Event type created", status: "success" });
+        }
+        setNewType({ name: "", color: "#D1E9FF", default_duration: 50, is_paid: true, requires_client: true, default_notes: "" });
+        setEditingType(null);
         typeModal.onClose();
         fetchData();
     } catch (err) {
-        toast({ title: "Failed to create type", status: "error" });
+        toast({ title: "Failed to save type", status: "error" });
     }
+  };
+
+  const startEditType = (type) => {
+      setEditingType(type);
+      setNewType({
+          name: type.name,
+          color: type.color,
+          default_duration: type.default_duration,
+          is_paid: type.is_paid,
+          requires_client: type.requires_client,
+          default_notes: type.default_notes
+      });
   };
 
   const handleCreate = async () => {
@@ -230,14 +248,14 @@ export default function ScheduleClient() {
         const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
         
         const payload = {
-          title: form.title || (selectedClientObj ? `${selectedClientObj.name} — ${selectedTypeObj?.name || 'Session'}` : (selectedTypeObj?.name || "Clinical Session")),
+          title: form.title || (selectedClientObj ? selectedClientObj.name : (selectedTypeObj?.name || "Clinical Session")),
           therapist: currentTherapistId,
           client: form.client ? Number(form.client) : null,
           event_type: form.event_type ? Number(form.event_type) : null,
           start_time: form.start_time,
           end_time: form.end_time,
           notes: form.notes,
-          color: selectedTypeObj?.color || "#56756C",
+          color: selectedTypeObj?.color || "#E8E8E8",
         };
         await apiPost("schedule-events/", payload);
         toast({ title: "Appointment created", status: "success" });
@@ -317,7 +335,6 @@ export default function ScheduleClient() {
         </VStack>
         
         <HStack spacing={6} wrap="wrap">
-            {/* Scalability Slider */}
             <HStack spacing={4} bg="white" p={2} px={4} borderRadius="full" shadow="sm" border="1px solid" borderColor="gray.100">
                 <Icon as={FiMaximize2} color="gray.400" />
                 <Text fontSize="xs" fontWeight="700" color="gray.500" whiteSpace="nowrap">View Scale</Text>
@@ -366,18 +383,16 @@ export default function ScheduleClient() {
               ".fc-business-hour": { backgroundColor: "rgba(169, 203, 183, 0.12) !important" },
               ".fc-non-business": { backgroundColor: "#F8F9FA !important" },
               ".fc-event": {
-                  borderRadius: "md",
-                  border: "none",
+                  borderRadius: "2px",
+                  borderLeft: "4px solid rgba(0,0,0,0.1)",
                   boxShadow: "sm",
-                  padding: "1px 4px",
-                  color: "white !important", // Force visibility
+                  padding: "0",
+                  color: "black !important",
                   overflow: "hidden"
               },
               ".fc-event-main": {
-                  fontSize: "0.75rem",
-                  fontWeight: "700",
-                  lineHeight: "1.1",
-                  color: "white !important"
+                  padding: "0",
+                  color: "black !important"
               },
               ".fc-toolbar-title": { fontSize: "1.1rem", fontWeight: "800", color: "#2E2E2E" }
           }}
@@ -387,10 +402,23 @@ export default function ScheduleClient() {
               onSelect={handleSelect}
               onEventClick={handleEventClick}
               businessHours={businessHours}
+              eventContent={(arg) => {
+                  const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
+                  const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
+                  return (
+                      <VStack align="start" spacing={0} p={1} h="full">
+                          <Text fontWeight="800" fontSize="xs" color="black" isTruncated w="full" lineHeight="1.1">
+                              {arg.event.title}
+                          </Text>
+                          <Text fontWeight="700" fontSize="10px" color="black" opacity={0.8}>
+                              {start} - {end}
+                          </Text>
+                      </VStack>
+                  );
+              }}
           />
       </Box>
 
-      {/* Primary Appointment Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay backdropFilter="blur(5px)" />
         <ModalContent borderRadius="3xl" p={4}>
@@ -443,9 +471,9 @@ export default function ScheduleClient() {
                 </FormControl>
 
                 <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Session Name</FormLabel>
+                    <FormLabel fontWeight="700" color="gray.600">Session Name (Optional overridden title)</FormLabel>
                     <Input 
-                        placeholder="e.g. Psychotherapy Follow-up" 
+                        placeholder="e.g. Art Therapy Follow-up" 
                         value={form.title}
                         onChange={(e) => setForm({ ...form, title: e.target.value })}
                         borderRadius="xl" h={12}
@@ -490,7 +518,6 @@ export default function ScheduleClient() {
         </ModalContent>
       </Modal>
 
-      {/* One-off Availability Modal */}
       <Modal isOpen={oneOffModal.isOpen} onClose={oneOffModal.onClose} size="lg">
         <ModalOverlay backdropFilter="blur(5px)" />
         <ModalContent borderRadius="3xl" p={4}>
@@ -541,7 +568,6 @@ export default function ScheduleClient() {
         </ModalContent>
       </Modal>
 
-      {/* Event Type Management Modal (Admin Only) */}
       <Modal isOpen={typeModal.isOpen} onClose={typeModal.onClose} size="2xl">
         <ModalOverlay backdropFilter="blur(5px)" />
         <ModalContent borderRadius="3xl" p={4}>
@@ -553,12 +579,13 @@ export default function ScheduleClient() {
                     <Text fontWeight="700" mb={3} fontSize="sm" color="gray.500">EXISTING TYPES</Text>
                     <SimpleGrid columns={1} spacing={2} maxH="300px" overflowY="auto" pr={2}>
                         {eventTypes.map(t => (
-                            <HStack key={t.id} justify="space-between" p={3} bg="gray.50" borderRadius="xl">
+                            <HStack key={t.id} justify="space-between" p={3} bg="gray.50" borderRadius="xl" _hover={{ bg: 'gray.100' }}>
                                 <HStack>
                                     <Box w={3} h={3} borderRadius="full" bg={t.color} />
                                     <Text fontWeight="600">{t.name}</Text>
                                     <Text fontSize="xs" color="gray.400">({t.default_duration}m)</Text>
                                 </HStack>
+                                <Button size="xs" variant="ghost" onClick={() => startEditType(t)}>Edit</Button>
                             </HStack>
                         ))}
                     </SimpleGrid>
@@ -567,15 +594,28 @@ export default function ScheduleClient() {
                 <Divider />
 
                 <VStack spacing={4} align="stretch" bg="gray.50" p={6} borderRadius="2xl">
-                    <Text fontWeight="700" fontSize="sm" color="gray.500">CREATE NEW TYPE</Text>
+                    <Text fontWeight="700" fontSize="sm" color="gray.500">
+                        {editingType ? `EDITING: ${editingType.name}` : "CREATE NEW TYPE"}
+                    </Text>
                     <SimpleGrid columns={2} spacing={4}>
                         <FormControl>
                             <FormLabel fontSize="sm">Type Name</FormLabel>
                             <Input placeholder="e.g. Lunch" value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} bg="white" />
                         </FormControl>
                         <FormControl>
-                            <FormLabel fontSize="sm">Color</FormLabel>
-                            <Input type="color" value={newType.color} onChange={(e) => setNewType({ ...newType, color: e.target.value })} bg="white" />
+                            <FormLabel fontSize="sm">Pick Theme Color</FormLabel>
+                            <SimpleGrid columns={4} spacing={2}>
+                                {SAFE_COLORS.map(c => (
+                                    <Box 
+                                        key={c.hex} 
+                                        w="full" h={8} borderRadius="md" bg={c.hex} cursor="pointer" 
+                                        border={newType.color === c.hex ? "2px solid" : "none"}
+                                        borderColor="#56756C"
+                                        onClick={() => setNewType({ ...newType, color: c.hex })}
+                                        title={c.name}
+                                    />
+                                ))}
+                            </SimpleGrid>
                         </FormControl>
                         <FormControl>
                             <FormLabel fontSize="sm">Default Duration (min)</FormLabel>
@@ -596,7 +636,14 @@ export default function ScheduleClient() {
                         <Textarea placeholder="Standard notes for this session type..." value={newType.default_notes} onChange={(e) => setNewType({ ...newType, default_notes: e.target.value })} bg="white" />
                     </FormControl>
 
-                    <Button bg="#56756D" color="white" borderRadius="full" onClick={handleCreateType}>Add New Event Type</Button>
+                    <HStack>
+                        {editingType && (
+                            <Button variant="ghost" onClick={() => { setEditingType(null); setNewType({ name: "", color: "#D1E9FF", default_duration: 50, is_paid: true, requires_client: true, default_notes: "" }); }}>Cancel Edit</Button>
+                        )}
+                        <Button flex={1} bg="#56756D" color="white" borderRadius="full" onClick={handleCreateType}>
+                            {editingType ? "Update Event Type" : "Add New Event Type"}
+                        </Button>
+                    </HStack>
                 </VStack>
             </VStack>
           </ModalBody>
