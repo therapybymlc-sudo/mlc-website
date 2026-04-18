@@ -1236,7 +1236,12 @@ class EventType(models.Model):
     requires_client = models.BooleanField(default=True, help_text="Whether a patient must be linked")
     default_notes = models.TextField(blank=True, null=True, help_text="Pre-filled notes for this type")
     notify_therapist = models.BooleanField(default=False, help_text="Send email/notif when scheduled")
+    group = models.CharField(max_length=100, default="General", blank=True)
+    order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'name']
 
     def __str__(self) -> str:
         return self.name

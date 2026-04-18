@@ -26,11 +26,7 @@ import {
   IconButton,
   Divider,
 } from "@chakra-ui/react";
-import { FiClock, FiPlus, FiTrash2, FiSave, FiSettings } from "react-icons/fi";
-import FullCalendar from "@fullcalendar/react";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import { schedulingApi } from "../../../../../api/scheduling";
+import { FiClock, FiPlus, FiTrash2, FiSave, FiSettings, FiCopy } from "react-icons/fi";
 import { apiGet, apiPatch } from "../../../../../api";
 
 export default function TherapistAvailabilityWrapper() {
@@ -54,7 +50,6 @@ export default function TherapistAvailabilityWrapper() {
     { key: "7", label: "Sun" },
   ];
 
-  // Helper to generate hourly slots between start and end
   const generateHourlySlots = (startStr, endStr) => {
     const list = [];
     let cur = parseInt(startStr.split(":")[0], 10);
@@ -76,7 +71,6 @@ export default function TherapistAvailabilityWrapper() {
       setSlots(Array.isArray(slotData) ? slotData : slotData.results || []);
       if (profileData) {
         setProfile(profileData);
-        // We expect business_hours to be an object: { "1": ["09:00", "10:00"], ... }
         setBusinessHours(profileData.business_hours || {});
       }
     } catch (err) {
@@ -101,6 +95,16 @@ export default function TherapistAvailabilityWrapper() {
     setBusinessHours({ ...businessHours, [dayKey]: current });
   };
 
+  const applyToAll = (dayKey) => {
+      const pattern = businessHours[dayKey] || [];
+      const newBh = {};
+      DAYS.forEach(day => {
+          newBh[day.key] = [...pattern];
+      });
+      setBusinessHours(newBh);
+      toast({ title: `Copied ${DAYS.find(d => d.key === dayKey).label} pattern to all days`, status: "info", duration: 2000 });
+  };
+
   const handleSavePattern = async () => {
     if (!profile) return;
     try {
@@ -112,36 +116,8 @@ export default function TherapistAvailabilityWrapper() {
     }
   };
 
-  // Convert hourly slots into FullCalendar businessHours objects
-  const calendarBusinessHours = useMemo(() => {
-    const bh = [];
-    Object.keys(businessHours).forEach(dayKey => {
-        const slotsForDay = [...(businessHours[dayKey] || [])].sort();
-        slotsForDay.forEach(startTime => {
-            const h = parseInt(startTime.split(":")[0], 10);
-            bh.push({
-                daysOfWeek: [parseInt(dayKey, 10)],
-                startTime: startTime,
-                endTime: `${String(h + 1).padStart(2, '0')}:00`
-            });
-        });
-    });
-    return bh;
-  }, [businessHours]);
-
-  const calendarEvents = useMemo(() => {
-    return slots.map(slot => ({
-      id: slot.id,
-      title: slot.status === "booked" ? "Booked" : "Reserved",
-      start: slot.start_time,
-      end: slot.end_time,
-      backgroundColor: slot.status === 'booked' ? '#56756C' : '#CBD5E0',
-      borderColor: slot.status === 'booked' ? '#56756C' : '#CBD5E0',
-    }));
-  }, [slots]);
-
   return (
-    <VStack align="stretch" spacing={10}>
+    <VStack align="stretch" spacing={10} pb={20}>
        <Box bg="white" p={8} borderRadius="4xl" shadow="sm" border="1px solid" borderColor="gray.100">
             <HStack justify="space-between" mb={8} wrap="wrap">
                 <HStack spacing={4}>
@@ -155,12 +131,7 @@ export default function TherapistAvailabilityWrapper() {
                 <HStack spacing={6} bg="gray.50" p={4} borderRadius="2xl">
                     <FormControl w="auto">
                         <FormLabel fontSize="xs" fontWeight="700">System Start</FormLabel>
-                        <Select 
-                            size="sm" 
-                            borderRadius="xl" 
-                            value={globalRange.start}
-                            onChange={(e) => setGlobalRange({ ...globalRange, start: e.target.value })}
-                        >
+                        <Select size="sm" borderRadius="xl" value={globalRange.start} onChange={(e) => setGlobalRange({ ...globalRange, start: e.target.value })}>
                             {Array.from({length: 24}).map((_, i) => {
                                 const h = String(i).padStart(2, '0');
                                 return <option key={h} value={`${h}:00`}>{i % 12 || 12} {i >= 12 ? 'PM' : 'AM'}</option>
@@ -169,29 +140,14 @@ export default function TherapistAvailabilityWrapper() {
                     </FormControl>
                     <FormControl w="auto">
                         <FormLabel fontSize="xs" fontWeight="700">System End</FormLabel>
-                        <Select 
-                            size="sm" 
-                            borderRadius="xl"
-                            value={globalRange.end}
-                            onChange={(e) => setGlobalRange({ ...globalRange, end: e.target.value })}
-                        >
+                        <Select size="sm" borderRadius="xl" value={globalRange.end} onChange={(e) => setGlobalRange({ ...globalRange, end: e.target.value })}>
                             {Array.from({length: 24}).map((_, i) => {
                                 const h = String(i).padStart(2, '0');
                                 return <option key={h} value={`${h}:00`}>{i % 12 || 12} {i >= 12 ? 'PM' : 'AM'}</option>
                             })}
                         </Select>
                     </FormControl>
-                    <Button 
-                        bg="#56756C" 
-                        color="white" 
-                        borderRadius="full" 
-                        size="md" 
-                        px={8}
-                        leftIcon={<FiSave />}
-                        onClick={handleSavePattern}
-                        _hover={{ bg: '#2E2E2E' }}
-                        mt={6}
-                    >
+                    <Button bg="#56756C" color="white" borderRadius="full" size="md" px={8} leftIcon={<FiSave />} onClick={handleSavePattern} _hover={{ bg: '#2E2E2E' }} mt={6}>
                         Apply Changes
                     </Button>
                 </HStack>
@@ -200,7 +156,18 @@ export default function TherapistAvailabilityWrapper() {
             <VStack align="stretch" spacing={6}>
                 {DAYS.map(day => (
                     <HStack key={day.key} spacing={6} align="center">
-                        <Text fontWeight="800" w="50px" color="#56756D" fontSize="sm">{day.label}</Text>
+                        <HStack w="100px" justify="space-between">
+                            <Text fontWeight="800" color="#56756D" fontSize="sm">{day.label}</Text>
+                            <IconButton 
+                                icon={<FiCopy />} 
+                                size="xs" 
+                                variant="ghost" 
+                                colorScheme="teal" 
+                                aria-label="Apply to all" 
+                                title="Apply this pattern to all days"
+                                onClick={() => applyToAll(day.key)}
+                            />
+                        </HStack>
                         <HStack spacing={2} wrap="wrap">
                             {generateHourlySlots(globalRange.start, globalRange.end).map(time => {
                                 const isActive = (businessHours[day.key] || []).includes(time);
@@ -230,37 +197,6 @@ export default function TherapistAvailabilityWrapper() {
                     </HStack>
                 ))}
             </VStack>
-       </Box>
-
-       <Box 
-            bg="white" 
-            p={4} 
-            borderRadius="4xl" 
-            shadow="xl" 
-            overflow="hidden" 
-            border="1px solid" 
-            borderColor="gray.100" 
-            h="800px"
-            sx={{
-                ".fc-business-hour": {
-                    backgroundColor: "rgba(169, 203, 183, 0.2) !important", // Light MLC Green for business hours
-                },
-                ".fc-non-business": {
-                    backgroundColor: "#F7FAFC !important", // Grey for non-business
-                }
-            }}
-        >
-          <FullCalendar
-            plugins={[timeGridPlugin, interactionPlugin]}
-            initialView="timeGridWeek"
-            headerToolbar={{ left: 'prev,next', center: 'title', right: '' }}
-            height="100%"
-            allDaySlot={false}
-            events={calendarEvents}
-            businessHours={calendarBusinessHours}
-            nowIndicator={true}
-            slotDuration="01:00:00"
-          />
        </Box>
     </VStack>
   );

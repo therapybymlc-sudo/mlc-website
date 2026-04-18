@@ -91,11 +91,13 @@ export default function ScheduleClient() {
 
   const [newType, setNewType] = useState({ 
     name: "", 
-    color: "#56756D",
+    color: "#D1E9FF",
     default_duration: 50,
     is_paid: true,
     requires_client: true,
-    default_notes: ""
+    default_notes: "",
+    group: "General",
+    order: 0
   });
 
   const [editingType, setEditingType] = useState(null); 
@@ -121,7 +123,9 @@ export default function ScheduleClient() {
         apiGet("event-types/").catch(() => [])
       ]);
 
-      const normalizedTypes = Array.isArray(typesRes) ? typesRes : typesRes.results || [];
+      const normalizedTypes = (Array.isArray(typesRes) ? typesRes : typesRes.results || [])
+        .sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name));
+
       setEventTypes(normalizedTypes);
       const typeMap = {};
       normalizedTypes.forEach(t => { typeMap[t.id] = t; });
@@ -242,7 +246,7 @@ export default function ScheduleClient() {
             await apiPost("event-types/", newType);
             toast({ title: "Event type created", status: "success" });
         }
-        setNewType({ name: "", color: "#D1E9FF", default_duration: 50, is_paid: true, requires_client: true, default_notes: "" });
+        setNewType({ name: "", color: "#D1E9FF", default_duration: 50, is_paid: true, requires_client: true, default_notes: "", group: "General", order: 0 });
         setEditingType(null);
         typeModal.onClose();
         fetchData();
@@ -259,7 +263,9 @@ export default function ScheduleClient() {
           default_duration: type.default_duration,
           is_paid: type.is_paid,
           requires_client: type.requires_client,
-          default_notes: type.default_notes
+          default_notes: type.default_notes,
+          group: type.group || "General",
+          order: type.order || 0
       });
   };
 
@@ -494,7 +500,18 @@ export default function ScheduleClient() {
                         }}
                         borderRadius="xl" h={12}
                     >
-                        {eventTypes.map(t => (<option key={t.id} value={t.id}>{t.name}</option>))}
+                        {Object.entries(eventTypes.reduce((acc, t) => {
+                            const g = t.group || "General";
+                            if (!acc[g]) acc[g] = [];
+                            acc[g].push(t);
+                            return acc;
+                        }, {})).map(([groupName, types]) => (
+                            <optgroup label={groupName} key={groupName}>
+                                {types.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </optgroup>
+                        ))}
                     </Select>
                 </FormControl>
 
@@ -643,6 +660,18 @@ export default function ScheduleClient() {
                             <Input placeholder="e.g. Lunch" value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} bg="white" />
                         </FormControl>
                         <FormControl>
+                            <FormLabel fontSize="sm">Section / Group</FormLabel>
+                            <Input placeholder="e.g. Clinical" value={newType.group} onChange={(e) => setNewType({ ...newType, group: e.target.value })} bg="white" />
+                        </FormControl>
+                        <FormControl>
+                            <FormLabel fontSize="sm">Display Order</FormLabel>
+                            <Input type="number" value={newType.order} onChange={(e) => setNewType({ ...newType, order: parseInt(e.target.value) })} bg="white" />
+                        </FormControl>
+                        <FormControl>
+                            <FormLabel fontSize="sm">Default Duration (min)</FormLabel>
+                            <Input type="number" value={newType.default_duration} onChange={(e) => setNewType({ ...newType, default_duration: parseInt(e.target.value) })} bg="white" />
+                        </FormControl>
+                        <FormControl>
                             <FormLabel fontSize="sm">Pick Theme Color</FormLabel>
                             <SimpleGrid columns={4} spacing={2}>
                                 {SAFE_COLORS.map(c => (
@@ -656,10 +685,6 @@ export default function ScheduleClient() {
                                     />
                                 ))}
                             </SimpleGrid>
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel fontSize="sm">Default Duration (min)</FormLabel>
-                            <Input type="number" value={newType.default_duration} onChange={(e) => setNewType({ ...newType, default_duration: parseInt(e.target.value) })} bg="white" />
                         </FormControl>
                         <FormControl display="flex" alignItems="center" mt={8}>
                             <FormLabel mb="0" fontSize="sm">Is Paid?</FormLabel>
