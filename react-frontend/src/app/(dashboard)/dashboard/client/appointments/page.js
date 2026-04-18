@@ -1,10 +1,7 @@
-import AppointmentsClient from './AppointmentsClient';
+'use client'
 
-
-export const metadata = {
-  title: 'My Appointments | MLC Health',
-  description: 'View your session history, manage upcoming appointments, and keep track of your therapeutic journey.',
-};
+import dynamic from 'next/dynamic';
+const AppointmentsClient = dynamic(() => import('./AppointmentsClient'), { ssr: false });
 
 export default function Page() {
   return <AppointmentsClient />;
