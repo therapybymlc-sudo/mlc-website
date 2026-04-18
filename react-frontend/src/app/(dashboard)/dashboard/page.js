@@ -12,8 +12,21 @@ export default function DashboardPage() {
   const [onboarding, setOnboarding] = useState(false);
   const toast = useToast();
 
-  const roles = user?.publicMetadata?.roles || [];
-  const hasExplicitRole = Array.isArray(roles) && roles.length > 0;
+  // Robust role detection matching AuthContext
+  const roles = (() => {
+    const metaRoles = user?.publicMetadata?.roles;
+    if (Array.isArray(metaRoles)) return metaRoles;
+    if (user?.publicMetadata?.role) return [user.publicMetadata.role];
+    
+    // Fallback to unsafe metadata if public is empty (sometimes happens during sync)
+    const unsafeRoles = user?.unsafeMetadata?.roles;
+    if (Array.isArray(unsafeRoles)) return unsafeRoles;
+    if (user?.unsafeMetadata?.role) return [user.unsafeMetadata.role];
+
+    return [];
+  })();
+
+  const hasExplicitRole = roles.length > 0;
   const isTherapist = roles.includes("therapist") || roles.includes("admin");
 
   useEffect(() => {
