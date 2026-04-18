@@ -38,6 +38,7 @@ const RichTextEditor = dynamic(() => import("../../../../../components/RichTextE
   loading: () => <Box h="400px" bg="gray.50" borderRadius="3xl" animate={{ opacity: [0.5, 1, 0.5] }} />
 });
 import { useAuth } from "../../../../../context/AuthContext";
+import JournalBookView from "./JournalBookView";
 
 const MOOD_CONFIG = {
   1: { label: "Very Unpleasant", color: "#4A4E69", glow: "rgba(74, 78, 105, 0.4)", tags: ["Angry", "Anxious", "Scared", "Overwhelmed", "Ashamed", "Sad", "Lonely", "Hopeless"] },
@@ -68,6 +69,7 @@ export default function JournalClient() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [updateText, setUpdateText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showBook, setShowBook] = useState(false);
 
   async function fetchEntries() {
     try {
@@ -364,7 +366,15 @@ export default function JournalClient() {
                             <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">Recent reflections</Heading>
                             <Text fontSize="xs" color="gray.400">Your documented journey</Text>
                         </VStack>
-                        <Icon as={FiClock} color="gray.400" />
+                        <IconButton 
+                            icon={<FiBookOpen />} 
+                            variant="ghost" 
+                            color="mlc.greenDark" 
+                            aria-label="View as Book"
+                            onClick={() => setShowBook(true)}
+                            isDisabled={entries.length === 0}
+                            _hover={{ bg: 'teal.50', color: 'mlc.gold' }}
+                        />
                     </HStack>
                     
                     <VStack align="stretch" spacing={4} maxH={{ base: "400px", lg: "700px" }} overflowY="auto" pr={2} sx={{
@@ -478,6 +488,14 @@ export default function JournalClient() {
                 }
             `}
         </Box>
+
+        {showBook && (
+            <JournalBookView 
+                entries={[...entries].reverse()} 
+                onClose={() => setShowBook(false)} 
+                userName={user?.fullName || "MLC Client"} 
+            />
+        )}
     </Box>
   );
 }
