@@ -34,31 +34,64 @@ api.interceptors.request.use(async (config) => {
 });
 
 // ==============================
-// Generic helpers (paths WITHOUT leading slash)
+// Generic helpers (ensuring paths have trailing slash for Django)
 // ==============================
+function preparePath(path) {
+  let cleanPath = path.replace(/^\/+/, "");
+  if (cleanPath && !cleanPath.endsWith("/")) {
+    cleanPath += "/";
+  }
+  return cleanPath;
+}
+
 export async function apiGet(path) {
-  const res = await api.get(path.replace(/^\/+/, ""));
-  return res.data;
+  try {
+    const res = await api.get(preparePath(path));
+    return res.data;
+  } catch (err) {
+    console.error(`API GET Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 export async function apiPost(path, body) {
-  const res = await api.post(path.replace(/^\/+/, ""), body);
-  return res.data;
+  try {
+    const res = await api.post(preparePath(path), body);
+    return res.data;
+  } catch (err) {
+    console.error(`API POST Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 export async function apiPut(path, body) {
-  const res = await api.put(path.replace(/^\/+/, ""), body);
-  return res.data;
+  try {
+    const res = await api.put(preparePath(path), body);
+    return res.data;
+  } catch (err) {
+    console.error(`API PUT Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 export async function apiPatch(path, body) {
-  const res = await api.patch(path.replace(/^\/+/, ""), body);
-  return res.data;
+  try {
+    const res = await api.patch(preparePath(path), body);
+    return res.data;
+  } catch (err) {
+    console.error(`API PATCH Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 export async function apiDelete(path) {
-  const res = await api.delete(path.replace(/^\/+/, ""));
-  return res.status === 204 || res.status === 200;
+  try {
+    const res = await api.delete(preparePath(path));
+    return res.status === 204 || res.status === 200;
+  } catch (err) {
+    console.error(`API DELETE Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 export async function apiUpload(path, formData) {
