@@ -24,6 +24,8 @@ import {
   Textarea,
   Badge,
   Icon,
+  SimpleGrid,
+  Center,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
@@ -45,11 +47,13 @@ export default function ScheduleClient() {
   const { user } = useUser();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [mounted, setMounted] = useState(false);
   
   const [events, setEvents] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [businessHours, setBusinessHours] = useState(null);
+  const [currentTherapistId, setCurrentTherapistId] = useState(null);
   
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -67,7 +71,10 @@ export default function ScheduleClient() {
       const [eventRes, clientRes, therapistRes] = await Promise.all([
         apiGet("schedule-events/"),
         apiGet("clients/"),
-        apiGet("therapists/me/") // Assuming this exists or we use user.id
+        apiGet("therapists/me/").catch(err => {
+            console.warn("Me endpoint not found, falling back to profile fetch", err);
+            return null;
+        })
       ]);
 
       // Normalize events
@@ -90,19 +97,22 @@ export default function ScheduleClient() {
       setClients(Array.isArray(clientRes) ? clientRes : clientRes.results || []);
 
       // Normalize business hours
-      if (therapistRes && therapistRes.business_hours) {
-        const bh = [];
-        Object.keys(therapistRes.business_hours).forEach(day => {
-          const dayOfWeek = parseInt(day, 10);
-          therapistRes.business_hours[day].forEach(block => {
-            bh.push({
-              daysOfWeek: [dayOfWeek],
-              startTime: block.startTime,
-              endTime: block.endTime
+      if (therapistRes) {
+        setCurrentTherapistId(therapistRes.id);
+        if (therapistRes.business_hours) {
+            const bh = [];
+            Object.keys(therapistRes.business_hours).forEach(day => {
+              const dayOfWeek = parseInt(day, 10);
+              therapistRes.business_hours[day].forEach(block => {
+                bh.push({
+                  daysOfWeek: [dayOfWeek],
+                  startTime: block.startTime,
+                  endTime: block.endTime
+                });
+              });
             });
-          });
-        });
-        setBusinessHours(bh);
+            setBusinessHours(bh);
+        }
       }
     } catch (err) {
       console.warn("Could not fetch full schedule data", err);
@@ -112,8 +122,11 @@ export default function ScheduleClient() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchData();
   }, []);
+
+  if (!mounted) return null;
 
   const handleSelect = (info) => {
     setIsEditMode(false);
@@ -159,11 +172,15 @@ export default function ScheduleClient() {
   };
 
   const handleCreate = async () => {
-    if (!form.start_time || !form.end_time) return;
+    if (!form.start_time || !form.end_time || !currentTherapistId) {
+        toast({ title: "Profile or time missing", status: "warning" });
+        return;
+    }
     try {
       const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
       const payload = {
         title: form.title || (selectedClientObj ? `Session with ${selectedClientObj.name}` : "Clinical Session"),
+        therapist: currentTherapistId, // CRITICAL FIX: Add therapist to payload
         client: form.client ? Number(form.client) : null,
         start_time: form.start_time,
         end_time: form.end_time,
@@ -174,15 +191,17 @@ export default function ScheduleClient() {
       onClose();
       fetchData();
     } catch (err) {
-      toast({ title: "Failed to create appointment", status: "error" });
+      const detail = err.response?.data?.detail || "Check all required fields.";
+      toast({ title: "Failed to create appointment", description: detail, status: "error" });
     }
   };
 
   const handleUpdate = async () => {
-    if (!selectedEvent) return;
+    if (!selectedEvent || !currentTherapistId) return;
     try {
       const payload = {
         title: form.title,
+        therapist: currentTherapistId, // CRITICAL FIX: Add therapist to payload
         client: form.client ? Number(form.client) : null,
         start_time: form.start_time,
         end_time: form.end_time,
@@ -236,33 +255,27 @@ export default function ScheduleClient() {
         </Button>
       </HStack>
 
-      {loading && events.length === 0 ? (
-          <Center h="400px">
-              <Spinner size="xl" color="#56756D" />
-          </Center>
-      ) : (
-        <Box 
-            bg="white" 
-            p={4} 
-            borderRadius="4xl" 
-            shadow="sm" 
-            border="1px solid" 
-            borderColor="gray.100" 
-            overflow="hidden"
-            sx={{
-                ".fc-timegrid-slot": { height: "3rem" },
-                ".fc-business-hour": { background: "transparent" },
-                ".fc-nonbusiness": { background: "#F7FAFC" }
-            }}
-        >
-            <FullCalendarComponent 
-                events={events} 
-                onSelect={handleSelect}
-                onEventClick={handleEventClick}
-                businessHours={businessHours}
-            />
-        </Box>
-      )}
+      <Box 
+          bg="white" 
+          p={4} 
+          borderRadius="4xl" 
+          shadow="sm" 
+          border="1px solid" 
+          borderColor="gray.100" 
+          overflow="hidden"
+          sx={{
+              ".fc-timegrid-slot": { height: "3rem" },
+              ".fc-business-hour": { background: "transparent" },
+              ".fc-nonbusiness": { background: "#F7FAFC" }
+          }}
+      >
+          <FullCalendarComponent 
+              events={events} 
+              onSelect={handleSelect}
+              onEventClick={handleEventClick}
+              businessHours={businessHours}
+          />
+      </Box>
 
       {/* Appointment Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
@@ -374,20 +387,4 @@ export default function ScheduleClient() {
       </Box>
     </Box>
   );
-}
-
-function SimpleGrid({ columns, spacing, w, children }) {
-    return (
-        <Box display="grid" gridTemplateColumns={`repeat(${columns}, 1fr)`} gap={spacing} w={w}>
-            {children}
-        </Box>
-    );
-}
-
-function Center({ h, children }) {
-    return (
-        <Box h={h} display="flex" alignItems="center" justifyContent="center">
-            {children}
-        </Box>
-    );
 }
