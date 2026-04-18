@@ -69,6 +69,56 @@ export default function JournalClient() {
   const [updateText, setUpdateText] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function fetchEntries() {
+    try {
+      const res = await apiGet("client-journals/");
+      const data = Array.isArray(res) ? res : res.results || [];
+      setEntries(data);
+      // Update cache
+      localStorage.setItem("mlc_journal_cache", JSON.stringify(data));
+    } catch (err) {
+      console.warn("Could not fetch journal entries");
+    }
+  }
+
+  async function handleSave() {
+    if (!content || content === "<p></p>") return;
+    setLoading(true);
+    try {
+      const saved = await apiPost("client-journals/", {
+        entry: content,
+        mood: MOOD_CONFIG[moodLevel].label,
+        extra_data: {
+          mood_level: moodLevel,
+          tags: selectedTags,
+          impacts: selectedImpacts
+        }
+      });
+      const newEntries = [saved, ...entries];
+      setEntries(newEntries);
+      localStorage.setItem("mlc_journal_cache", JSON.stringify(newEntries));
+      resetForm();
+      toast({ title: "Journal Entry Saved", status: "success" });
+    } catch (err) {
+      toast({ title: "Failed to save entry", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function resetForm() {
+    setStep(1);
+    setContent("");
+    setSelectedTags([]);
+    setSelectedImpacts([]);
+    setMoodLevel(3);
+  }
+
+  function toggleTag(tag, list, setList) {
+    if (list.includes(tag)) setList(list.filter(t => t !== tag));
+    else setList([...list, tag]);
+  }
+
   useEffect(() => {
     setIsMounted(true);
     // Load fallback from localStorage for instant UI
@@ -94,56 +144,6 @@ export default function JournalClient() {
         </VStack>
     </Center>
   );
-
-  const fetchEntries = async () => {
-    try {
-      const res = await apiGet("client-journals/");
-      const data = Array.isArray(res) ? res : res.results || [];
-      setEntries(data);
-      // Update cache
-      localStorage.setItem("mlc_journal_cache", JSON.stringify(data));
-    } catch (err) {
-      console.warn("Could not fetch journal entries");
-    }
-  };
-
-  const handleSave = async () => {
-    if (!content || content === "<p></p>") return;
-    setLoading(true);
-    try {
-      const saved = await apiPost("client-journals/", {
-        entry: content,
-        mood: MOOD_CONFIG[moodLevel].label,
-        extra_data: {
-          mood_level: moodLevel,
-          tags: selectedTags,
-          impacts: selectedImpacts
-        }
-      });
-      const newEntries = [saved, ...entries];
-      setEntries(newEntries);
-      localStorage.setItem("mlc_journal_cache", JSON.stringify(newEntries));
-      resetForm();
-      toast({ title: "Journal Entry Saved", status: "success" });
-    } catch (err) {
-      toast({ title: "Failed to save entry", status: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetForm = () => {
-    setStep(1);
-    setContent("");
-    setSelectedTags([]);
-    setSelectedImpacts([]);
-    setMoodLevel(3);
-  };
-
-  const toggleTag = (tag, list, setList) => {
-    if (list.includes(tag)) setList(list.filter(t => t !== tag));
-    else setList([...list, tag]);
-  };
 
   const renderStep = () => {
     const config = MOOD_CONFIG[moodLevel];

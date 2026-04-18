@@ -66,23 +66,7 @@ export default function GoalsClient() {
   const [isAdding, setIsAdding] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-    const cached = localStorage.getItem("mlc_goals_cache");
-    if (cached) {
-      try { setGoals(JSON.parse(cached)); } catch (e) {}
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      fetchGoals();
-    } else if (!authLoading && !isAuthenticated) {
-        setLoading(false);
-    }
-  }, [authLoading, isAuthenticated]);
-
-  const fetchGoals = async () => {
+  async function fetchGoals() {
     try {
       setLoading(true);
       const res = await apiGet("client-goals/");
@@ -94,9 +78,9 @@ export default function GoalsClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleAddGoal = async () => {
+  async function handleAddGoal() {
     if (!newGoalTitle.trim()) return;
     setIsAdding(true);
     try {
@@ -119,9 +103,9 @@ export default function GoalsClient() {
     } finally {
       setIsAdding(false);
     }
-  };
+  }
 
-  const handleToggleGoal = async (goal) => {
+  async function handleToggleGoal(goal) {
     try {
       const updated = { ...goal, is_completed: !goal.is_completed };
       await apiPut(`client-goals/${goal.id}/`, updated);
@@ -131,9 +115,9 @@ export default function GoalsClient() {
     } catch (err) {
       toast({ title: "Failed to update progress", status: "error" });
     }
-  };
+  }
 
-  const handleDeleteGoal = async (id) => {
+  async function handleDeleteGoal(id) {
     try {
       await apiDelete(`client-goals/${id}/`);
       const newGoals = goals.filter(g => g.id !== id);
@@ -143,7 +127,23 @@ export default function GoalsClient() {
     } catch (err) {
       toast({ title: "Could not remove goal", status: "error" });
     }
-  };
+  }
+
+  useEffect(() => {
+    setIsMounted(true);
+    const cached = localStorage.getItem("mlc_goals_cache");
+    if (cached) {
+      try { setGoals(JSON.parse(cached)); } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      fetchGoals();
+    } else if (!authLoading && !isAuthenticated) {
+        setLoading(false);
+    }
+  }, [authLoading, isAuthenticated]);
 
   if (!isMounted) return null;
 

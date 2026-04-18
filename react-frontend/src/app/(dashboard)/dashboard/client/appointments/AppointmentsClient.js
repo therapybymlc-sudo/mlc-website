@@ -31,6 +31,18 @@ export default function AppointmentsClient() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  async function fetchAppointments() {
+    try {
+      setLoading(true);
+      const res = await apiGet("client-appointments/");
+      setAppointments(Array.isArray(res) ? res : res.results || []);
+    } catch (err) {
+      toast({ title: "Could not load appointments", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -44,18 +56,6 @@ export default function AppointmentsClient() {
   }, [authLoading, isAuthenticated]);
 
   if (!isMounted) return null;
-
-  const fetchAppointments = async () => {
-    try {
-      setLoading(true);
-      const res = await apiGet("client-appointments/");
-      setAppointments(Array.isArray(res) ? res : res.results || []);
-    } catch (err) {
-      toast({ title: "Could not load appointments", status: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Box maxW="1200px" mx="auto">
