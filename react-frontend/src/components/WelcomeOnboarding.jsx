@@ -69,39 +69,39 @@ const TOUR_STEPS = [
   // Phase 1: Dashboard Overview (After Welcome Slide)
   {
     target: '#tour-welcome-heading',
-    content: 'This is your Healing Space. We have curated all your tools here for easy access.',
+    content: 'This is your healing command center. Click "Next" to see your tracking tools.',
     placement: 'bottom',
-    disableBeacon: false, // Bring back the dot as requested
+    disableBeacon: false,
   },
   {
     target: '#tour-mood-card',
-    content: 'Share how you are feeling today. This helps your therapist attuned to your current state.',
+    content: 'Check in with your mood here. This helps your therapist prepare for your sessions.',
     placement: 'bottom',
   },
   {
     target: '#tour-appt-card',
-    content: 'Review and join your upcoming clinical sessions here.',
+    content: 'Your scheduled sessions appear here for easy access.',
     placement: 'top',
     is_last_in_phase: true
   },
   // Phase 2: Journal (After Journal Slide)
   {
     target: '#tour-book-view-btn',
-    content: 'The Book View transforms your entries into a beautiful digital manuscript.',
+    content: 'Use this button to enter the immersive "Book View" of your entries.',
     placement: 'left',
     is_last_in_phase: true
   },
   // Phase 3: Goals (After Goals Slide)
   {
     target: '#tour-goals-card',
-    content: 'Track the milestones you and your therapist define together.',
+    content: 'Your clinical goals are always visible and trackable here.',
     placement: 'bottom',
     is_last_in_phase: true
   },
   // Phase 4: Safety (After Safety Slide)
   {
-    target: '#tour-safety-plan',
-    content: 'Your Care Space. Access your safety plan and groundedness tools instantly.',
+    target: '#tour-safety-plan-client',
+    content: 'Support is always a click away. Your emergency care tools are right here.',
     placement: 'right',
     is_last_in_phase: true
   }
@@ -138,17 +138,24 @@ export default function WelcomeOnboarding() {
     return () => window.removeEventListener('mlc-start-tour', handleStartTour);
   }, [onOpen]);
 
+  // Use state to track if we've handled the redirection
+  const [pendingRedirection, setPendingRedirection] = useState(null);
+
   const handleModalContinue = () => {
     setIsModalVisible(false);
     onClose();
 
     const targetPath = currentAesthetic.href;
     if (targetPath && currentPath !== targetPath) {
+      setPendingRedirection(targetPath);
       router.push(targetPath);
-      // Wait for navigation and potential data loading before starting Joyride
-      setTimeout(() => setRunJoyride(true), 1200);
+      // Wait longer for full page transition and mounting
+      setTimeout(() => {
+          setPendingRedirection(null);
+          setRunJoyride(true);
+      }, 1500);
     } else {
-      setTimeout(() => setRunJoyride(true), 200);
+      setTimeout(() => setRunJoyride(true), 300);
     }
   };
 
@@ -159,6 +166,7 @@ export default function WelcomeOnboarding() {
       const currentStep = TOUR_STEPS[index];
       if (currentStep?.is_last_in_phase) {
         setRunJoyride(false);
+        // Advance the state for the NEXT phase
         setJoyrideIndex(index + 1);
 
         if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
@@ -168,7 +176,7 @@ export default function WelcomeOnboarding() {
           setTimeout(() => {
             setIsModalVisible(true);
             onOpen();
-          }, 500);
+          }, 800);
         } else {
             localStorage.setItem('mlc_onboarding_visited', 'true');
         }
@@ -183,38 +191,46 @@ export default function WelcomeOnboarding() {
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
 
+  // Prevent Joyride from running while we are redirecting
+  const effectivelyRunning = runJoyride && !pendingRedirection;
+
   return (
     <>
       <Joyride
         steps={TOUR_STEPS}
         stepIndex={joyrideIndex}
-        run={runJoyride}
+        run={effectivelyRunning}
         continuous
         scrollToFirstStep
         showProgress
         showSkipButton
         disableOverlayClose
         disableScrolling={false}
-        disableSafeSelectors={true}
-        spotlightClicks={true}
-        scrollOffset={100}
+        scrollOffset={120}
+        floaterProps={{ disableAnimation: true }}
         callback={handleJoyrideCallback}
         styles={{
           options: {
             primaryColor: '#56756D',
             textColor: '#2E2E2E',
-            overlayColor: 'rgba(0, 0, 0, 0.75)',
-            zIndex: 20000, // Even higher to stay above EVERYTHING
+            overlayColor: 'rgba(0, 0, 0, 0.85)',
+            zIndex: 30000,
           },
           tooltipContainer: {
             textAlign: 'left',
-            borderRadius: '16px',
-            padding: '10px'
+            borderRadius: '24px',
+            padding: '16px'
           },
           buttonNext: {
-            borderRadius: '10px',
+            borderRadius: '12px',
             padding: '12px 24px',
-            fontWeight: 'bold'
+            backgroundColor: '#56756D',
+            fontWeight: 'bold',
+            fontSize: '14px'
+          },
+          spotlight: {
+              borderRadius: '20px',
+              border: '2px solid #C9A960'
           }
         }}
       />
