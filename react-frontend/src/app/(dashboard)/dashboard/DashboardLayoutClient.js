@@ -74,6 +74,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
       { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
       { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
+      { label: 'The Lux Studio', icon: FiTarget, href: '/dashboard/client/premium' },
       { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
       { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
     ];
