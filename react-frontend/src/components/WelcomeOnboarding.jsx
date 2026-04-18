@@ -33,7 +33,8 @@ const AESTHETIC_STEPS = [
     description: "Welcome to your private healing space. We've designed this environment to support your journey with beauty, privacy, and clinical insight.",
     icon: FiActivity,
     color: "#56756D",
-    image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=2672&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=2672&auto=format&fit=crop",
+    href: "/dashboard/client"
   },
   {
     id: 'journal',
@@ -41,7 +42,8 @@ const AESTHETIC_STEPS = [
     description: "Your Journal isn't just a list—it's a story. Use our unique 'Book View' to see your reflections transformed into a digital manuscript of your growth.",
     icon: FiBookOpen,
     color: "#C9A960",
-    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=2574&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=2574&auto=format&fit=crop",
+    href: "/dashboard/client/journal"
   },
   {
     id: 'goals',
@@ -49,7 +51,8 @@ const AESTHETIC_STEPS = [
     description: "Set and track goals with your therapist. Every step forward is captured, visualized, and celebrated as you build resilience.",
     icon: FiTarget,
     color: "#84A59D",
-    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2670&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2670&auto=format&fit=crop",
+    href: "/dashboard/client/goals"
   },
   {
     id: 'safety',
@@ -57,7 +60,8 @@ const AESTHETIC_STEPS = [
     description: "Your safety plan is always a click away. We prioritize your well-being with tools that ensure you're supported even between sessions.",
     icon: FiShield,
     color: "#4A4E69",
-    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=2670&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=2670&auto=format&fit=crop",
+    href: "/dashboard/client/safety"
   }
 ];
 
@@ -144,8 +148,16 @@ export default function WelcomeOnboarding() {
   const handleModalContinue = () => {
     setIsModalVisible(false);
     onClose();
-    // After closing modal, start the specific Joyride phase
-    setTimeout(() => setRunJoyride(true), 100);
+
+    // Redirection Logic: Ensure user is on the correct page before starting the phase
+    const targetPath = currentAesthetic.href;
+    if (targetPath && currentPath !== targetPath) {
+      router.push(targetPath);
+      // Wait for navigation and potential data loading before starting Joyride
+      setTimeout(() => setRunJoyride(true), 800);
+    } else {
+      setTimeout(() => setRunJoyride(true), 100);
+    }
   };
 
   const handleJoyrideCallback = (data) => {
