@@ -26,7 +26,23 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
         </VStack>
       </HStack>
 
-      {links.map((link) => {
+      {links.map((link, idx) => {
+        if (link.type === 'header') {
+          return (
+            <Box key={`header-${idx}`} pt={idx === 0 ? 0 : 4} pb={2} px={3}>
+              <Text 
+                fontSize="10px" 
+                fontWeight="800" 
+                color="mlc.gold" 
+                letterSpacing="1.5px"
+                opacity={0.8}
+              >
+                {link.label}
+              </Text>
+            </Box>
+          );
+        }
+
         const isActive = pathname === link.href;
         return (
           <ChakraLink

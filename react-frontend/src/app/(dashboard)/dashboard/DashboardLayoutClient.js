@@ -48,27 +48,46 @@ export default function DashboardLayout({ children }) {
     setMounted(true);
   }, []);
 
-  const isTherapist = useMemo(() => {
-    if (!user) return false;
-    return user.publicMetadata?.roles?.includes('therapist') || user.publicMetadata?.roles?.includes('admin');
+  const { isAdmin, isTherapist } = useMemo(() => {
+    if (!user) return { isAdmin: false, isTherapist: false };
+    const roles = user.publicMetadata?.roles || [];
+    return {
+      isAdmin: roles.includes('admin'),
+      isTherapist: roles.includes('therapist') || roles.includes('admin')
+    };
   }, [user]);
 
-  const links = useMemo(() => isTherapist ? [
-    { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
-    { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
-    { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
-    { label: 'Availability', icon: FiClock, href: '/dashboard/therapist/availability' },
-    { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
-    { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
-    { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
-  ] : [
-    { label: 'Overview', icon: FiLayout, href: '/dashboard/client' },
-    { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
-    { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
-    { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
-    { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
-    { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
-  ], [isTherapist]);
+  const links = useMemo(() => {
+    const therapistLinks = [
+      { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
+      { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
+      { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
+      { label: 'Availability', icon: FiClock, href: '/dashboard/therapist/availability' },
+      { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
+      { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
+      { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
+    ];
+
+    const clientLinks = [
+      { label: 'Overview', icon: FiLayout, href: '/dashboard/client', isClient: true },
+      { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
+      { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
+      { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
+      { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
+      { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
+    ];
+
+    if (isAdmin) {
+      return [
+        { label: 'PRACTITIONER', type: 'header' },
+        ...therapistLinks,
+        { label: 'CLIENT VIEW', type: 'header' },
+        ...clientLinks
+      ];
+    }
+
+    return isTherapist ? therapistLinks : clientLinks;
+  }, [isTherapist, isAdmin]);
 
   if (!mounted || !isLoaded) {
     return (
