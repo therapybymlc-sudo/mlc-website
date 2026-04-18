@@ -204,7 +204,10 @@ export default function WelcomeOnboarding() {
   };
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
-  const effectivelyRunning = runJoyride && !pendingRedirection && !isOpen;
+  // Gate Joyride only while the intro modal is visible. `isOpen` can remain true
+  // internally even when the modal is not rendered (because we also gate with
+  // `isModalVisible`), which would incorrectly prevent the tour from running.
+  const effectivelyRunning = runJoyride && !pendingRedirection && !isModalVisible;
 
   return (
     <>
@@ -213,6 +216,9 @@ export default function WelcomeOnboarding() {
         stepIndex={joyrideIndex}
         run={effectivelyRunning}
         continuous
+        disableBeacon
+        disableOverlay
+        spotlightClicks
         scrollToFirstStep
         showProgress
         showSkipButton
@@ -225,7 +231,7 @@ export default function WelcomeOnboarding() {
           options: {
             primaryColor: '#56756D',
             textColor: '#2E2E2E',
-            overlayColor: 'rgba(0, 0, 0, 0.85)',
+            overlayColor: 'rgba(0, 0, 0, 0)',
             zIndex: 40000,
           },
           tooltipContainer: {
@@ -247,7 +253,7 @@ export default function WelcomeOnboarding() {
       />
 
       <Modal isOpen={isOpen && isModalVisible} onClose={onClose} size="full" motionPreset="none">
-        <ModalOverlay bg="blackAlpha.900" backdropFilter="blur(20px)" />
+        <ModalOverlay bg="transparent" backdropFilter="none" />
         <ModalContent bg="transparent" shadow="none">
           <ModalBody p={0}>
             <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
