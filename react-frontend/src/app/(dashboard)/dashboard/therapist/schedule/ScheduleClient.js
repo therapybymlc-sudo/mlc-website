@@ -76,12 +76,11 @@ export default function ScheduleClient() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [eventRes, clientRes, therapistRes, typesRes, slotRes] = await Promise.all([
+      const [eventRes, clientRes, therapistRes, typesRes] = await Promise.all([
         apiGet("schedule-events/"),
         apiGet("clients/"),
         apiGet("therapists/me/").catch(() => null),
-        apiGet("event-types/").catch(() => []),
-        apiGet("availability-slots/").catch(() => [])
+        apiGet("event-types/").catch(() => [])
       ]);
 
       // Normalize event types
@@ -90,17 +89,13 @@ export default function ScheduleClient() {
       const typeMap = {};
       normalizedTypes.forEach(t => { typeMap[t.id] = t; });
 
-      // Unified Events Array
-      const unifiedEvents = [];
-
-      // 1. Process Schedule Events
+      // Process Schedule Events
       const eventData = Array.isArray(eventRes) ? eventRes : eventRes.results || [];
-      eventData.forEach(ev => {
+      const unifiedEvents = eventData.map(ev => {
         const typeInfo = typeMap[ev.event_type] || {};
-        unifiedEvents.push({
-          id: `ev-${ev.id}`,
+        return {
+          id: ev.id,
           originalId: ev.id,
-          type: "session",
           title: ev.title,
           start: ev.start_time,
           end: ev.end_time,
@@ -112,32 +107,7 @@ export default function ScheduleClient() {
               event_type: ev.event_type,
               notes: ev.notes,
           }
-        });
-      });
-
-      // 2. Process Availability Slots
-      const slotData = Array.isArray(slotRes) ? slotRes : slotRes.results || [];
-      slotData.forEach(slot => {
-        // Only show 'open' slots in the therapist's primary schedule to avoid clutter.
-        // 'Blocked' slots are usually a result of overlapping sessions which are already visible.
-        if (slot.status === "open") {
-            const color = "#A9CBB7"; // MLC Green for open slots
-            unifiedEvents.push({
-              id: `slot-${slot.id}`,
-              originalId: slot.id,
-              type: "availability",
-              title: "Available for Booking",
-              start: slot.start_time,
-              end: slot.end_time,
-              backgroundColor: color,
-              borderColor: color,
-              display: 'block', 
-              extendedProps: {
-                  status: slot.status,
-                  notes: slot.notes,
-              }
-            });
-        }
+        };
       });
 
       setEvents(unifiedEvents);
@@ -152,19 +122,30 @@ export default function ScheduleClient() {
             const bh = [];
             Object.keys(therapistRes.business_hours).forEach(day => {
               const dayOfWeek = parseInt(day, 10);
-              therapistRes.business_hours[day].forEach(block => {
-                bh.push({
-                  daysOfWeek: [dayOfWeek],
-                  startTime: block.startTime,
-                  endTime: block.endTime
-                });
+              const daySlots = therapistRes.business_hours[day] || [];
+              daySlots.forEach(slot => {
+                // If the user upgraded to hourly toggles, slot might be a string "09:00"
+                if (typeof slot === 'string') {
+                    const h = parseInt(slot.split(":")[0], 10);
+                    bh.push({
+                      daysOfWeek: [dayOfWeek],
+                      startTime: slot,
+                      endTime: `${String(h + 1).padStart(2, '0')}:00`
+                    });
+                } else {
+                    bh.push({
+                      daysOfWeek: [dayOfWeek],
+                      startTime: slot.startTime,
+                      endTime: slot.endTime
+                    });
+                }
               });
             });
             setBusinessHours(bh);
         }
       }
     } catch (err) {
-      console.warn("Could not fetch full schedule data", err);
+      console.warn("Could not fetch schedule data", err);
     } finally {
       setLoading(false);
     }
