@@ -136,6 +136,10 @@ button:focus-visible {
   color: #2E2E2E;
   font-weight: 600;
   padding: 8px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
 }
 .fc-timegrid-axis-cushion {
   color: #718096 !important;

@@ -455,8 +455,20 @@ export default function ScheduleClient() {
               ".fc-timegrid-axis-cushion": { fontSize: { base: "0.6rem", md: "0.8rem" } }
           }}
       >
-          <Box overflowX="auto" w="full" pb={4} cursor="grab" _active={{ cursor: 'grabbing' }}>
-            <Box minW="1000px">
+          <Box 
+            overflowX="auto" 
+            w="full" 
+            pb={4} 
+            cursor="grab" 
+            _active={{ cursor: 'grabbing' }}
+            position="relative"
+            css={{
+              '&::-webkit-scrollbar': { height: '6px' },
+              '&::-webkit-scrollbar-track': { background: '#F8F9FA' },
+              '&::-webkit-scrollbar-thumb': { background: '#D1D5DB', borderRadius: '10px' },
+            }}
+          >
+            <Box minW={{ base: "1000px", md: "100%" }} position="relative">
               <FullCalendarComponent 
                   events={events} 
                   onSelect={handleSelect}
