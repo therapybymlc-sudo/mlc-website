@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Joyride, EVENTS, STATUS } from 'react-joyride';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Modal,
@@ -21,6 +20,20 @@ import {
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronRight, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
+import dynamic from 'next/dynamic';
+
+// Use a dynamic import to avoid SSR issues with react-joyride which accesses 'window'
+const Joyride = dynamic(() => import('react-joyride').then(mod => mod.Joyride), { ssr: false });
+
+// Import constants for events/status if needed, but we can also use strings to be safe against SSR
+const EVENTS = {
+  TOUR_END: 'tour:end',
+  TARGET_NOT_FOUND: 'error:target_not_found'
+};
+const STATUS = {
+  SKIPPED: 'skipped',
+  FINISHED: 'finished'
+};
 
 const MotionBox = motion(Box);
 
@@ -63,30 +76,29 @@ const AESTHETIC_STEPS = [
   },
 ];
 
-/** v3 step shape; use skipBeacon (not disableBeacon). */
 const PAGE_SPOTLIGHT_TOURS = [
   [
     {
       target: '#tour-welcome-heading',
-      content: 'Your command center. This header greets you and anchors the whole dashboard—like a home base in a game.',
+      content: 'Your command center. This header greets you and anchors the whole dashboard.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-mood-card',
-      content: 'Tap a mood to log how you are arriving. Your therapist can see this and shape the next session around it.',
+      content: 'Tap a mood to log how you are arriving today.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-goals-card',
-      content: 'A live preview of your goals. Open “View detailed path” anytime to manage intentions with your therapist.',
+      content: 'A live preview of your intentions.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-appt-card',
-      content: 'Your next session lives here—date, time, and when you are ready, join the video room from this card.',
+      content: 'Join your clinical sessions directly from this card.',
       placement: 'top',
       skipBeacon: true,
     },
@@ -94,19 +106,19 @@ const PAGE_SPOTLIGHT_TOURS = [
   [
     {
       target: '#tour-journal-capture',
-      content: 'New entry flow: mood slider, tags, then the editor. Each step is a “level” that ends with Save.',
+      content: 'The step-by-step reflection flow.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-journal-history',
-      content: 'Past reflections stack here. Scroll to revisit a day; everything stays in one timeline.',
+      content: 'Your past reflections stacked by date.',
       placement: 'left',
       skipBeacon: true,
     },
     {
       target: '#tour-book-view-btn',
-      content: 'Book View is the reward screen—your entries become a readable manuscript. Unlocks after you have at least one entry.',
+      content: 'Read your journey as a beautiful digital book.',
       placement: 'left',
       skipBeacon: true,
     },
@@ -114,45 +126,27 @@ const PAGE_SPOTLIGHT_TOURS = [
   [
     {
       target: '#tour-goals-header',
-      content: 'Your roadmap title and subtitle—this page is for long-arc intentions, not just tasks.',
-      placement: 'bottom',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-goals-new',
-      content: 'New Intention opens the form: name it, pick a tier (daily / short / long term), add context, then save.',
+      content: 'Manage your long-arc intentions here.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-goals-stats',
-      content: 'These three cards score each tier—percent complete at a glance, like progress bars on a character sheet.',
+      content: 'Progress scores for each of your tiers.',
       placement: 'top',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-goals-tabs',
-      content: 'Switch tabs to filter all goals or focus on one tier. Check items off as you and your therapist agree they are done.',
-      placement: 'bottom',
       skipBeacon: true,
     },
   ],
   [
     {
       target: '#tour-safety-header',
-      content: 'Your safety plan is private and clinician-aligned. Fill it when you are relatively calm—it is easier than in crisis.',
+      content: 'Your private, clinician-vetted safety plan.',
       placement: 'bottom',
       skipBeacon: true,
     },
     {
       target: '#tour-safety-sections',
-      content: 'Each section is a step: warning signs, coping, people to call, professionals, environment, and what matters to you.',
-      placement: 'top',
-      skipBeacon: true,
-    },
-    {
-      target: '#tour-safety-save',
-      content: 'Save locks in updates. Only you and your primary therapist can view this plan.',
+      content: 'Proactive coping strategies and supports.',
       placement: 'top',
       skipBeacon: true,
     },
@@ -161,14 +155,13 @@ const PAGE_SPOTLIGHT_TOURS = [
 
 const JOYRIDE_OPTIONS = {
   zIndex: 100000,
-  primaryColor: '#56756D',
-  overlayColor: 'rgba(15, 23, 42, 0.78)',
+  primaryColor: '#56756C',
+  overlayColor: 'rgba(15, 23, 42, 0.85)',
   textColor: '#2E2E2E',
   showProgress: true,
   scrollOffset: 120,
-  targetWaitTimeout: 4000,
+  targetWaitTimeout: 10000, // Be more patient
   blockTargetInteraction: true,
-  buttons: ['back', 'close', 'primary', 'skip'],
 };
 
 export default function WelcomeOnboarding() {
@@ -181,14 +174,13 @@ export default function WelcomeOnboarding() {
   const [pendingRoute, setPendingRoute] = useState(null);
   const [runSpotlight, setRunSpotlight] = useState(false);
   const [spotlightKey, setSpotlightKey] = useState(0);
-  const [spotlightSteps, setSpotlightSteps] = useState(() => PAGE_SPOTLIGHT_TOURS[0]);
+  const [spotlightSteps, setSpotlightSteps] = useState(PAGE_SPOTLIGHT_TOURS[0]);
 
   const spotlightPhaseRef = useRef(0);
 
   const finishOnboarding = () => {
     localStorage.setItem('mlc_onboarding_visited', 'true');
     setIsModalVisible(false);
-    setPendingRoute(null);
     setRunSpotlight(false);
     onClose();
   };
@@ -201,14 +193,13 @@ export default function WelcomeOnboarding() {
     const t = window.setTimeout(() => {
       setIsModalVisible(true);
       onOpen();
-    }, 1500);
+    }, 2000);
     return () => window.clearTimeout(t);
   }, [pathname, onOpen]);
 
   useEffect(() => {
     const handleStartTour = () => {
       setCurrentAestheticIdx(0);
-      setPendingRoute(null);
       setRunSpotlight(false);
       setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[0]);
       setIsModalVisible(true);
@@ -222,113 +213,108 @@ export default function WelcomeOnboarding() {
     if (!pendingRoute) return;
     if (pathname !== pendingRoute) return;
 
+    // We reached the target page, wait for it to settle
     const t = window.setTimeout(() => {
       setPendingRoute(null);
       setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[spotlightPhaseRef.current]);
       setSpotlightKey((k) => k + 1);
       setRunSpotlight(true);
-    }, 900);
+    }, 1200);
 
     return () => window.clearTimeout(t);
   }, [pathname, pendingRoute]);
 
-  const advanceAfterSpotlight = (phase, skipped) => {
+  const advanceAfterSpotlight = (skipped) => {
     setRunSpotlight(false);
-    setSpotlightKey((k) => k + 1);
-
     if (skipped) {
       finishOnboarding();
       return;
     }
 
-    if (phase < AESTHETIC_STEPS.length - 1) {
-      setCurrentAestheticIdx(phase + 1);
-      setIsModalVisible(true);
-      onOpen();
-      return;
+    if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
+      setCurrentAestheticIdx(idx => idx + 1);
+      setTimeout(() => {
+        setIsModalVisible(true);
+        onOpen();
+      }, 500);
+    } else {
+      finishOnboarding();
     }
-
-    finishOnboarding();
   };
 
   const handleJoyrideEvent = (data) => {
     const { type, status } = data;
 
     if (type === EVENTS.TARGET_NOT_FOUND) {
-      advanceAfterSpotlight(spotlightPhaseRef.current, false);
-      return;
+        // Silently advance if a target isn't available to prevent blocking
+        advanceAfterSpotlight(false);
     }
 
-    if (type === EVENTS.TOUR_END) {
-      const skipped = status === STATUS.SKIPPED;
-      advanceAfterSpotlight(spotlightPhaseRef.current, skipped);
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      advanceAfterSpotlight(status === STATUS.SKIPPED);
     }
   };
 
   const handleModalContinue = () => {
-    const phase = currentAestheticIdx;
-    const route = AESTHETIC_STEPS[phase].path;
-
-    spotlightPhaseRef.current = phase;
-    setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[phase]);
+    const route = AESTHETIC_STEPS[currentAestheticIdx].path;
+    spotlightPhaseRef.current = currentAestheticIdx;
+    
     setIsModalVisible(false);
     onClose();
 
     if (pathname === route) {
-      window.setTimeout(() => {
-        setSpotlightKey((k) => k + 1);
+      setTimeout(() => {
+        setSpotlightKey(k => k + 1);
         setRunSpotlight(true);
-      }, 100);
-      return;
+      }, 600); // Give modal time to finish closing
+    } else {
+      setPendingRoute(route);
+      router.push(route);
     }
-
-    setPendingRoute(route);
-    router.push(route);
   };
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
   const isLastSlide = currentAestheticIdx === AESTHETIC_STEPS.length - 1;
 
+  if (typeof window === 'undefined') return null;
+
   return (
     <>
       <Joyride
-        key={spotlightKey}
+        key={`joyride-${spotlightKey}`}
         steps={spotlightSteps}
         run={runSpotlight && !isModalVisible}
         continuous
         scrollToFirstStep
-        options={JOYRIDE_OPTIONS}
-        onEvent={handleJoyrideEvent}
+        {...JOYRIDE_OPTIONS}
+        callback={handleJoyrideEvent}
         styles={{
+          options: {
+            zIndex: 100000,
+            primaryColor: '#56756C',
+            overlayColor: 'rgba(15, 23, 42, 0.85)',
+          },
           tooltip: {
-            borderRadius: '16px',
-            padding: 16,
+            borderRadius: '24px',
+            padding: '20px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           },
           tooltipContainer: { textAlign: 'left' },
           buttonPrimary: {
-            borderRadius: '10px',
-            padding: '10px 18px',
-            backgroundColor: '#56756D',
-            fontWeight: '700',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            backgroundColor: '#56756C',
+            fontWeight: 'bold',
           },
-          buttonBack: { color: '#56756D' },
-          buttonSkip: { color: '#718096' },
           spotlight: {
-            stroke: '#C9A960',
-            strokeWidth: 2,
+            borderRadius: '20px',
+            border: '2px solid #C9A960',
           },
         }}
       />
 
-      <Modal
-        isOpen={isOpen && isModalVisible}
-        onClose={finishOnboarding}
-        size="full"
-        motionPreset="none"
-        closeOnOverlayClick
-        closeOnEsc
-      >
-        <ModalOverlay bg="transparent" backdropFilter="none" />
+      <Modal isOpen={isOpen && isModalVisible} onClose={finishOnboarding} size="full" motionPreset="none">
+        <ModalOverlay bg="blackAlpha.900" backdropFilter="blur(20px)" />
         <ModalContent bg="transparent" shadow="none">
           <ModalBody p={0}>
             <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
@@ -339,61 +325,57 @@ export default function WelcomeOnboarding() {
                     initial={{ opacity: 0, scale: 1.1 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    position="absolute"
-                    top="0"
-                    left="0"
-                    w="full"
-                    h="full"
+                    transition={{ duration: 0.8 }}
+                    position="absolute" top="0" left="0" w="full" h="full"
                     bgImage={`url(${currentAesthetic.image})`}
-                    bgSize="cover"
-                    bgPosition="center"
+                    bgSize="cover" bgPosition="center"
                   >
                     <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient="linear(to-r, transparent, rgba(0,0,0,0.4))" />
                   </MotionBox>
                 </AnimatePresence>
               </Box>
 
-              <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }} position="relative">
+              <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }}>
                 <VStack spacing={12} w="full" maxW="400px" align="start">
                   <Box w="full">
-                    <Progress value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} size="xs" bg="gray.50" colorScheme="teal" borderRadius="full" />
-                    <Text mt={4} fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="0.2em">
-                      MILESTONE {currentAestheticIdx + 1} OF {AESTHETIC_STEPS.length}
+                    <Progress value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} size="xs" colorScheme="teal" borderRadius="full" />
+                    <Text mt={4} fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="widest">
+                      PHASE {currentAestheticIdx + 1} OF {AESTHETIC_STEPS.length}
                     </Text>
                   </Box>
 
-                  <VStack spacing={6} align="start" w="full">
-                    <AnimatePresence mode="wait">
-                      <MotionBox key={currentAestheticIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.5 }} w="full">
-                        <Icon as={currentAesthetic.icon} boxSize={12} color={currentAesthetic.color} mb={6} />
-                        <Heading size="2xl" color="mlc.black" fontFamily="'Playfair Display', serif" mb={4} lineHeight="shorter">
-                          {currentAesthetic.title}
-                        </Heading>
-                        <Text fontSize="lg" color="gray.500" lineHeight="tall">
-                          {currentAesthetic.description}
-                        </Text>
-                      </MotionBox>
-                    </AnimatePresence>
-                  </VStack>
+                  <AnimatePresence mode="wait">
+                    <MotionBox
+                      key={currentAestheticIdx}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      w="full"
+                    >
+                      <Icon as={currentAesthetic.icon} boxSize={12} color={currentAesthetic.color} mb={6} />
+                      <Heading size="2xl" color="#2E2E2E" fontFamily="'Playfair Display', serif" mb={4}>
+                        {currentAesthetic.title}
+                      </Heading>
+                      <Text fontSize="lg" color="gray.500" lineHeight="tall">
+                        {currentAesthetic.description}
+                      </Text>
+                    </MotionBox>
+                  </AnimatePresence>
 
                   <HStack w="full" justify="space-between" pt={10}>
                     <HStack spacing={2}>
                       {AESTHETIC_STEPS.map((_, i) => (
-                        <Box key={i} w={i === currentAestheticIdx ? "30px" : "8px"} h="8px" borderRadius="full" bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"} transition="all 0.3s" />
+                        <Box key={i} w={i === currentAestheticIdx ? "30px" : "8px"} h="8px" borderRadius="full" 
+                        bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"} />
                       ))}
                     </HStack>
                     <Button
                       rightIcon={<FiChevronRight />}
-                      bg={currentAesthetic.color}
-                      color="white"
-                      borderRadius="full"
-                      px={10}
-                      h={14}
+                      bg={currentAesthetic.color} color="white" borderRadius="full" px={10} h={14}
                       onClick={handleModalContinue}
-                      _hover={{ transform: 'scale(1.05)', bg: 'mlc.black' }}
+                      _hover={{ transform: 'scale(1.05)' }}
                     >
-                      {isLastSlide ? 'Show me this page' : 'Next — spotlight tour'}
+                      {isLastSlide ? 'Begin Journey' : 'Next Spotlight'}
                     </Button>
                   </HStack>
                 </VStack>
