@@ -66,43 +66,44 @@ const AESTHETIC_STEPS = [
 ];
 
 const TOUR_STEPS = [
-  // Phase 1: Dashboard Overview (After Welcome Slide)
   {
     target: '#tour-welcome-heading',
-    content: 'This is your healing command center. Click "Next" to see your tracking tools.',
+    content: 'Welcome to your healing command center. Everything you need is organized here.',
     placement: 'bottom',
     disableBeacon: true,
   },
   {
     target: '#tour-mood-card',
-    content: 'Check in with your mood here. This helps your therapist prepare for your sessions.',
+    content: 'Share how you’re arriving today. Your therapist uses this to tailor your next session.',
     placement: 'bottom',
+    disableBeacon: true,
   },
   {
     target: '#tour-appt-card',
-    content: 'Your scheduled sessions appear here for easy access.',
+    content: 'Review and join your clinical appointments instantly.',
     placement: 'top',
+    disableBeacon: true,
     is_last_in_phase: true
   },
-  // Phase 2: Journal (After Journal Slide)
   {
     target: '#tour-book-view-btn',
-    content: 'Use this button to enter the immersive "Book View" of your entries.',
+    content: 'The Book View transforms your reflections into a digital manuscript.',
     placement: 'left',
+    disableBeacon: true,
     is_last_in_phase: true
   },
-  // Phase 3: Goals (After Goals Slide)
   {
     target: '#tour-goals-card',
-    content: 'Your clinical goals are always visible and trackable here.',
+    content: 'Celebrate every step forward by tracking your clinical goals.',
     placement: 'bottom',
+    disableBeacon: true,
     is_last_in_phase: true
   },
-  // Phase 4: Safety (After Safety Slide)
   {
     target: '#tour-safety-plan-client',
-    content: 'Support is always a click away. Your emergency care tools are right here.',
+    content: 'Access care tools and your safety plan here whenever you need support.',
     placement: 'right',
+    disableBeacon: true,
     is_last_in_phase: true
   }
 ];
@@ -116,15 +117,15 @@ export default function WelcomeOnboarding() {
   const [joyrideIndex, setJoyrideIndex] = useState(0);
   const [runJoyride, setRunJoyride] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [pendingRedirection, setPendingRedirection] = useState(null);
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('mlc_onboarding_visited');
     if (!hasSeenOnboarding) {
-      const timer = setTimeout(() => {
+      setTimeout(() => {
         setIsModalVisible(true);
         onOpen();
       }, 1500);
-      return () => clearTimeout(timer);
     }
 
     const handleStartTour = () => {
@@ -138,9 +139,6 @@ export default function WelcomeOnboarding() {
     return () => window.removeEventListener('mlc-start-tour', handleStartTour);
   }, [onOpen]);
 
-  // Use state to track if we've handled the redirection
-  const [pendingRedirection, setPendingRedirection] = useState(null);
-
   const handleModalContinue = () => {
     setIsModalVisible(false);
     onClose();
@@ -149,61 +147,45 @@ export default function WelcomeOnboarding() {
     if (targetPath && currentPath !== targetPath) {
       setPendingRedirection(targetPath);
       router.push(targetPath);
-      // Wait longer for full page transition and mounting
       setTimeout(() => {
           setPendingRedirection(null);
           setRunJoyride(true);
-      }, 1500);
+      }, 1800); // Wait longer for full CSR
     } else {
-      setTimeout(() => setRunJoyride(true), 300);
+      setTimeout(() => setRunJoyride(true), 400);
     }
   };
 
   const handleJoyrideCallback = (data) => {
     const { action, index, status, type } = data;
+    
+    if (type === 'step:after') {
+      const currentStep = TOUR_STEPS[index];
+      if (currentStep?.is_last_in_phase) {
+        setRunJoyride(false);
+        setJoyrideIndex(index + 1);
+
+        if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
+          const nextIdx = currentAestheticIdx + 1;
+          setCurrentAestheticIdx(nextIdx);
+          setTimeout(() => {
+            setIsModalVisible(true);
+            onOpen();
+          }, 600);
+        } else {
+            localStorage.setItem('mlc_onboarding_visited', 'true');
+        }
+      }
+    }
 
     if (status === 'finished' || status === 'skipped') {
       setRunJoyride(false);
       localStorage.setItem('mlc_onboarding_visited', 'true');
-      return;
-    }
-
-    // We're using Joyride in controlled mode via `stepIndex`, so we must advance
-    // the index ourselves on every step transition.
-    if (type === 'step:after' || type === 'target:notFound') {
-      const currentStep = TOUR_STEPS[index];
-
-      // Only end the phase when the user is moving forward past the last step.
-      if (currentStep?.is_last_in_phase && action !== 'prev') {
-        setRunJoyride(false);
-        setJoyrideIndex(Math.min(index + 1, TOUR_STEPS.length - 1));
-
-        setCurrentAestheticIdx((prevIdx) => {
-          if (prevIdx < AESTHETIC_STEPS.length - 1) {
-            const nextIdx = prevIdx + 1;
-            setTimeout(() => {
-              setIsModalVisible(true);
-              onOpen();
-            }, 800);
-            return nextIdx;
-          }
-
-          localStorage.setItem('mlc_onboarding_visited', 'true');
-          return prevIdx;
-        });
-        return;
-      }
-
-      const delta = action === 'prev' ? -1 : 1;
-      const nextIndex = Math.max(0, Math.min(index + delta, TOUR_STEPS.length - 1));
-      setJoyrideIndex(nextIndex);
     }
   };
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
-
-  // Prevent Joyride from running while we are redirecting
-  const effectivelyRunning = runJoyride && !pendingRedirection;
+  const effectivelyRunning = runJoyride && !pendingRedirection && !isOpen;
 
   return (
     <>
@@ -217,7 +199,7 @@ export default function WelcomeOnboarding() {
         showSkipButton
         disableOverlayClose
         disableScrolling={false}
-        scrollOffset={120}
+        scrollOffset={140}
         floaterProps={{ disableAnimation: true }}
         callback={handleJoyrideCallback}
         styles={{
@@ -225,22 +207,21 @@ export default function WelcomeOnboarding() {
             primaryColor: '#56756D',
             textColor: '#2E2E2E',
             overlayColor: 'rgba(0, 0, 0, 0.85)',
-            zIndex: 30000,
+            zIndex: 40000,
           },
           tooltipContainer: {
             textAlign: 'left',
-            borderRadius: '24px',
-            padding: '16px'
+            borderRadius: '20px',
+            padding: '12px'
           },
           buttonNext: {
-            borderRadius: '12px',
+            borderRadius: '10px',
             padding: '12px 24px',
             backgroundColor: '#56756D',
             fontWeight: 'bold',
-            fontSize: '14px'
           },
           spotlight: {
-              borderRadius: '20px',
+              borderRadius: '16px',
               border: '2px solid #C9A960'
           }
         }}
@@ -276,13 +257,7 @@ export default function WelcomeOnboarding() {
               <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }} position="relative">
                 <VStack spacing={12} w="full" maxW="400px" align="start">
                   <Box w="full">
-                    <Progress 
-                      value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} 
-                      size="xs" 
-                      bg="gray.50" 
-                      colorScheme="teal" 
-                      borderRadius="full" 
-                    />
+                    <Progress value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} size="xs" bg="gray.50" colorScheme="teal" borderRadius="full" />
                     <Text mt={4} fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="0.2em">
                       MILESTONE {currentAestheticIdx + 1} OF {AESTHETIC_STEPS.length}
                     </Text>
@@ -290,22 +265,9 @@ export default function WelcomeOnboarding() {
 
                   <VStack spacing={6} align="start" w="full">
                     <AnimatePresence mode="wait">
-                      <MotionBox
-                        key={currentAestheticIdx}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.5 }}
-                        w="full"
-                      >
+                      <MotionBox key={currentAestheticIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.5 }} w="full">
                         <Icon as={currentAesthetic.icon} boxSize={12} color={currentAesthetic.color} mb={6} />
-                        <Heading 
-                          size="2xl" 
-                          color="mlc.black" 
-                          fontFamily="'Playfair Display', serif" 
-                          mb={4}
-                          lineHeight="shorter"
-                        >
+                        <Heading size="2xl" color="mlc.black" fontFamily="'Playfair Display', serif" mb={4} lineHeight="shorter">
                           {currentAesthetic.title}
                         </Heading>
                         <Text fontSize="lg" color="gray.500" lineHeight="tall">
@@ -318,28 +280,10 @@ export default function WelcomeOnboarding() {
                   <HStack w="full" justify="space-between" pt={10}>
                      <HStack spacing={2}>
                         {AESTHETIC_STEPS.map((_, i) => (
-                          <Box 
-                            key={i} 
-                            w={i === currentAestheticIdx ? "30px" : "8px"} 
-                            h="8px" 
-                            borderRadius="full" 
-                            bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"}
-                            transition="all 0.3s"
-                          />
+                          <Box key={i} w={i === currentAestheticIdx ? "30px" : "8px"} h="8px" borderRadius="full" bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"} transition="all 0.3s" />
                         ))}
                      </HStack>
-                     
-                     <Button 
-                        rightIcon={<FiChevronRight />} 
-                        bg={currentAesthetic.color} 
-                        color="white" 
-                        borderRadius="full" 
-                        px={10} 
-                        h={14}
-                        onClick={handleModalContinue}
-                        _hover={{ transform: 'scale(1.05)', bg: 'mlc.black' }}
-                        transition="all 0.2s"
-                     >
+                     <Button rightIcon={<FiChevronRight />} bg={currentAesthetic.color} color="white" borderRadius="full" px={10} h={14} onClick={handleModalContinue} _hover={{ transform: 'scale(1.05)', bg: 'mlc.black' }}>
                        Explore Feature
                      </Button>
                   </HStack>
