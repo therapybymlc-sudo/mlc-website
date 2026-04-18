@@ -158,30 +158,49 @@ export default function WelcomeOnboarding() {
 
   const handleJoyrideCallback = (data) => {
     const { action, index, status, type } = data;
-    
-    if (type === 'step:after') {
-      const currentStep = TOUR_STEPS[index];
-      if (currentStep?.is_last_in_phase) {
-        setRunJoyride(false);
-        setJoyrideIndex(index + 1);
-
-        if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
-          const nextIdx = currentAestheticIdx + 1;
-          setCurrentAestheticIdx(nextIdx);
-          setTimeout(() => {
-            setIsModalVisible(true);
-            onOpen();
-          }, 600);
-        } else {
-            localStorage.setItem('mlc_onboarding_visited', 'true');
-        }
-      }
-    }
 
     if (status === 'finished' || status === 'skipped') {
       setRunJoyride(false);
       localStorage.setItem('mlc_onboarding_visited', 'true');
+      return;
     }
+
+    // Joyride is used in controlled mode via `stepIndex`, so we must advance
+    // the index ourselves on every step transition (including missing targets).
+    const isStepTransition =
+      type === 'step:after' ||
+      type === 'target:notFound' ||
+      // Some Joyride versions report this as an error event name.
+      type === 'error:target_not_found';
+
+    if (!isStepTransition) return;
+
+    const currentStep = TOUR_STEPS[index];
+
+    // Only end the phase when the user is moving forward past the last step.
+    if (currentStep?.is_last_in_phase && action !== 'prev') {
+      setRunJoyride(false);
+      setJoyrideIndex(Math.min(index + 1, TOUR_STEPS.length - 1));
+
+      setCurrentAestheticIdx((prevIdx) => {
+        if (prevIdx < AESTHETIC_STEPS.length - 1) {
+          const nextIdx = prevIdx + 1;
+          setTimeout(() => {
+            setIsModalVisible(true);
+            onOpen();
+          }, 600);
+          return nextIdx;
+        }
+
+        localStorage.setItem('mlc_onboarding_visited', 'true');
+        return prevIdx;
+      });
+      return;
+    }
+
+    const delta = action === 'prev' ? -1 : 1;
+    const nextIndex = Math.max(0, Math.min(index + delta, TOUR_STEPS.length - 1));
+    setJoyrideIndex(nextIndex);
   };
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
