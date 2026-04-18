@@ -15,6 +15,8 @@ import {
   Badge,
   useColorModeValue,
   Tag,
+  Divider,
+  Spinner,
 } from "@chakra-ui/react";
 import { FiChevronLeft, FiChevronRight, FiX, FiDownload, FiBookOpen } from "react-icons/fi";
 import { generateJournalEpub } from './epubExporter';
