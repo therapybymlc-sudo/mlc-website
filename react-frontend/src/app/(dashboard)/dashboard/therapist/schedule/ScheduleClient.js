@@ -118,23 +118,26 @@ export default function ScheduleClient() {
       // 2. Process Availability Slots
       const slotData = Array.isArray(slotRes) ? slotRes : slotRes.results || [];
       slotData.forEach(slot => {
-        // Only show if not superseded by a session at the exact same time
-        const color = slot.status === "blocked" ? "#CBD5E0" : "#A9CBB7";
-        unifiedEvents.push({
-          id: `slot-${slot.id}`,
-          originalId: slot.id,
-          type: "availability",
-          title: slot.status === "open" ? "Available for Booking" : "Blocked Slot",
-          start: slot.start_time,
-          end: slot.end_time,
-          backgroundColor: color,
-          borderColor: color,
-          display: 'block', // Ensure it fills the slot
-          extendedProps: {
-              status: slot.status,
-              notes: slot.notes,
-          }
-        });
+        // Only show 'open' slots in the therapist's primary schedule to avoid clutter.
+        // 'Blocked' slots are usually a result of overlapping sessions which are already visible.
+        if (slot.status === "open") {
+            const color = "#A9CBB7"; // MLC Green for open slots
+            unifiedEvents.push({
+              id: `slot-${slot.id}`,
+              originalId: slot.id,
+              type: "availability",
+              title: "Available for Booking",
+              start: slot.start_time,
+              end: slot.end_time,
+              backgroundColor: color,
+              borderColor: color,
+              display: 'block', 
+              extendedProps: {
+                  status: slot.status,
+                  notes: slot.notes,
+              }
+            });
+        }
       });
 
       setEvents(unifiedEvents);
