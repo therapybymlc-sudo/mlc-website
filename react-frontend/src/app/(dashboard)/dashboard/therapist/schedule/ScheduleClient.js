@@ -435,20 +435,20 @@ export default function ScheduleClient() {
                   return (
                       <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden">
                           <Text 
-                            fontWeight="900" 
+                            fontWeight="900 !important" 
                             fontSize={titleSize} 
-                            color="black" 
+                            color="black !important" 
                             isTruncated 
                             w="full" 
-                            lineHeight="1.2"
+                            lineHeight="1.1"
                           >
                               {arg.event.title}
                           </Text>
                           <Text 
-                            fontWeight="800" 
+                            fontWeight="800 !important" 
                             fontSize={timeSize} 
-                            color="black" 
-                            opacity={0.8}
+                            color="black !important" 
+                            opacity={0.9}
                             lineHeight="1"
                           >
                               {start} - {end}
