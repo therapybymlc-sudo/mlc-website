@@ -6,7 +6,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { Box } from "@chakra-ui/react";
 
-export default function FullCalendarWrapper({ events, onSelect, onEventClick, businessHours }) {
+export default function FullCalendarWrapper({ events, onSelect, onEventClick, businessHours, eventContent }) {
   return (
     <Box className="calendar-container" sx={{
         '.fc-toolbar-title': { fontSize: '1.2rem', fontWeight: 'bold' },
@@ -31,6 +31,7 @@ export default function FullCalendarWrapper({ events, onSelect, onEventClick, bu
         businessHours={businessHours || true}
         select={onSelect}
         eventClick={onEventClick}
+        eventContent={eventContent}
       />
     </Box>
   );
