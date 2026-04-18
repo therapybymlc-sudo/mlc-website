@@ -431,7 +431,28 @@ export default function ScheduleClient() {
                             <Select 
                                 placeholder="Select type" 
                                 value={form.event_type}
-                                onChange={(e) => setForm({ ...form, event_type: e.target.value })}
+                                onChange={(e) => {
+                                    const typeId = e.target.value;
+                                    const typeObj = eventTypes.find(t => String(t.id) === String(typeId));
+                                    if (typeObj && form.start_time) {
+                                        const start = new Date(form.start_time);
+                                        const end = new Date(start.getTime() + (typeObj.default_duration || 50) * 60000);
+                                        
+                                        const toLocalISO = (date) => {
+                                            const offset = date.getTimezoneOffset() * 60000;
+                                            return new Date(date - offset).toISOString().slice(0, 16);
+                                        };
+
+                                        setForm({ 
+                                            ...form, 
+                                            event_type: typeId, 
+                                            end_time: toLocalISO(end),
+                                            notes: form.notes || typeObj.default_notes || ""
+                                        });
+                                    } else {
+                                        setForm({ ...form, event_type: typeId });
+                                    }
+                                }}
                                 borderRadius="xl"
                                 h={12}
                             >
@@ -505,7 +526,7 @@ export default function ScheduleClient() {
             </VStack>
           </ModalBody>
 
-          <ModalFooter pt={8}>
+          <ModalFooter pb={8} px={10}>
             <HStack w="full" justify="space-between">
                 {isEditMode ? (
                     <Button variant="ghost" colorScheme="red" onClick={handleDelete} borderRadius="full">
@@ -515,7 +536,7 @@ export default function ScheduleClient() {
                 <HStack spacing={4}>
                     <Button variant="ghost" onClick={onClose} borderRadius="full">Back</Button>
                     <Button 
-                        bg="#56756D" 
+                        bg="#56756C" 
                         color="white" 
                         borderRadius="full" 
                         px={8}
@@ -531,50 +552,90 @@ export default function ScheduleClient() {
       </Modal>
 
       {/* Event Type Management Modal (Admin Only) */}
-      <Modal isOpen={typeModal.isOpen} onClose={typeModal.onClose}>
+      <Modal isOpen={typeModal.isOpen} onClose={typeModal.onClose} size="2xl">
         <ModalOverlay backdropFilter="blur(5px)" />
         <ModalContent borderRadius="3xl" p={4}>
           <ModalHeader>Manage Event Types</ModalHeader>
           <ModalCloseButton mt={6} mr={6} />
           <ModalBody>
-            <VStack spacing={6} align="stretch">
+            <VStack spacing={6} align="stretch" maxH="80vh" overflowY="auto">
                 <Box>
                     <Text fontWeight="700" mb={3} fontSize="sm" color="gray.500">EXISTING TYPES</Text>
-                    <VStack align="stretch" spacing={2}>
+                    <SimpleGrid columns={1} spacing={2} maxH="300px" overflowY="auto" pr={2}>
                         {eventTypes.map(t => (
                             <HStack key={t.id} justify="space-between" p={3} bg="gray.50" borderRadius="xl">
                                 <HStack>
                                     <Box w={3} h={3} borderRadius="full" bg={t.color} />
                                     <Text fontWeight="600">{t.name}</Text>
+                                    <Text fontSize="xs" color="gray.400">({t.default_duration}m)</Text>
                                 </HStack>
                             </HStack>
                         ))}
-                    </VStack>
+                    </SimpleGrid>
                 </Box>
 
                 <Divider />
 
-                <VStack spacing={4} align="stretch">
-                    <Text fontWeight="700" fontSize="sm" color="gray.500">CREATE NEW</Text>
+                <VStack spacing={4} align="stretch" bg="gray.50" p={6} borderRadius="2xl">
+                    <Text fontWeight="700" fontSize="sm" color="gray.500">CREATE NEW TYPE</Text>
+                    <SimpleGrid columns={2} spacing={4}>
+                        <FormControl>
+                            <FormLabel fontSize="sm">Type Name</FormLabel>
+                            <Input 
+                                placeholder="e.g. Lunch" 
+                                value={newType.name}
+                                onChange={(e) => setNewType({ ...newType, name: e.target.value })}
+                                bg="white"
+                            />
+                        </FormControl>
+                        <FormControl>
+                            <FormLabel fontSize="sm">Color</FormLabel>
+                            <Input 
+                                type="color" 
+                                value={newType.color}
+                                onChange={(e) => setNewType({ ...newType, color: e.target.value })}
+                                bg="white"
+                            />
+                        </FormControl>
+                        <FormControl>
+                            <FormLabel fontSize="sm">Default Duration (min)</FormLabel>
+                            <Input 
+                                type="number"
+                                value={newType.default_duration || 50}
+                                onChange={(e) => setNewType({ ...newType, default_duration: parseInt(e.target.value) })}
+                                bg="white"
+                            />
+                        </FormControl>
+                        <FormControl display="flex" alignItems="center" mt={8}>
+                            <FormLabel mb="0" fontSize="sm">Is Paid?</FormLabel>
+                            <Checkbox 
+                                colorScheme="teal"
+                                isChecked={newType.is_paid !== false}
+                                onChange={(e) => setNewType({ ...newType, is_paid: e.target.checked })}
+                            />
+                        </FormControl>
+                        <FormControl display="flex" alignItems="center">
+                            <FormLabel mb="0" fontSize="sm">Requires Patient?</FormLabel>
+                            <Checkbox 
+                                colorScheme="teal"
+                                isChecked={newType.requires_client !== false}
+                                onChange={(e) => setNewType({ ...newType, requires_client: e.target.checked })}
+                            />
+                        </FormControl>
+                    </SimpleGrid>
+                    
                     <FormControl>
-                        <FormLabel>Type Name</FormLabel>
-                        <Input 
-                            placeholder="e.g. Art Therapy" 
-                            value={newType.name}
-                            onChange={(e) => setNewType({ ...newType, name: e.target.value })}
+                        <FormLabel fontSize="sm">Pre-filled Notes</FormLabel>
+                        <Textarea 
+                            placeholder="Standard notes for this session type..." 
+                            value={newType.default_notes}
+                            onChange={(e) => setNewType({ ...newType, default_notes: e.target.value })}
+                            bg="white"
                         />
                     </FormControl>
-                    <FormControl>
-                        <FormLabel>Category Color (Hex)</FormLabel>
-                        <Input 
-                            type="color" 
-                            h={12}
-                            value={newType.color}
-                            onChange={(e) => setNewType({ ...newType, color: e.target.value })}
-                        />
-                    </FormControl>
+
                     <Button bg="#56756D" color="white" borderRadius="full" onClick={handleCreateType}>
-                        Create Event Type
+                        Add New Event Type
                     </Button>
                 </VStack>
             </VStack>

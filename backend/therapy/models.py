@@ -1230,7 +1230,12 @@ class ClientFile(models.Model):
 class EventType(models.Model):
     """Flexible, color-coded types for scheduling (e.g., Follow-up, Workshop, Leave)."""
     name = models.CharField(max_length=80, unique=True)
-    color = models.CharField(max_length=7, default="#A9CBB7")  # HEX like #C9A960
+    color = models.CharField(max_length=7, default="#A9CBB7")
+    default_duration = models.PositiveIntegerField(default=50, help_text="Default duration in minutes")
+    is_paid = models.BooleanField(default=True, help_text="Whether this event type is billable")
+    requires_client = models.BooleanField(default=True, help_text="Whether a patient must be linked")
+    default_notes = models.TextField(blank=True, null=True, help_text="Pre-filled notes for this type")
+    notify_therapist = models.BooleanField(default=False, help_text="Send email/notif when scheduled")
     is_active = models.BooleanField(default=True)
 
     def __str__(self) -> str:
