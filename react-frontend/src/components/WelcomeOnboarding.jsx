@@ -20,8 +20,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronRight, FiCheck, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
 import dynamic from 'next/dynamic';
-const Joyride = dynamic(() => import('react-joyride'), { ssr: false });
-// Manual STATUS codes since dynamic import doesn't easily expose named exports from the module
+// Joyride often requires targeting the specific export in Next.js dynamic imports
+const Joyride = dynamic(() => import('react-joyride').then(mod => mod.default || mod.Joyride), { ssr: false });
+
 const STATUS = {
   FINISHED: 'finished',
   SKIPPED: 'skipped',
