@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Box, VStack, HStack, Heading, Text, Input, Button, FormControl, FormLabel, SimpleGrid, useToast, Icon, Avatar, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, Stack, Select, Textarea, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Tag, TagLabel, TagCloseButton, Divider, Badge, Alert, AlertIcon, AlertTitle, AlertDescription, Wrap, WrapItem, 
+  Box, Flex, VStack, HStack, Heading, Text, Input, Button, FormControl, FormLabel, SimpleGrid, useToast, Icon, Avatar, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, Stack, Select, Textarea, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Tag, TagLabel, TagCloseButton, Divider, Badge, Alert, AlertIcon, AlertTitle, AlertDescription, Wrap, WrapItem, 
 } from "@chakra-ui/react";
 import { 
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
@@ -173,25 +173,39 @@ export default function ProfileClient() {
   return (
     <Box maxW="1200px" mx="auto" pb={20}>
       <VStack align="stretch" spacing={6} mb={10}>
-        <HStack justify="space-between">
+        <Flex 
+          direction={{ base: "column", md: "row" }}
+          justify="space-between" 
+          align={{ base: "stretch", md: "center" }}
+          gap={4}
+        >
            <Box>
-              <Heading size="xl" color="#2E2E2E" fontFamily="'Playfair Display', serif">Cinician Identity Hub</Heading>
-              <Text color="gray.500" mt={1}>Define your professional scope, expertise, and public presence.</Text>
+              <Heading size={{ base: "lg", md: "xl" }} color="#2E2E2E" fontFamily="'Playfair Display', serif" whiteSpace="normal">Clinician Identity Hub</Heading>
+              <Text color="gray.500" mt={1} fontSize={{ base: "sm", md: "md" }}>Define your professional scope, expertise, and public presence.</Text>
            </Box>
-           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={handleSave} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl">Finalize & Sync</Button>
-        </HStack>
+           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={handleSave} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl" w={{ base: "full", md: "auto" }} flexShrink={0}>Finalize & Sync</Button>
+        </Flex>
       </VStack>
 
       <Tabs variant="enclosed" colorScheme="teal" isLazy>
-        <TabList overflowX="auto" border="none" mb={8} sx={{ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUser} mr={2}/> Identity</Tab>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiAward} mr={2}/> Credentials</Tab>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiUsers} mr={2}/> Populations</Tab>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiTarget} mr={2}/> Clinical Scope</Tab>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiHeart} mr={2}/> Therapeutic Approach</Tab>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiClock} mr={2}/> Availability</Tab>
-          <Tab whiteSpace="nowrap" borderRadius="xl" px={8} mr={2} border="1px solid" borderColor="gray.100"><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
-          <Tab whiteSpace="nowrap" _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={8} border="1px solid" borderColor="gray.100"><Icon as={FiSettings} mr={2}/> Internal Matching</Tab>
+        <TabList 
+          overflowX="auto" 
+          border="none" 
+          mb={8} 
+          flexWrap="nowrap"
+          sx={{ 
+            scrollbarWidth: 'none', 
+            '&::-webkit-scrollbar': { display: 'none' } 
+          }}
+        >
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiUser} mr={2}/> Identity</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiAward} mr={2}/> Credentials</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiUsers} mr={2}/> Populations</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiTarget} mr={2}/> Clinical Scope</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiHeart} mr={2}/> Therapeutic Approach</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiClock} mr={2}/> Availability</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={{ base: 4, md: 8 }} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiSettings} mr={2}/> Internal Matching</Tab>
         </TabList>
 
         <TabPanels bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
@@ -696,14 +710,14 @@ export default function ProfileClient() {
         </TabPanels>
       </Tabs>
       
-      <Box p={8} mt={10} bg="#56756D" borderRadius="3xl" color="white" shadow="2xl">
-         <HStack justify="space-between">
+      <Box p={{ base: 6, md: 8 }} mt={10} bg="#56756D" borderRadius="3xl" color="white" shadow="2xl">
+         <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} gap={4}>
             <VStack align="start" spacing={0}>
-               <Text fontWeight="bold" fontSize="lg">Commit Changes to Public Profile</Text>
+               <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }}>Commit Changes to Public Profile</Text>
                <Text fontSize="sm" opacity="0.8">This will immediately update your crawlable public page and matching score.</Text>
             </VStack>
-            <Button size="lg" bg="white" color="mlc.greenDark" borderRadius="full" px={12} onClick={handleSave} isLoading={loading}>Sync Now</Button>
-         </HStack>
+            <Button size="lg" bg="white" color="mlc.greenDark" borderRadius="full" px={12} onClick={handleSave} isLoading={loading} w={{ base: "full", md: "auto" }} flexShrink={0}>Sync Now</Button>
+         </Flex>
       </Box>
     </Box>
   );

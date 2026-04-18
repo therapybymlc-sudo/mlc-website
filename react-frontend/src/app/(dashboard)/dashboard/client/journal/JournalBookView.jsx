@@ -159,17 +159,17 @@ export default function JournalBookView({ entries, onClose, userName }) {
           >
             {/* 1. Cover Page */}
             <Page number={0}>
-               <Center h="100%" flexDirection="column" textAlign="center" p={10} border="10px double" borderColor="mlc.gold">
+               <Center h="100%" flexDirection="column" textAlign="center" p={{ base: 4, md: 10 }} border="10px double" borderColor="mlc.gold">
                   <VStack spacing={8}>
                      <Icon as={FiBookOpen} boxSize={12} color="mlc.gold" />
                      <VStack spacing={2}>
                         <Text fontSize="sm" letterSpacing="0.2em" color="gray.500" fontWeight="800">MLC HEALTH</Text>
-                        <Heading size="2xl" fontFamily="'Playfair Display', serif" color="mlc.black">My Therapeutic Journey</Heading>
+                        <Heading size={{ base: "lg", md: "2xl" }} fontFamily="'Playfair Display', serif" color="mlc.black" whiteSpace="normal" wordBreak="keep-all" lineHeight="1.3">My Therapeutic Journey</Heading>
                      </VStack>
                      <Divider w="50px" borderColor="mlc.gold" borderBottomWidth="2px" />
                      <VStack spacing={0}>
-                        <Text fontStyle="italic" color="gray.600">Documented by</Text>
-                        <Text fontWeight="800" fontSize="lg" color="mlc.black">{userName}</Text>
+                        <Text fontStyle="italic" color="gray.600" fontSize={{ base: "sm", md: "md" }}>Documented by</Text>
+                        <Text fontWeight="800" fontSize={{ base: "md", md: "lg" }} color="mlc.black">{userName}</Text>
                      </VStack>
                      <Text fontSize="xs" color="gray.400" mt={10}>Generated on {new Date().toLocaleDateString()}</Text>
                   </VStack>

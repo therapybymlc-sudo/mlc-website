@@ -92,15 +92,15 @@ export default function AppointmentsClient() {
             {loading ? (
                 <VStack py={20}><Spinner color="#56756D" /></VStack>
             ) : (
-                <Box overflowX="auto" w="full">
-                <Table variant="simple">
+                <Box overflowX="auto" w="full" minW="0">
+                <Table variant="simple" size={{ base: "sm", md: "md" }}>
                     <Thead>
                         <Tr>
-                            <Th>Date & Time</Th>
-                            <Th>Therapist</Th>
-                            <Th>Format</Th>
-                            <Th>Status</Th>
-                            <Th textAlign="right">Action</Th>
+                            <Th whiteSpace="nowrap">Date & Time</Th>
+                            <Th whiteSpace="nowrap">Therapist</Th>
+                            <Th whiteSpace="nowrap">Format</Th>
+                            <Th whiteSpace="nowrap">Status</Th>
+                            <Th whiteSpace="nowrap" textAlign="right">Action</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
