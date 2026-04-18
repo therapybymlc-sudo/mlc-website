@@ -115,6 +115,7 @@ export default function DashboardLayout({ children }) {
         borderColor="gray.100"
         position="sticky"
         top="0"
+        overflowY="auto"
       >
         <SidebarContent links={links} pathname={pathname} signOut={signOut} />
       </Box>
@@ -132,6 +133,18 @@ export default function DashboardLayout({ children }) {
         >
            <Box /> 
            <HStack spacing={4}>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                leftIcon={<Icon as={FiCheckCircle} />} 
+                onClick={() => window.dispatchEvent(new CustomEvent('mlc-start-tour'))}
+                color="gray.500"
+                fontSize="xs"
+                borderRadius="full"
+                _hover={{ bg: 'mlc.green', color: 'white' }}
+              >
+                ORIENTATION
+              </Button>
               <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
            </HStack>
         </Flex>
