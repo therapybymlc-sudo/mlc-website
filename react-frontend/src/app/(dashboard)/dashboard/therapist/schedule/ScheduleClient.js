@@ -364,9 +364,9 @@ export default function ScheduleClient() {
         gap={4}
         mb={4}
       >
-        <VStack align="start" spacing={0}>
-            <Heading size="lg" color="#2E2E2E" fontWeight="800">Clinical Schedule</Heading>
-            <Text color="gray.500" fontSize="sm">Manage your therapeutic sessions and availability.</Text>
+        <VStack align="start" spacing={0} flex="1" minW="200px">
+            <Heading size="lg" color="#2E2E2E" fontWeight="800" noOfLines={1}>Clinical Schedule</Heading>
+            <Text color="gray.500" fontSize="sm" noOfLines={1}>Manage your therapeutic sessions and availability.</Text>
         </VStack>
         
         <Flex 
