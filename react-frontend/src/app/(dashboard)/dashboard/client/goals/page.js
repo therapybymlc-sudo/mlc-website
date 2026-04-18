@@ -1,5 +1,5 @@
-import dynamic from 'next/dynamic';
-const GoalsClient = dynamic(() => import('./GoalsClient'), { ssr: false });
+import GoalsClient from './GoalsClient';
+
 
 export const metadata = {
   title: 'My Goals | MLC Health',
