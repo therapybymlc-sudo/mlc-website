@@ -348,7 +348,41 @@ export default function ScheduleClient() {
         </HStack>
       </HStack>
 
-      <Box bg="white" p={4} borderRadius="4xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
+      <Box 
+          bg="white" 
+          p={6} 
+          borderRadius="4xl" 
+          shadow="xl" 
+          border="1px solid" 
+          borderColor="gray.100" 
+          overflow="hidden"
+          sx={{
+              ".fc": {
+                  fontFamily: "inherit",
+              },
+              ".fc-timegrid-slot": { 
+                  height: "4rem",
+                  borderColor: "gray.50"
+              },
+              ".fc-business-hour": { 
+                  backgroundColor: "rgba(169, 203, 183, 0.15) !important", // Soft MLC Green tint
+              },
+              ".fc-non-business": { 
+                  backgroundColor: "#F7FAFC !important", // Clean grey for off-hours
+              },
+              ".fc-event": {
+                  borderRadius: "xl",
+                  border: "none",
+                  boxShadow: "sm",
+                  padding: "2px 4px"
+              },
+              ".fc-toolbar-title": {
+                  fontSize: "1.25rem",
+                  fontWeight: "800",
+                  color: "#2E2E2E"
+              }
+          }}
+      >
           <FullCalendarComponent 
               events={events} 
               onSelect={handleSelect}
