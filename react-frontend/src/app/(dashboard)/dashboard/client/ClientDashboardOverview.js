@@ -195,13 +195,13 @@ export default function ClientDashboardOverview() {
     <Box maxW="1200px" mx="auto">
       {/* HEADER SECTION */}
       <Flex 
-        direction={{ base: 'column', md: 'row' }} 
+        direction={{ base: 'column', lg: 'row' }} 
         justify="space-between" 
-        align={{ base: 'start', md: 'flex-end' }}
+        align={{ base: 'stretch', lg: 'flex-end' }}
         mb={10}
         gap={6}
       >
-        <HStack spacing={5}>
+        <Flex direction={{ base: "column", sm: "row" }} align={{ base: "center", sm: "center" }} gap={5}>
           <Box position="relative">
             <Avatar 
               size="xl" 
@@ -223,48 +223,48 @@ export default function ClientDashboardOverview() {
               <Icon as={moodColors[mood]?.icon || FiActivity} color={moodColors[mood]?.text || '#2E2E2E'} boxSize={3} />
             </Box>
           </Box>
-          <VStack align="start" spacing={1}>
+          <VStack align={{ base: "center", sm: "start" }} spacing={1}>
             <Tag size="sm" variant="subtle" colorScheme="teal" borderRadius="full">
               {new Date().getHours() < 12 ? 'Good Morning' : 'Good Evening'}, {user?.firstName} 🌿
             </Tag>
-            <Heading as="h1" size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif" id="tour-welcome-heading">
-                Welcome to Your Healing Space
+            <Heading as="h1" size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif" textAlign={{ base: "center", sm: "left" }} noOfLines={1}>
+                Your Healing Space
             </Heading>
-            <Text color="gray.500" fontSize="sm">Your journey is a process, not a destination. Take a breath.</Text>
+            <Text color="gray.500" fontSize="sm" textAlign={{ base: "center", sm: "left" }}>Take a breath.</Text>
           </VStack>
-        </HStack>
+        </Flex>
 
-        <HStack spacing={3}>
-           <Box textAlign="right" display={{ base: 'none', md: 'block' }}>
-              <Text fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="wider">THERAPY STREAK</Text>
-              <Text fontSize="lg" fontWeight="700" color="#56756D">{stats.journalStreak} Days</Text>
+        <HStack spacing={6} justify={{ base: "center", lg: "flex-end" }} bg="white" p={4} borderRadius="2xl" shadow="sm">
+           <Box textAlign="center">
+              <Text fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="wider">STREAK</Text>
+              <Text fontSize="lg" fontWeight="700" color="#56756D" whiteSpace="nowrap">{stats.journalStreak} Days</Text>
            </Box>
-           <Divider orientation="vertical" h="40px" />
-           <Box textAlign="right">
-              <Text fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="wider">GOALS ALIVE</Text>
-              <Text fontSize="lg" fontWeight="700" color="#C9A960">{stats.activeGoals}</Text>
+           <Divider orientation="vertical" h="30px" />
+           <Box textAlign="center">
+              <Text fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="wider">GOALS</Text>
+              <Text fontSize="lg" fontWeight="700" color="#C9A960" whiteSpace="nowrap">{stats.activeGoals} Active</Text>
            </Box>
         </HStack>
       </Flex>
 
-      {/* STREAK NUDGE IF NOT CHECKED IN TODAY */}
+      {/* STREAK NUDGE */}
       {!loading && !journals.some(j => new Date(j.created_at).toDateString() === new Date().toDateString()) && !checkins.some(c => new Date(c.checkin_date).toDateString() === new Date().toDateString()) && (
         <Box 
           bgGradient="linear(to-r, #C9A960, #D68C45)" 
-          p={6} 
+          p={{ base: 4, md: 6 }} 
           borderRadius="3xl" 
           mb={10} 
           color="white" 
           shadow="lg"
         >
-          <HStack justify="space-between" flexWrap="wrap" gap={4}>
+          <Flex direction={{ base: "column", md: "row" }} justify="space-between" align="center" gap={4}>
             <HStack spacing={6}>
-              <Box bg="white" p={3} borderRadius="2xl">
+              <Box bg="white" p={3} borderRadius="2xl" display={{ base: "none", sm: "block" }}>
                 <Icon as={FiZap} color="#D68C45" boxSize={6} />
               </Box>
-              <VStack align="start" spacing={0}>
+              <VStack align={{ base: "center", md: "start" }} spacing={0} textAlign={{ base: "center", md: "left" }}>
                 <Heading size="sm">Protect your {stats.journalStreak}-day streak!</Heading>
-                <Text fontSize="sm" opacity={0.9}>You haven't checked in with your healing tools today. Take a moment for a quick reflection.</Text>
+                <Text fontSize="sm" opacity={0.9} noOfLines={{ base: 2, md: 1 }}>Log your daily reflection to stay on path.</Text>
               </VStack>
             </HStack>
             <Button 
@@ -274,141 +274,77 @@ export default function ClientDashboardOverview() {
               color="#D68C45" 
               borderRadius="full" 
               px={8}
+              w={{ base: "full", md: "auto" }}
               _hover={{ bg: 'whiteAlpha.900' }}
             >
               Log Reflection
             </Button>
-          </HStack>
+          </Flex>
         </Box>
       )}
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8} mb={10}>
-        {/* Mood Card - Enhanced */}
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} mb={10}>
+        {/* Mood Card */}
         <Box 
-          id="tour-mood-card"
-          bg="white" 
-          p={8} 
-          borderRadius="3xl" 
-          shadow="sm" 
-          border="1px solid" 
-          borderColor="gray.100"
-          transition="0.3s"
-          _hover={{ shadow: 'md' }}
+          bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100"
         >
           <HStack justify="space-between" mb={6}>
-            <Heading size="sm" color="#2E2E2E" fontWeight="600">How are you arriving?</Heading>
+            <Heading size="sm" color="#2E2E2E" fontWeight="600">Arriving today</Heading>
             <Icon as={FiSun} color="#C9A960" />
           </HStack>
-          <VStack spacing={3} align="stretch">
-            <SimpleGrid columns={2} spacing={3}>
-              {Object.keys(moodColors).map(m => (
-                <Button 
-                  key={m} 
-                  size="md" 
-                  h="60px"
-                  variant="outline" 
-                  bg={mood === m ? moodColors[m].bg : 'transparent'}
-                  borderColor={mood === m ? moodColors[m].text : 'gray.100'}
-                  color={mood === m ? moodColors[m].text : 'gray.600'}
-                  _hover={{ bg: moodColors[m].bg, borderColor: moodColors[m].text }}
-                  onClick={() => handleMoodUpdate(m)}
-                  borderRadius="2xl"
-                  display="flex"
-                  flexDirection="column"
-                  gap={1}
-                >
-                  <Icon as={moodColors[m].icon} boxSize={4} />
-                  <Text fontSize="xs">{m}</Text>
-                </Button>
-              ))}
-            </SimpleGrid>
-            <Text fontSize="xs" color="gray.400" textAlign="center" mt={2}>
-              Synced with your therapist's dashboard.
-            </Text>
-          </VStack>
+          <SimpleGrid columns={2} spacing={3}>
+            {Object.keys(moodColors).map(m => (
+              <Button 
+                key={m} 
+                size="md" h="50px" variant="outline" 
+                bg={mood === m ? moodColors[m].bg : 'transparent'}
+                borderColor={mood === m ? moodColors[m].text : 'gray.100'}
+                color={mood === m ? moodColors[m].text : 'gray.600'}
+                onClick={() => handleMoodUpdate(m)}
+                borderRadius="xl"
+                display="flex" gap={1}
+              >
+                <Icon as={moodColors[m].icon} boxSize={3} />
+                <Text fontSize="xs" fontWeight="700">{m}</Text>
+              </Button>
+            ))}
+          </SimpleGrid>
         </Box>
 
-        {/* Goals Progress - Refined */}
+        {/* Goals Progress */}
         <Box 
-          id="tour-goals-card"
-          bg="white" 
-          p={8} 
-          borderRadius="3xl" 
-          shadow="sm" 
-          border="1px solid" 
-          borderColor="gray.100"
-          transition="0.3s"
-          _hover={{ shadow: 'md' }}
+          bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100"
         >
            <HStack justify="space-between" mb={6}>
-            <Heading size="sm" color="#2E2E2E">Healing Journey</Heading>
+            <Heading size="sm" color="#2E2E2E">Progress</Heading>
             <Icon as={FiCheckCircle} color="#56756C" />
           </HStack>
           <VStack align="stretch" spacing={5}>
             <Box>
                 <HStack justify="space-between" mb={2}>
-                    <Text fontSize="sm" fontWeight="600" color="#2E2E2E">Overall Progress</Text>
+                    <Text fontSize="xs" fontWeight="700" color="gray.500">OVERALL</Text>
                     <Text fontSize="sm" fontWeight="800" color="#56756D">{Math.round(progressValue)}%</Text>
                 </HStack>
-                <Progress 
-                    value={progressValue} 
-                    bg="#E9F2ED" 
-                    colorScheme="teal" 
-                    borderRadius="full" 
-                    size="md" 
-                />
+                <Progress value={progressValue} bg="#E9F2ED" colorScheme="teal" borderRadius="full" size="sm" />
             </Box>
-            
             <VStack align="start" spacing={3}>
                 {goals.slice(0, 2).map(goal => (
-                    <HStack key={goal.id} spacing={3}>
-                        <Icon as={FiArrowRight} color="#56756D" boxSize={3} />
-                        <Text fontSize="sm" color="gray.600" noOfLines={1}>{goal.title}</Text>
+                    <HStack key={goal.id} spacing={3} w="full">
+                        <Icon as={FiArrowRight} color="#56756D" boxSize={3} flexShrink={0} />
+                        <Text fontSize="sm" color="gray.600" noOfLines={1} flex={1}>{goal.title}</Text>
                     </HStack>
                 ))}
             </VStack>
-            
-            <Button 
-                as={NextLink} 
-                href="/dashboard/client/goals" 
-                size="sm" 
-                variant="ghost" 
-                color="#56756D" 
-                p={0} 
-                _hover={{ bg: 'transparent', textDecoration: 'underline' }}
-                justifyContent="start"
-            >
-                View detailed path
-            </Button>
           </VStack>
         </Box>
 
-        {/* Next Appointment - Premium Look */}
+        {/* Next Appointment */}
         <Box 
-          id="tour-appt-card"
-          bg="#56756D" 
-          p={8} 
-          borderRadius="3xl" 
-          shadow="xl" 
-          color="white"
-          position="relative"
-          overflow="hidden"
+          bg="#56756D" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="xl" color="white" position="relative" overflow="hidden"
         >
-            <Box 
-                position="absolute" 
-                top="-20px" 
-                right="-20px" 
-                bg="white" 
-                opacity={0.05} 
-                w="150px" 
-                h="150px" 
-                borderRadius="full" 
-            />
-            
-            <HStack justify="space-between" mb={8}>
+            <HStack justify="space-between" mb={6}>
                 <VStack align="start" spacing={0}>
-                   <Heading size="sm">Coming Up Next</Heading>
-                   <Text fontSize="xs" opacity={0.8}>Standard Therapy Session</Text>
+                   <Heading size="sm" noOfLines={1}>Next Session</Heading>
                 </VStack>
                 <Icon as={FiCalendar} boxSize={5} />
             </HStack>
@@ -416,53 +352,25 @@ export default function ClientDashboardOverview() {
             {nextAppt ? (
                 <VStack align="start" spacing={4}>
                     <HStack spacing={4}>
-                        <VStack align="start" spacing={0} bg="rgba(255,255,255,0.1)" p={3} borderRadius="2xl" border="1px solid rgba(255,255,255,0.2)">
-                            <Text fontSize="2xl" fontWeight="800" lineHeight="1">
-                                {new Date(nextAppt.start_time).getDate()}
-                            </Text>
-                            <Text fontSize="xs" fontWeight="bold" opacity={0.8}>
-                                {new Date(nextAppt.start_time).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
-                            </Text>
+                        <VStack align="center" spacing={0} bg="rgba(255,255,255,0.1)" p={3} borderRadius="2xl" minW="60px">
+                            <Text fontSize="xl" fontWeight="800">{new Date(nextAppt.start_time).getDate()}</Text>
+                            <Text fontSize="xs" fontWeight="bold" opacity={0.8}>{new Date(nextAppt.start_time).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}</Text>
                         </VStack>
                         <VStack align="start" spacing={0}>
-                            <Text fontWeight="700" fontSize="lg">
-                                {new Date(nextAppt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </Text>
-                            <Text fontSize="xs" opacity={0.8}>With {nextAppt.therapist_name || 'Assigned Therapist'}</Text>
+                            <Text fontWeight="700" fontSize="md">{new Date(nextAppt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            <Text fontSize="xs" opacity={0.8} noOfLines={1}>With {nextAppt.therapist_name || 'Therapist'}</Text>
                         </VStack>
                     </HStack>
-                    <HStack w="full" pt={2}>
-                        <Button 
-                            flex="1" 
-                            size="md" 
-                            bg="white" 
-                            color="#56756D" 
-                            borderRadius="2xl"
-                            _hover={{ bg: '#F2F1ED' }}
-                            fontSize="sm"
-                            fontWeight="700"
-                        >
-                            Join Video Room
-                        </Button>
-                    </HStack>
+                    <Button w="full" bg="white" color="#56756D" borderRadius="xl" fontSize="sm" fontWeight="800">Join Session</Button>
                 </VStack>
             ) : (
                 <VStack align="start" spacing={6}>
-                    <Text fontSize="sm" opacity={0.9}>You don't have any sessions scheduled currently.</Text>
-                    <Button 
-                        as={NextLink} 
-                        href="/therapists/discovery" 
-                        size="md" 
-                        bg="white" 
-                        color="#56756D" 
-                        borderRadius="2xl"
-                        w="full"
-                    >
-                        Schedule Session
-                    </Button>
+                    <Text fontSize="sm" opacity={0.9}>No pending sessions.</Text>
+                    <Button as={NextLink} href="/therapists/discovery" size="md" bg="white" color="#56756D" borderRadius="full" w="full">Schedule</Button>
                 </VStack>
             )}
         </Box>
+      </SimpleGrid>
       </SimpleGrid>
 
       {relationships.length === 0 && !loading && (

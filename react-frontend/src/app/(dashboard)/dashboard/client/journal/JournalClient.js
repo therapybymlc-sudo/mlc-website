@@ -289,11 +289,11 @@ export default function JournalClient() {
       case 3:
         return (
           <VStack spacing={6} py={6} w="full" animate={{ opacity: 1 }} initial={{ opacity: 0 }}>
-             <HStack w="full" justify="space-between">
-                <Button leftIcon={<FiChevronLeft />} variant="ghost" onClick={() => setStep(2)}>Back</Button>
-                <HStack>
-                    <Badge variant="subtle" colorScheme="teal" borderRadius="full" px={3}>{config.label}</Badge>
-                    {selectedTags.map(t => <Badge key={t} opacity={0.6} borderRadius="full">{t}</Badge>)}
+             <HStack w="full" justify="space-between" wrap="wrap" gap={3}>
+                <Button leftIcon={<FiChevronLeft />} variant="ghost" onClick={() => setStep(2)} size={{ base: "sm", md: "md" }}>Back</Button>
+                <HStack spacing={2} wrap="nowrap" overflow="hidden">
+                    <Badge variant="subtle" colorScheme="teal" borderRadius="full" px={3} whiteSpace="nowrap">{config.label}</Badge>
+                    {selectedTags.map(t => <Badge key={t} opacity={0.6} borderRadius="full" whiteSpace="nowrap" display={{ base: "none", sm: "inline-block" }}>{t}</Badge>)}
                 </HStack>
              </HStack>
              
@@ -413,11 +413,11 @@ export default function JournalClient() {
                                 _hover={{ borderColor: '#C9A960', transform: 'translateY(-2px)', shadow: 'md' }}
                                 transition="all 0.2s"
                             >
-                                <HStack justify="space-between" mb={3}>
-                                    <Text fontSize="xs" fontWeight="800" color="#C9A960">
-                                        {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                <HStack justify="space-between" mb={3} wrap="nowrap">
+                                    <Text fontSize="10px" fontWeight="900" color="#C9A960" whiteSpace="nowrap">
+                                        {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase()}
                                     </Text>
-                                    <Badge colorScheme="teal" borderRadius="full" fontSize="10px" px={2} variant="subtle">{entry.mood}</Badge>
+                                    <Badge colorScheme="teal" borderRadius="full" fontSize="10px" px={2} variant="subtle" whiteSpace="nowrap">{entry.mood}</Badge>
                                 </HStack>
                                 <Box 
                                     fontSize="sm" 

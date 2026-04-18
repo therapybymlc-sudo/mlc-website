@@ -155,8 +155,8 @@ export default function GoalsClient() {
 
   return (
     <Box maxW="1000px" mx="auto" pb={20}>
-      <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'flex-end' }} mb={10} gap={4}>
-        <VStack id="tour-goals-header" align="start" spacing={1}>
+      <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'flex-end' }} mb={10} gap={4}>
+        <VStack id="tour-goals-header" align={{ base: "center", md: "start" }} spacing={1} textAlign={{ base: "center", md: "left" }}>
           <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">
             Your Healing Roadmap
           </Heading>
@@ -169,6 +169,7 @@ export default function GoalsClient() {
           color="white" 
           borderRadius="full" 
           px={8}
+          w={{ base: "full", md: "auto" }}
           onClick={() => setShowAddForm(!showAddForm)}
           _hover={{ bg: '#C9A960' }}
         >
@@ -318,13 +319,15 @@ function GoalItem({ goal, onToggle, onDelete }) {
               isChecked={goal.is_completed}
               onChange={() => onToggle(goal)}
             />
-            <VStack align="start" spacing={0} onClick={() => setIsExpanded(!isExpanded)} cursor="pointer" flex="1">
-              <HStack>
+            <VStack align="start" spacing={0} onClick={() => setIsExpanded(!isExpanded)} cursor="pointer" flex="1" overflow="hidden">
+              <HStack w="full" wrap="nowrap">
                 <Text 
                   fontWeight="700" 
                   color={goal.is_completed ? 'gray.300' : '#2E2E2E'}
                   textDecoration={goal.is_completed ? 'line-through' : 'none'}
-                  fontSize="lg"
+                  fontSize={{ base: "md", md: "lg" }}
+                  noOfLines={1}
+                  flex={1}
                 >
                   {goal.title}
                 </Text>
@@ -335,6 +338,8 @@ function GoalItem({ goal, onToggle, onDelete }) {
                   borderRadius="full" 
                   px={2}
                   opacity={goal.is_completed ? 0.3 : 0.8}
+                  whiteSpace="nowrap"
+                  display={{ base: "none", sm: "block" }}
                 >
                   {goal.category?.replace('_', ' ').toUpperCase()}
                 </Badge>
