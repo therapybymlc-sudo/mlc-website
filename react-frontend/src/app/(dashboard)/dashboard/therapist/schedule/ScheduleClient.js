@@ -351,7 +351,7 @@ export default function ScheduleClient() {
       <Box 
           bg="white" 
           p={6} 
-          borderRadius="4xl" 
+          borderRadius="3xl" 
           shadow="xl" 
           border="1px solid" 
           borderColor="gray.100" 
@@ -361,23 +361,23 @@ export default function ScheduleClient() {
                   fontFamily: "inherit",
               },
               ".fc-timegrid-slot": { 
-                  height: "4rem",
+                  height: "3rem",
                   borderColor: "gray.50"
               },
               ".fc-business-hour": { 
-                  backgroundColor: "rgba(169, 203, 183, 0.15) !important", // Soft MLC Green tint
+                  backgroundColor: "rgba(169, 203, 183, 0.12) !important",
               },
               ".fc-non-business": { 
-                  backgroundColor: "#F7FAFC !important", // Clean grey for off-hours
+                  backgroundColor: "#F8F9FA !important",
               },
               ".fc-event": {
-                  borderRadius: "xl",
+                  borderRadius: "lg",
                   border: "none",
                   boxShadow: "sm",
-                  padding: "2px 4px"
+                  padding: "1px 4px"
               },
               ".fc-toolbar-title": {
-                  fontSize: "1.25rem",
+                  fontSize: "1.1rem",
                   fontWeight: "800",
                   color: "#2E2E2E"
               }
