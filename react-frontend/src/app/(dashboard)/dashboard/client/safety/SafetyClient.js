@@ -85,7 +85,7 @@ export default function SafetyClient() {
 
   return (
     <Box maxW="900px" mx="auto">
-      <VStack align="start" spacing={1} mb={8}>
+      <VStack id="tour-safety-header" align="start" spacing={1} mb={8}>
         <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">
           Personal Safety Plan
         </Heading>
@@ -101,6 +101,7 @@ export default function SafetyClient() {
       </Alert>
 
       <VStack align="stretch" spacing={6}>
+        <Box id="tour-safety-sections">
         <Accordion allowMultiple defaultIndex={[0]}>
           <SafetySection 
             icon={FiAlertTriangle} 
@@ -158,8 +159,9 @@ export default function SafetyClient() {
             onChange={(val) => handleChange('reason_for_living', val)}
           />
         </Accordion>
+        </Box>
 
-        <Box pt={6}>
+        <Box id="tour-safety-save" pt={6}>
             <Button 
                 w="full" 
                 h="60px" 

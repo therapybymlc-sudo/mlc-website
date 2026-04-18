@@ -335,8 +335,8 @@ export default function JournalClient() {
             alignItems="start"
         >
             {/* Capture Area - Takes 2/3 on large screens */}
-            <GridItem colSpan={{ base: 1, lg: 2 }}>
-                <MotionBox 
+            <GridItem colSpan={{ base: 1, lg: 2 }} id="tour-journal-capture">
+                <MotionBox
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     bg="white" 
@@ -365,7 +365,7 @@ export default function JournalClient() {
             </GridItem>
 
             {/* History Rail - Takes 1/3 */}
-            <GridItem colSpan={1}>
+            <GridItem colSpan={1} id="tour-journal-history">
                 <VStack align="stretch" spacing={6} position={{ lg: "sticky" }} top="24px">
                     <HStack justify="space-between">
                         <VStack align="start" spacing={0}>

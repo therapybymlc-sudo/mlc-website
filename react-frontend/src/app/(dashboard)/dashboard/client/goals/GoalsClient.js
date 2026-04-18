@@ -156,13 +156,14 @@ export default function GoalsClient() {
   return (
     <Box maxW="1000px" mx="auto" pb={20}>
       <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'start', md: 'flex-end' }} mb={10} gap={4}>
-        <VStack align="start" spacing={1}>
+        <VStack id="tour-goals-header" align="start" spacing={1}>
           <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">
             Your Healing Roadmap
           </Heading>
           <Text color="gray.500">Tiered intentions for your evolution.</Text>
         </VStack>
         <Button 
+          id="tour-goals-new"
           leftIcon={<FiPlus />} 
           bg="#56756D" 
           color="white" 
@@ -176,7 +177,7 @@ export default function GoalsClient() {
       </Flex>
 
       {/* Stats Board */}
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
+      <SimpleGrid id="tour-goals-stats" columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
         {CATEGORIES.map(cat => (
           <Box key={cat.id} bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
             <HStack justify="space-between" mb={3}>
@@ -247,7 +248,7 @@ export default function GoalsClient() {
         </Box>
       </Collapse>
 
-      <Tabs variant="soft-rounded" colorScheme="teal">
+      <Tabs id="tour-goals-tabs" variant="soft-rounded" colorScheme="teal">
         <TabList mb={8} bg="white" p={1} borderRadius="full" shadow="sm" w="fit-content">
           <Tab borderRadius="full" px={8} fontSize="sm" fontWeight="700">All Goals</Tab>
           {CATEGORIES.map(cat => (
