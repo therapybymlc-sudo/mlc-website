@@ -455,18 +455,15 @@ export default function ScheduleClient() {
               ".fc-timegrid-axis-cushion": { fontSize: { base: "0.6rem", md: "0.8rem" } }
           }}
       >
-          <FullCalendarComponent 
-              events={events} 
-              onSelect={handleSelect}
-              onEventClick={handleEventClick}
-              businessHours={businessHours}
-              initialView={typeof window !== 'undefined' && window.innerWidth < 768 ? 'timeGridDay' : 'timeGridWeek'}
-              dayHeaderFormat={{ 
-                weekday: typeof window !== 'undefined' && window.innerWidth < 768 ? 'narrow' : 'short', 
-                day: 'numeric', 
-                month: 'numeric', 
-                omitCommas: true 
-              }}
+          <Box overflowX="auto" w="full" pb={4} cursor="grab" _active={{ cursor: 'grabbing' }}>
+            <Box minW="1000px">
+              <FullCalendarComponent 
+                  events={events} 
+                  onSelect={handleSelect}
+                  onEventClick={handleEventClick}
+                  businessHours={businessHours}
+                  initialView="timeGridWeek"
+                  dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'numeric', omitCommas: true }}
               eventContent={(arg) => {
                   const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
@@ -508,6 +505,8 @@ export default function ScheduleClient() {
                   );
               }}
           />
+            </Box>
+          </Box>
       </Box>
 
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
