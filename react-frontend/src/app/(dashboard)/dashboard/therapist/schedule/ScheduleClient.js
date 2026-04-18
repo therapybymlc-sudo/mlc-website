@@ -418,12 +418,30 @@ export default function ScheduleClient() {
               eventContent={(arg) => {
                   const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
+                  
+                  // Dynamically scale font based on slotHeight
+                  const titleSize = `${Math.max(0.65, Math.min(0.9, 0.5 + (slotHeight * 0.1)))}rem`;
+                  const timeSize = `${Math.max(0.55, Math.min(0.75, 0.4 + (slotHeight * 0.08)))}rem`;
+
                   return (
-                      <VStack align="start" spacing={0} p={1} h="full">
-                          <Text fontWeight="800" fontSize="xs" color="black" isTruncated w="full" lineHeight="1.1">
+                      <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden">
+                          <Text 
+                            fontWeight="900" 
+                            fontSize={titleSize} 
+                            color="black" 
+                            isTruncated 
+                            w="full" 
+                            lineHeight="1.2"
+                          >
                               {arg.event.title}
                           </Text>
-                          <Text fontWeight="700" fontSize="10px" color="black" opacity={0.8}>
+                          <Text 
+                            fontWeight="800" 
+                            fontSize={timeSize} 
+                            color="black" 
+                            opacity={0.8}
+                            lineHeight="1"
+                          >
                               {start} - {end}
                           </Text>
                       </VStack>
