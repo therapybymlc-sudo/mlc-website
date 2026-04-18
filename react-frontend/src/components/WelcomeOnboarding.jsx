@@ -69,45 +69,39 @@ const TOUR_STEPS = [
   // Phase 1: Dashboard Overview (After Welcome Slide)
   {
     target: '#tour-overview-client',
-    content: 'This is your Dashboard Overview. It provides an immediate snapshot of your progress.',
+    content: 'This is your Dashboard Sidebar. You can navigate between all your tools here.',
     placement: 'right',
-    step_id: 'overview-links'
   },
   {
     target: '#tour-mood-card',
-    content: 'Shared mood data helps your therapist prepare for your next session. Checking in here is your first step of each week.',
+    content: 'Share how you are feeling today. This helps your therapist attuned to your current state.',
     placement: 'bottom',
-    step_id: 'mood'
   },
   {
     target: '#tour-appt-card',
-    content: 'Your clinical command center. Join sessions or review appointments instantly.',
+    content: 'Review and join your upcoming clinical sessions here.',
     placement: 'top',
-    step_id: 'appt',
     is_last_in_phase: true
   },
   // Phase 2: Journal (After Journal Slide)
   {
-    target: '#tour-journal',
-    content: 'Your private sanctuary. Here you can write, reflect, and see your story in 3D using the Book View.',
-    placement: 'right',
-    step_id: 'journal-link',
+    target: '#tour-book-view-btn',
+    content: 'The Book View transforms your entries into a beautiful digital manuscript.',
+    placement: 'left',
     is_last_in_phase: true
   },
   // Phase 3: Goals (After Goals Slide)
   {
     target: '#tour-goals-card',
-    content: 'Celebrate every milestone. Here, your journey is visualized in real-time.',
+    content: 'Track the milestones you and your therapist define together.',
     placement: 'bottom',
-    step_id: 'goals-card',
     is_last_in_phase: true
   },
   // Phase 4: Safety (After Safety Slide)
   {
     target: '#tour-safety-plan',
-    content: 'Access care tools and your safety plan here. Support is available whenever you need it.',
+    content: 'Your Care Space. Access your safety plan and groundedness tools instantly.',
     placement: 'right',
-    step_id: 'safety-link',
     is_last_in_phase: true
   }
 ];
@@ -117,7 +111,6 @@ export default function WelcomeOnboarding() {
   const currentPath = usePathname();
   const { isOpen, onOpen, onClose } = useDisclosure();
   
-  // State for the Interleaved flow
   const [currentAestheticIdx, setCurrentAestheticIdx] = useState(0);
   const [joyrideIndex, setJoyrideIndex] = useState(0);
   const [runJoyride, setRunJoyride] = useState(false);
@@ -133,7 +126,6 @@ export default function WelcomeOnboarding() {
       return () => clearTimeout(timer);
     }
 
-    // Listener for manual tour trigger
     const handleStartTour = () => {
         setCurrentAestheticIdx(0);
         setJoyrideIndex(0);
@@ -149,39 +141,34 @@ export default function WelcomeOnboarding() {
     setIsModalVisible(false);
     onClose();
 
-    // Redirection Logic: Ensure user is on the correct page before starting the phase
     const targetPath = currentAesthetic.href;
     if (targetPath && currentPath !== targetPath) {
       router.push(targetPath);
       // Wait for navigation and potential data loading before starting Joyride
-      setTimeout(() => setRunJoyride(true), 800);
+      setTimeout(() => setRunJoyride(true), 1200);
     } else {
-      setTimeout(() => setRunJoyride(true), 100);
+      setTimeout(() => setRunJoyride(true), 200);
     }
   };
 
   const handleJoyrideCallback = (data) => {
     const { action, index, status, type } = data;
     
-    // Check if we reached the end of a "Phase"
     if (type === 'step:after') {
       const currentStep = TOUR_STEPS[index];
       if (currentStep?.is_last_in_phase) {
         setRunJoyride(false);
         setJoyrideIndex(index + 1);
 
-        // If we have more aesthetic slides, show the next one
         if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
           const nextIdx = currentAestheticIdx + 1;
           setCurrentAestheticIdx(nextIdx);
           
-          // Small delay before opening next modal for impact
           setTimeout(() => {
             setIsModalVisible(true);
             onOpen();
-          }, 400);
+          }, 500);
         } else {
-            // End of entire tour
             localStorage.setItem('mlc_onboarding_visited', 'true');
         }
       }
@@ -206,6 +193,8 @@ export default function WelcomeOnboarding() {
         showProgress
         showSkipButton
         disableOverlayClose
+        disableScrolling={false}
+        scrollOffset={100}
         callback={handleJoyrideCallback}
         styles={{
           options: {
@@ -232,7 +221,6 @@ export default function WelcomeOnboarding() {
         <ModalContent bg="transparent" shadow="none">
           <ModalBody p={0}>
             <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
-              {/* Visual Side */}
               <Box flex="1" position="relative" display={{ base: 'none', lg: 'block' }}>
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -255,7 +243,6 @@ export default function WelcomeOnboarding() {
                 </AnimatePresence>
               </Box>
 
-              {/* Content Side */}
               <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }} position="relative">
                 <VStack spacing={12} w="full" maxW="400px" align="start">
                   <Box w="full">

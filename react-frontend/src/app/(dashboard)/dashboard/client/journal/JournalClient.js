@@ -372,7 +372,7 @@ export default function JournalClient() {
                             <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">Recent reflections</Heading>
                             <Text fontSize="xs" color="gray.400">Your documented journey</Text>
                         </VStack>
-                        <VStack spacing={2} align="center">
+                        <VStack spacing={2} align="center" id="tour-book-view-btn">
                             <IconButton 
                                 icon={<FiBookOpen fontSize="24px" />} 
                                 variant="ghost" 
