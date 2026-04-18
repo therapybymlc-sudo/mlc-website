@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -17,24 +17,19 @@ import {
   Progress,
   Center,
 } from "@chakra-ui/react";
-import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
-import { FiChevronRight, FiCheck, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
-import dynamic from 'next/dynamic';
-
-const Joyride = dynamic(() => import('react-joyride').then(mod => mod.default || mod.Joyride), { ssr: false });
+import { FiChevronRight, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
 
 const MotionBox = motion(Box);
 
 const AESTHETIC_STEPS = [
   {
     id: 'welcome',
-    title: "Welcome to MLC Health",
+    title: "Welcome to MLC",
     description: "Welcome to your private healing space. We've designed this environment to support your journey with beauty, privacy, and clinical insight.",
     icon: FiActivity,
     color: "#56756D",
     image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=2672&auto=format&fit=crop",
-    href: "/dashboard/client"
   },
   {
     id: 'journal',
@@ -43,7 +38,6 @@ const AESTHETIC_STEPS = [
     icon: FiBookOpen,
     color: "#C9A960",
     image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=2574&auto=format&fit=crop",
-    href: "/dashboard/client/journal"
   },
   {
     id: 'goals',
@@ -52,7 +46,6 @@ const AESTHETIC_STEPS = [
     icon: FiTarget,
     color: "#84A59D",
     image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2670&auto=format&fit=crop",
-    href: "/dashboard/client/goals"
   },
   {
     id: 'safety',
@@ -61,63 +54,20 @@ const AESTHETIC_STEPS = [
     icon: FiShield,
     color: "#4A4E69",
     image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=2670&auto=format&fit=crop",
-    href: "/dashboard/client/safety"
-  }
-];
-
-const TOUR_STEPS = [
-  {
-    target: '#tour-welcome-heading',
-    content: 'Welcome to your healing command center. Everything you need is organized here.',
-    placement: 'bottom',
-    disableBeacon: true,
-  },
-  {
-    target: '#tour-mood-card',
-    content: 'Share how you’re arriving today. Your therapist uses this to tailor your next session.',
-    placement: 'bottom',
-    disableBeacon: true,
-  },
-  {
-    target: '#tour-appt-card',
-    content: 'Review and join your clinical appointments instantly.',
-    placement: 'top',
-    disableBeacon: true,
-    is_last_in_phase: true
-  },
-  {
-    target: '#tour-book-view-btn',
-    content: 'The Book View transforms your reflections into a digital manuscript.',
-    placement: 'left',
-    disableBeacon: true,
-    is_last_in_phase: true
-  },
-  {
-    target: '#tour-goals-card',
-    content: 'Celebrate every step forward by tracking your clinical goals.',
-    placement: 'bottom',
-    disableBeacon: true,
-    is_last_in_phase: true
-  },
-  {
-    target: '#tour-safety-plan-client',
-    content: 'Access care tools and your safety plan here whenever you need support.',
-    placement: 'right',
-    disableBeacon: true,
-    is_last_in_phase: true
   }
 ];
 
 export default function WelcomeOnboarding() {
-  const router = useRouter();
-  const currentPath = usePathname();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  
+
   const [currentAestheticIdx, setCurrentAestheticIdx] = useState(0);
-  const [joyrideIndex, setJoyrideIndex] = useState(0);
-  const [runJoyride, setRunJoyride] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [pendingRedirection, setPendingRedirection] = useState(null);
+
+  const finishOnboarding = () => {
+    localStorage.setItem('mlc_onboarding_visited', 'true');
+    setIsModalVisible(false);
+    onClose();
+  };
 
   useEffect(() => {
     const hasSeenOnboarding = localStorage.getItem('mlc_onboarding_visited');
@@ -129,195 +79,106 @@ export default function WelcomeOnboarding() {
     }
 
     const handleStartTour = () => {
-        setCurrentAestheticIdx(0);
-        setJoyrideIndex(0);
-        setRunJoyride(false);
-        setIsModalVisible(true);
-        onOpen();
+      setCurrentAestheticIdx(0);
+      setIsModalVisible(true);
+      onOpen();
     };
     window.addEventListener('mlc-start-tour', handleStartTour);
     return () => window.removeEventListener('mlc-start-tour', handleStartTour);
   }, [onOpen]);
 
   const handleModalContinue = () => {
-    setIsModalVisible(false);
-    onClose();
-
-    const targetPath = currentAesthetic.href;
-    if (targetPath && currentPath !== targetPath) {
-      setPendingRedirection(targetPath);
-      router.push(targetPath);
-      setTimeout(() => {
-          setPendingRedirection(null);
-          setRunJoyride(true);
-      }, 1800); // Wait longer for full CSR
-    } else {
-      setTimeout(() => setRunJoyride(true), 400);
-    }
-  };
-
-  const handleJoyrideCallback = (data) => {
-    const { action, index, status, type } = data;
-
-    if (status === 'finished' || status === 'skipped') {
-      setRunJoyride(false);
-      localStorage.setItem('mlc_onboarding_visited', 'true');
+    if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
+      setCurrentAestheticIdx((i) => i + 1);
       return;
     }
-
-    // Joyride is used in controlled mode via `stepIndex`, so we must advance
-    // the index ourselves on every step transition (including missing targets).
-    const isStepTransition =
-      type === 'step:after' ||
-      type === 'target:notFound' ||
-      // Some Joyride versions report this as an error event name.
-      type === 'error:target_not_found';
-
-    if (!isStepTransition) return;
-
-    const currentStep = TOUR_STEPS[index];
-
-    // Only end the phase when the user is moving forward past the last step.
-    if (currentStep?.is_last_in_phase && action !== 'prev') {
-      setRunJoyride(false);
-      setJoyrideIndex(Math.min(index + 1, TOUR_STEPS.length - 1));
-
-      setCurrentAestheticIdx((prevIdx) => {
-        if (prevIdx < AESTHETIC_STEPS.length - 1) {
-          const nextIdx = prevIdx + 1;
-          setTimeout(() => {
-            setIsModalVisible(true);
-            onOpen();
-          }, 600);
-          return nextIdx;
-        }
-
-        localStorage.setItem('mlc_onboarding_visited', 'true');
-        return prevIdx;
-      });
-      return;
-    }
-
-    const delta = action === 'prev' ? -1 : 1;
-    const nextIndex = Math.max(0, Math.min(index + delta, TOUR_STEPS.length - 1));
-    setJoyrideIndex(nextIndex);
+    finishOnboarding();
   };
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
-  // Gate Joyride only while the intro modal is visible. `isOpen` can remain true
-  // internally even when the modal is not rendered (because we also gate with
-  // `isModalVisible`), which would incorrectly prevent the tour from running.
-  const effectivelyRunning = runJoyride && !pendingRedirection && !isModalVisible;
+  const isLastStep = currentAestheticIdx === AESTHETIC_STEPS.length - 1;
 
   return (
-    <>
-      <Joyride
-        steps={TOUR_STEPS}
-        stepIndex={joyrideIndex}
-        run={effectivelyRunning}
-        continuous
-        disableBeacon
-        disableOverlay
-        spotlightClicks
-        scrollToFirstStep
-        showProgress
-        showSkipButton
-        disableOverlayClose
-        disableScrolling={false}
-        scrollOffset={140}
-        floaterProps={{ disableAnimation: true }}
-        callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            primaryColor: '#56756D',
-            textColor: '#2E2E2E',
-            overlayColor: 'rgba(0, 0, 0, 0)',
-            zIndex: 40000,
-          },
-          tooltipContainer: {
-            textAlign: 'left',
-            borderRadius: '20px',
-            padding: '12px'
-          },
-          buttonNext: {
-            borderRadius: '10px',
-            padding: '12px 24px',
-            backgroundColor: '#56756D',
-            fontWeight: 'bold',
-          },
-          spotlight: {
-              borderRadius: '16px',
-              border: '2px solid #C9A960'
-          }
-        }}
-      />
+    <Modal
+      isOpen={isOpen && isModalVisible}
+      onClose={finishOnboarding}
+      size="full"
+      motionPreset="none"
+      closeOnOverlayClick closeOnEsc
+    >
+      <ModalOverlay bg="transparent" backdropFilter="none" />
+      <ModalContent bg="transparent" shadow="none">
+        <ModalBody p={0}>
+          <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
+            <Box flex="1" position="relative" display={{ base: 'none', lg: 'block' }}>
+              <AnimatePresence mode="wait">
+                <MotionBox
+                  key={currentAestheticIdx}
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  w="full"
+                  h="full"
+                  bgImage={`url(${currentAesthetic.image})`}
+                  bgSize="cover"
+                  bgPosition="center"
+                >
+                  <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient="linear(to-r, transparent, rgba(0,0,0,0.4))" />
+                </MotionBox>
+              </AnimatePresence>
+            </Box>
 
-      <Modal isOpen={isOpen && isModalVisible} onClose={onClose} size="full" motionPreset="none">
-        <ModalOverlay bg="transparent" backdropFilter="none" />
-        <ModalContent bg="transparent" shadow="none">
-          <ModalBody p={0}>
-            <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
-              <Box flex="1" position="relative" display={{ base: 'none', lg: 'block' }}>
-                <AnimatePresence mode="wait">
-                  <MotionBox
-                    key={currentAestheticIdx}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    position="absolute"
-                    top="0"
-                    left="0"
-                    w="full"
-                    h="full"
-                    bgImage={`url(${currentAesthetic.image})`}
-                    bgSize="cover"
-                    bgPosition="center"
-                  >
-                    <Box position="absolute" top="0" left="0" w="full" h="full" bgGradient="linear(to-r, transparent, rgba(0,0,0,0.4))" />
-                  </MotionBox>
-                </AnimatePresence>
-              </Box>
+            <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }} position="relative">
+              <VStack spacing={12} w="full" maxW="400px" align="start">
+                <Box w="full">
+                  <Progress value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} size="xs" bg="gray.50" colorScheme="teal" borderRadius="full" />
+                  <Text mt={4} fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="0.2em">
+                    MILESTONE {currentAestheticIdx + 1} OF {AESTHETIC_STEPS.length}
+                  </Text>
+                </Box>
 
-              <Center bg="white" w={{ base: 'full', lg: '500px', xl: '650px' }} p={{ base: 8, md: 20 }} position="relative">
-                <VStack spacing={12} w="full" maxW="400px" align="start">
-                  <Box w="full">
-                    <Progress value={((currentAestheticIdx + 1) / AESTHETIC_STEPS.length) * 100} size="xs" bg="gray.50" colorScheme="teal" borderRadius="full" />
-                    <Text mt={4} fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="0.2em">
-                      MILESTONE {currentAestheticIdx + 1} OF {AESTHETIC_STEPS.length}
-                    </Text>
-                  </Box>
-
-                  <VStack spacing={6} align="start" w="full">
-                    <AnimatePresence mode="wait">
-                      <MotionBox key={currentAestheticIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.5 }} w="full">
-                        <Icon as={currentAesthetic.icon} boxSize={12} color={currentAesthetic.color} mb={6} />
-                        <Heading size="2xl" color="mlc.black" fontFamily="'Playfair Display', serif" mb={4} lineHeight="shorter">
-                          {currentAesthetic.title}
-                        </Heading>
-                        <Text fontSize="lg" color="gray.500" lineHeight="tall">
-                          {currentAesthetic.description}
-                        </Text>
-                      </MotionBox>
-                    </AnimatePresence>
-                  </VStack>
-
-                  <HStack w="full" justify="space-between" pt={10}>
-                     <HStack spacing={2}>
-                        {AESTHETIC_STEPS.map((_, i) => (
-                          <Box key={i} w={i === currentAestheticIdx ? "30px" : "8px"} h="8px" borderRadius="full" bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"} transition="all 0.3s" />
-                        ))}
-                     </HStack>
-                     <Button rightIcon={<FiChevronRight />} bg={currentAesthetic.color} color="white" borderRadius="full" px={10} h={14} onClick={handleModalContinue} _hover={{ transform: 'scale(1.05)', bg: 'mlc.black' }}>
-                       Explore Feature
-                     </Button>
-                  </HStack>
+                <VStack spacing={6} align="start" w="full">
+                  <AnimatePresence mode="wait">
+                    <MotionBox key={currentAestheticIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.5 }} w="full">
+                      <Icon as={currentAesthetic.icon} boxSize={12} color={currentAesthetic.color} mb={6} />
+                      <Heading size="2xl" color="mlc.black" fontFamily="'Playfair Display', serif" mb={4} lineHeight="shorter">
+                        {currentAesthetic.title}
+                      </Heading>
+                      <Text fontSize="lg" color="gray.500" lineHeight="tall">
+                        {currentAesthetic.description}
+                      </Text>
+                    </MotionBox>
+                  </AnimatePresence>
                 </VStack>
-              </Center>
-            </HStack>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </>
+
+                <HStack w="full" justify="space-between" pt={10}>
+                  <HStack spacing={2}>
+                    {AESTHETIC_STEPS.map((_, i) => (
+                      <Box key={i} w={i === currentAestheticIdx ? "30px" : "8px"} h="8px" borderRadius="full" bg={i === currentAestheticIdx ? currentAesthetic.color : "gray.100"} transition="all 0.3s" />
+                    ))}
+                  </HStack>
+                  <Button
+                    rightIcon={<FiChevronRight />}
+                    bg={currentAesthetic.color}
+                    color="white"
+                    borderRadius="full"
+                    px={10}
+                    h={14}
+                    onClick={handleModalContinue}
+                    _hover={{ transform: 'scale(1.05)', bg: 'mlc.black' }}
+                  >
+                    {isLastStep ? 'Get started' : 'Next'}
+                  </Button>
+                </HStack>
+              </VStack>
+            </Center>
+          </HStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 }
