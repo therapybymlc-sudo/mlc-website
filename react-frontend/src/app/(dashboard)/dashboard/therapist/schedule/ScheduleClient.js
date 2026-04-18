@@ -167,6 +167,8 @@ export default function ScheduleClient() {
     fetchData();
   }, []);
 
+  const [slotHeight, setSlotHeight] = useState(2); // Top-level hook
+
   if (!mounted) return null;
 
   const toLocalISO = (date) => {
@@ -305,7 +307,6 @@ export default function ScheduleClient() {
     }
   };
 
-  const [slotHeight, setSlotHeight] = useState(2); // Default to 2rem
 
   return (
     <VStack align="stretch" spacing={6} p={8} bg="#FDFDFD" minH="100vh">
