@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import { Joyride, EVENTS, STATUS } from 'react-joyride';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Modal,
@@ -21,11 +21,6 @@ import {
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronRight, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
-
-const Joyride = dynamic(
-  () => import('react-joyride').then((mod) => mod.Joyride),
-  { ssr: false }
-);
 
 const MotionBox = motion(Box);
 
@@ -68,32 +63,32 @@ const AESTHETIC_STEPS = [
   },
 ];
 
-/** Spotlight tours: each array runs only on its matching route—never mix targets across pages. */
+/** v3 step shape; use skipBeacon (not disableBeacon). */
 const PAGE_SPOTLIGHT_TOURS = [
   [
     {
       target: '#tour-welcome-heading',
       content: 'Your command center. This header greets you and anchors the whole dashboard—like a home base in a game.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-mood-card',
       content: 'Tap a mood to log how you are arriving. Your therapist can see this and shape the next session around it.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-goals-card',
       content: 'A live preview of your goals. Open “View detailed path” anytime to manage intentions with your therapist.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-appt-card',
       content: 'Your next session lives here—date, time, and when you are ready, join the video room from this card.',
       placement: 'top',
-      disableBeacon: true,
+      skipBeacon: true,
     },
   ],
   [
@@ -101,19 +96,19 @@ const PAGE_SPOTLIGHT_TOURS = [
       target: '#tour-journal-capture',
       content: 'New entry flow: mood slider, tags, then the editor. Each step is a “level” that ends with Save.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-journal-history',
       content: 'Past reflections stack here. Scroll to revisit a day; everything stays in one timeline.',
       placement: 'left',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-book-view-btn',
       content: 'Book View is the reward screen—your entries become a readable manuscript. Unlocks after you have at least one entry.',
       placement: 'left',
-      disableBeacon: true,
+      skipBeacon: true,
     },
   ],
   [
@@ -121,25 +116,25 @@ const PAGE_SPOTLIGHT_TOURS = [
       target: '#tour-goals-header',
       content: 'Your roadmap title and subtitle—this page is for long-arc intentions, not just tasks.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-goals-new',
       content: 'New Intention opens the form: name it, pick a tier (daily / short / long term), add context, then save.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-goals-stats',
       content: 'These three cards score each tier—percent complete at a glance, like progress bars on a character sheet.',
       placement: 'top',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-goals-tabs',
       content: 'Switch tabs to filter all goals or focus on one tier. Check items off as you and your therapist agree they are done.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
   ],
   [
@@ -147,22 +142,34 @@ const PAGE_SPOTLIGHT_TOURS = [
       target: '#tour-safety-header',
       content: 'Your safety plan is private and clinician-aligned. Fill it when you are relatively calm—it is easier than in crisis.',
       placement: 'bottom',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-safety-sections',
       content: 'Each section is a step: warning signs, coping, people to call, professionals, environment, and what matters to you.',
       placement: 'top',
-      disableBeacon: true,
+      skipBeacon: true,
     },
     {
       target: '#tour-safety-save',
       content: 'Save locks in updates. Only you and your primary therapist can view this plan.',
       placement: 'top',
-      disableBeacon: true,
+      skipBeacon: true,
     },
   ],
 ];
+
+const JOYRIDE_OPTIONS = {
+  zIndex: 100000,
+  primaryColor: '#56756D',
+  overlayColor: 'rgba(15, 23, 42, 0.78)',
+  textColor: '#2E2E2E',
+  showProgress: true,
+  scrollOffset: 120,
+  targetWaitTimeout: 4000,
+  blockTargetInteraction: true,
+  buttons: ['back', 'close', 'primary', 'skip'],
+};
 
 export default function WelcomeOnboarding() {
   const router = useRouter();
@@ -176,7 +183,6 @@ export default function WelcomeOnboarding() {
   const [spotlightKey, setSpotlightKey] = useState(0);
   const [spotlightSteps, setSpotlightSteps] = useState(() => PAGE_SPOTLIGHT_TOURS[0]);
 
-  /** Phase index for the tour that just ran (0–3), captured when leaving the modal. */
   const spotlightPhaseRef = useRef(0);
 
   const finishOnboarding = () => {
@@ -221,29 +227,10 @@ export default function WelcomeOnboarding() {
       setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[spotlightPhaseRef.current]);
       setSpotlightKey((k) => k + 1);
       setRunSpotlight(true);
-    }, 650);
+    }, 900);
 
     return () => window.clearTimeout(t);
   }, [pathname, pendingRoute]);
-
-  const handleModalContinue = () => {
-    const phase = currentAestheticIdx;
-    const route = AESTHETIC_STEPS[phase].path;
-
-    spotlightPhaseRef.current = phase;
-    setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[phase]);
-    setIsModalVisible(false);
-    onClose();
-
-    if (pathname === route) {
-      setSpotlightKey((k) => k + 1);
-      setRunSpotlight(true);
-      return;
-    }
-
-    setPendingRoute(route);
-    router.push(route);
-  };
 
   const advanceAfterSpotlight = (phase, skipped) => {
     setRunSpotlight(false);
@@ -264,18 +251,39 @@ export default function WelcomeOnboarding() {
     finishOnboarding();
   };
 
-  const handleSpotlightCallback = (data) => {
-    const { status, type } = data;
+  const handleJoyrideEvent = (data) => {
+    const { type, status } = data;
 
-    if (type === 'error:target_not_found') {
+    if (type === EVENTS.TARGET_NOT_FOUND) {
       advanceAfterSpotlight(spotlightPhaseRef.current, false);
       return;
     }
 
-    if (status !== 'finished' && status !== 'skipped') return;
+    if (type === EVENTS.TOUR_END) {
+      const skipped = status === STATUS.SKIPPED;
+      advanceAfterSpotlight(spotlightPhaseRef.current, skipped);
+    }
+  };
 
-    const skipped = status === 'skipped';
-    advanceAfterSpotlight(spotlightPhaseRef.current, skipped);
+  const handleModalContinue = () => {
+    const phase = currentAestheticIdx;
+    const route = AESTHETIC_STEPS[phase].path;
+
+    spotlightPhaseRef.current = phase;
+    setSpotlightSteps(PAGE_SPOTLIGHT_TOURS[phase]);
+    setIsModalVisible(false);
+    onClose();
+
+    if (pathname === route) {
+      window.setTimeout(() => {
+        setSpotlightKey((k) => k + 1);
+        setRunSpotlight(true);
+      }, 100);
+      return;
+    }
+
+    setPendingRoute(route);
+    router.push(route);
   };
 
   const currentAesthetic = AESTHETIC_STEPS[currentAestheticIdx];
@@ -288,27 +296,16 @@ export default function WelcomeOnboarding() {
         steps={spotlightSteps}
         run={runSpotlight && !isModalVisible}
         continuous
-        showProgress
-        showSkipButton
         scrollToFirstStep
-        scrollOffset={120}
-        spotlightClicks={false}
-        disableScrolling={false}
-        callback={handleSpotlightCallback}
-        floaterProps={{ disableAnimation: true }}
+        options={JOYRIDE_OPTIONS}
+        onEvent={handleJoyrideEvent}
         styles={{
-          options: {
-            zIndex: 100000,
-            primaryColor: '#56756D',
-            textColor: '#2E2E2E',
-            overlayColor: 'rgba(15, 23, 42, 0.78)',
-          },
           tooltip: {
             borderRadius: '16px',
             padding: 16,
           },
           tooltipContainer: { textAlign: 'left' },
-          buttonNext: {
+          buttonPrimary: {
             borderRadius: '10px',
             padding: '10px 18px',
             backgroundColor: '#56756D',
@@ -317,8 +314,8 @@ export default function WelcomeOnboarding() {
           buttonBack: { color: '#56756D' },
           buttonSkip: { color: '#718096' },
           spotlight: {
-            borderRadius: '14px',
-            border: '2px solid #C9A960',
+            stroke: '#C9A960',
+            strokeWidth: 2,
           },
         }}
       />
