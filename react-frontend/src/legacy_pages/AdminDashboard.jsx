@@ -756,6 +756,19 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
         >
           View Live Site
         </Button>
+        <Button 
+          as={Link}
+          href="/dashboard"
+          variant="solid" 
+          bg="mlc.green"
+          color="white"
+          w="full" 
+          size="sm" 
+          mt={2}
+          _hover={{ bg: "mlc.greenDark" }}
+        >
+          Return to Dashboard
+        </Button>
       </Box>
     </VStack>
   );

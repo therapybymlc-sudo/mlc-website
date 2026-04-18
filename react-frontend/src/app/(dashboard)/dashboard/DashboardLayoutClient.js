@@ -179,8 +179,8 @@ export default function DashboardLayout({ children }) {
         </Box>
       </Box>
 
-      {/* Aesthetic Intro for Clients */}
-      {!isTherapist && <WelcomeOnboarding />}
+      {/* Aesthetic Intro for Clients & Admins */}
+      <WelcomeOnboarding />
 
       {/* Mobile Sidebar Drawer */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
