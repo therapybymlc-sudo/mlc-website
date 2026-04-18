@@ -76,27 +76,31 @@ export default function ScheduleClient() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [eventRes, clientRes, therapistRes, typesRes] = await Promise.all([
+      const [eventRes, clientRes, therapistRes, typesRes, slotRes] = await Promise.all([
         apiGet("schedule-events/"),
         apiGet("clients/"),
         apiGet("therapists/me/").catch(() => null),
-        apiGet("event-types/").catch(() => [])
+        apiGet("event-types/").catch(() => []),
+        apiGet("availability-slots/").catch(() => [])
       ]);
 
       // Normalize event types
       const normalizedTypes = Array.isArray(typesRes) ? typesRes : typesRes.results || [];
       setEventTypes(normalizedTypes);
-
-      // Map types for fast access
       const typeMap = {};
       normalizedTypes.forEach(t => { typeMap[t.id] = t; });
 
-      // Normalize events
+      // Unified Events Array
+      const unifiedEvents = [];
+
+      // 1. Process Schedule Events
       const eventData = Array.isArray(eventRes) ? eventRes : eventRes.results || [];
-      setEvents(eventData.map(ev => {
+      eventData.forEach(ev => {
         const typeInfo = typeMap[ev.event_type] || {};
-        return {
-          id: ev.id,
+        unifiedEvents.push({
+          id: `ev-${ev.id}`,
+          originalId: ev.id,
+          type: "session",
           title: ev.title,
           start: ev.start_time,
           end: ev.end_time,
@@ -108,8 +112,32 @@ export default function ScheduleClient() {
               event_type: ev.event_type,
               notes: ev.notes,
           }
-        };
-      }));
+        });
+      });
+
+      // 2. Process Availability Slots
+      const slotData = Array.isArray(slotRes) ? slotRes : slotRes.results || [];
+      slotData.forEach(slot => {
+        // Only show if not superseded by a session at the exact same time
+        const color = slot.status === "blocked" ? "#CBD5E0" : "#A9CBB7";
+        unifiedEvents.push({
+          id: `slot-${slot.id}`,
+          originalId: slot.id,
+          type: "availability",
+          title: slot.status === "open" ? "Available for Booking" : "Blocked Slot",
+          start: slot.start_time,
+          end: slot.end_time,
+          backgroundColor: color,
+          borderColor: color,
+          display: 'block', // Ensure it fills the slot
+          extendedProps: {
+              status: slot.status,
+              notes: slot.notes,
+          }
+        });
+      });
+
+      setEvents(unifiedEvents);
 
       // Normalize clients
       setClients(Array.isArray(clientRes) ? clientRes : clientRes.results || []);
@@ -158,6 +186,7 @@ export default function ScheduleClient() {
     };
 
     setForm({
+      mode: "session",
       title: "",
       client: "",
       event_type: "",
@@ -180,14 +209,27 @@ export default function ScheduleClient() {
         return new Date(date - offset).toISOString().slice(0, 16);
     };
 
-    setForm({
-      title: event.title,
-      client: event.extendedProps.client_id || "",
-      event_type: event.extendedProps.event_type || "",
-      start_time: toLocalISO(event.start),
-      end_time: toLocalISO(event.end),
-      notes: event.extendedProps.notes || "",
-    });
+    if (event.extendedProps.type === "availability") {
+        setForm({
+            mode: "availability",
+            title: "Public Availability Slot",
+            client: "",
+            event_type: "",
+            start_time: toLocalISO(event.start),
+            end_time: toLocalISO(event.end),
+            notes: event.extendedProps.notes || "",
+        });
+    } else {
+        setForm({
+            mode: "session",
+            title: event.title,
+            client: event.extendedProps.client_id || "",
+            event_type: event.extendedProps.event_type || "",
+            start_time: toLocalISO(event.start),
+            end_time: toLocalISO(event.end),
+            notes: event.extendedProps.notes || "",
+        });
+    }
     onOpen();
   };
 
@@ -205,67 +247,96 @@ export default function ScheduleClient() {
   };
 
   const handleCreate = async () => {
-    if (!form.start_time || !form.end_time || !currentTherapistId) {
-        toast({ title: "Profile or time missing", status: "warning" });
-        return;
-    }
+    if (!form.start_time || !form.end_time || !currentTherapistId) return;
     try {
-      const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
-      const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
-      
-      const payload = {
-        title: form.title || (selectedClientObj ? `${selectedClientObj.name} — ${selectedTypeObj?.name || 'Session'}` : (selectedTypeObj?.name || "Clinical Session")),
-        therapist: currentTherapistId,
-        client: form.client ? Number(form.client) : null,
-        event_type: form.event_type ? Number(form.event_type) : null,
-        start_time: form.start_time,
-        end_time: form.end_time,
-        notes: form.notes,
-        color: selectedTypeObj?.color || "#56756C",
-      };
-      await apiPost("schedule-events/", payload);
-      toast({ title: "Appointment created", status: "success" });
+      if (form.mode === "availability") {
+          const payload = {
+              therapist: currentTherapistId,
+              start_time: form.start_time,
+              end_time: form.end_time,
+              status: "open",
+              visible_to_clients: true,
+              notes: form.notes
+          };
+          await apiPost("availability-slots/", payload);
+          toast({ title: "Availability slot published", status: "success" });
+      } else {
+          const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
+          const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
+          
+          const payload = {
+            title: form.title || (selectedClientObj ? `${selectedClientObj.name} — ${selectedTypeObj?.name || 'Session'}` : (selectedTypeObj?.name || "Clinical Session")),
+            therapist: currentTherapistId,
+            client: form.client ? Number(form.client) : null,
+            event_type: form.event_type ? Number(form.event_type) : null,
+            start_time: form.start_time,
+            end_time: form.end_time,
+            notes: form.notes,
+            color: selectedTypeObj?.color || "#56756C",
+          };
+          await apiPost("schedule-events/", payload);
+          toast({ title: "Appointment created", status: "success" });
+      }
       onClose();
       fetchData();
     } catch (err) {
-      const detail = err.response?.data?.detail || "Check all required fields.";
-      toast({ title: "Failed to create appointment", description: detail, status: "error" });
+      toast({ title: "Process failed", description: err.response?.data?.detail || "Check all fields.", status: "error" });
     }
   };
 
   const handleUpdate = async () => {
     if (!selectedEvent || !currentTherapistId) return;
+    const isSlot = selectedEvent.id.startsWith("slot-");
+    const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id.split("-")[1];
+
     try {
-      const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
-      const payload = {
-        title: form.title,
-        therapist: currentTherapistId,
-        client: form.client ? Number(form.client) : null,
-        event_type: form.event_type ? Number(form.event_type) : null,
-        start_time: form.start_time,
-        end_time: form.end_time,
-        notes: form.notes,
-        color: selectedTypeObj?.color || selectedEvent.backgroundColor,
-      };
-      await apiPut(`schedule-events/${selectedEvent.id}/`, payload);
-      toast({ title: "Appointment updated", status: "success" });
+      if (isSlot) {
+          const payload = {
+              start_time: form.start_time,
+              end_time: form.end_time,
+              notes: form.notes
+          };
+          await apiPut(`availability-slots/${originalId}/`, payload);
+          toast({ title: "Slot updated", status: "success" });
+      } else {
+          const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
+          const payload = {
+            title: form.title,
+            therapist: currentTherapistId,
+            client: form.client ? Number(form.client) : null,
+            event_type: form.event_type ? Number(form.event_type) : null,
+            start_time: form.start_time,
+            end_time: form.end_time,
+            notes: form.notes,
+            color: selectedTypeObj?.color || selectedEvent.backgroundColor,
+          };
+          await apiPut(`schedule-events/${originalId}/`, payload);
+          toast({ title: "Session updated", status: "success" });
+      }
       onClose();
       fetchData();
     } catch (err) {
-      toast({ title: "Failed to update appointment", status: "error" });
+      toast({ title: "Update failed", status: "error" });
     }
   };
 
   const handleDelete = async () => {
     if (!selectedEvent) return;
-    if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
+    const isSlot = selectedEvent.id.startsWith("slot-");
+    const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id.split("-")[1];
+
+    if (!window.confirm(`Are you sure you want to delete this ${isSlot ? 'slot' : 'appointment'}?`)) return;
     try {
-      await apiDelete(`schedule-events/${selectedEvent.id}/`);
-      toast({ title: "Appointment canceled", status: "success" });
+      if (isSlot) {
+          await apiDelete(`availability-slots/${originalId}/`);
+      } else {
+          await apiDelete(`schedule-events/${originalId}/`);
+      }
+      toast({ title: "Removed successfully", status: "success" });
       onClose();
       fetchData();
     } catch (err) {
-      toast({ title: "Failed to cancel appointment", status: "error" });
+      toast({ title: "Removal failed", status: "error" });
     }
   };
 
@@ -343,46 +414,76 @@ export default function ScheduleClient() {
           <ModalCloseButton mt={6} mr={6} />
           <ModalBody>
             <VStack spacing={6}>
-                <FormControl isRequired>
-                    <FormLabel fontWeight="700" color="gray.600">Event Type</FormLabel>
-                    <Select 
-                        placeholder="Select type" 
-                        value={form.event_type}
-                        onChange={(e) => setForm({ ...form, event_type: e.target.value })}
-                        borderRadius="xl"
-                        h={12}
-                    >
-                        {eventTypes.map(t => (
-                            <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                    </Select>
+                <FormControl>
+                    <FormLabel fontWeight="700" color="gray.600">Entry Type</FormLabel>
+                    <HStack spacing={4}>
+                        <Button 
+                            flex={1} 
+                            variant={form.mode === 'session' ? 'solid' : 'outline'}
+                            bg={form.mode === 'session' ? '#56756D' : 'transparent'}
+                            color={form.mode === 'session' ? 'white' : '#56756D'}
+                            onClick={() => setForm({ ...form, mode: 'session' })}
+                            borderRadius="xl"
+                        >
+                            Clinical Session
+                        </Button>
+                        <Button 
+                            flex={1} 
+                            variant={form.mode === 'availability' ? 'solid' : 'outline'}
+                            bg={form.mode === 'availability' ? '#A9CBB7' : 'transparent'}
+                            color={form.mode === 'availability' ? 'white' : '#A9CBB7'}
+                            onClick={() => setForm({ ...form, mode: 'availability' })}
+                            borderRadius="xl"
+                        >
+                            Public Availability
+                        </Button>
+                    </HStack>
                 </FormControl>
 
-                <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Patient</FormLabel>
-                    <Select 
-                        placeholder="Select client (optional)" 
-                        value={form.client}
-                        onChange={(e) => setForm({ ...form, client: e.target.value })}
-                        borderRadius="xl"
-                        h={12}
-                    >
-                        {clients.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </Select>
-                </FormControl>
+                {form.mode === 'session' && (
+                    <>
+                        <FormControl isRequired>
+                            <FormLabel fontWeight="700" color="gray.600">Event Type</FormLabel>
+                            <Select 
+                                placeholder="Select type" 
+                                value={form.event_type}
+                                onChange={(e) => setForm({ ...form, event_type: e.target.value })}
+                                borderRadius="xl"
+                                h={12}
+                            >
+                                {eventTypes.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </Select>
+                        </FormControl>
 
-                <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Session Name</FormLabel>
-                    <Input 
-                        placeholder="e.g. Psychotherapy Follow-up" 
-                        value={form.title}
-                        onChange={(e) => setForm({ ...form, title: e.target.value })}
-                        borderRadius="xl"
-                        h={12}
-                    />
-                </FormControl>
+                        <FormControl>
+                            <FormLabel fontWeight="700" color="gray.600">Patient</FormLabel>
+                            <Select 
+                                placeholder="Select client (optional)" 
+                                value={form.client}
+                                onChange={(e) => setForm({ ...form, client: e.target.value })}
+                                borderRadius="xl"
+                                h={12}
+                            >
+                                {clients.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl>
+                            <FormLabel fontWeight="700" color="gray.600">Session Name</FormLabel>
+                            <Input 
+                                placeholder="e.g. Psychotherapy Follow-up" 
+                                value={form.title}
+                                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                borderRadius="xl"
+                                h={12}
+                            />
+                        </FormControl>
+                    </>
+                )}
 
                 <SimpleGrid columns={2} spacing={4} w="full">
                     <FormControl>
