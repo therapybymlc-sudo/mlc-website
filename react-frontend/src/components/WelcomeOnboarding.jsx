@@ -19,7 +19,13 @@ import {
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronRight, FiCheck, FiBookOpen, FiActivity, FiTarget, FiShield } from "react-icons/fi";
-import Joyride, { STATUS } from 'react-joyride';
+import dynamic from 'next/dynamic';
+const Joyride = dynamic(() => import('react-joyride'), { ssr: false });
+// Manual STATUS codes since dynamic import doesn't easily expose named exports from the module
+const STATUS = {
+  FINISHED: 'finished',
+  SKIPPED: 'skipped',
+};
 
 const MotionBox = motion(Box);
 
