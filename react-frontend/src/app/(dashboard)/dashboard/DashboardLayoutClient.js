@@ -68,6 +68,7 @@ export default function DashboardLayout({ children }) {
       { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
       { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
       { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
+      { label: 'The Therapist OS', icon: FiTarget, href: '/dashboard/therapist/premium' },
     ];
 
     const clientLinks = [
