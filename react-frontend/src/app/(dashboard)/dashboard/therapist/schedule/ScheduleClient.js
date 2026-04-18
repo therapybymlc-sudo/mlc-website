@@ -355,24 +355,40 @@ export default function ScheduleClient() {
 
 
   return (
-    <VStack align="stretch" spacing={6} p={8} bg="#FDFDFD" minH="100vh">
-      <HStack justify="space-between" mb={4} wrap="wrap">
+    <VStack align="stretch" spacing={6} p={{ base: 4, md: 8 }} bg="#FDFDFD" minH="100vh">
+      <Flex 
+        direction={{ base: "column", md: "row" }} 
+        justify="space-between" 
+        align={{ base: "start", md: "center" }}
+        gap={4}
+        mb={4}
+      >
         <VStack align="start" spacing={0}>
             <Heading size="lg" color="#2E2E2E" fontWeight="800">Clinical Schedule</Heading>
             <Text color="gray.500" fontSize="sm">Manage your therapeutic sessions and availability.</Text>
         </VStack>
         
-        <HStack spacing={6} wrap="wrap">
-            <HStack spacing={4} bg="white" p={2} px={4} borderRadius="full" shadow="sm" border="1px solid" borderColor="gray.100">
+        <Flex 
+            direction={{ base: "column", sm: "row" }}
+            gap={4}
+            w={{ base: "full", md: "auto" }}
+            align={{ base: "stretch", sm: "center" }}
+        >
+            {/* Scalability Slider - Hidden/Compact on mobile */}
+            <HStack 
+                spacing={4} 
+                bg="white" 
+                p={2} 
+                px={4} 
+                borderRadius="full" 
+                shadow="sm" 
+                border="1px solid" 
+                borderColor="gray.100"
+                display={{ base: "none", md: "flex" }}
+            >
                 <Icon as={FiMaximize2} color="gray.400" />
                 <Text fontSize="xs" fontWeight="700" color="gray.500" whiteSpace="nowrap">View Scale</Text>
-                <Slider 
-                    aria-label="Scale View" 
-                    min={1.5} max={6} step={0.5} 
-                    w="120px" 
-                    defaultValue={2}
-                    onChange={(v) => setSlotHeight(v)}
-                >
+                <Slider aria-label="Scale View" min={1.5} max={6} step={0.5} w="120px" defaultValue={2} onChange={(v) => setSlotHeight(v)}>
                     <SliderTrack bg="gray.100">
                         <SliderFilledTrack bg="#56756C" />
                     </SliderTrack>
@@ -380,24 +396,28 @@ export default function ScheduleClient() {
                 </Slider>
             </HStack>
 
-            <HStack spacing={3}>
+            <Flex 
+                direction={{ base: "column", lg: "row" }}
+                gap={3}
+                w={{ base: "full", lg: "auto" }}
+            >
                 {isAdmin && (
-                    <Button variant="ghost" leftIcon={<FiSettings />} borderRadius="full" onClick={typeModal.onOpen}>Manage Types</Button>
+                    <Button variant="ghost" leftIcon={<FiSettings />} borderRadius="full" onClick={typeModal.onOpen} size={{ base: "sm", md: "md" }}>Manage Types</Button>
                 )}
-                <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={oneOffModal.onOpen} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }}>
+                <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={oneOffModal.onOpen} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }} size={{ base: "sm", md: "md" }}>
                     One-off Availability
                 </Button>
-                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "" }); onOpen(); }} _hover={{ bg: '#C9A960' }}>
+                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "" }); onOpen(); }} _hover={{ bg: '#C9A960' }} size={{ base: "sm", md: "md" }}>
                   Add Session
                 </Button>
-            </HStack>
-        </HStack>
-      </HStack>
+            </Flex>
+        </Flex>
+      </Flex>
 
       <Box 
           bg="white" 
-          p={6} 
-          borderRadius="2xl" 
+          p={{ base: 2, md: 6 }} 
+          borderRadius={{ base: "xl", md: "2xl" }} 
           shadow="xl" 
           border="1px solid" 
           borderColor="gray.100" 
@@ -422,7 +442,8 @@ export default function ScheduleClient() {
                   padding: "0",
                   color: "black !important"
               },
-              ".fc-toolbar-title": { fontSize: "1.1rem", fontWeight: "800", color: "#2E2E2E" }
+              ".fc-toolbar-title": { fontSize: { base: "0.9rem", md: "1.1rem" }, fontWeight: "800", color: "#2E2E2E" },
+              ".fc-button": { padding: { base: "4px 8px", md: "8px 16px" }, fontSize: { base: "0.7rem", md: "0.85rem" } }
           }}
       >
           <FullCalendarComponent 
