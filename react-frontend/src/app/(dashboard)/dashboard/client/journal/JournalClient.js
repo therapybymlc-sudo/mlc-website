@@ -39,6 +39,7 @@ const RichTextEditor = dynamic(() => import("../../../../../components/RichTextE
   loading: () => <Box h="400px" bg="gray.50" borderRadius="3xl" animate={{ opacity: [0.5, 1, 0.5] }} />
 });
 import { useAuth } from "../../../../../context/AuthContext";
+import { useUser } from "@clerk/nextjs";
 const JournalBookView = dynamic(() => import("./JournalBookView"), {
   ssr: false,
   loading: () => <Center h="100vh" w="100vw" position="fixed" top="0" left="0" bg="rgba(0,0,0,0.8)" zIndex={2000}><Spinner color="white" /></Center>
@@ -59,6 +60,7 @@ const MotionBox = motion(Box);
 export default function JournalClient() {
   const toast = useToast();
   const { loading: authLoading, isAuthenticated } = useAuth();
+  const { user } = useUser();
   const [isMounted, setIsMounted] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [entries, setEntries] = useState([]);
