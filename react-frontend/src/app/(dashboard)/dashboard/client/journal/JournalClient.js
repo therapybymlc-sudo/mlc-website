@@ -31,7 +31,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiSave, FiClock, FiActivity, FiDownload, FiPlusCircle, FiMessageCircle, FiChevronRight, FiChevronLeft } from "react-icons/fi";
+import { FiSave, FiClock, FiActivity, FiDownload, FiPlusCircle, FiMessageCircle, FiChevronRight, FiChevronLeft, FiBookOpen } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
 import dynamic from 'next/dynamic';
 const RichTextEditor = dynamic(() => import("../../../../../components/RichTextEditor.jsx"), {
