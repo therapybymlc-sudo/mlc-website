@@ -68,7 +68,7 @@ const AESTHETIC_STEPS = [
 const TOUR_STEPS = [
   // Phase 1: Dashboard Overview (After Welcome Slide)
   {
-    target: '#tour-overview',
+    target: '#tour-overview-client',
     content: 'This is your Dashboard Overview. It provides an immediate snapshot of your progress.',
     placement: 'right',
     step_id: 'overview-links'
@@ -205,11 +205,13 @@ export default function WelcomeOnboarding() {
         scrollToFirstStep
         showProgress
         showSkipButton
+        disableOverlayClose
         callback={handleJoyrideCallback}
         styles={{
           options: {
             primaryColor: '#56756D',
             textColor: '#2E2E2E',
+            overlayColor: 'rgba(0, 0, 0, 0.75)',
             zIndex: 10000,
           },
           tooltipContainer: {

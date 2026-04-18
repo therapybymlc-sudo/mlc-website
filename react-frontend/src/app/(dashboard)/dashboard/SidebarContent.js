@@ -47,13 +47,13 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
         return (
           <ChakraLink
             as={NextLink}
-            key={link.label}
+            key={`${link.label}-${idx}`}
             href={link.href}
             _hover={{ textDecoration: 'none' }}
             onClick={onClose}
           >
             <HStack
-              id={`tour-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+              id={`tour-${link.label.toLowerCase().replace(/\s+/g, '-')}${link.isClient ? '-client' : ''}`}
               spacing={3}
               p={3}
               borderRadius="xl"
