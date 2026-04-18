@@ -98,6 +98,19 @@ export default function ScheduleClient() {
     default_notes: ""
   });
 
+  const [editingType, setEditingType] = useState(null); 
+
+  const SAFE_COLORS = [
+    { name: "Sky Blue", hex: "#D1E9FF" },
+    { name: "Mint Green", hex: "#D6F5D6" },
+    { name: "Warm Gold", hex: "#FFF4D1" },
+    { name: "Lavender", hex: "#FAD1FF" },
+    { name: "Soft Peach", hex: "#FFE0D1" },
+    { name: "Cool Grey", hex: "#E8E8E8" },
+    { name: "Aqua", hex: "#D1FAF9" },
+    { name: "Rose", hex: "#FFD1D1" },
+  ];
+
   const fetchData = async () => {
     try {
       setLoading(true);
