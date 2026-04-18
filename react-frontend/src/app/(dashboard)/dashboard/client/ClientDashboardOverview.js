@@ -285,6 +285,7 @@ export default function ClientDashboardOverview() {
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={8} mb={10}>
         {/* Mood Card - Enhanced */}
         <Box 
+          id="tour-mood-card"
           bg="white" 
           p={8} 
           borderRadius="3xl" 
@@ -329,6 +330,7 @@ export default function ClientDashboardOverview() {
 
         {/* Goals Progress - Refined */}
         <Box 
+          id="tour-goals-card"
           bg="white" 
           p={8} 
           borderRadius="3xl" 
@@ -383,6 +385,7 @@ export default function ClientDashboardOverview() {
 
         {/* Next Appointment - Premium Look */}
         <Box 
+          id="tour-appt-card"
           bg="#56756D" 
           p={8} 
           borderRadius="3xl" 

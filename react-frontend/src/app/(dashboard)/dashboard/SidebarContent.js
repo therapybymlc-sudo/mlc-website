@@ -37,6 +37,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
             onClick={onClose}
           >
             <HStack
+              id={`tour-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
               spacing={3}
               p={3}
               borderRadius="xl"
