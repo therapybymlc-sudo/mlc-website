@@ -16,6 +16,8 @@ import {
   StatNumber,
   StatHelpText,
   Divider,
+  Flex,
+  Center,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings } from "react-icons/fi";

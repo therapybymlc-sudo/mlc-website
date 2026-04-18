@@ -83,6 +83,7 @@ export default function AppointmentsClient() {
             {loading ? (
                 <VStack py={20}><Spinner color="#56756D" /></VStack>
             ) : (
+                <Box overflowX="auto" w="full">
                 <Table variant="simple">
                     <Thead>
                         <Tr>
@@ -98,14 +99,12 @@ export default function AppointmentsClient() {
                             <Tr key={appt.id} _hover={{ bg: 'gray.50' }}>
                                 <Td>
                                     <VStack align="start" spacing={0}>
-                                        <Text fontWeight="700">{new Date(appt.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
-                                        <Text fontSize="xs" color="gray.500">{new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                                        <Text fontWeight="700" whiteSpace="nowrap">{new Date(appt.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
+                                        <Text fontSize="xs" color="gray.500" whiteSpace="nowrap">{new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                                     </VStack>
                                 </Td>
                                 <Td>
-                                    <HStack>
-                                        <Text fontWeight="600">{appt.therapist_name || "Assigned Therapist"}</Text>
-                                    </HStack>
+                                    <Text fontWeight="600" noOfLines={1}>{appt.therapist_name || "Assigned Therapist"}</Text>
                                 </Td>
                                 <Td>
                                     <HStack spacing={2}>
@@ -126,6 +125,7 @@ export default function AppointmentsClient() {
                         )}
                     </Tbody>
                 </Table>
+                </Box>
             )}
         </Box>
     </Box>

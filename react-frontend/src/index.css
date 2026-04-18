@@ -148,3 +148,48 @@ button:focus-visible {
 .fc-v-event .fc-event-main {
   color: #2E2E2E !important;
 }
+
+/* ========================================================
+   Global Dashboard Responsiveness
+   Prevents text wrapping, button warping, and layout
+   overflow across ALL dashboard modules.
+   ======================================================== */
+
+/* All headings inside the dashboard stay on one line */
+[class*="chakra-heading"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Buttons never break text to a second line */
+[class*="chakra-button"] {
+  white-space: nowrap !important;
+  flex-shrink: 0;
+}
+
+/* Stat labels, badges, tags — always single-line */
+[class*="chakra-stat__label"],
+[class*="chakra-badge"],
+[class*="chakra-tag"] {
+  white-space: nowrap !important;
+}
+
+/* Tables scroll horizontally on mobile instead of squishing */
+[class*="chakra-table__container"],
+.chakra-table__container {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table cells don't wrap */
+th, td {
+  white-space: nowrap;
+}
+
+/* Prevent any flex row from wrapping unexpectedly on mobile */
+@media (max-width: 480px) {
+  /* Scale down padding and font on very small screens */
+  [class*="chakra-heading"] {
+    font-size: clamp(1rem, 4vw, 1.5rem) !important;
+  }
+}
