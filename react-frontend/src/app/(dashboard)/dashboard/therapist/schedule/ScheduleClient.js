@@ -443,8 +443,9 @@ export default function ScheduleClient() {
                   padding: "0",
                   color: "black !important"
               },
-              ".fc-toolbar-title": { fontSize: { base: "0.9rem", md: "1.1rem" }, fontWeight: "800", color: "#2E2E2E" },
-              ".fc-button": { padding: { base: "4px 8px", md: "8px 16px" }, fontSize: { base: "0.7rem", md: "0.85rem" } }
+              ".fc-toolbar-title": { fontSize: { base: "0.8rem", sm: "0.9rem", md: "1.1rem" }, fontWeight: "800", color: "#2E2E2E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+              ".fc-button": { padding: { base: "4px 6px", md: "8px 16px" }, fontSize: { base: "0.6rem", md: "0.85rem" }, whiteSpace: "nowrap" },
+              ".fc-header-toolbar": { gap: { base: 1, md: 4 }, flexWrap: "nowrap !important", overflow: "hidden" }
           }}
       >
           <FullCalendarComponent 
@@ -456,19 +457,22 @@ export default function ScheduleClient() {
                   const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
                   
-                  // Dynamically scale font based on slotHeight
-                  const titleSize = `${Math.max(0.65, Math.min(0.9, 0.5 + (slotHeight * 0.1)))}rem`;
-                  const timeSize = `${Math.max(0.55, Math.min(0.75, 0.4 + (slotHeight * 0.08)))}rem`;
+                  // Even more aggressive mobile scaling to prevent warping
+                  const titleSize = { base: "0.6rem", md: `${Math.max(0.7, Math.min(0.9, 0.55 + (slotHeight * 0.1)))}rem` };
+                  const timeSize = { base: "0.5rem", md: `${Math.max(0.6, Math.min(0.8, 0.45 + (slotHeight * 0.08)))}rem` };
 
                   return (
-                      <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden">
+                      <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden" minW={0}>
                           <Text 
                             fontWeight="900 !important" 
                             fontSize={titleSize} 
                             color="black !important" 
-                            isTruncated 
+                            whiteSpace="nowrap"
+                            overflow="hidden"
+                            textOverflow="ellipsis"
                             w="full" 
                             lineHeight="1.1"
+                            display="block"
                           >
                               {arg.event.title}
                           </Text>
@@ -476,8 +480,13 @@ export default function ScheduleClient() {
                             fontWeight="800 !important" 
                             fontSize={timeSize} 
                             color="black !important" 
+                            whiteSpace="nowrap"
+                            overflow="hidden"
+                            textOverflow="ellipsis"
                             opacity={0.9}
                             lineHeight="1"
+                            w="full"
+                            display="block"
                           >
                               {start} - {end}
                           </Text>
