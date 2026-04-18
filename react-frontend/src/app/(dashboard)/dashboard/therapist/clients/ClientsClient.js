@@ -176,8 +176,8 @@ export default function ClientsClient() {
   return (
     <Box>
       {viewMode !== "detail" && (
-        <HStack justify="space-between" mb={8}>
-          <VStack align="start" spacing={1}>
+        <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'flex-end' }} mb={8} gap={4}>
+          <VStack align={{ base: "center", md: "start" }} spacing={1} textAlign={{ base: "center", md: "left" }}>
             <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
               Client Caseload
             </Heading>
@@ -187,55 +187,78 @@ export default function ClientsClient() {
             onClick={() => setViewMode(viewMode === 'list' ? 'add' : 'list')}
             colorScheme={viewMode === 'list' ? 'teal' : 'gray'}
             borderRadius="full"
-            px={6}
+            px={8}
+            w={{ base: "full", md: "auto" }}
           >
             {viewMode === 'list' ? '+ Add New Client' : 'Back to List'}
           </Button>
-        </HStack>
+        </Flex>
       )}
 
       {viewMode === "list" && (
-        <Box bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+        <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
           <Input 
             placeholder="Search by name or email..." 
             mb={6} 
             value={search} 
             onChange={(e) => setSearch(e.target.value)} 
             borderRadius="xl"
+            bg="gray.50"
+            border="none"
           />
           {loading ? (
             <VStack py={10}><Spinner color="#56756D" /></VStack>
           ) : (
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Name</Th>
-                  <Th>Status</Th>
-                  <Th>Last Assessment</Th>
-                  <Th textAlign="right">Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {filteredClients.map((client) => (
-                  <Tr key={client.id} _hover={{ bg: 'gray.50' }}>
-                    <Td fontWeight="600">{client.name}</Td>
-                    <Td><Badge colorScheme="green" variant="subtle">ACTIVE</Badge></Td>
-                    <Td fontSize="sm" color="gray.600">
-                       {client.last_quiz ? "Completed Screening" : "Pending Intake"}
-                    </Td>
-                    <Td textAlign="right">
-                      <Button size="sm" variant="outline" colorScheme="teal" borderRadius="full" onClick={() => {
+            <VStack align="stretch" spacing={0} divider={<Divider />}>
+              <Box display={{ base: "none", md: "block" }} mb={2}>
+                 <Table variant="simple" size="sm">
+                   <Thead>
+                     <Tr>
+                       <Th color="gray.400" fontWeight="800">NAME</Th>
+                       <Th color="gray.400" fontWeight="800">STATUS</Th>
+                       <Th color="gray.400" fontWeight="800">SCREENING</Th>
+                       <Th textAlign="right" color="gray.400" fontWeight="800">ACTIONS</Th>
+                     </Tr>
+                   </Thead>
+                 </Table>
+              </Box>
+              
+              {filteredClients.map((client) => (
+                <Flex 
+                   key={client.id} 
+                   p={4} 
+                   direction={{ base: "column", md: "row" }}
+                   align={{ base: "start", md: "center" }}
+                   justify="space-between"
+                   gap={{ base: 3, md: 4 }}
+                   _hover={{ bg: 'gray.50' }}
+                   transition="0.2s"
+                   wrap="nowrap"
+                >
+                   <HStack spacing={4} flex="1" overflow="hidden">
+                      <Avatar size="sm" name={client.name} bg="teal.50" color="teal.500" />
+                      <VStack align="start" spacing={0} overflow="hidden">
+                         <Text fontWeight="700" color="#2E2E2E" noOfLines={1}>{client.name}</Text>
+                         <Text fontSize="xs" color="gray.400" noOfLines={1} display={{ base: "block", md: "none" }}>{client.email}</Text>
+                      </VStack>
+                   </HStack>
+
+                   <HStack spacing={4} justify={{ base: "space-between", md: "flex-end" }} w={{ base: "full", md: "auto" }}>
+                      <Badge colorScheme="green" variant="subtle" borderRadius="full" px={3} whiteSpace="nowrap">ACTIVE</Badge>
+                      <Text fontSize="xs" color="gray.500" whiteSpace="nowrap" display={{ base: "none", md: "block" }} minW="120px">
+                         {client.last_quiz ? "COMPLETED" : "PENDING"}
+                      </Text>
+                      <Button size="xs" variant="outline" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap" onClick={() => {
                         setSelectedClient(client);
                         setViewMode("detail");
-                      }}>View Record</Button>
-                    </Td>
-                  </Tr>
-                ))}
-                {filteredClients.length === 0 && (
-                  <Tr><Td colSpan={4} textAlign="center"><Text color="gray.500" py={4}>No clients found.</Text></Td></Tr>
-                )}
-              </Tbody>
-            </Table>
+                      }}>Record</Button>
+                   </HStack>
+                </Flex>
+              ))}
+              {filteredClients.length === 0 && (
+                <Center py={10}><Text color="gray.500">No clients found.</Text></Center>
+              )}
+            </VStack>
           )}
         </Box>
       )}

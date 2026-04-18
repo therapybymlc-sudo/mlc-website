@@ -44,12 +44,12 @@ export default function NotesClient() {
 
   return (
     <Box>
-      <HStack justify="space-between" mb={8}>
-        <VStack align="start" spacing={1}>
+      <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "flex-end" }} mb={8} gap={4}>
+        <VStack align={{ base: "center", md: "start" }} spacing={1} textAlign={{ base: "center", md: "left" }}>
           <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
             Clinical Note Templates
           </Heading>
-          <Text color="gray.500">Design and manage structured forms for your clinical documentation.</Text>
+          <Text color="gray.500">Structured forms for your clinical documentation.</Text>
         </VStack>
         <Button 
           leftIcon={<FiPlus />} 
@@ -57,47 +57,47 @@ export default function NotesClient() {
           color="white" 
           _hover={{ bg: "#C9A960" }}
           borderRadius="full"
-          px={6}
+          px={8}
+          w={{ base: "full", md: "auto" }}
         >
           New Template
         </Button>
-      </HStack>
+      </Flex>
 
-      <Box bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+      <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
         {loading ? (
           <VStack py={10}><Spinner color="#56756D" /></VStack>
         ) : (
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Template Name</Th>
-                <Th>Description</Th>
-                <Th>Fields</Th>
-                <Th textAlign="right">Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {templates.map((t) => (
-                <Tr key={t.id} _hover={{ bg: 'gray.50' }}>
-                  <Td fontWeight="600">{t.name}</Td>
-                  <Td fontSize="sm" color="gray.600">{t.description || "—"}</Td>
-                  <Td>{t.fields?.length || 0}</Td>
-                  <Td textAlign="right">
-                    <HStack justify="flex-end" spacing={1}>
-                       <Button size="xs" variant="ghost">Edit</Button>
-                    </HStack>
-                  </Td>
-                </Tr>
-              ))}
-              {templates.length === 0 && (
-                <Tr>
-                  <Td colSpan={4} textAlign="center">
-                    <Text color="gray.500" py={6}>No templates created yet. Click "New Template" to start.</Text>
-                  </Td>
-                </Tr>
-              )}
-            </Tbody>
-          </Table>
+          <VStack align="stretch" spacing={0} divider={<Divider />}>
+            {templates.map((t) => (
+              <Flex 
+                key={t.id} 
+                p={4} 
+                direction={{ base: "column", sm: "row" }}
+                align={{ base: "start", sm: "center" }}
+                justify="space-between"
+                gap={3}
+                _hover={{ bg: 'gray.50' }}
+                transition="0.2s"
+              >
+                <VStack align="start" spacing={0} flex="1" overflow="hidden">
+                  <Text fontWeight="700" color="#2E2E2E" noOfLines={1}>{t.name}</Text>
+                  <Text fontSize="xs" color="gray.500" noOfLines={1}>{t.description || "No description provided."}</Text>
+                </VStack>
+                <HStack spacing={4} justify={{ base: "space-between", sm: "flex-end" }} w={{ base: "full", sm: "auto" }}>
+                  <Badge variant="subtle" colorScheme="gray" borderRadius="full" px={3} whiteSpace="nowrap">
+                    {t.fields?.length || 0} FIELDS
+                  </Badge>
+                  <Button size="xs" variant="ghost" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap">Edit</Button>
+                </HStack>
+              </Flex>
+            ))}
+            {templates.length === 0 && (
+              <Center py={10}>
+                <Text color="gray.500" fontSize="sm">No templates defined.</Text>
+              </Center>
+            )}
+          </VStack>
         )}
       </Box>
     </Box>
