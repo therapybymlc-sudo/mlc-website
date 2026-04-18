@@ -1,4 +1,7 @@
+'use client'
+
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs";
 import api, { setTokenGetter } from "../api.js";
 

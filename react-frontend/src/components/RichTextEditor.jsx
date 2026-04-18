@@ -1,4 +1,7 @@
+'use client'
+
 import { useEffect, useRef } from "react";
+
 import { Box, Button, HStack, Text } from "@chakra-ui/react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
