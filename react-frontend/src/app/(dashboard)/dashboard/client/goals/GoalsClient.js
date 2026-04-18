@@ -250,10 +250,23 @@ export default function GoalsClient() {
       </Collapse>
 
       <Tabs id="tour-goals-tabs" variant="soft-rounded" colorScheme="teal">
-        <TabList mb={8} bg="white" p={1} borderRadius="full" shadow="sm" w="fit-content">
-          <Tab borderRadius="full" px={8} fontSize="sm" fontWeight="700">All Goals</Tab>
+        <TabList 
+          mb={8} 
+          bg="white" 
+          p={1} 
+          borderRadius="full" 
+          shadow="sm" 
+          w={{ base: "100%", md: "fit-content" }}
+          overflowX="auto"
+          flexWrap="nowrap"
+          sx={{
+            "&::-webkit-scrollbar": { display: "none" },
+            scrollbarWidth: "none",
+          }}
+        >
+          <Tab borderRadius="full" px={{ base: 4, md: 8 }} fontSize={{ base: "xs", md: "sm" }} fontWeight="700" flexShrink={0} whiteSpace="nowrap">All Goals</Tab>
           {CATEGORIES.map(cat => (
-            <Tab key={cat.id} borderRadius="full" px={8} fontSize="sm" fontWeight="700">{cat.label}</Tab>
+            <Tab key={cat.id} borderRadius="full" px={{ base: 4, md: 8 }} fontSize={{ base: "xs", md: "sm" }} fontWeight="700" flexShrink={0} whiteSpace="nowrap">{cat.label}</Tab>
           ))}
         </TabList>
 

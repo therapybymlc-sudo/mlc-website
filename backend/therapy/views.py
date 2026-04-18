@@ -188,33 +188,43 @@ def _resolve_client_from_request(request):
     if not user or not user.is_authenticated:
         return None
 
+    # 1. Check direct relationship
     client_profile = getattr(user, "client_profile", None)
     if client_profile:
         return client_profile
 
+    # 2. Check by email
     email = getattr(user, "email", None)
-    client = ClientProfile.objects.filter(email__iexact=email).first() if email else None
-    if client:
-        if client.user_id != user.id:
-            client.user = user
-            client.save(update_fields=["user"])
-        return client
+    if email:
+        client = ClientProfile.objects.filter(email__iexact=email).first()
+        if client:
+            if client.user_id != user.id:
+                client.user = user
+                client.save(update_fields=["user"])
+            return client
         
+    # 3. Create new profile, handling potential uniqueness conflicts
     display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
     safe_email = email or f"client_{user.pk or 'nouser'}@local"
     
-    client, created = ClientProfile.objects.get_or_create(
-        user=user,
-        defaults={
-            "name": display_name,
-            "email": safe_email,
-        }
-    )
-    if not created and email and client.email.lower() != email.lower():
-        client.email = email
-        client.save(update_fields=["email"])
-        
-    return client
+    try:
+        client, created = ClientProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "name": display_name,
+                "email": safe_email,
+            }
+        )
+        return client
+    except IntegrityError:
+        # Email uniqueness constraint - try to find by email one more time
+        client = ClientProfile.objects.filter(email__iexact=safe_email).first()
+        if client:
+            if client.user_id != user.id:
+                client.user = user
+                client.save(update_fields=["user"])
+            return client
+        return None
 
 
 def _active_client_ids_for_therapist(therapist):

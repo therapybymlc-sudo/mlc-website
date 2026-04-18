@@ -15,18 +15,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Remove blue tap highlight on mobile for a more native feel */
+  /* Remove blue tap highlight on mobile */
   -webkit-tap-highlight-color: transparent;
-}
-
-/* Global button focus and tap stability */
-button, [role="button"], a {
-  -webkit-tap-highlight-color: transparent !important;
-  outline: none !important;
-}
-button:focus {
-  outline: none !important;
-  box-shadow: none !important;
 }
 
 body {
@@ -34,10 +24,39 @@ body {
   font-weight: 400;
   color: rgba(46, 46, 46, 0.9);
   margin: 0;
-  display: block; /* Overriding previous flex if it exists */
+  display: block;
   min-width: 320px;
 }
 
+/* ========================================================
+   Kill the blue tap/focus box EVERYWHERE
+   ======================================================== */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent !important;
+}
+button,
+[role="button"],
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent !important;
+}
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+a:focus,
+a:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ========================================================
+   Typography
+   ======================================================== */
 h1, .hero-title {
   font-family: 'Playfair Display', serif !important;
   font-weight: 500 !important;
@@ -66,6 +85,9 @@ button {
   letter-spacing: 0.2px;
 }
 
+/* ========================================================
+   Hero Section
+   ======================================================== */
 .hero-container {
   position: relative;
   overflow: hidden;
@@ -90,13 +112,6 @@ button {
   position: relative;
   z-index: 2;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
 
 @media (prefers-color-scheme: light) {
   :root {
@@ -105,9 +120,6 @@ button:focus-visible {
   }
   a:hover {
     color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
   }
 }
 
@@ -129,7 +141,7 @@ button:focus-visible {
 .fc-toolbar-title {
   font-family: 'Inter', sans-serif !important;
   color: #2E2E2E !important;
-  font-size: 1.25rem !important; /* Smaller, cleaner sizes for Inter in dashboard */
+  font-size: 1.25rem !important;
   font-weight: 600 !important;
 }
 .fc-event {
@@ -168,12 +180,6 @@ button:focus-visible {
    overflow across ALL dashboard modules.
    ======================================================== */
 
-/* All headings inside the dashboard stay on one line */
-[class*="chakra-heading"] {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* Buttons never break text to a second line */
 [class*="chakra-button"] {
   white-space: nowrap !important;
@@ -187,21 +193,24 @@ button:focus-visible {
   white-space: nowrap !important;
 }
 
-/* Tables scroll horizontally on mobile instead of squishing */
-[class*="chakra-table__container"],
-.chakra-table__container {
+/* Tables: force horizontal scroll with no-wrap headers */
+th, td {
+  white-space: nowrap !important;
+}
+
+/* Chakra Tabs — prevent vertical text stacking on small screens */
+[class*="chakra-tabs__tablist"] {
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap !important;
+}
+[class*="chakra-tabs__tab"] {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
 }
 
-/* Table cells don't wrap */
-th, td {
-  white-space: nowrap;
-}
-
-/* Prevent any flex row from wrapping unexpectedly on mobile */
+/* Small screen heading scaling */
 @media (max-width: 480px) {
-  /* Scale down padding and font on very small screens */
   [class*="chakra-heading"] {
     font-size: clamp(1rem, 4vw, 1.5rem) !important;
   }

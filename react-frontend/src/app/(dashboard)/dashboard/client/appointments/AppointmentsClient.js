@@ -6,6 +6,7 @@ import {
   Text,
   VStack,
   HStack,
+  Flex,
   Button,
   useToast,
   Spinner,
@@ -59,12 +60,18 @@ export default function AppointmentsClient() {
 
   return (
     <Box maxW="1200px" mx="auto">
-       <HStack justify="space-between" mb={8} align="flex-end">
-          <VStack align="start" spacing={1}>
+       <Flex 
+          direction={{ base: "column", md: "row" }}
+          justify="space-between" 
+          align={{ base: "stretch", md: "flex-end" }}
+          mb={8}
+          gap={4}
+        >
+          <VStack align={{ base: "center", md: "start" }} spacing={1} textAlign={{ base: "center", md: "left" }}>
             <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
                 Your Sessions
             </Heading>
-            <Text color="gray.500">Manage your upcoming and past therapeutic appointments.</Text>
+            <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>Manage your upcoming and past therapeutic appointments.</Text>
           </VStack>
           <Button 
             as={NextLink}
@@ -74,10 +81,12 @@ export default function AppointmentsClient() {
             borderRadius="full" 
             px={8} 
             _hover={{ bg: '#C9A960' }}
+            w={{ base: "full", md: "auto" }}
+            flexShrink={0}
           >
             Book New Session
           </Button>
-        </HStack>
+        </Flex>
 
         <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
             {loading ? (

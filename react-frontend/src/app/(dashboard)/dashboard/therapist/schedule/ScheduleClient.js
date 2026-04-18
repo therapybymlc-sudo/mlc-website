@@ -357,25 +357,22 @@ export default function ScheduleClient() {
 
   return (
     <VStack align="stretch" spacing={6} p={{ base: 4, md: 8 }} bg="#FDFDFD" minH="100vh">
-      <Flex 
-        direction={{ base: "column", md: "row" }} 
-        justify="space-between" 
-        align={{ base: "start", md: "center" }}
-        gap={4}
-        mb={4}
-      >
-        <VStack align="start" spacing={0} flex="1" minW="200px">
-            <Heading size="lg" color="#2E2E2E" fontWeight="800" noOfLines={1}>Clinical Schedule</Heading>
-            <Text color="gray.500" fontSize="sm" noOfLines={1}>Manage your therapeutic sessions and availability.</Text>
+      <VStack align="stretch" spacing={4} mb={4}>
+        {/* Title - always on its own line */}
+        <VStack align="start" spacing={0}>
+            <Heading size="lg" color="#2E2E2E" fontWeight="800" whiteSpace="nowrap">Clinical Schedule</Heading>
+            <Text color="gray.500" fontSize="sm" whiteSpace="nowrap">Manage your therapeutic sessions and availability.</Text>
         </VStack>
         
+        {/* Controls row */}
         <Flex 
             direction={{ base: "column", sm: "row" }}
             gap={4}
-            w={{ base: "full", md: "auto" }}
+            w="full"
             align={{ base: "stretch", sm: "center" }}
+            justify="space-between"
         >
-            {/* Scalability Slider - Hidden/Compact on mobile */}
+            {/* Scalability Slider - Hidden on mobile */}
             <HStack 
                 spacing={4} 
                 bg="white" 
@@ -413,7 +410,7 @@ export default function ScheduleClient() {
                 </Button>
             </Flex>
         </Flex>
-      </Flex>
+      </VStack>
 
       <Box 
           bg="white" 
