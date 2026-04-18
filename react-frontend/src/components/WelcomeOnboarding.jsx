@@ -68,10 +68,10 @@ const AESTHETIC_STEPS = [
 const TOUR_STEPS = [
   // Phase 1: Dashboard Overview (After Welcome Slide)
   {
-    target: '[data-tour="overview-link"]',
-    content: 'This is your Dashboard Sidebar. You can navigate between all your tools here.',
-    placement: 'right',
-    disableBeacon: true, // Show tooltip immediately to prevent the "stuck" state
+    target: '#tour-welcome-heading',
+    content: 'This is your Healing Space. We have curated all your tools here for easy access.',
+    placement: 'bottom',
+    disableBeacon: false, // Bring back the dot as requested
   },
   {
     target: '#tour-mood-card',

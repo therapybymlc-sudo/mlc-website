@@ -227,7 +227,7 @@ export default function ClientDashboardOverview() {
             <Tag size="sm" variant="subtle" colorScheme="teal" borderRadius="full">
               {new Date().getHours() < 12 ? 'Good Morning' : 'Good Evening'}, {user?.firstName} 🌿
             </Tag>
-            <Heading as="h1" size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">
+            <Heading as="h1" size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif" id="tour-welcome-heading">
                 Welcome to Your Healing Space
             </Heading>
             <Text color="gray.500" fontSize="sm">Your journey is a process, not a destination. Take a breath.</Text>
