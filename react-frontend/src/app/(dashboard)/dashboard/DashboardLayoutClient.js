@@ -15,6 +15,7 @@ import {
   Text,
   Spinner,
   Center,
+  Button
 } from '@chakra-ui/react'
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons'
 import { 
