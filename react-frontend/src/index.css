@@ -14,6 +14,19 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Remove blue tap highlight on mobile for a more native feel */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Global button focus and tap stability */
+button, [role="button"], a {
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+}
+button:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 body {
