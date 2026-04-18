@@ -71,7 +71,7 @@ const TOUR_STEPS = [
     target: '#tour-welcome-heading',
     content: 'This is your healing command center. Click "Next" to see your tracking tools.',
     placement: 'bottom',
-    disableBeacon: false,
+    disableBeacon: true,
   },
   {
     target: '#tour-mood-card',
@@ -161,31 +161,42 @@ export default function WelcomeOnboarding() {
 
   const handleJoyrideCallback = (data) => {
     const { action, index, status, type } = data;
-    
-    if (type === 'step:after') {
-      const currentStep = TOUR_STEPS[index];
-      if (currentStep?.is_last_in_phase) {
-        setRunJoyride(false);
-        // Advance the state for the NEXT phase
-        setJoyrideIndex(index + 1);
-
-        if (currentAestheticIdx < AESTHETIC_STEPS.length - 1) {
-          const nextIdx = currentAestheticIdx + 1;
-          setCurrentAestheticIdx(nextIdx);
-          
-          setTimeout(() => {
-            setIsModalVisible(true);
-            onOpen();
-          }, 800);
-        } else {
-            localStorage.setItem('mlc_onboarding_visited', 'true');
-        }
-      }
-    }
 
     if (status === 'finished' || status === 'skipped') {
       setRunJoyride(false);
       localStorage.setItem('mlc_onboarding_visited', 'true');
+      return;
+    }
+
+    // We're using Joyride in controlled mode via `stepIndex`, so we must advance
+    // the index ourselves on every step transition.
+    if (type === 'step:after' || type === 'target:notFound') {
+      const currentStep = TOUR_STEPS[index];
+
+      // Only end the phase when the user is moving forward past the last step.
+      if (currentStep?.is_last_in_phase && action !== 'prev') {
+        setRunJoyride(false);
+        setJoyrideIndex(Math.min(index + 1, TOUR_STEPS.length - 1));
+
+        setCurrentAestheticIdx((prevIdx) => {
+          if (prevIdx < AESTHETIC_STEPS.length - 1) {
+            const nextIdx = prevIdx + 1;
+            setTimeout(() => {
+              setIsModalVisible(true);
+              onOpen();
+            }, 800);
+            return nextIdx;
+          }
+
+          localStorage.setItem('mlc_onboarding_visited', 'true');
+          return prevIdx;
+        });
+        return;
+      }
+
+      const delta = action === 'prev' ? -1 : 1;
+      const nextIndex = Math.max(0, Math.min(index + delta, TOUR_STEPS.length - 1));
+      setJoyrideIndex(nextIndex);
     }
   };
 
