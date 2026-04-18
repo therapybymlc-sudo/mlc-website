@@ -79,8 +79,14 @@ export default function DashboardLayout({ children }) {
 
     if (isAdmin) {
       return [
+        { label: 'ADMINISTRATION', type: 'header' },
+        { label: 'Site Editors', icon: FiFileText, href: '/admin' },
+        { label: 'Applications', icon: FiUsers, href: '/admin' },
+        { label: 'Inquiries', icon: FiHeart, href: '/admin' },
+        
         { label: 'PRACTITIONER', type: 'header' },
         ...therapistLinks,
+        
         { label: 'CLIENT VIEW', type: 'header' },
         ...clientLinks
       ];
