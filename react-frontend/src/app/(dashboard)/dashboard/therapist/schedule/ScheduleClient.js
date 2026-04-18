@@ -28,10 +28,15 @@ import {
   Center,
   Divider,
   Checkbox,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  Tooltip,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle } from "react-icons/fi";
+import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle, FiMaximize2 } from "react-icons/fi";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
@@ -300,87 +305,80 @@ export default function ScheduleClient() {
     }
   };
 
+  const [slotHeight, setSlotHeight] = useState(2); // Default to 2rem
+
   return (
     <VStack align="stretch" spacing={6} p={8} bg="#FDFDFD" minH="100vh">
-      <HStack justify="space-between" mb={4}>
+      <HStack justify="space-between" mb={4} wrap="wrap">
         <VStack align="start" spacing={0}>
             <Heading size="lg" color="#2E2E2E" fontWeight="800">Clinical Schedule</Heading>
             <Text color="gray.500" fontSize="sm">Manage your therapeutic sessions and availability.</Text>
         </VStack>
         
-        <HStack spacing={3}>
-            {isAdmin && (
-                <Button 
-                    variant="ghost" 
-                    leftIcon={<FiSettings />} 
-                    borderRadius="full" 
-                    onClick={typeModal.onOpen}
+        <HStack spacing={6} wrap="wrap">
+            {/* Scalability Slider */}
+            <HStack spacing={4} bg="white" p={2} px={4} borderRadius="full" shadow="sm" border="1px solid" borderColor="gray.100">
+                <Icon as={FiMaximize2} color="gray.400" />
+                <Text fontSize="xs" fontWeight="700" color="gray.500" whiteSpace="nowrap">View Scale</Text>
+                <Slider 
+                    aria-label="Scale View" 
+                    min={1.5} max={6} step={0.5} 
+                    w="120px" 
+                    defaultValue={2}
+                    onChange={(v) => setSlotHeight(v)}
                 >
-                    Manage Types
+                    <SliderTrack bg="gray.100">
+                        <SliderFilledTrack bg="#56756C" />
+                    </SliderTrack>
+                    <SliderThumb boxSize={4} border="2px solid" borderColor="#56756C" />
+                </Slider>
+            </HStack>
+
+            <HStack spacing={3}>
+                {isAdmin && (
+                    <Button variant="ghost" leftIcon={<FiSettings />} borderRadius="full" onClick={typeModal.onOpen}>Manage Types</Button>
+                )}
+                <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={oneOffModal.onOpen} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }}>
+                    One-off Availability
                 </Button>
-            )}
-            <Button 
-                variant="outline" 
-                borderRadius="full" 
-                leftIcon={<FiGlobe />} 
-                onClick={oneOffModal.onOpen}
-                borderColor="#56756D"
-                color="#56756D"
-                _hover={{ bg: 'gray.50' }}
-            >
-                One-off Availability
-            </Button>
-            <Button 
-              leftIcon={<FiPlus />} 
-              bg="#56756D" 
-              color="white" 
-              borderRadius="full" 
-              px={6}
-              onClick={() => {
-                  setIsEditMode(false);
-                  setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "" });
-                  onOpen();
-              }}
-              _hover={{ bg: '#C9A960' }}
-            >
-              Add Session
-            </Button>
+                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "" }); onOpen(); }} _hover={{ bg: '#C9A960' }}>
+                  Add Session
+                </Button>
+            </HStack>
         </HStack>
       </HStack>
 
       <Box 
           bg="white" 
           p={6} 
-          borderRadius="3xl" 
+          borderRadius="2xl" 
           shadow="xl" 
           border="1px solid" 
           borderColor="gray.100" 
           overflow="hidden"
           sx={{
-              ".fc": {
-                  fontFamily: "inherit",
-              },
+              ".fc": { fontFamily: "inherit" },
               ".fc-timegrid-slot": { 
-                  height: "3rem",
+                  height: `${slotHeight}rem`,
                   borderColor: "gray.50"
               },
-              ".fc-business-hour": { 
-                  backgroundColor: "rgba(169, 203, 183, 0.12) !important",
-              },
-              ".fc-non-business": { 
-                  backgroundColor: "#F8F9FA !important",
-              },
+              ".fc-business-hour": { backgroundColor: "rgba(169, 203, 183, 0.12) !important" },
+              ".fc-non-business": { backgroundColor: "#F8F9FA !important" },
               ".fc-event": {
-                  borderRadius: "lg",
+                  borderRadius: "md",
                   border: "none",
                   boxShadow: "sm",
-                  padding: "1px 4px"
+                  padding: "1px 4px",
+                  color: "white !important", // Force visibility
+                  overflow: "hidden"
               },
-              ".fc-toolbar-title": {
-                  fontSize: "1.1rem",
-                  fontWeight: "800",
-                  color: "#2E2E2E"
-              }
+              ".fc-event-main": {
+                  fontSize: "0.75rem",
+                  fontWeight: "700",
+                  lineHeight: "1.1",
+                  color: "white !important"
+              },
+              ".fc-toolbar-title": { fontSize: "1.1rem", fontWeight: "800", color: "#2E2E2E" }
           }}
       >
           <FullCalendarComponent 
