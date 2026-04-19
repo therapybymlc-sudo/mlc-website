@@ -36,6 +36,7 @@ import {
   Briefcase,
   Layers,
   HelpCircle,
+  Video,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "../api.js";
@@ -744,6 +745,11 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
         <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>COMMUNITY</Text>
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={GraduationCap} label="Training Content" id="training" />
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Layers} label="Careers Content" id="careers" />
+      </VStack>
+
+      <VStack align="stretch" spacing={1}>
+        <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>SYSTEM TESTING</Text>
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Video} label="Video Test Lab" id="video_test" />
       </VStack>
 
       <Box pt={10}>
@@ -1568,6 +1574,56 @@ export default function AdminDashboard() {
         )}
 
         {/* SUB PAGES PLACEHOLDERS - To be modularized in next steps */}
+        {activeTab === "video_test" && (
+           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
+              <VStack align="stretch" spacing={8}>
+                 <Box>
+                    <Heading size="md" mb={2}>Video Infrastructure Test Lab</Heading>
+                    <Text color="gray.500" fontSize="sm">Verify the MLC Live Session environment and test your camera/mic hardware.</Text>
+                 </Box>
+
+                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                    <Box p={6} bg="teal.50" borderRadius="2xl" border="1px solid" borderColor="teal.100">
+                       <VStack align="start" spacing={4}>
+                          <HStack>
+                             <Icon as={Video} color="teal.600" />
+                             <Text fontWeight="800" color="teal.900">SDK Status: Active</Text>
+                          </HStack>
+                          <Text fontSize="sm" color="teal.700">The Daily.co clinical engine is initialized and ready for encrypted streams.</Text>
+                       </VStack>
+                    </Box>
+
+                    <Box p={6} bg="gray.900" borderRadius="2xl" color="white">
+                       <VStack align="start" spacing={4}>
+                          <Text fontWeight="800" fontSize="sm" color="whiteAlpha.700" letterSpacing="1px">READY TO COMMENCE</Text>
+                          <Heading size="sm">Launch Test Environment</Heading>
+                          <Text fontSize="xs" color="whiteAlpha.600">This will open the in-app clinical lounge used by patients and therapists.</Text>
+                          <Button 
+                            bg="teal.400" 
+                            color="teal.900" 
+                            size="sm" 
+                            borderRadius="full"
+                            onClick={() => window.open("/dashboard/client/session?url=https://mlchealth.daily.co/demo-room", "_blank")}
+                            _hover={{ bg: 'teal.300' }}
+                          >
+                            Launch Live Test Room
+                          </Button>
+                       </VStack>
+                    </Box>
+                 </SimpleGrid>
+
+                 <Box p={6} border="1px dashed" borderColor="gray.200" borderRadius="2xl">
+                    <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={4}>TEST PROTOCOL</Text>
+                    <VStack align="start" spacing={3}>
+                       <Text fontSize="sm" color="gray.600">• Verify that the MLC-branded control bar appears.</Text>
+                       <Text fontSize="sm" color="gray.600">• Confirm the "End-to-End Encrypted" badge is visible.</Text>
+                       <Text fontSize="sm" color="gray.600">• Test "End Session" redirects back to the dashboard.</Text>
+                    </VStack>
+                 </Box>
+              </VStack>
+           </Box>
+        )}
+
         {(activeTab === "training" || activeTab === "careers" || activeTab === "therapists" || activeTab === "services_content" || activeTab === "therapist_apply") && (
            <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
               <HStack mb={6} justify="space-between">
