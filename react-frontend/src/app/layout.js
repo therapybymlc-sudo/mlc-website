@@ -17,6 +17,8 @@ export const metadata = {
   description: 'MLC Health & Wellness Centre provides structured and ethical mental health care. Our organization is dedicated to high-quality psychological services across major cities in India.',
 }
 
+import CookieConsent from '../components/CookieConsent'
+
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider
@@ -47,6 +49,7 @@ export default function RootLayout({ children }) {
           <Providers>
             <ClientWrapper>
               {children}
+              <CookieConsent />
             </ClientWrapper>
           </Providers>
         </body>
