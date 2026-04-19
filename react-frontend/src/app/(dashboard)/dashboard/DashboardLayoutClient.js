@@ -136,21 +136,26 @@ export default function DashboardLayout({ children }) {
           display={{ base: 'none', lg: 'flex' }}
         >
            <Box /> 
-           <HStack spacing={4}>
+            <HStack spacing={6}>
               <Button 
                 size="sm" 
-                variant="ghost" 
-                leftIcon={<Icon as={FiCheckCircle} />} 
+                variant="outline" 
+                leftIcon={<Icon as={FiTarget} />} 
                 onClick={() => window.dispatchEvent(new CustomEvent('mlc-start-tour'))}
-                color="gray.500"
+                color="teal.700"
+                borderColor="teal.100"
+                bg="teal.50"
+                fontWeight="900"
                 fontSize="xs"
+                letterSpacing="0.1em"
                 borderRadius="full"
-                _hover={{ bg: 'mlc.green', color: 'white' }}
+                _hover={{ bg: 'teal.800', color: 'white', transform: 'scale(1.05)' }}
+                transition="all 0.3s"
               >
                 ORIENTATION
               </Button>
               <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
-           </HStack>
+            </HStack>
         </Flex>
 
         <Flex
