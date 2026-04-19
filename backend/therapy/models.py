@@ -154,6 +154,16 @@ class ClientProfile(models.Model):
     )
     is_premium = models.BooleanField(default=False)
 
+    # --- Clinical intake data saved from the therapist matching screening ---
+    intake_clinical_notes = models.JSONField(
+        default=dict, blank=True, null=True,
+        help_text="Structured clinical intake data from the screening form, visible to the assigned therapist."
+    )
+    dass_scores = models.JSONField(
+        default=dict, blank=True, null=True,
+        help_text="DASS-21 scores and interpretations from the screening form."
+    )
+
     @property
     def has_active_relationship(self):
         return self.relationships.filter(status="active").exists()

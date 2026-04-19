@@ -15,7 +15,7 @@ const defaultAboutContent = {
   hero: {
     title: "Our Approach to Care",
     body:
-      "<p>At MLC Therapy, we believe that sustainable systems create deeper healing. Our philosophy is rooted in three pillars: clinical clarity, relational depth, and ethical accountability. When care is structured and therapists are supported, clients receive consistent, high-quality therapy they can trust.</p>",
+      "<p>At MLC, we believe that sustainable systems create deeper healing. Our philosophy is rooted in three pillars: clinical clarity, relational depth, and ethical accountability. When care is structured and therapists are supported, clients receive consistent, high-quality therapy they can trust.</p>",
     cta_label: "Meet the Team",
     cta_link: "/meettheteam",
     image_url: "/approach_new.jpg",
@@ -23,7 +23,7 @@ const defaultAboutContent = {
   why: {
     title: "Why We Started MLC Therapy",
     body:
-      "<p>MLC Therapy was born from witnessing systemic gaps in mental health care. Talented therapists were burning out, and clients were receiving inconsistent support. We envisioned a model that protects both clinical integrity and therapist sustainability, ensuring that client care never suffers.</p>",
+      "<p>MLC was born from witnessing systemic gaps in mental health care. Talented therapists were burning out, and clients were receiving inconsistent support. We envisioned a model that protects both clinical integrity and therapist sustainability, ensuring that client care never suffers.</p>",
   },
   pillars: [
     {
@@ -86,7 +86,7 @@ export default function About() {
         <title>MLC Therapy | Our Approach to Structured & Ethical Mental Health Care in India</title>
         <meta
           name="description"
-          content="MLC Therapy is a structured, ethically grounded mental health practice offering online therapy across India with clinical clarity and relational depth for clients."
+          content="MLC is a structured, ethically grounded mental health practice offering therapy across India with clinical clarity and relational depth for clients."
         />
               <meta property="og:image" content="https://mlchealth.in/about_illustration_new.jpg" />
         <meta name="twitter:image" content="https://mlchealth.in/about_illustration_new.jpg" />
@@ -262,19 +262,19 @@ export default function About() {
               >
                 “When I began my master’s, I saw countless passionate, skilled
                 therapists leave the field, not because they lacked ability or
-                passion, but because they lacked support. MLC Therapy was my
-                response to that; a model where therapists feel as held as the
-                clients they serve. I’m proud to be building a community where we
+                passion, but because they lacked support. MLC was my
+                response to that; a sustainable ecosystem where therapists feel as held as the
+                clients they serve. It is a vision of holistic care where one space holds your mind, body and awareness in all the ways it needs. I’m proud to be building a community where we
                 neither compromise on client care nor therapist well-being while
                 striving to uphold the highest ethical standards.
                 <br />
                 <br />
-                For clients, it means therapy that’s structured, ethical, and
+                Right now, for clients, it means therapy that’s structured, ethical, and
                 deeply human. For therapists, it means community, mentorship, and
                 the security they deserve.”
                 <br />
                 <br />
-                <strong>— Asma Imadi, Founder</strong>
+                <strong>- Asma Imadi, Founder</strong>
               </Text>
             </Box>
             <Image
@@ -309,9 +309,9 @@ export default function About() {
             maxW="3xl"
             mx="auto"
           >
-            To redefine mental health care by building a system that supports
+            To redefine Health care by building a ecosystem that supports
             both the client and the clinician. We aim to bridge the gap between
-            passion and sustainability in mental healthcare, creating spaces
+            passion and sustainability in healthcare, creating spaces
             where quality, ethics, and compassion coexist.
           </Text>
 
@@ -335,7 +335,7 @@ export default function About() {
             every therapist feels valued and every client feels seen.
           </Text>
           <Text fontSize="sm" color="#56756D" fontFamily="'Inter', sans-serif" mt={6}>
-            We offer online therapy services to individuals, couples, and families across Mumbai,
+            We offer therapy services to individuals, couples, and families across Mumbai,
             Delhi, Bangalore, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad and throughout India.
           </Text>
         </Container>

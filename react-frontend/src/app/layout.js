@@ -19,7 +19,29 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        layout: {
+          logoPlacement: 'inside',
+          logoImageUrl: '/logo_tra.png',
+          showOptionalFields: false,
+        },
+        variables: {
+          colorPrimary: '#56756D',
+          colorText: '#2E2E2E',
+          fontFamily: "'Inter', sans-serif",
+        },
+        elements: {
+          card: {
+            borderRadius: '24px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
+          },
+          footer: {
+            display: 'none', // Try to hide the footer branding
+          }
+        }
+      }}
+    >
       <html lang="en" className={`${inter.variable} ${playfair.variable} ${forum.variable}`}>
         <body>
           <Providers>

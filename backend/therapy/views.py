@@ -1977,7 +1977,50 @@ class TherapistMatchView(APIView):
         # Add matches to M2M
         for m in matches[:5]:
             screening.recommended_therapists.add(m['id'])
-            
+
+        # 6. Save clinical intake note + DASS scores to the client's profile
+        if client:
+            client.intake_clinical_notes = {
+                "screening_id": screening.id,
+                "screening_date": screening.created_at.isoformat(),
+                "age": data.get("age"),
+                "gender": data.get("gender"),
+                "location": data.get("location", {}),
+                "languages": data.get("languages", []),
+                "presenting_concerns": data.get("presenting_concerns", []),
+                "primary_concern": data.get("primary_concern"),
+                "duration": data.get("duration"),
+                "impairment_level": data.get("impairment_level"),
+                "life_stage_context": data.get("life_stage_context"),
+                "cultural_social_context": data.get("cultural_social_context"),
+                "identity_lived_experience": data.get("identity_lived_experience"),
+                "other_identity_details": data.get("other_identity_details"),
+                "prior_therapy": data.get("prior_therapy"),
+                "psychiatry_history": data.get("psychiatry_history"),
+                "on_medication": data.get("on_medication"),
+                "has_diagnosis": data.get("has_diagnosis"),
+                "diagnosis_details": data.get("diagnosis_details"),
+                "health_factors": data.get("health_factors"),
+                "sleep_quality": data.get("sleep_quality"),
+                "energy_level": data.get("energy_level"),
+                "appetite_level": data.get("appetite_level"),
+                "support_sources": data.get("support_sources", []),
+                "risk_level": risk_level,
+                "suicidal_thoughts": suicidal_thoughts,
+                "feels_safe": feels_safe,
+                "summary": dass_summary,
+            }
+            client.dass_scores = {
+                "depression_score": dass_scores['depression'],
+                "anxiety_score": dass_scores['anxiety'],
+                "stress_score": dass_scores['stress'],
+                "depression_level": dass_levels['depression'],
+                "anxiety_level": dass_levels['anxiety'],
+                "stress_level": dass_levels['stress'],
+                "summary": dass_summary,
+            }
+            client.save(update_fields=["intake_clinical_notes", "dass_scores"])
+
         return Response({
             "screening_id": screening.id,
             "dass_summary": dass_summary,

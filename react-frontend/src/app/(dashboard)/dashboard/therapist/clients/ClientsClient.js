@@ -65,7 +65,10 @@ export default function ClientsClient() {
 
   const renderClientDetail = () => {
     if (!selectedClient) return null;
-    const screening = selectedClient.screening_results || selectedClient.last_quiz || null;
+    
+    // Prioritize new clinical note fields over legacy screening results
+    const screening = selectedClient.intake_clinical_notes || selectedClient.screening_results || selectedClient.last_quiz || null;
+    const dass = selectedClient.dass_scores || (screening?.dass_scores ? { ...screening.dass_scores, ...screening.dass_interpretations } : null);
 
     return (
       <Box animation="fadeIn 0.5s">
@@ -107,29 +110,31 @@ export default function ClientsClient() {
             <VStack spacing={8} align="stretch">
                {/* 📊 DASS-21 Section */}
                <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-                  <HStack justify="space-between" mb={6}>
-                     <HStack><Icon as={FiActivity} color="teal.500" /><Heading size="sm">DASS-21 Score & Interpretation</Heading></HStack>
-                     <Badge variant="subtle" colorScheme="teal">Clinical Screening</Badge>
-                  </HStack>
-                  
-                  {screening?.dass_scores ? (
-                    <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
-                       {["depression", "anxiety", "stress"].map(scale => {
-                          const score = screening.dass_scores[scale];
-                          const interpret = screening.dass_interpretations[scale];
-                          let color = "gray";
-                          if (interpret === "Moderate") color = "orange";
-                          if (interpret === "Severe" || interpret === "Extremely Severe") color = "red";
-                          
-                          return (
-                            <VStack key={scale} align="start" p={6} bg={`${color}.50`} borderRadius="2xl" border="1px solid" borderColor={`${color}.100`}>
-                               <Text textTransform="uppercase" fontSize="xs" fontWeight="bold" color={`${color}.600`}>{scale}</Text>
-                               <Heading size="lg" color={`${color}.700`}>{score}</Heading>
-                               <Badge colorScheme={color} borderRadius="full">{interpret}</Badge>
-                            </VStack>
-                          );
-                       })}
-                    </SimpleGrid>
+                   <HStack justify="space-between" mb={6}>
+                      <HStack><Icon as={FiActivity} color="teal.500" /><Heading size="sm">DASS-21 Score & Interpretation</Heading></HStack>
+                      <Badge variant="subtle" colorScheme="teal">Clinical Screening</Badge>
+                   </HStack>
+                   
+                   {dass ? (
+                     <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
+                        {["depression", "anxiety", "stress"].map(scale => {
+                           // Use either the score directly or look in nested objects
+                           const score = dass[`${scale}_score`] ?? dass[scale];
+                           const interpret = dass[`${scale}_level`] ?? (screening?.dass_interpretations ? screening.dass_interpretations[scale] : null);
+                           
+                           let color = "gray";
+                           if (interpret === "Moderate") color = "orange";
+                           if (interpret === "Severe" || interpret === "Extremely Severe") color = "red";
+                           
+                           return (
+                             <VStack key={scale} align="start" p={6} bg={`${color}.50`} borderRadius="2xl" border="1px solid" borderColor={`${color}.100`}>
+                                <Text textTransform="uppercase" fontSize="xs" fontWeight="bold" color={`${color}.600`}>{scale}</Text>
+                                <Heading size="lg" color={`${color}.700`}>{score}</Heading>
+                                <Badge colorScheme={color} borderRadius="full">{interpret}</Badge>
+                             </VStack>
+                           );
+                        })}
+                     </SimpleGrid>
                   ) : (
                     <Text color="gray.500" fontStyle="italic">No screening data available for this client.</Text>
                   )}
@@ -152,20 +157,53 @@ export default function ClientsClient() {
                   </VStack>
                </Box>
 
-               {/* 🛡️ Risk & Safety */}
-               <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-                  <HStack mb={6}><Icon as={FiShield} color="red.500" /><Heading size="sm">Risk Assessment Summary</Heading></HStack>
-                  <SimpleGrid columns={2} spacing={10}>
-                     <Box>
-                        <Text fontSize="xs" fontWeight="bold" color="gray.500">Suicidal Ideation</Text>
-                        <Text fontWeight="600" color={screening?.suicidal_thoughts === "No" ? "green.500" : "red.500"}>{screening?.suicidal_thoughts || "—"}</Text>
-                     </Box>
-                     <Box>
-                        <Text fontSize="xs" fontWeight="bold" color="gray.500">Feels Safe at Home</Text>
-                        <Text fontWeight="600" color={screening?.feels_safe === "No" ? "red.500" : "green.500"}>{screening?.feels_safe || "—"}</Text>
-                     </Box>
-                  </SimpleGrid>
-               </Box>
+                {/* 🛡️ Risk & Safety */}
+                <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                   <HStack mb={6}><Icon as={FiShield} color="red.500" /><Heading size="sm">Risk Assessment Summary</Heading></HStack>
+                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Suicidal Ideation</Text>
+                         <Text fontWeight="600" color={screening?.suicidal_thoughts === "No" ? "green.500" : "red.500"}>{screening?.suicidal_thoughts || "—"}</Text>
+                      </Box>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Feels Safe at Home</Text>
+                         <Text fontWeight="600" color={screening?.feels_safe === "No" ? "red.500" : "green.500"}>{screening?.feels_safe || "—"}</Text>
+                      </Box>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Physical Health Factors</Text>
+                         <Text fontSize="sm">{screening?.health_factors || "—"}</Text>
+                      </Box>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Support System</Text>
+                         <Text fontSize="sm">{screening?.support_sources?.join(", ") || "—"}</Text>
+                      </Box>
+                   </SimpleGrid>
+                </Box>
+
+                {/* 📝 Identity & Life Context */}
+                <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                   <HStack mb={6}><Icon as={FiUser} color="teal.500" /><Heading size="sm">Identity & Contextual Factors</Heading></HStack>
+                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Life Stage</Text>
+                         <Text fontSize="sm">{screening?.life_stage_context || "—"}</Text>
+                      </Box>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Cultural Context</Text>
+                         <Text fontSize="sm">{screening?.cultural_social_context || "—"}</Text>
+                      </Box>
+                      <Box>
+                         <Text fontSize="xs" fontWeight="bold" color="gray.500">Identity / Lived Experience</Text>
+                         <Text fontSize="sm">{screening?.identity_lived_experience || "—"}</Text>
+                      </Box>
+                      {screening?.other_identity_details && (
+                        <Box gridColumn="span 2">
+                           <Text fontSize="xs" fontWeight="bold" color="gray.500">Additional Context</Text>
+                           <Text fontSize="sm">{screening.other_identity_details}</Text>
+                        </Box>
+                      )}
+                   </SimpleGrid>
+                </Box>
             </VStack>
           </GridItem>
         </Grid>
