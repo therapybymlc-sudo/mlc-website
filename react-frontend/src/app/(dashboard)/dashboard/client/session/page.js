@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Box, Container, VStack, Heading, Text, Button, Center, Icon, useToast } from '@chakra-ui/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Box, Container, VStack, HStack, Heading, Text, Button, Center, Icon, useToast, Spinner } from '@chakra-ui/react';
 import { FiArrowLeft, FiShield } from 'react-icons/fi';
 import dynamic from 'next/dynamic';
 
@@ -80,8 +80,3 @@ export default function SessionPage() {
   );
 }
 
-const HStack = ({ children, ...props }) => (
-  <Box display="flex" flexDirection="row" {...props}>
-    {children}
-  </Box>
-);
