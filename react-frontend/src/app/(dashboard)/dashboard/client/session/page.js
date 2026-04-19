@@ -24,7 +24,7 @@ export default function SessionPage() {
   const toast = useToast();
   
   // In a real scenario, this would be fetched from the backend based on a session ID
-  const roomUrl = searchParams.get('url') || "https://mlchealth.daily.co/demo-room"; 
+  const roomUrl = searchParams.get('url') || "https://mlchealth.daily.co/DemoRoom"; 
   const [sessionActive, setSessionActive] = useState(true);
 
   if (!sessionActive) {
