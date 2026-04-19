@@ -321,6 +321,8 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             if is_verified is not None:
                 qs = qs.filter(is_verified=is_verified.lower() == "true")
             return qs
+        if not therapist:
+            return TherapistProfile.objects.none()
         return TherapistProfile.objects.filter(id=therapist.id)
 
     @action(detail=False, methods=["get"], url_path="me")
