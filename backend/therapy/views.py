@@ -1070,7 +1070,9 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
         client = _resolve_client_from_request(self.request)
         qs = ClientJournal.objects.all()
         if therapist:
-            client_ids = _active_client_ids_for_therapist(therapist)
+            client_ids = list(_active_client_ids_for_therapist(therapist))
+            if client:
+                client_ids.append(client.id)
             qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
@@ -1123,7 +1125,9 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
         client = _resolve_client_from_request(self.request)
         qs = ClientGoal.objects.all()
         if therapist:
-            client_ids = _active_client_ids_for_therapist(therapist)
+            client_ids = list(_active_client_ids_for_therapist(therapist))
+            if client:
+                client_ids.append(client.id)
             qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
@@ -1159,7 +1163,9 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
         client = _resolve_client_from_request(self.request)
         qs = ClientCheckin.objects.all()
         if therapist:
-            client_ids = _active_client_ids_for_therapist(therapist)
+            client_ids = list(_active_client_ids_for_therapist(therapist))
+            if client:
+                client_ids.append(client.id)
             qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
