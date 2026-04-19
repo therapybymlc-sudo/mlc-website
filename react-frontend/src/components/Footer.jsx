@@ -208,8 +208,8 @@ export default function Footer() {
             © {new Date().getFullYear()} MLC Health & Wellness Centre. All rights reserved.
           </Text>
           <HStack spacing={8}>
-            <Link fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Privacy Policy</Link>
-            <Link fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Terms of Service</Link>
+            <Link as={NextLink} href="/privacy" fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Privacy Policy</Link>
+            <Link as={NextLink} href="/terms" fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Terms of Service</Link>
             <Link fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>Cookie Settings</Link>
           </HStack>
           <Box />
