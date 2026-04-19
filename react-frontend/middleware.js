@@ -13,6 +13,9 @@ const isPublicRoute = createRouteMatcher([
   '/supervision(.*)',
   '/workshops(.*)',
   '/therapists(.*)',
+  '/privacy(.*)',
+  '/terms(.*)',
+  '/book(.*)',
   '/api(.*)'
 ]);
 
