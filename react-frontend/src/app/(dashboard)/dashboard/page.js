@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Center, Spinner, Box, Heading, Text, Button, VStack, useToast } from "@chakra-ui/react";
 import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { apiPost } from "../../../api.js";
 
 export default function DashboardPage() {
@@ -11,6 +12,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const [onboarding, setOnboarding] = useState(false);
   const toast = useToast();
+  const searchParams = useSearchParams();
+  const autoRole = searchParams.get("role");
 
   // Robust role detection matching AuthContext
   const roles = (() => {
@@ -42,8 +45,14 @@ export default function DashboardPage() {
       } else {
         router.replace("/dashboard/client");
       }
+      return;
     }
-  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, router]);
+
+    // Auto-onboard if role is in URL (e.g. from signup redirect)
+    if (autoRole && !onboarding) {
+      handleSelectRole(autoRole);
+    }
+  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, router, autoRole, onboarding]);
 
   const handleSelectRole = async (role) => {
     setOnboarding(true);

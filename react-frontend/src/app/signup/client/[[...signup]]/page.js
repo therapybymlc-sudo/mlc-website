@@ -28,7 +28,7 @@ export default function ClientSignUpPage() {
                 }
               }
             }}
-            fallbackRedirectUrl="/client-checkin"
+            fallbackRedirectUrl="/dashboard?role=client"
           />
         </VStack>
       </Container>
