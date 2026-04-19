@@ -125,7 +125,18 @@ export default function AppointmentsClient() {
                                     <Badge colorScheme="teal" borderRadius="full" px={3} py={1} fontSize="10px">CONFIRMED</Badge>
                                 </Td>
                                 <Td textAlign="right">
-                                    <Button size="sm" variant="outline" colorScheme="teal" borderRadius="full">Join Room</Button>
+                                    <Button 
+                                        as={NextLink}
+                                        href={`/dashboard/client/session?id=${appt.id}`}
+                                        size="sm" 
+                                        variant="solid" 
+                                        bg="teal.800" 
+                                        color="white" 
+                                        borderRadius="full"
+                                        _hover={{ bg: 'teal.900' }}
+                                    >
+                                        Join Room
+                                    </Button>
                                 </Td>
                             </Tr>
                         ))}

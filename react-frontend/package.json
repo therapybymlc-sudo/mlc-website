@@ -13,6 +13,8 @@
     "@chakra-ui/react": "^2.10.9",
     "@clerk/clerk-react": "latest",
     "@clerk/nextjs": "latest",
+    "@daily-co/daily-js": "^0.89.1",
+    "@daily-co/daily-react": "^0.24.0",
     "@emailjs/browser": "^4.4.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
