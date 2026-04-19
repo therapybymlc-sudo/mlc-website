@@ -15,7 +15,8 @@ import {
   Circle,
   Icon,
   Tooltip,
-  Button
+  Button,
+  Divider
 } from '@chakra-ui/react';
 import { 
   FiMic, FiMicOff, FiVideo, FiVideoOff, FiPhoneOff, 
@@ -187,7 +188,9 @@ export default function TherapyRoom({ roomUrl, token, onLeave }) {
     if (!roomUrl || callObject) return;
 
     const co = DailyIframe.createCallObject();
-    co.join({ url: roomUrl, token: token || undefined });
+    const joinOptions = { url: roomUrl };
+    if (token) joinOptions.token = token;
+    co.join(joinOptions);
     setCallObject(co);
 
     return () => {
