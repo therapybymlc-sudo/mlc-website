@@ -5,7 +5,7 @@ import {
   Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid,
   Image, FormControl, FormLabel, Input, Select, Textarea, useToast,
   Divider, Icon, Flex, Accordion, AccordionItem, AccordionButton,
-  AccordionPanel, AccordionIcon, Badge,
+  AccordionPanel, AccordionIcon, Badge, Center,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import {
