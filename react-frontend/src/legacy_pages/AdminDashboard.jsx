@@ -1604,7 +1604,7 @@ export default function AdminDashboard() {
                             color="teal.900" 
                             size="sm" 
                             borderRadius="full"
-                            onClick={() => window.open("/dashboard/client/session?url=https://mlchealth.daily.co/demo-room", "_blank")}
+                            onClick={() => window.open("/dashboard/client/session?url=https://mlchealth.daily.co/DemoRoom", "_blank")}
                             _hover={{ bg: 'teal.300' }}
                           >
                             Launch Live Test Room
