@@ -3,8 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, VStack, Heading, Text, Button, Center, Icon, useToast } from '@chakra-ui/react';
 import { FiArrowLeft, FiShield } from 'react-icons/fi';
-import TherapyRoom from '../../../../../components/video/TherapyRoom';
-import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const TherapyRoom = dynamic(() => import('../../../../../components/video/TherapyRoom'), {
+  ssr: false,
+  loading: () => (
+    <Center h="500px" bg="gray.950" borderRadius="3xl">
+      <VStack spacing={4}>
+        <Spinner color="teal.500" />
+        <Text color="whiteAlpha.600" fontSize="xs">Initializing Secure Stream...</Text>
+      </VStack>
+    </Center>
+  )
+});
 
 export default function SessionPage() {
   const router = useRouter();
