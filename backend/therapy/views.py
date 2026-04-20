@@ -372,9 +372,14 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         roles = _extract_roles_from_auth(self.request)
         
-        # 1. Admins see everything
+        # 1. Admins see everything (with filtering support)
         if "admin" in roles or self.request.user.is_staff:
-            return TherapistProfile.objects.all()
+            queryset = TherapistProfile.objects.all()
+            is_verified = self.request.query_params.get("is_verified")
+            if is_verified is not None:
+                is_verified_bool = is_verified.lower() == "true"
+                queryset = queryset.filter(is_verified=is_verified_bool)
+            return queryset
 
         # 2. For 'list' or 'retrieve' actions (Client Discovery View)
         # We allow everyone to see the basic profile info if they are authenticated
