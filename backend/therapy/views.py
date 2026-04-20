@@ -360,11 +360,24 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         return TherapistProfile.objects.filter(id=therapist.id)
 
     def create(self, request, *args, **kwargs):
-        # Resilience: if trying to create but it exists, resolve and return me
+        # Resilience: if trying to create but it exists by session, resolve and return me
         therapist = _resolve_therapist_from_request(request, allow_create=True)
         if therapist:
             serializer = self.get_serializer(therapist)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        # If not found by session, check the actual email in the POST body
+        body_email = request.data.get("email")
+        if body_email:
+            existing = TherapistProfile.objects.filter(email__iexact=body_email).first()
+            if existing:
+                # Link it to the current user if not already linked
+                if existing.user_id != request.user.id:
+                    existing.user = request.user
+                    existing.save(update_fields=["user"])
+                serializer = self.get_serializer(existing)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return super().create(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"], url_path="me")
