@@ -204,9 +204,15 @@ export default function PublicProfileClient({ therapist }) {
                    {isLoadingSlots ? (
                      <Center py={10}><Spinner color="mlc.green" /></Center>
                    ) : slots.length === 0 ? (
-                     <Box py={10} textAlign="center">
-                        <Text color="gray.500" fontSize="sm">No public slots listed yet. Please contact MLC for direct booking.</Text>
-                        <Button mt={4} variant="outline" colorScheme="teal" borderRadius="full" px={8}>Contact Support</Button>
+                     <Box py={8} px={6} textAlign="center" bg="white" borderRadius="2xl" border="1px dashed" borderColor="mlc.green">
+                        <VStack spacing={4}>
+                           <Icon as={FiMessageCircle} color="mlc.green" boxSize={8} />
+                           <Text color="gray.600" fontWeight="600">No public slots currently listed</Text>
+                           <Text color="gray.500" fontSize="sm">You can still start your journey with {profile?.name || "this specialist"} by sending a direct inquiry.</Text>
+                           <Button as={NextLink} href={`/book?therapist=${profile.id}`} bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }}>
+                              Send Booking Inquiry
+                           </Button>
+                        </VStack>
                      </Box>
                    ) : (
                      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
