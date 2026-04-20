@@ -36,13 +36,33 @@ export default function PublicProfileClient({ therapist }) {
   if (!therapist) return <Box p={20} textAlign="center"><Text>Therapist not found.</Text></Box>;
 
   const [slots, setSlots] = React.useState([]);
+  const [profile, setProfile] = React.useState(therapist);
+  const [isLoadingProfile, setIsLoadingProfile] = React.useState(!therapist);
   const [isLoadingSlots, setIsLoadingSlots] = React.useState(true);
   const toast = useToast();
 
   React.useEffect(() => {
+    if (!profile) {
+      const fetchProfile = async () => {
+        try {
+          const idFromUrl = window.location.pathname.split('/').pop();
+          const res = await fetch(`https://api.mlchealth.in/api/therapists/${idFromUrl}/`);
+          if (res.ok) {
+            const data = await res.json();
+            setProfile(data);
+          }
+        } catch (err) { console.error("Profile fallback failed", err); }
+        finally { setIsLoadingProfile(false); }
+      };
+      fetchProfile();
+    }
+  }, [profile]);
+
+  React.useEffect(() => {
+     if (!profile?.id) return;
      const fetchSlots = async () => {
        try {
-         const res = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${therapist.id}`);
+         const res = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${profile.id}`);
          if (res.ok) {
            const data = await res.json();
            setSlots(data.results || data);
@@ -54,18 +74,20 @@ export default function PublicProfileClient({ therapist }) {
        }
      };
      fetchSlots();
-  }, [therapist.id]);
+  }, [profile?.id]);
 
-  // Schema.org Structured Data
+  if (isLoadingProfile) return <Center p={20} h="60vh"><VStack><Spinner size="xl" color="mlc.green" /><Text>Loading specialist profile...</Text></VStack></Center>;
+  if (!profile) return <Box p={20} textAlign="center"><VStack spacing={4}><Text fontSize="xl">Profile currently unavailable.</Text><Button as={NextLink} href="/therapists/discovery" variant="outline" borderRadius="full">Return to Discovery</Button></VStack></Box>;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Psychologist",
-    "name": therapist.name,
-    "description": therapist.headline || therapist.bio?.substring(0, 160),
-    "image": therapist.profile_image_url,
-    "jobTitle": therapist.title || "Psychotherapist",
-    "knowsAbout": therapist.specialties || therapist.focus_areas,
-    "knowsLanguage": therapist.languages,
+    "name": profile.name,
+    "description": profile.headline || profile.bio?.substring(0, 160),
+    "image": profile.profile_image_url,
+    "jobTitle": profile.title || "Psychotherapist",
+    "knowsAbout": profile.specialties || profile.focus_areas,
+    "knowsLanguage": profile.languages,
     "provider": {
       "@type": "MedicalOrganization",
       "name": "MLC Health and Wellness Centre",

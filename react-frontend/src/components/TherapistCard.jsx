@@ -135,7 +135,7 @@ export default function TherapistCard({ therapist, isMatch = false }) {
             </Button>
             <Button
               as={NextLink}
-              href={`/book?therapist=${therapist.id}`}
+              href={`/therapists/${therapist.id}#booking-calendar`}
               flex="1"
               borderRadius="full"
               fontSize="sm"
