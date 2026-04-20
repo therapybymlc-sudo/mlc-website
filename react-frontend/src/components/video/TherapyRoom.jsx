@@ -28,11 +28,14 @@ export default function TherapyRoom({ roomUrl, onLeave }) {
 
     // Custom clinical setup
     jitsiApi.executeCommand('subject', 'MLC Secure Clinical Session');
-    jitsiApi.executeCommand('avatarUrl', '/logo_tra.png');
     
-    // Add listeners
+    // Add listeners with a small guard to prevent "Double Exit" on login redirects
     jitsiApi.addEventListener('videoConferenceLeft', () => {
-      if (onLeave) onLeave();
+      // Small delay prevents the "Session Concluded" screen from appearing
+      // during the internal redirect when a user clicks "Log In"
+      setTimeout(() => {
+        if (onLeave) onLeave();
+      }, 1000);
     });
   };
 
