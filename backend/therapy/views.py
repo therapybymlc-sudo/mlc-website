@@ -704,12 +704,11 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
 
 
 class AvailabilitySlotPublicView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        client = _resolve_client_from_request(request)
-        if not client:
-            return _profile_required_response("client")
+        # We no longer require a client profile just to VIEW public slots.
+        # Booking still requires authentication and a profile elsewhere.
 
         therapist_id = (
             request.query_params.get("therapist")
