@@ -317,9 +317,13 @@ def _extract_roles_from_auth(request):
         if payload.get("sub") in admin_user_ids and "admin" not in roles:
             roles = list(roles) + ["admin"]
     email = getattr(getattr(request, "user", None), "email", None) or payload_email
-    if email and email.lower() in admin_emails and "admin" not in roles:
-        roles = list(roles) + ["admin"]
-    
+    if email and email.lower() in admin_emails:
+        if "admin" not in roles:
+            roles = list(roles) + ["admin"]
+        # Force staff status on user object for this request's lifespan
+        if getattr(request, "user", None):
+            request.user.is_staff = True
+            
     derived_roles = [str(r).lower() for r in roles if r]
     # Debug: see what's happening in logs
     if "admin" in derived_roles or "therapist" in derived_roles:
@@ -492,6 +496,9 @@ class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return Appointment.objects.none()
+            
         qs = Appointment.objects.filter(therapist=therapist).order_by("-date")
         client_id = self.request.query_params.get("client")
         if client_id:
