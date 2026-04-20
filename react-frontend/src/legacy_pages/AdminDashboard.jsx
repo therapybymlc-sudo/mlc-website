@@ -731,7 +731,6 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
       <VStack align="stretch" spacing={1}>
         <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>VERIFICATION</Text>
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Users} label="Vetting Portal" id="vetting" />
-        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={UserCheck} label="Therapist Signups" id="profiles" />
       </VStack>
 
       <VStack align="stretch" spacing={1}>
@@ -1262,18 +1261,17 @@ export default function AdminDashboard() {
                   </VStack>
                 )}
               </Box>
-           </Box>
-        )}
 
-        {activeTab === "profiles" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
-              <Heading size="md" mb={6} borderBottom="2px solid" borderColor="mlc.green" pb={2} display="inline-block">
-                Profile Verification
-              </Heading>
-              <Text fontSize="sm" color="gray.500" mb={6}>
-                 These are therapists who created a profile but haven't been vetted for the public directory.
-              </Text>
-              {unverifiedTherapists.length === 0 ? (
+              <Divider mb={10} />
+
+              <Box>
+                <Heading size="sm" mb={4} color="mlc.greenDark">
+                  Pending Profile Verifications ({unverifiedTherapists.length})
+                </Heading>
+                <Text fontSize="xs" color="gray.500" mb={4}>
+                  These are clinicians with active accounts who need final directory verification.
+                </Text>
+                {unverifiedTherapists.length === 0 ? (
                   <Text color="gray.500" fontSize="sm">All profiles verified.</Text>
                 ) : (
                   <VStack align="stretch" spacing={3}>
@@ -1313,6 +1311,7 @@ export default function AdminDashboard() {
                     ))}
                   </VStack>
                 )}
+              </Box>
            </Box>
         )}
 
