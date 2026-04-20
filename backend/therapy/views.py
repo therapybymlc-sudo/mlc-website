@@ -653,11 +653,20 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
         
         created_slots = 0
         current_dt = start_dt
+        
+        # Helper to match day names or numbers
+        DAY_MAP = {
+            "0": "sunday", "1": "monday", "2": "tuesday", "3": "wednesday", 
+            "4": "thursday", "5": "friday", "6": "saturday"
+        }
+
         while current_dt <= end_dt:
-            weekday = current_dt.isoweekday() # 1=Mon, 7=Sun
-            day_str = str(weekday % 7) # 0=Sun, 1=Mon...
+            weekday_idx = str(current_dt.isoweekday() % 7) # 0=Sun, 1=Mon
+            day_name = DAY_MAP.get(weekday_idx)
             
-            day_slots = business_hours.get(day_str, [])
+            # Look for hours using number OR name (Robust Match)
+            day_slots = business_hours.get(weekday_idx) or business_hours.get(day_name) or []
+            
             for block in day_slots:
                 start_str = block.get("startTime")
                 end_str = block.get("endTime")
@@ -665,45 +674,32 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
                     continue
                 
                 try:
-                    slot_start_time = datetime.strptime(f"{current_dt} {start_str}", "%Y-%m-%d %H:%M")
-                    slot_end_time = datetime.strptime(f"{current_dt} {end_str}", "%Y-%m-%d %H:%M")
-                    slot_start_time = timezone.make_aware(slot_start_time)
-                    slot_end_time = timezone.make_aware(slot_end_time)
+                    slot_start_time = timezone.make_aware(datetime.strptime(f"{current_dt} {start_str}", "%Y-%m-%d %H:%M"))
+                    slot_end_time = timezone.make_aware(datetime.strptime(f"{current_dt} {end_str}", "%Y-%m-%d %H:%M"))
                 except ValueError:
                     continue
                 
-                curr_slot_start = slot_start_time
-                while curr_slot_start + timedelta(hours=1) <= slot_end_time:
-                    curr_slot_end = curr_slot_start + timedelta(hours=1)
-                    
-                    overlap = AvailabilitySlot.objects.filter(
+                # Check for overlap before creating (Prevents bloating)
+                overlap = AvailabilitySlot.objects.filter(
+                    therapist=therapist,
+                    start_time__lt=slot_end_time,
+                    end_time__gt=slot_start_time,
+                    status__in=[AvailabilitySlot.Status.OPEN, AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BLOCKED]
+                ).exists()
+
+                if not overlap:
+                    AvailabilitySlot.objects.create(
                         therapist=therapist,
-                        status__in=[AvailabilitySlot.Status.OPEN, AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.BLOCKED],
-                        start_time__lt=curr_slot_end,
-                        end_time__gt=curr_slot_start
+                        start_time=slot_start_time,
+                        end_time=slot_end_time,
+                        status=AvailabilitySlot.Status.OPEN,
+                        visible_to_clients=True
                     )
-                    
-                    overlap_events = ScheduleEvent.objects.filter(
-                        therapist=therapist,
-                        start_time__lt=curr_slot_end,
-                        end_time__gt=curr_slot_start
-                    )
-                    
-                    if not overlap.exists() and not overlap_events.exists():
-                        AvailabilitySlot.objects.create(
-                            therapist=therapist,
-                            start_time=curr_slot_start,
-                            end_time=curr_slot_end,
-                            status=AvailabilitySlot.Status.OPEN,
-                            visible_to_clients=True
-                        )
-                        created_slots += 1
-                    
-                    curr_slot_start += timedelta(hours=1)
+                    created_slots += 1
             
             current_dt += timedelta(days=1)
             
-        return Response({"detail": f"Generated {created_slots} open slots."})
+        return Response({"detail": f"Successfully generated {created_slots} slots based on your weekly hours."})
 
 
 class AvailabilitySlotPublicView(APIView):
