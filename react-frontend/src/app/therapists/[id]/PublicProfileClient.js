@@ -33,8 +33,7 @@ import NextLink from "next/link";
 import Script from "next/script";
 
 export default function PublicProfileClient({ therapist }) {
-  if (!therapist) return <Box p={20} textAlign="center"><Text>Therapist not found.</Text></Box>;
-
+  const [isMounted, setIsMounted] = React.useState(false);
   const [slots, setSlots] = React.useState([]);
   const [profile, setProfile] = React.useState(therapist);
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(!therapist);
@@ -42,6 +41,7 @@ export default function PublicProfileClient({ therapist }) {
   const toast = useToast();
 
   React.useEffect(() => {
+    setIsMounted(true);
     if (!profile) {
       const fetchProfile = async () => {
         try {
@@ -76,8 +76,17 @@ export default function PublicProfileClient({ therapist }) {
      fetchSlots();
   }, [profile?.id]);
 
+  if (!isMounted) return <Box h="100vh" bg="white" />;
   if (isLoadingProfile) return <Center p={20} h="60vh"><VStack><Spinner size="xl" color="mlc.green" /><Text>Loading specialist profile...</Text></VStack></Center>;
-  if (!profile) return <Box p={20} textAlign="center"><VStack spacing={4}><Text fontSize="xl">Profile currently unavailable.</Text><Button as={NextLink} href="/therapists/discovery" variant="outline" borderRadius="full">Return to Discovery</Button></VStack></Box>;
+  if (!profile) return (
+    <Box p={20} textAlign="center">
+      <VStack spacing={4}>
+        <Text fontSize="xl" fontWeight="700">Specialist Profile Currently Syncing</Text>
+        <Text color="gray.500">We are retrieving the latest clinical credentials. Please refresh in a moment!</Text>
+        <Button as={NextLink} href="/therapists/discovery" variant="outline" borderRadius="full">Return to Discovery</Button>
+      </VStack>
+    </Box>
+  );
 
   const jsonLd = {
     "@context": "https://schema.org",
