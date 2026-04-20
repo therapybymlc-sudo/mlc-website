@@ -1,16 +1,35 @@
 import dynamic from 'next/dynamic';
-import { Box, Spinner, VStack, Text } from '@chakra-ui/react';
 
-// Nuclear option for hydration errors: Disable SSR for the profile hub
+/** 
+ * Build Fix: Using a lightweight HTML loader for the dynamic boundary. 
+ * This prevents Server vs Client component conflicts during the build process.
+ */
 const ProfileClient = dynamic(() => import('./ProfileClient'), { 
   ssr: false,
   loading: () => (
-    <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="#FAFAFA">
-      <VStack spacing={4}>
-        <Spinner size="xl" thickness="4px" color="#56756D" />
-        <Text color="gray.500" fontFamily="'Playfair Display', serif">Initializing Hub...</Text>
-      </VStack>
-    </Box>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      backgroundColor: '#FAFAFA',
+      fontFamily: 'serif'
+    }}>
+      <div style={{
+        width: '40px',
+        height: '40px',
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #56756D',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+        marginBottom: '1rem'
+      }} />
+      <p style={{ color: '#666' }}>Initializing Identity Hub...</p>
+      <style>{`
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      `}</style>
+    </div>
   )
 });
 
