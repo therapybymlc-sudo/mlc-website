@@ -720,13 +720,13 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        one_month_from_now = timezone.now() + timezone.timedelta(days=30)
+        # Expand visibility to 90 days and simplify filters
+        ninety_days_from_now = timezone.now() + timezone.timedelta(days=90)
         slots = AvailabilitySlot.objects.filter(
             therapist_id=therapist_id,
             status=AvailabilitySlot.Status.OPEN,
-            visible_to_clients=True,
             start_time__gt=timezone.now(),
-            start_time__lte=one_month_from_now,
+            start_time__lte=ninety_days_from_now,
         ).order_by("start_time")
 
         serializer = AvailabilitySlotPublicSerializer(slots, many=True)
