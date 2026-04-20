@@ -133,16 +133,25 @@ export default function ProfileClient() {
   const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
+    if (!isMounted) return;
+    
     const fetchProfile = async () => {
       try {
+        console.log("Fetching profile...");
         const data = await apiGet("therapists/me/");
-        if (data) setProfile(prev => ({ ...prev, ...data }));
+        if (data && data.id) {
+          setProfile(prev => ({ ...prev, ...data }));
+        }
       } catch (error) {
-        console.warn("Using local draft");
+        if (error.response?.status === 404) {
+          console.warn("Profile not found - using local draft mode");
+        } else {
+          console.error("Profile sync error:", error);
+        }
       }
     };
     fetchProfile();
-  }, []);
+  }, [isMounted]);
 
   const handleSave = async (showToast = true) => {
     setLoading(true);

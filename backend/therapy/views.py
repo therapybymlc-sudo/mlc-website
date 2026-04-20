@@ -319,7 +319,13 @@ def _extract_roles_from_auth(request):
     email = getattr(getattr(request, "user", None), "email", None) or payload_email
     if email and email.lower() in admin_emails and "admin" not in roles:
         roles = list(roles) + ["admin"]
-    return [str(r).lower() for r in roles if r]
+    
+    derived_roles = [str(r).lower() for r in roles if r]
+    # Debug: see what's happening in logs
+    if "admin" in derived_roles or "therapist" in derived_roles:
+        print(f"[AUTH] User: {email} | Roles: {derived_roles}")
+    
+    return derived_roles
 
 
 def _is_premium_request(request):
