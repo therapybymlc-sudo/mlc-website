@@ -66,7 +66,8 @@ export default function TherapyRoom({ roomUrl, onLeave }) {
 
       <Box h="full" w="full">
         <JitsiMeeting
-          domain="meet.jit.si"
+          domain="8x8.vc"
+          appId="vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406"
           roomName={roomName}
           configOverwrite={{
             startWithAudioMuted: true,
@@ -74,8 +75,8 @@ export default function TherapyRoom({ roomUrl, onLeave }) {
             startWithVideoMuted: true,
             enableEmailInStats: false,
             disableDeepLinking: true,
-            prejoinPageEnabled: false, // Straight to session for ease
-            enableE2EP: true, // End-to-end encryption support
+            prejoinPageEnabled: false,
+            enableE2EP: true, // End-to-end encryption for security
             toolbarButtons: [
               'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
               'fodeviceselection', 'hangup', 'profile', 'chat', 'settings',
