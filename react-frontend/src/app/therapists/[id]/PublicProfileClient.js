@@ -124,7 +124,7 @@ export default function PublicProfileClient({ therapist }) {
               <BreadcrumbLink as={NextLink} href="/therapists/discovery">Find a Therapist</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbItem isCurrentPage>
-              <BreadcrumbLink fontWeight="bold" color="mlc.greenDark">{therapist.name}</BreadcrumbLink>
+              <BreadcrumbLink fontWeight="bold" color="mlc.greenDark">{profile?.name || "Specialist"}</BreadcrumbLink>
             </BreadcrumbItem>
           </Breadcrumb>
         </Container>
@@ -137,16 +137,16 @@ export default function PublicProfileClient({ therapist }) {
             <VStack align="start" spacing={6}>
               <HStack spacing={4}>
                 <Badge bg="rgba(86, 117, 109, 0.1)" color="mlc.greenDark" borderRadius="full" px={4} py={1} fontSize="xs">ACTIVE CLINICIAN</Badge>
-                {therapist.is_accepting_new && <Badge bg="green.50" color="green.600" borderRadius="full" px={4} py={1} fontSize="xs">ACCEPTING NEW CLIENTS</Badge>}
+                {profile?.is_accepting_new && <Badge bg="green.50" color="green.600" borderRadius="full" px={4} py={1} fontSize="xs">ACCEPTING NEW CLIENTS</Badge>}
               </HStack>
               <VStack align="start" spacing={2}>
                 <Heading as="h1" size="2xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">
-                  {therapist.name}
+                  {profile?.name}
                 </Heading>
-                <Text fontSize="xl" color="gray.600" fontWeight="500">{therapist.title || "Psychotherapist"}</Text>
+                <Text fontSize="xl" color="gray.600" fontWeight="500">{profile?.title || "Psychotherapist"}</Text>
               </VStack>
               <Text fontSize="lg" color="gray.500" fontStyle="italic" lineHeight="tall">
-                "{therapist.headline || `Dedicated to supporting your mental health journey through evidence-based practice.`}"
+                "{profile?.headline || `Dedicated to supporting your mental health journey through evidence-based practice.`}"
               </Text>
               <HStack spacing={4} pt={4}>
                 <Button as="a" href="#booking-calendar" size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }} shadow="xl">
@@ -161,8 +161,8 @@ export default function PublicProfileClient({ therapist }) {
             <Box position="relative">
               <Box position="absolute" top="-20px" left="-20px" boxSize="100px" bg="mlc.gold" opacity="0.1" borderRadius="full" />
               <Image 
-                src={therapist.profile_image_url || "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=600"}
-                alt={`${therapist.name} - ${therapist.title}`}
+                src={profile?.profile_image_url || "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=600"}
+                alt={`${profile?.name} - ${profile?.title}`}
                 borderRadius="3xl"
                 shadow="2xl"
                 border="8px solid white"
@@ -215,7 +215,7 @@ export default function PublicProfileClient({ therapist }) {
                             borderRadius="xl"
                             _hover={{ bg: "mlc.green", color: "white" }}
                             as={NextLink}
-                            href={`/book?therapist=${therapist.id}&slot=${slot.id}`}
+                            href={`/book?therapist=${profile.id}&slot=${slot.id}`}
                           >
                              {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Button>
@@ -229,7 +229,7 @@ export default function PublicProfileClient({ therapist }) {
               <Box>
                 <Heading as="h2" size="lg" mb={6} color="mlc.greenDark">About My Practice</Heading>
                 <Text fontSize="md" color="gray.600" lineHeight="1.8" whiteSpace="pre-wrap">
-                  {therapist.bio || "No biography provided yet."}
+                  {profile?.bio || "No biography provided yet."}
                 </Text>
               </Box>
 
@@ -240,7 +240,7 @@ export default function PublicProfileClient({ therapist }) {
                   <Box>
                     <Text fontWeight="bold" mb={3} color="mlc.gold">Main Concerns</Text>
                     <VStack align="start" spacing={3}>
-                      {(therapist.focus_areas || therapist.specialties || []).map(topic => (
+                      {(profile?.focus_areas || profile?.specialties || []).map(topic => (
                         <HStack key={topic} fontSize="sm" color="gray.600">
                           <Icon as={FiHeart} color="mlc.green" />
                           <Text>{topic}</Text>
@@ -251,7 +251,7 @@ export default function PublicProfileClient({ therapist }) {
                   <Box>
                     <Text fontWeight="bold" mb={3} color="mlc.gold">Modalities</Text>
                     <HStack spacing={2} wrap="wrap">
-                      {(therapist.modalities || []).map(m => (
+                      {(profile?.modalities || []).map(m => (
                         <Badge key={m} variant="subtle" colorScheme="teal" borderRadius="full" px={3} py={1}>{m}</Badge>
                       ))}
                     </HStack>
@@ -272,7 +272,7 @@ export default function PublicProfileClient({ therapist }) {
                       <Icon as={FiClock} color="mlc.green" />
                       <Text fontSize="sm">Experience</Text>
                     </HStack>
-                    <Text fontSize="sm" fontWeight="700">{therapist.years_experience || "5"}+ Years</Text>
+                    <Text fontSize="sm" fontWeight="700">{profile?.years_experience || "5"}+ Years</Text>
                   </HStack>
                   <HStack justify="space-between">
                     <HStack spacing={3} color="gray.600">
@@ -286,11 +286,11 @@ export default function PublicProfileClient({ therapist }) {
                       <Icon as={FiGlobe} color="mlc.green" />
                       <Text fontSize="sm">Languages</Text>
                     </HStack>
-                    <Text fontSize="sm" fontWeight="700">{(therapist.languages || ["English"]).join(", ")}</Text>
+                    <Text fontSize="sm" fontWeight="700">{(profile?.languages || ["English"]).join(", ")}</Text>
                   </HStack>
                   <Divider my={4} />
                   <VStack align="stretch" spacing={2}>
-                    <Text fontSize="2xl" fontWeight="800" color="mlc.greenDark">KD {therapist.hourly_rate || "45"}</Text>
+                    <Text fontSize="2xl" fontWeight="800" color="mlc.greenDark">KD {profile?.hourly_rate || "45"}</Text>
                     <Text fontSize="xs" color="gray.500">Per individual session</Text>
                   </VStack>
                   <Button as="a" href="#booking-calendar" mt={4} size="lg" bg="mlc.gold" color="white" borderRadius="full" _hover={{ bg: 'mlc.green' }}>
