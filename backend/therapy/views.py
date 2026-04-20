@@ -394,6 +394,16 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
+    def retrieve(self, request, *args, **kwargs):
+        """Force-allow retrieval by ID for authenticated users to fix 404 sync issues."""
+        pk = kwargs.get("pk")
+        try:
+            instance = TherapistProfile.objects.get(pk=pk)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except TherapistProfile.DoesNotExist:
+            return Response({"detail": "Therapist not found."}, status=status.HTTP_404_NOT_FOUND)
+
     def update(self, request, *args, **kwargs):
         """Override to resolve by email instead of queryset to prevent 404 on role-delay."""
         kwargs["partial"] = True
