@@ -1,4 +1,4 @@
-import PublicProfileClient from "./PublicProfileClient";
+import TherapistPublicClient from "./TherapistPublicClient";
 
 // 🔍 Generate Metadata for SEO
 export async function generateMetadata({ params }) {
@@ -34,5 +34,5 @@ export default async function TherapistPublicPage({ params }) {
     console.error("Failed to fetch therapist for SSR", err);
   }
 
-  return <PublicProfileClient therapist={therapist} />;
+  return <TherapistPublicClient therapist={therapist} />;
 }
