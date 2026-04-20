@@ -1922,17 +1922,21 @@ class VerifyTherapistView(APIView):
             profile.is_verified = True
             profile.save(update_fields=["is_verified", "updated_at"])
             
-            # Notify the therapist
-            if profile.user:
-                Notification.objects.create(
-                    recipient_user_profile=profile.user,
-                    type=Notification.Type.APPOINTMENT_SCHEDULED, # Reuse or use a message
-                    title="Account Verified",
-                    body="Your therapist profile has been verified by MLC. You now have full access to the dashboard.",
-                    related_model="TherapistProfile",
-                    related_id=str(profile.id),
-                    action_url="/therapist/dashboard"
-                )
+            # Notify the therapist (Fail-Safe)
+            try:
+                if profile.user:
+                    Notification.objects.create(
+                        recipient_user_profile=profile.user,
+                        type=Notification.Type.APPOINTMENT_SCHEDULED,
+                        title="Account Verified",
+                        body="Your therapist profile has been verified by MLC. You now have full access to the dashboard.",
+                        related_model="TherapistProfile",
+                        related_id=str(profile.id),
+                        action_url="/therapist/dashboard" # CharField or handle failure
+                    )
+            except Exception as e:
+                print(f"Non-critical Notification Error: {str(e)}")
+                
             return Response({"detail": f"Therapist {profile.name} verified successfully."})
         except TherapistProfile.DoesNotExist:
             return Response({"detail": "Therapist not found."}, status=status.HTTP_404_NOT_FOUND)
