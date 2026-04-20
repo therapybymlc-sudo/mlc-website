@@ -1917,10 +1917,17 @@ class TherapistMatchView(APIView):
         matches = []
         for t in latest.recommended_therapists.all():
             t_data = TherapistProfileSerializer(t).data
-            # In a real match, we'd recalculate or store the score. 
-            # For retrieval, we'll assume they were good matches.
             t_data["match_score"] = 0 
             matches.append(t_data)
+            
+        # Fallback: If for some reason the saved matches are empty (old logic),
+        # return all verified therapists so they don't see a blank screen
+        if not matches:
+            all_v = TherapistProfile.objects.filter(is_verified=True)[:5]
+            for t in all_v:
+                t_data = TherapistProfileSerializer(t).data
+                t_data["match_score"] = 0
+                matches.append(t_data)
             
         return Response({
             "screening_id": latest.id,

@@ -1,4 +1,4 @@
-import DiscoveryClient from './DiscoveryClient'
+import DiscoveryBridge from './DiscoveryBridge'
 
 export const metadata = {
   title: 'Find Your Specialist | MLC Health & Wellness Centre',
@@ -6,5 +6,5 @@ export const metadata = {
 }
 
 export default function DiscoveryPage() {
-  return <DiscoveryClient />
+  return <DiscoveryBridge />
 }
