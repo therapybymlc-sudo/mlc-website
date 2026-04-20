@@ -347,7 +347,6 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         roles = _extract_roles_from_auth(self.request)
         if "admin" in roles or self.request.user.is_staff:
             qs = TherapistProfile.objects.all()
@@ -355,14 +354,28 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             if is_verified is not None:
                 qs = qs.filter(is_verified=is_verified.lower() == "true")
             return qs
-        if not therapist:
-            return TherapistProfile.objects.none()
-        return TherapistProfile.objects.filter(id=therapist.id)
+
+        # Build a queryset that catches profiles linked by user FK OR by email
+        # This handles the case where role resolution fails but the user owns the profile
+        payload = getattr(self.request, "auth", {})
+        payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
+        email = getattr(self.request.user, "email", None) or payload_email
+        
+        from django.db.models import Q
+        filters = Q(user=self.request.user)
+        if email:
+            filters |= Q(email__iexact=email)
+        qs = TherapistProfile.objects.filter(filters)
+        return qs
 
     def create(self, request, *args, **kwargs):
         # Resilience: if trying to create but it exists by session, resolve and return me
         therapist = _resolve_therapist_from_request(request, allow_create=True)
         if therapist:
+            # Ensure user linkage is up to date
+            if therapist.user_id != request.user.id:
+                therapist.user = request.user
+                therapist.save(update_fields=["user"])
             serializer = self.get_serializer(therapist)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
@@ -371,7 +384,6 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         if body_email:
             existing = TherapistProfile.objects.filter(email__iexact=body_email).first()
             if existing:
-                # Link it to the current user if not already linked
                 if existing.user_id != request.user.id:
                     existing.user = request.user
                     existing.save(update_fields=["user"])
@@ -380,18 +392,34 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
 
         return super().create(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        """Override to resolve by email instead of queryset to prevent 404 on role-delay."""
+        kwargs["partial"] = True
+        pk = kwargs.get("pk") or self.kwargs.get("pk")
+        
+        # Try to get via normal queryset first
+        instance = self.get_queryset().filter(pk=pk).first()
+        
+        # Fallback: resolve via email linkage
+        if not instance:
+            instance = _resolve_therapist_from_request(request, allow_create=False)
+        
+        if not instance:
+            return Response({"detail": "Profile not found or access denied."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
-        # Try to resolve or create if admin
+        """Resiliently resolve the current user's profile."""
         therapist = _resolve_therapist_from_request(request, allow_create=True)
         if not therapist:
             return Response({"detail": "Therapist profile not found and could not be initialized."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(therapist)
         return Response(serializer.data)
-
-    def update(self, request, *args, **kwargs):
-        kwargs["partial"] = True
-        return super().update(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"], url_path="jitsi-token")
     def jitsi_token(self, request):
