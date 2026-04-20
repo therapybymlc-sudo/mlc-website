@@ -336,9 +336,10 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
-        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        # Try to resolve or create if admin
+        therapist = _resolve_therapist_from_request(request, allow_create=True)
         if not therapist:
-            return Response({"detail": "Therapist profile not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Therapist profile not found and could not be initialized."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(therapist)
         return Response(serializer.data)
 

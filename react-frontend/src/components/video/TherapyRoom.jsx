@@ -16,8 +16,13 @@ import { FiShield, FiLock } from 'react-icons/fi';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 
 export default function TherapyRoom({ roomUrl, onLeave }) {
+  const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [api, setApi] = useState(null);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Extract room name from URL or fallback
   const roomName = roomUrl ? roomUrl.split('/').pop() : "MLC-Secure-Lounge";
@@ -38,6 +43,8 @@ export default function TherapyRoom({ roomUrl, onLeave }) {
       }, 1000);
     });
   };
+
+  if (!isMounted) return null;
 
   if (!roomUrl && !loading) {
      return (
