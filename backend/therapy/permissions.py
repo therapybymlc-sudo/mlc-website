@@ -43,12 +43,10 @@ def get_current_client_profile(user):
     except ClientProfile.DoesNotExist:
         pass
 
+    # Passive matching to prevent 500 errors during stale sessions
     email = getattr(user, "email", None)
     client = ClientProfile.objects.filter(email__iexact=email).first() if email else None
     if client:
-        if client.user_id != user.id:
-            client.user = user
-            client.save(update_fields=["user"])
         return client
         
     display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
