@@ -71,11 +71,15 @@ export default function PublicProfileClient({ therapist }) {
              const res = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${profile.id}&cache_refresh=${Date.now()}`, { 
                next: { revalidate: 0 } 
              });
-         if (res.ok) {
-           const data = await res.json();
-           console.log("Slots arrived from DB:", data);
-           setSlots(data.results || data);
-         }
+             if (res.ok) {
+               const data = await res.json();
+               console.log("Slots arrived from DB:", data);
+               setSlots(data.results || data);
+             } else {
+               // Log the detailed error from the server (User Suggested Enhancement)
+               const errorText = await res.text();
+               console.error(`Server Error (${res.status}):`, errorText);
+             }
        } catch (err) {
          console.error("Failed to fetch slots", err);
        } finally {
