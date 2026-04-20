@@ -348,15 +348,18 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         roles = _extract_roles_from_auth(self.request)
+        
+        # 1. Admins see everything
         if "admin" in roles or self.request.user.is_staff:
-            qs = TherapistProfile.objects.all()
-            is_verified = self.request.query_params.get("is_verified")
-            if is_verified is not None:
-                qs = qs.filter(is_verified=is_verified.lower() == "true")
-            return qs
+            return TherapistProfile.objects.all()
 
-        # Build a queryset that catches profiles linked by user FK OR by email
-        # This handles the case where role resolution fails but the user owns the profile
+        # 2. For 'list' or 'retrieve' actions (Client Discovery View)
+        # We allow everyone to see the basic profile info if they are authenticated
+        # In the future, we can add a 'Public' permission for unauthenticated users
+        if self.action in ["list", "retrieve"]:
+            return TherapistProfile.objects.all()
+
+        # 3. For edits/dashboard actions, restrict to owner
         payload = getattr(self.request, "auth", {})
         payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
         email = getattr(self.request.user, "email", None) or payload_email
@@ -365,8 +368,7 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         filters = Q(user=self.request.user)
         if email:
             filters |= Q(email__iexact=email)
-        qs = TherapistProfile.objects.filter(filters)
-        return qs
+        return TherapistProfile.objects.filter(filters)
 
     def create(self, request, *args, **kwargs):
         # Resilience: if trying to create but it exists by session, resolve and return me
