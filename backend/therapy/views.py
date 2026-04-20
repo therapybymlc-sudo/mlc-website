@@ -1879,8 +1879,7 @@ class VerifyTherapistView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        if not request.user.is_staff:
-            return Response({"detail": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+        _require_admin(request)
             
         try:
             profile = TherapistProfile.objects.get(pk=pk)

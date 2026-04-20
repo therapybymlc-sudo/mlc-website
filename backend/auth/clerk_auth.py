@@ -44,14 +44,35 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             if not username:
                 raise exceptions.AuthenticationFailed("Token missing subject")
 
+            # Check if this email is in our ironclad admin list
+            admin_emails = [
+                e.strip().lower()
+                for e in getattr(settings, "ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in").split(",")
+                if e.strip()
+            ]
+            is_master_admin = email and email.lower() in admin_emails
+
             User = get_user_model()
             user, created = User.objects.get_or_create(
                 username=username,
-                defaults={"email": email or f"{username}@example.invalid"},
+                defaults={
+                    "email": email or f"{username}@example.invalid",
+                    "is_staff": is_master_admin
+                },
             )
+            
+            # Sync staff status and email if they changed
+            save_needed = False
             if email and (created or not user.email or user.email.endswith("@example.invalid")):
                 user.email = email
-                user.save(update_fields=["email"])
+                save_needed = True
+            
+            if is_master_admin and not user.is_staff:
+                user.is_staff = True
+                save_needed = True
+                
+            if save_needed:
+                user.save()
 
             return (user, payload)
 
