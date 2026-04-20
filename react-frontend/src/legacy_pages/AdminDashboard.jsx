@@ -1293,8 +1293,16 @@ export default function AdminDashboard() {
                                 await apiPost(`therapists/verify/${t.id}/`, {});
                                 toast({ status: "success", title: "Therapist verified" });
                                 fetchUnverifiedTherapists();
-                              } catch {
-                                toast({ status: "error", title: "Verification failed" });
+                              } catch (error) {
+                                if (error.response?.status === 403) {
+                                  toast({ 
+                                    status: "error", 
+                                    title: "Access Denied", 
+                                    description: "You need administrator privileges to verify therapists." 
+                                  });
+                                } else {
+                                  toast({ status: "error", title: "Verification failed" });
+                                }
                               }
                             }}
                           >
