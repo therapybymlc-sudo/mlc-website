@@ -367,7 +367,11 @@ def _require_admin(request):
 # ----------------------------
 class TherapistProfileViewSet(viewsets.ModelViewSet):
     serializer_class = TherapistProfileSerializer
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         roles = _extract_roles_from_auth(self.request)
@@ -381,11 +385,10 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(is_verified=is_verified_bool)
             return queryset
 
-        # 2. For 'list' or 'retrieve' actions (Client Discovery View)
-        # We allow everyone to see the basic profile info if they are authenticated
-        # In the future, we can add a 'Public' permission for unauthenticated users
+        # 2. Public/Discovery Discovery View
+        # We allow ALL authenticated users to see VERIFIED therapists for matching
         if self.action in ["list", "retrieve"]:
-            return TherapistProfile.objects.all()
+            return TherapistProfile.objects.filter(is_verified=True)
 
         # 3. For edits/dashboard actions, restrict to owner
         payload = getattr(self.request, "auth", {})
@@ -2071,14 +2074,21 @@ class TherapistMatchView(APIView):
                 elif 'reflective' in style_pref and any(m in t_modalities for m in ['humanistic', 'psychodynamic', 'existential']):
                     score += 5
 
+            # 🛡️ GLOBAL VERIFICATION BOOST (Critical for visibility)
+            if t.is_verified:
+                score += 50 # Ensure they always appear in 'matches'
+
             t_data = TherapistProfileSerializer(t).data
             t_data["match_score"] = score
             
-            if score >= 0:
+            # Since everyone has +50 if verified, they all go to matches
+            if score >= 10:
                 matches.append(t_data)
             else:
                 others.append(t_data)
         
+        # Sort matches by score descending
+        matches.sort(key=lambda x: x.get("match_score", 0), reverse=True)
         matches.sort(key=lambda x: x["match_score"], reverse=True)
         others.sort(key=lambda x: x["match_score"], reverse=True)
         
