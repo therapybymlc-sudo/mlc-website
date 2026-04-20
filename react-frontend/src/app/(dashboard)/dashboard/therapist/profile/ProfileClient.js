@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
-  Box, Flex, VStack, HStack, Heading, Text, Input, Button, FormControl, FormLabel, SimpleGrid, useToast, Icon, Avatar, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, Stack, Select, Textarea, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Tag, TagLabel, TagCloseButton, Divider, Badge, Alert, AlertIcon, AlertTitle, AlertDescription, Wrap, WrapItem, 
+  Box, Flex, VStack, HStack, Heading, Text, Input, Button, FormControl, FormLabel, SimpleGrid, useToast, Icon, Avatar, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, Stack, Select, Textarea, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Tag, TagLabel, TagCloseButton, Divider, Badge, Alert, AlertIcon, AlertTitle, AlertDescription, Wrap, WrapItem, Spinner,
 } from "@chakra-ui/react";
 import { 
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
@@ -63,6 +64,7 @@ const CURRENCIES = ["KD", "INR", "USD", "AED", "GBP"];
 
 export default function ProfileClient() {
   const toast = useToast();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keywordInput, setKeywordInput] = useState("");
@@ -133,40 +135,46 @@ export default function ProfileClient() {
   const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || !isUserLoaded) return;
     
     const fetchProfile = async () => {
       try {
-        console.log("Fetching profile...");
         const data = await apiGet("therapists/me/");
         if (data && data.id) {
           setProfile(prev => ({ ...prev, ...data }));
         }
       } catch (error) {
         if (error.response?.status === 404) {
-          console.warn("Profile not found - using local draft mode");
+          // Profile doesn't exist yet — will be created on first save
+          const clerkEmail = user?.primaryEmailAddress?.emailAddress || "";
+          if (clerkEmail) setProfile(prev => ({ ...prev, email: clerkEmail }));
         } else {
           console.error("Profile sync error:", error);
         }
       }
     };
     fetchProfile();
-  }, [isMounted]);
+  }, [isMounted, isUserLoaded]);
 
   const handleSave = async (showToast = true) => {
     setLoading(true);
+    // Always ensure email from Clerk is in the payload — this is the linkage key
+    const clerkEmail = user?.primaryEmailAddress?.emailAddress || "";
+    const payload = { ...profile, email: profile.email || clerkEmail };
+    const name = payload.name || user?.fullName || user?.firstName || "Therapist";
     try {
       if (profile.id) {
-        await apiPut(`therapists/${profile.id}/`, profile);
-        if (showToast) toast({ title: "Profile Synced", status: "success" });
+        await apiPut(`therapists/${profile.id}/`, { ...payload, name });
+        if (showToast) toast({ title: "Profile Synced ✓", status: "success", duration: 2000 });
       } else {
-        const created = await apiPost("therapists/", profile);
-        setProfile(created);
-        if (showToast) toast({ title: "Profile Initialized", status: "success" });
+        const created = await apiPost("therapists/", { ...payload, name });
+        setProfile(prev => ({ ...prev, ...created }));
+        if (showToast) toast({ title: "Profile Initialized ✓", status: "success", duration: 2000 });
       }
       return true;
     } catch (error) {
-      toast({ title: "Sync failed", status: "error" });
+      const detail = error?.response?.data?.email?.[0] || error?.response?.data?.detail || "Please try again.";
+      toast({ title: "Sync failed", description: detail, status: "error" });
       return false;
     } finally {
       setLoading(false);
@@ -197,7 +205,7 @@ export default function ProfileClient() {
     setProfile({...profile, [field]: updated});
   };
 
-  if (!isMounted) {
+  if (!isMounted || !isUserLoaded) {
     return (
       <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="#FAFAFA">
         <VStack spacing={4}>
