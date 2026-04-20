@@ -739,6 +739,10 @@ class AvailabilitySlotPublicView(APIView):
             if not profile:
                 return Response({"detail": "Profile not found"}, status=404)
 
+            # Professional 14-day window with timezone buffer
+            start_buffer = timezone.now() - timezone.timedelta(hours=6)
+            end_buffer = timezone.now() + timezone.timedelta(days=14)
+
             # 2. Get manual slots (Always show these even if dynamic fails)
             existing_slots = AvailabilitySlot.objects.filter(
                 therapist__email__iexact=profile.email,
@@ -791,10 +795,9 @@ class AvailabilitySlotPublicView(APIView):
             return Response(final_data)
 
         except Exception as e:
-            # SHIELD: If dynamic sync fails, log it and at least return a valid response
+            # SHIELD: Log it and RETURN AN ARRAY so the frontend doesn't crash
             print(f"CRITICAL CALENDAR SYNC ERROR: {str(e)}")
-            # Fallback to just showing the manual slots so the page doesn't break
-            return Response({"detail": "Limited results due to sync lag", "error": str(e)}, status=200)
+            return Response([], status=200) # Give an empty list to keep the UI stable
 
 
 class PublicTherapistDirectoryView(APIView):
