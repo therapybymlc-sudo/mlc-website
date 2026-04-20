@@ -1923,11 +1923,20 @@ class TherapistMatchView(APIView):
             matches.append(t_data)
             
         # Fallback: If for some reason the saved matches are empty (old logic),
-        # return all verified therapists. If none are verified, return anyone!
+        # return all verified therapists. If none are verified, return anyone 
+        # who has a real profile (bio or experience).
         if not matches:
+            # 1. Try verified first
             all_v = TherapistProfile.objects.filter(is_verified=True)[:5]
+            
+            # 2. If no verified, show any profile that looks "Real" 
+            # (has a bio or name that isn't just a User ID)
             if not all_v:
-                all_v = TherapistProfile.objects.all()[:5]
+                all_v = TherapistProfile.objects.exclude(bio__isnull=True).exclude(bio="").exclude(name__startswith="user_")[:5]
+                
+            # 3. Ultimate fallback if even the "Real" ones are empty
+            if not all_v:
+                all_v = TherapistProfile.objects.all()[:3]
                 
             for t in all_v:
                 t_data = TherapistProfileSerializer(t).data
