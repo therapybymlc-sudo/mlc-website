@@ -51,6 +51,9 @@ class TherapistProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = TherapistProfile
         fields = "__all__"
+        extra_kwargs = {
+            "email": {"validators": []} # Handled manually in ViewSet for resilience
+        }
 
 
 class TherapistSessionLinkSerializer(serializers.ModelSerializer):
