@@ -165,10 +165,12 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if therapist:
         return therapist
 
-    if not allow_create:
+    roles = _extract_roles_from_auth(request)
+    is_admin = "admin" in roles
+
+    if not allow_create and not is_admin:
         return None
 
-    roles = _extract_roles_from_auth(request)
     if not any(role in roles for role in ["therapist", "premium_therapist", "admin"]):
         return None
 

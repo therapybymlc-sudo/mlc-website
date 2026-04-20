@@ -60,7 +60,20 @@ def is_request_owned_by_client(user, booking_request: BookingRequest):
 
 
 def _is_admin_user(user):
-    return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    
+    # Check custom admin emails from settings
+    from django.conf import settings
+    admin_emails = [
+        e.strip().lower() 
+        for e in getattr(settings, "ADMIN_EMAILS", "").split(",") 
+        if e.strip()
+    ]
+    email = getattr(user, "email", None)
+    return bool(email and email.lower() in admin_emails)
 
 
 def _raise_profile_missing(profile_type: str):
