@@ -49,7 +49,8 @@ export default function PublicProfileClient({ therapist }) {
     if (!profile) {
       const fetchProfile = async () => {
         try {
-          const idFromUrl = window.location.pathname.split('/').pop();
+          const pathParts = window.location.pathname.split('/').filter(Boolean);
+          const idFromUrl = pathParts[pathParts.length - 1];
           const res = await fetch(`https://api.mlchealth.in/api/therapists/${idFromUrl}/`);
           if (res.ok) {
             const data = await res.json();
