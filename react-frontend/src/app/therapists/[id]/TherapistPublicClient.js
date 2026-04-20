@@ -219,9 +219,9 @@ export default function PublicProfileClient({ therapist }) {
                         </VStack>
                      </Box>
                    ) : (
-                     <VStack align="stretch" spacing={6}>
+                     <VStack align="stretch" spacing={6} key={`slots-v-${slots.length}`}>
                         <HStack justify="space-between" bg="blue.50" p={2} borderRadius="md" border="1px solid" borderColor="blue.100">
-                           <Text fontSize="xs" fontWeight="700" color="blue.700">FOUND {slots.length} UPCOMING SLOTS</Text>
+                           <Text fontSize="xs" fontWeight="700" color="blue.700">LIVE SYNC: {slots.length} UPCOMING SESSION{slots.length > 1 ? 'S' : ''} DETECTED</Text>
                            <Icon as={FiCheckCircle} color="blue.500" />
                         </HStack>
                         <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
