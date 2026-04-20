@@ -719,9 +719,27 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # ULTIMATE DIAGNOSIS: Show every single slot in the entire database
-        # This will prove if the data even exists on this server.
-        slots = AvailabilitySlot.objects.all().order_by("-created_at")
+        # RESTORED: Professional Filtering (ID + Email Bridge)
+        email_param = request.query_params.get("email")
+        if not email_param:
+            t_obj = TherapistProfile.objects.filter(id=therapist_id).first()
+            email_param = t_obj.email if t_obj else None
+
+        if email_param:
+            therapist_ids = TherapistProfile.objects.filter(email__iexact=email_param).values_list('id', flat=True)
+        else:
+            therapist_ids = [therapist_id]
+
+        # Professional 14-day booking window with timezone buffer
+        start_buffer = timezone.now() - timezone.timedelta(hours=6)
+        end_buffer = timezone.now() + timezone.timedelta(days=14)
+
+        slots = AvailabilitySlot.objects.filter(
+            therapist_id__in=therapist_ids,
+            status=AvailabilitySlot.Status.OPEN,
+            start_time__gt=start_buffer,
+            start_time__lte=end_buffer,
+        ).order_by("start_time")
 
         serializer = AvailabilitySlotPublicSerializer(slots, many=True)
         return Response(serializer.data)
