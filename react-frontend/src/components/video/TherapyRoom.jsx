@@ -79,7 +79,7 @@ export default function TherapyRoom({ roomUrl, onLeave }) {
             enableE2EP: true, // End-to-end encryption for security
             toolbarButtons: [
               'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
-              'fodeviceselection', 'hangup', 'profile', 'chat', 'settings',
+              'hangup', 'profile', 'chat', 'settings',
               'videoquality', 'tileview', 'select-background',
             ],
           }}
