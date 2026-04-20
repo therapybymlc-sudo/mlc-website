@@ -193,7 +193,16 @@ def _resolve_client_from_request(request):
     if client_profile:
         return client_profile
 
-    # 2. Check by email
+    # 2. Guard: Strictly separate roles (unless admin)
+    roles = _extract_roles_from_auth(request)
+    is_admin = "admin" in roles
+    therapist = _resolve_therapist_from_request(request)
+    
+    if therapist and not is_admin:
+        # If they are a therapist and NOT an admin, they cannot have a client profile
+        return None
+
+    # 3. Check by email
     email = getattr(user, "email", None)
     if email:
         client = ClientProfile.objects.filter(email__iexact=email).first()
@@ -203,7 +212,7 @@ def _resolve_client_from_request(request):
                 client.save(update_fields=["user"])
             return client
         
-    # 3. Create new profile, handling potential uniqueness conflicts
+    # 4. Create new profile
     display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
     safe_email = email or f"client_{user.pk or 'nouser'}@local"
     
@@ -1071,8 +1080,11 @@ class ClientJournalViewSet(viewsets.ModelViewSet):
         qs = ClientJournal.objects.all()
         if therapist:
             client_ids = list(_active_client_ids_for_therapist(therapist))
-            if client:
+            # ONLY Admins get to see their own "client" self in the therapist view
+            roles = _extract_roles_from_auth(self.request)
+            if client and "admin" in roles:
                 client_ids.append(client.id)
+            
             qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
@@ -1126,8 +1138,11 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
         qs = ClientGoal.objects.all()
         if therapist:
             client_ids = list(_active_client_ids_for_therapist(therapist))
-            if client:
+            # ONLY Admins get to see their own "client" self in the therapist view
+            roles = _extract_roles_from_auth(self.request)
+            if client and "admin" in roles:
                 client_ids.append(client.id)
+                
             qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
@@ -1164,8 +1179,11 @@ class ClientCheckinViewSet(viewsets.ModelViewSet):
         qs = ClientCheckin.objects.all()
         if therapist:
             client_ids = list(_active_client_ids_for_therapist(therapist))
-            if client:
+            # ONLY Admins get to see their own "client" self in the therapist view
+            roles = _extract_roles_from_auth(self.request)
+            if client and "admin" in roles:
                 client_ids.append(client.id)
+
             qs = qs.filter(client_id__in=client_ids)
             client_id = self.request.query_params.get("client")
             if client_id:
