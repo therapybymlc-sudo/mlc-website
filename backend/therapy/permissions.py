@@ -17,9 +17,21 @@ def get_current_therapist_profile(user):
     if not user or not user.is_authenticated:
         return None
     try:
-        return user.therapist_profile
-    except TherapistProfile.DoesNotExist:
-        return None
+        if hasattr(user, "therapist_profile"):
+            return user.therapist_profile
+    except Exception:
+        pass
+
+    # Fail-safe email matching (Mirroring the view resolver for consistency)
+    email = getattr(user, "email", None)
+    if email:
+        therapist = TherapistProfile.objects.filter(email__iexact=email).first()
+        if therapist:
+            if therapist.user_id != user.id:
+                therapist.user = user
+                therapist.save(update_fields=["user"])
+            return therapist
+    return None
 
 
 def get_current_client_profile(user):
