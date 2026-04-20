@@ -67,9 +67,15 @@ export default function PublicProfileClient({ therapist }) {
      if (!profile?.id) return;
      const fetchSlots = async () => {
        try {
-         const res = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${profile.id}`);
+         // Cache-busting timestamp to avoid stale 'No slots' display
+         const cacheBuster = Date.now();
+         const res = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${profile.id}&v=${cacheBuster}`, { 
+           cache: 'no-store', // Force fresh fetch
+           headers: { 'Pragma': 'no-cache' } 
+         });
          if (res.ok) {
            const data = await res.json();
+           console.log("Slots arrived from DB:", data);
            setSlots(data.results || data);
          }
        } catch (err) {
