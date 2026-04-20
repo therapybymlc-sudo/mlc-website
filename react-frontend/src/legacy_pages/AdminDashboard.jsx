@@ -1243,6 +1243,13 @@ export default function AdminDashboard() {
                                     const notes = document.getElementById(`notes-${app.id}`)?.value;
                                     try {
                                       await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes });
+                                      
+                                      // Automatically find and verify the profile if email matches
+                                      const matchingProfile = unverifiedTherapists.find(p => p.email.toLowerCase() === app.email.toLowerCase());
+                                      if (matchingProfile) {
+                                        await apiPost(`therapists/verify/${matchingProfile.id}/`, {});
+                                      }
+
                                       toast({ status: "success", title: "Therapist Approved!", description: "Application status updated and profile created." });
                                       fetchTherapistApplications();
                                       fetchUnverifiedTherapists();
@@ -1265,17 +1272,30 @@ export default function AdminDashboard() {
               <Divider mb={10} />
 
               <Box>
-                <Heading size="sm" mb={4} color="mlc.greenDark">
-                  Pending Profile Verifications ({unverifiedTherapists.length})
-                </Heading>
+                <HStack justify="space-between" mb={4}>
+                  <Heading size="sm" color="mlc.greenDark">
+                    Pending Profile Verifications ({unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).length})
+                  </Heading>
+                  <Button size="xs" variant="ghost" colorScheme="red" onClick={async () => {
+                    if (!confirm("Permanently delete all ghost profiles (named user_...)?")) return;
+                    try {
+                       const ghosts = unverifiedTherapists.filter(t => t.name.toLowerCase().startsWith("user_"));
+                       for (const g of ghosts) {
+                         await apiDelete(`therapists/${g.id}/`);
+                       }
+                       toast({ status: "info", title: "Ghosts Purged" });
+                       fetchUnverifiedTherapists();
+                    } catch { toast({ status: "error", title: "Purge failed" }); }
+                  }}>Purge Ghosts</Button>
+                </HStack>
                 <Text fontSize="xs" color="gray.500" mb={4}>
                   These are clinicians with active accounts who need final directory verification.
                 </Text>
-                {unverifiedTherapists.length === 0 ? (
+                {unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).length === 0 ? (
                   <Text color="gray.500" fontSize="sm">All profiles verified.</Text>
                 ) : (
                   <VStack align="stretch" spacing={3}>
-                    {unverifiedTherapists.map(t => (
+                    {unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).map(t => (
                       <Box key={t.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" _hover={{ bg: "gray.50" }}>
                         <HStack justify="space-between">
                           <VStack align="flex-start" spacing={1}>
