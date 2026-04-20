@@ -2022,12 +2022,9 @@ class TherapistMatchView(APIView):
             t_data = TherapistProfileSerializer(t).data
             t_data["match_score"] = score
             
-            if score >= 15:
+            if score >= 0:
                 matches.append(t_data)
             else:
-                others.append(t_data)
-                t_data = TherapistProfileSerializer(t).data
-                t_data["match_score"] = 0
                 others.append(t_data)
         
         matches.sort(key=lambda x: x["match_score"], reverse=True)
