@@ -1955,27 +1955,9 @@ class TherapistMatchView(APIView):
         elif suicidal_thoughts != "No" or feels_safe == "I am not completely sure":
             risk_level = "moderate"
             
-        # 3. Hard Filters
+        # 3. Soft Filters & Scoring
         all_verified = TherapistProfile.objects.filter(is_verified=True)
         
-        # Age served (Placeholder logic for now as profiles don't have age_min/max yet, but we'll assume they fit)
-        # Service type
-        st_req = data.get("service_type") # "Individual therapy", "Couples therapy", etc.
-        if st_req:
-            all_verified = all_verified.filter(modalities__icontains=st_req) | all_verified.exclude(modalities__isnull=False) # Fallback if not specified
-
-        # Language
-        lang_req = data.get("languages", [])
-        if lang_req:
-            # Simple intersection check
-            potential = []
-            for t in all_verified:
-                t_langs = [l.lower() for l in (t.languages or [])]
-                if any(l.lower() in t_langs for l in lang_req):
-                    potential.append(t)
-            all_verified = TherapistProfile.objects.filter(id__in=[p.id for p in potential])
-            
-        # 4. Weighted Scoring
         matches = []
         others = []
         
@@ -1984,18 +1966,33 @@ class TherapistMatchView(APIView):
         style_pref = data.get("therapy_style_pref", "").lower()
         gender_pref = data.get("therapist_gender_pref", "").lower()
         religion_pref = data.get("religion_pref", "").lower()
+        lang_req = [l.lower() for l in data.get("languages", [])]
+        st_req = (data.get("service_type") or "").lower()
         
         for t in all_verified:
             score = 0
+            t_concerns = [c.lower() for c in (t.concerns or [])]
+            t_modalities = [m.lower() for m in (t.modalities or [])]
+            t_langs = [l.lower() for l in (t.languages or [])]
             
             # Primary Concern (High)
-            t_concerns = [c.lower() for c in (t.concerns or [])]
             if primary_concern in t_concerns:
-                score += 10
+                score += 15
                 
             # Secondary Concerns (Medium)
             matching_secondaries = set(t_concerns).intersection(set(secondary_concerns))
             score += len(matching_secondaries) * 5
+            
+            # Languages (High)
+            if any(l in t_langs for l in lang_req):
+                score += 12
+                
+            # Service Type / Role Match (Medium)
+            if st_req:
+                if "individual" in st_req and t.years_experience >= 1:
+                    score += 5
+                if "couples" in st_req and "couples" in t_concerns:
+                    score += 8
             
             # Gender Preference (High)
             if gender_pref and gender_pref != "no preference":
@@ -2008,17 +2005,14 @@ class TherapistMatchView(APIView):
                     score += 5
             
             # DASS Profile Fit (Medium-High)
-            # Anxiety + Stress Focus
             if (dass_levels['anxiety'] != 'Normal' or dass_levels['stress'] != 'Normal') and \
                any(kw in t_concerns for kw in ['anxiety', 'stress', 'burnout', 'overwhelmed']):
                 score += 8
-            # Depression Focus
             if dass_levels['depression'] != 'Normal' and \
                any(kw in t_concerns for kw in ['depression', 'low mood', 'sadness']):
                 score += 8
                 
             # Style Preference (Medium)
-            t_modalities = [m.lower() for m in (t.modalities or [])]
             if style_pref:
                 if 'structured' in style_pref and any(m in t_modalities for m in ['cbt', 'dbf', 'solution-focused']):
                     score += 5
@@ -2032,12 +2026,6 @@ class TherapistMatchView(APIView):
                 matches.append(t_data)
             else:
                 others.append(t_data)
-
-        # Fallback: If no matches or others found (too restrictive filters), 
-        # add all verified therapists to others
-        if not matches and not others:
-            all_verified_fallback = TherapistProfile.objects.filter(is_verified=True)
-            for t in all_verified_fallback:
                 t_data = TherapistProfileSerializer(t).data
                 t_data["match_score"] = 0
                 others.append(t_data)

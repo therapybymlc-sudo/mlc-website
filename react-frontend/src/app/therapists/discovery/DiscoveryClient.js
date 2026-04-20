@@ -891,9 +891,11 @@ export default function DiscoveryClient() {
           <VStack align="start" spacing={6}>
             <Heading size={{ base: "md", md: "lg" }} color="teal.900">Your Recommended Specialists</Heading>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={{ base: 6, md: 10 }} w="full">
-              {results?.matches?.map(t => <TherapistCard key={t.id} therapist={t} />)}
+              {(results?.matches?.length > 0 ? results.matches : (results?.others || [])).map(t => (
+                <TherapistCard key={t.id} therapist={t} />
+              ))}
             </SimpleGrid>
-            {(!results || !results.matches || results.matches.length === 0) && (
+            {(!results || ((!results.matches || results.matches.length === 0) && (!results.others || results.others.length === 0))) && (
               <VStack py={{ base: 10, md: 20 }} bg="gray.50" borderRadius="3xl" w="full" textAlign="center">
                 <Icon as={FiStar} w={10} h={10} color="gray.300" />
                 <Text color="gray.500" fontSize={{ base: "sm", md: "md" }} px={4}>No immediate matches found for these specific criteria. Our intake team will review your application manually and contact you within 24 hours.</Text>
