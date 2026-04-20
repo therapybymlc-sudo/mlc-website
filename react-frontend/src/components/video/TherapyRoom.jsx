@@ -15,7 +15,7 @@ import {
 import { FiShield, FiLock } from 'react-icons/fi';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 
-export default function TherapyRoom({ roomUrl, onLeave }) {
+export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [api, setApi] = useState(null);
@@ -81,6 +81,7 @@ export default function TherapyRoom({ roomUrl, onLeave }) {
           domain="8x8.vc"
           appId="vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406"
           roomName={roomName}
+          jwt={jwt}
           configOverwrite={{
             startWithAudioMuted: true,
             disableModeratorIndicator: true,
