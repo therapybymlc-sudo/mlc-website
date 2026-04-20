@@ -9,7 +9,7 @@ from django.views.generic import TemplateView
 from django.db import transaction, models, IntegrityError
 from django.utils import timezone
 from django.conf import settings
-from datetime import timedelta
+from datetime import datetime, date, time, timedelta
 
 from therapy.models import (
     ScheduleEvent,
@@ -760,8 +760,18 @@ class AvailabilitySlotPublicView(APIView):
                 day_blocks = profile.business_hours.get(weekday_idx) or profile.business_hours.get(day_name) or []
                 for block in day_blocks:
                     try:
-                        start_t = timezone.make_aware(datetime.strptime(f"{check_date} {block['startTime']}", "%Y-%m-%d %H:%M"))
-                        end_t = timezone.make_aware(datetime.strptime(f"{check_date} {block['endTime']}", "%Y-%m-%d %H:%M"))
+                        # NEW: Support for simple string format ["09:00", "10:00"]
+                        if isinstance(block, str):
+                            start_str = block
+                            # Handle potential format issues
+                            if ':' not in start_str: continue
+                            h, m = map(int, start_str.split(':'))
+                            start_t = timezone.make_aware(datetime.combine(check_date, time(h, m)))
+                            end_t = start_t + timedelta(hours=1)
+                        else:
+                            # Support for dictionary format {"startTime": "09:00", "endTime": "10:00"}
+                            start_t = timezone.make_aware(datetime.strptime(f"{check_date} {block['startTime']}", "%Y-%m-%d %H:%M"))
+                            end_t = timezone.make_aware(datetime.strptime(f"{check_date} {block['endTime']}", "%Y-%m-%d %H:%M"))
                         
                         if start_t < timezone.now(): continue
                         
