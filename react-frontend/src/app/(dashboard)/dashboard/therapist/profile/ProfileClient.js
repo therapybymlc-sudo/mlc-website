@@ -219,7 +219,9 @@ export default function ProfileClient() {
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiClock} mr={2}/> Availability</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={{ base: 4, md: 8 }} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiSettings} mr={2}/> Internal Matching</Tab>
-        </TabList        <TabPanels bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+        </TabList>
+
+        <TabPanels bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
           {/* 1. Identity */}
           <TabPanel>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={12}>
