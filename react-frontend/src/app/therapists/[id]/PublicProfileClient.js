@@ -1,6 +1,7 @@
 'use client'
 import React from 'react';
-import NextLink from "next/link";
+import Link from "next/link";
+import Script from "next/script";
 
 import { 
   Box, 
@@ -34,7 +35,6 @@ import {
   FiCheckCircle, FiClock, FiVideo, FiMapPin, FiAward, 
   FiGlobe, FiMessageCircle, FiHeart, FiCalendar 
 } from "react-icons/fi";
-import Script from "next/script";
 
 export default function PublicProfileClient({ therapist }) {
   const [isMounted, setIsMounted] = React.useState(false);
@@ -88,7 +88,7 @@ export default function PublicProfileClient({ therapist }) {
       <VStack spacing={4}>
         <Text fontSize="xl" fontWeight="700">Specialist Profile Currently Syncing</Text>
         <Text color="gray.500">We are retrieving the latest clinical credentials. Please refresh in a moment!</Text>
-        <Button as={NextLink} href="/therapists/discovery" variant="outline" borderRadius="full">Return to Discovery</Button>
+        <Button as={Link} href="/therapists/discovery" variant="outline" borderRadius="full">Return to Discovery</Button>
       </VStack>
     </Box>
   );
@@ -122,10 +122,10 @@ export default function PublicProfileClient({ therapist }) {
         <Container maxW="6xl">
           <Breadcrumb fontSize="xs" color="gray.500">
             <BreadcrumbItem>
-              <BreadcrumbLink as={NextLink} href="/">Home</BreadcrumbLink>
+              <BreadcrumbLink as={Link} href="/">Home</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbItem>
-              <BreadcrumbLink as={NextLink} href="/therapists/discovery">Find a Therapist</BreadcrumbLink>
+              <BreadcrumbLink as={Link} href="/therapists/discovery">Find a Therapist</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbItem isCurrentPage>
               <BreadcrumbLink fontWeight="bold" color="mlc.greenDark">{profile?.name || "Specialist"}</BreadcrumbLink>
@@ -209,7 +209,7 @@ export default function PublicProfileClient({ therapist }) {
                            <Icon as={FiMessageCircle} color="mlc.green" boxSize={8} />
                            <Text color="gray.600" fontWeight="600">No public slots currently listed</Text>
                            <Text color="gray.500" fontSize="sm">You can still start your journey with {profile?.name || "this specialist"} by sending a direct inquiry.</Text>
-                           <Button as={NextLink} href={`/book?therapist=${profile.id}`} bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }}>
+                           <Button as={Link} href={`/book?therapist=${profile.id}`} bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }}>
                               Send Booking Inquiry
                            </Button>
                         </VStack>
