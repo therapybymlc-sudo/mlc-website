@@ -1921,9 +1921,12 @@ class TherapistMatchView(APIView):
             matches.append(t_data)
             
         # Fallback: If for some reason the saved matches are empty (old logic),
-        # return all verified therapists so they don't see a blank screen
+        # return all verified therapists. If none are verified, return anyone!
         if not matches:
             all_v = TherapistProfile.objects.filter(is_verified=True)[:5]
+            if not all_v:
+                all_v = TherapistProfile.objects.all()[:5]
+                
             for t in all_v:
                 t_data = TherapistProfileSerializer(t).data
                 t_data["match_score"] = 0
@@ -2085,7 +2088,14 @@ class TherapistMatchView(APIView):
         )
         # Add matches to M2M
         for m in matches[:5]:
-            screening.recommended_therapists.add(m['id'])
+            screening.recommended_therapists.add(m["id"])
+            
+        # Final Safety: If for some reason matches is empty, return anything found to the frontend
+        # so they don't see a blank screen on the first results load
+        if not matches:
+            fallback_list = TherapistProfile.objects.all()[:5]
+            for f in fallback_list:
+                matches.append(TherapistProfileSerializer(f).data)
 
         # 6. Save clinical intake note + DASS scores to the client's profile
         if client:
