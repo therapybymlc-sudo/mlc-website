@@ -34,7 +34,6 @@ import {
   FiCheckCircle, FiClock, FiVideo, FiMapPin, FiAward, 
   FiGlobe, FiMessageCircle, FiHeart, FiCalendar 
 } from "react-icons/fi";
-import NextLink from "next/link";
 import Script from "next/script";
 
 export default function PublicProfileClient({ therapist }) {
