@@ -222,8 +222,11 @@ export default function DiscoveryClient() {
   const [results, setResults] = useState(null);
   const [finalInterpretations, setFinalInterpretations] = useState(null);
   const toast = useToast();
-  const { isAuthenticated, user: authUser } = useAuth();
   const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [quizData, setQuizData] = useState({
     consent: false,
@@ -273,39 +276,68 @@ export default function DiscoveryClient() {
     email_marketing_consent: false,
   });
 
-  // Check for auth + existing screening on mount
+  // 1. Initial Draft & Server Check
   useEffect(() => {
-    if (!clerkLoaded) return;
+    if (!clerkLoaded || !isMounted) return;
 
     if (!isSignedIn) {
       setView("auth_gate");
       return;
     }
 
-    async function checkExisting() {
+    async function initialize() {
+      // Priority 1: Check server for finished results
       try {
         const res = await apiGet("therapists/match/");
         if (res && res.matches && res.matches.length > 0) {
           setResults(res);
           setFinalInterpretations(res.dass_interpretations || null);
           setView("welcome_back");
-        } else {
-          setView("quiz");
+          return;
         }
       } catch (err) {
-        console.error("Existing discovery check failed", err);
-        setView("quiz");
+        console.warn("Server check failed, falling back to local draft", err);
       }
-    }
-    checkExisting();
-  }, [clerkLoaded, isSignedIn]);
 
-  // Auto-fill email from Clerk
+      // Priority 2: Check local storage for mid-quiz draft
+      const savedQuiz = localStorage.getItem("mlc_discovery_draft");
+      const savedStep = localStorage.getItem("mlc_discovery_step");
+      
+      if (savedQuiz) {
+        try {
+          const parsed = JSON.parse(savedQuiz);
+          setQuizData(prev => ({ ...prev, ...parsed }));
+          if (savedStep) setCurrentSection(parseInt(savedStep));
+        } catch (e) {
+          console.error("Failed to parse local draft", e);
+        }
+      }
+      setView("quiz");
+    }
+
+    initialize();
+  }, [clerkLoaded, isSignedIn, isMounted]);
+
+  // 2. Draft Autosave
+  useEffect(() => {
+    if (view === "quiz" && isMounted) {
+      localStorage.setItem("mlc_discovery_draft", JSON.stringify(quizData));
+      localStorage.setItem("mlc_discovery_step", currentSection.toString());
+    }
+  }, [quizData, currentSection, view, isMounted]);
+
+  // 3. Auto-fill email from Clerk
   useEffect(() => {
     if (clerkUser?.primaryEmailAddress?.emailAddress && !quizData.email) {
       setQuizData(prev => ({ ...prev, email: clerkUser.primaryEmailAddress.emailAddress }));
     }
   }, [clerkUser]);
+
+  const handleStartOver = () => {
+    localStorage.removeItem("mlc_discovery_draft");
+    localStorage.removeItem("mlc_discovery_step");
+    window.location.reload();
+  };
 
   const progress = (currentSection / (SECTIONS.length - 1)) * 100;
 
