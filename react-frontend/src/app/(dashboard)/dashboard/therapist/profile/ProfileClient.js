@@ -125,6 +125,8 @@ export default function ProfileClient() {
     best_fit_notes: ""
   });
 
+  const [tabIndex, setTabIndex] = useState(0);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -137,21 +139,32 @@ export default function ProfileClient() {
     fetchProfile();
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = async (showToast = true) => {
     setLoading(true);
     try {
       if (profile.id) {
         await apiPut(`therapists/${profile.id}/`, profile);
-        toast({ title: "Profile Synced", status: "success" });
+        if (showToast) toast({ title: "Profile Synced", status: "success" });
       } else {
         const created = await apiPost("therapists/", profile);
         setProfile(created);
-        toast({ title: "Profile Initialized", status: "success" });
+        if (showToast) toast({ title: "Profile Initialized", status: "success" });
       }
+      return true;
     } catch (error) {
       toast({ title: "Sync failed", status: "error" });
+      return false;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveAndNext = async () => {
+    const success = await handleSave(false);
+    if (success) {
+      setTabIndex((prev) => (prev + 1) % 8);
+      toast({ title: "Progress Saved", status: "success", duration: 1500 });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -183,11 +196,11 @@ export default function ProfileClient() {
               <Heading size={{ base: "lg", md: "xl" }} color="#2E2E2E" fontFamily="'Playfair Display', serif" whiteSpace="normal">Clinician Identity Hub</Heading>
               <Text color="gray.500" mt={1} fontSize={{ base: "sm", md: "md" }}>Define your professional scope, expertise, and public presence.</Text>
            </Box>
-           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={handleSave} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl" w={{ base: "full", md: "auto" }} flexShrink={0}>Finalize & Sync</Button>
+           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={() => handleSave()} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl" w={{ base: "full", md: "auto" }} flexShrink={0}>Finalize & Sync</Button>
         </Flex>
       </VStack>
 
-      <Tabs variant="enclosed" colorScheme="teal" isLazy>
+      <Tabs index={tabIndex} onChange={(i) => setTabIndex(i)} variant="enclosed" colorScheme="teal" isLazy>
         <TabList 
           overflowX="auto" 
           border="none" 
@@ -206,9 +219,7 @@ export default function ProfileClient() {
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiClock} mr={2}/> Availability</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} _selected={{ color: 'red.500', bg: 'red.50' }} borderRadius="xl" px={{ base: 4, md: 8 }} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiSettings} mr={2}/> Internal Matching</Tab>
-        </TabList>
-
-        <TabPanels bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+        </TabList        <TabPanels bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
           {/* 1. Identity */}
           <TabPanel>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={12}>
@@ -235,6 +246,10 @@ export default function ProfileClient() {
                   <Button mt={4} leftIcon={<FiCamera />} variant="ghost" size="sm">Update Profile Picture</Button>
                </VStack>
             </SimpleGrid>
+            <Divider my={10} />
+            <Flex justify="flex-end">
+              <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+            </Flex>
           </TabPanel>
 
           {/* 2. Credentials */}
@@ -279,6 +294,10 @@ export default function ProfileClient() {
                   <Text fontSize="xs" color="gray.400" mb={4}>Degree Certificate, CV/Resume, License Proof</Text>
                   <Button size="sm" colorScheme="teal" variant="outline">Upload Files</Button>
                </Box>
+               <Divider my={6} />
+                <Flex justify="flex-end">
+                  <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+                </Flex>
             </VStack>
           </TabPanel>
 
@@ -391,6 +410,10 @@ export default function ProfileClient() {
                      ))}
                   </VStack>
                </Box>
+               <Divider my={6} />
+                <Flex justify="flex-end">
+                  <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+                </Flex>
             </VStack>
           </TabPanel>
 
@@ -469,6 +492,10 @@ export default function ProfileClient() {
                      ))}
                   </SimpleGrid>
                </Box>
+               <Divider my={6} />
+                <Flex justify="flex-end">
+                  <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+                </Flex>
             </VStack>
           </TabPanel>
 
@@ -598,6 +625,10 @@ export default function ProfileClient() {
                      </Box>
                   </SimpleGrid>
                </Box>
+               <Divider my={6} />
+                <Flex justify="flex-end">
+                  <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+                </Flex>
             </VStack>
           </TabPanel>
 
@@ -631,6 +662,10 @@ export default function ProfileClient() {
                      <Input placeholder="e.g. Banjara Hills, Hyderabad" value={profile.locations} onChange={(e) => setProfile({...profile, locations: e.target.value})} borderRadius="xl" />
                   </FormControl>
                </VStack>
+               <Divider my={6} />
+                <Flex justify="flex-end">
+                  <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+                </Flex>
             </VStack>
           </TabPanel>
 
@@ -644,8 +679,8 @@ export default function ProfileClient() {
                
                <Box bg="#F9FBFA" p={8} borderRadius="3xl">
                   <HStack justify="space-between" mb={4}>
-                    <Heading size="xs" textTransform="uppercase">Skill Keywords (Max 6)</Heading>
-                    <Badge colorScheme="teal">{profile.keywords?.length} / 6</Badge>
+                     <Heading size="xs" textTransform="uppercase">Skill Keywords (Max 6)</Heading>
+                     <Badge colorScheme="teal">{profile.keywords?.length} / 6</Badge>
                   </HStack>
                   <Text fontSize="xs" color="gray.500" mb={6}>Type and press enter. Keywords are auto-corrected for uniform profile consistency.</Text>
                   
@@ -668,6 +703,10 @@ export default function ProfileClient() {
                   <FormLabel fontWeight="800">Welcome Note to First-Time Seekers</FormLabel>
                   <Textarea value={profile.welcome_note} onChange={(e) => setProfile({...profile, welcome_note: e.target.value})} borderRadius="xl" placeholder="A reassuring message for those new to therapy..." />
                </FormControl>
+               <Divider my={6} />
+                <Flex justify="flex-end">
+                  <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+                </Flex>
             </VStack>
           </TabPanel>
 
@@ -704,6 +743,10 @@ export default function ProfileClient() {
                      <FormLabel fontWeight="700">Internal Matching Notes</FormLabel>
                      <Textarea bg="white" placeholder="Best fit cases, specific exclusion patterns, etc." value={profile.best_fit_notes} onChange={(e) => setProfile({...profile, best_fit_notes: e.target.value})} borderRadius="xl" />
                   </FormControl>
+                  <Divider my={10} />
+                  <Flex justify="center">
+                    <Button leftIcon={<FiSave />} size="lg" bg="#56756D" color="white" borderRadius="full" px={16} onClick={() => handleSave()} isLoading={loading} shadow="2xl">Finalize & Sync Profile</Button>
+                  </Flex>
                </Box>
             </VStack>
           </TabPanel>
