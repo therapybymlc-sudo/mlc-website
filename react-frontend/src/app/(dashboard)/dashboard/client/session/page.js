@@ -18,14 +18,36 @@ const TherapyRoom = dynamic(() => import('../../../../../components/video/Therap
   )
 });
 
+import { apiGet } from '../../../../../api';
+
 export default function SessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
   
-  // In a real scenario, this would be fetched from the backend based on a session ID
-  const roomUrl = searchParams.get('url') || "https://mlchealth.daily.co/DemoRoom"; 
+  const roomUrl = searchParams.get('url') || "https://8x8.vc/vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406/MLC-Secure-Lounge"; 
   const [sessionActive, setSessionActive] = useState(true);
+  const [sessionToken, setSessionToken] = useState(null);
+
+  useEffect(() => {
+    // Automatically fetch a professional JaaS token from our backend
+    const fetchToken = async () => {
+      try {
+        const roomIdentifier = roomUrl.split('/').pop();
+        // Try both therapist and client endpoints to see where the user is profile-linked
+        const response = await apiGet(`therapists/me/jitsi-token/?room=${roomIdentifier}`)
+          .catch(() => apiGet(`clients/me/jitsi-token/?room=${roomIdentifier}`));
+        
+        if (response?.token) {
+          setSessionToken(response.token);
+        }
+      } catch (err) {
+        console.warn("Could not fetch secure session token, falling back to guest mode.", err);
+      }
+    };
+
+    fetchToken();
+  }, [roomUrl]);
 
   if (!sessionActive) {
     return (
@@ -70,7 +92,7 @@ export default function SessionPage() {
         <Box flex="1" overflow="hidden" boxShadow="2xl" borderRadius="3xl">
            <TherapyRoom 
             roomUrl={roomUrl} 
-            jwt="eyJraWQiOiJ2cGFhcy1tYWdpYy1jb29raWUtMGQyOWNmYmVlMjc2NDRiMmFkNDMyY2RkNGYwNDM0MDYvMWJmOGM3LVNBTVBMRV9BUFAiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiJqaXRzaSIsImlzcyI6ImNoYXQiLCJpYXQiOjE3NzY2NjgzMTMsImV4cCI6MTc3NjY3NTUxMywibmJmIjoxNzc2NjY4MzA4LCJzdWIiOiJ2cGFhcy1tYWdpYy1jb29raWUtMGQyOWNmYmVlMjc2NDRiMmFkNDMyY2RkNGYwNDM0MDYiLCJjb250ZXh0Ijp7ImZlYXR1cmVzIjp7ImxpdmVzdHJlYW1pbmciOnRydWUsImZpbGUtdXBsb2FkIjp0cnVlLCJvdXRib3VuZC1jYWxsIjp0cnVlLCJzaXAtb3V0Ym91bmQtY2FsbCI6ZmFsc2UsInRyYW5zY3JpcHRpb24iOnRydWUsImxpc3QtdmlzaXRvcnMiOmZhbHNlLCJyZWNvcmRpbmciOnRydWUsImZsaXAiOmZhbHNlfSwidXNlciI6eyJoaWRkZW4tZnJvbS1yZWNvcmRlciI6ZmFsc2UsIm1vZGVyYXRvciI6dHJ1ZSwibmFtZSI6InRoZXJhcHlieW1sYyIsImlkIjoiZ29vZ2xlLW9hdXRoMnwxMDAxMjYzMTY0NDM5ODY1MjI3OTQiLCJhdmF0YXIiOiIiLCJlbWFpbCI6InRoZXJhcHlieW1sY0BnbWFpbC5jb20ifX0sInJvb20iOiIqIn0.Vm0BBl_axDKP9ejZT5QOpsubCtPjxhqVhgaUBHOI5opRpsStNmR1HAdi3vxyI6QJfBSzdKBA8ZkTqGjD6wCL0EYF3ZbHJWfvIjJe_PW6p5LgmeDijIG8tKMTTgd1c2Li--1poqddrB3m0iedY1uGtNgw6X2biiTXU6lWh6y9Dn2QH5WPuK3A5Cu3vCU-kTkOCZL1wd6p7cua-u-xB6fU0JXovzBBryexxQslH2HEWyDWWUkImjqvBm903x_FGpAi4jh1qicVKo04F29J3lgizuNPizdNfcxJa58Qie3GTDdi7RERuCOdPmLdSbzR_700UJthF5at_wlHow0uMpIJyg"
+            jwt={sessionToken}
             onLeave={() => {
               toast({ title: "Session Concluded", status: "info" });
               setSessionActive(false);

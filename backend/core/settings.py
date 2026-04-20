@@ -216,3 +216,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 CORS_EXPOSE_HEADERS = ["Content-Type", "Authorization"]
+
+# ==========================
+# Jitsi / JaaS Configuration
+# ==========================
+JITSI_APP_ID = os.getenv("JITSI_APP_ID")
+JITSI_KID = os.getenv("JITSI_KID")
+JITSI_PRIVATE_KEY = os.getenv("JITSI_PRIVATE_KEY")

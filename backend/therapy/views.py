@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, exceptions
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
+from therapy.services import generate_jitsi_token
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -347,6 +348,14 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         kwargs["partial"] = True
         return super().update(request, *args, **kwargs)
 
+    @action(detail=False, methods=["get"], url_path="jitsi-token")
+    def jitsi_token(self, request):
+        room_name = request.query_params.get("room", "MLC-Secure-Lounge")
+        token = generate_jitsi_token(request.user, room_name)
+        if not token:
+            return Response({"detail": "Token generation failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"token": token})
+
 
 class TherapistSessionLinkViewSet(viewsets.ModelViewSet):
     serializer_class = TherapistSessionLinkSerializer
@@ -377,6 +386,14 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Client profile not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(client)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="jitsi-token")
+    def jitsi_token(self, request):
+        room_name = request.query_params.get("room", "MLC-Secure-Lounge")
+        token = generate_jitsi_token(request.user, room_name)
+        if not token:
+            return Response({"detail": "Token generation failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"token": token})
 
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
