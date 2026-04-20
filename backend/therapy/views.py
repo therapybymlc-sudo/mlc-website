@@ -720,11 +720,10 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Enforce a professional 14-day focused booking window
+        # DIAGNOSTIC MODE: Show ALL slots for 14 days regardless of ID to find the mismatch
         two_weeks_from_now = timezone.now() + timezone.timedelta(days=14)
         slots = AvailabilitySlot.objects.filter(
-            therapist_id=therapist_id,
-            status=AvailabilitySlot.Status.OPEN,
+            status__in=[AvailabilitySlot.Status.OPEN, AvailabilitySlot.Status.HELD],
             start_time__gt=timezone.now(),
             start_time__lte=two_weeks_from_now,
         ).order_by("start_time")
