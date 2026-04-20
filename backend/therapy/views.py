@@ -312,11 +312,25 @@ def _extract_roles_from_auth(request):
         if uid.strip()
     ]
     payload_email = None
+    payload_sub = None
     if isinstance(payload, dict):
         payload_email = payload.get("email") or payload.get("email_address")
-        if payload.get("sub") in admin_user_ids and "admin" not in roles:
-            roles = list(roles) + ["admin"]
-    email = getattr(getattr(request, "user", None), "email", None) or payload_email
+        payload_sub = payload.get("sub")
+        
+        # 1. Match by Clerk ID (Fix A)
+        if payload_sub and payload_sub in admin_user_ids:
+            if "admin" not in roles:
+                roles = list(roles) + ["admin"]
+                
+    # 2. Match by Email (Fix C)
+    user_obj = getattr(request, "user", None)
+    email = getattr(user_obj, "email", None) or payload_email
+    
+    # If the user's username IS the Clerk ID, check it against admin_user_ids too
+    username = getattr(user_obj, "username", None)
+    if username and username in admin_user_ids and "admin" not in roles:
+        roles = list(roles) + ["admin"]
+
     if email and email.lower() in admin_emails:
         if "admin" not in roles:
             roles = list(roles) + ["admin"]
