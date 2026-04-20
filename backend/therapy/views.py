@@ -146,13 +146,16 @@ def _resolve_therapist_from_request(request, allow_create=False):
     Optionally creates one for therapists/admins when missing.
     """
     user = getattr(request, "user", None)
-    if not user or not user.is_authenticated:
+    if not user or not user.is_authenticated or user.id is None:
         return None
 
     # Prefer explicit linkage
-    therapist_profile = getattr(user, "therapist_profile", None)
-    if therapist_profile:
-        return therapist_profile
+    try:
+        therapist_profile = getattr(user, "therapist_profile", None)
+        if therapist_profile:
+            return therapist_profile
+    except Exception:
+        pass
 
     # Step 1: Try to find by email from user or token (Ruthless Match)
     payload = getattr(request, "auth", {})
