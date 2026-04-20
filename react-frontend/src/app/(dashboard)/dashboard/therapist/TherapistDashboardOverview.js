@@ -102,7 +102,22 @@ export default function TherapistDashboardOverview() {
                             <Text fontSize="xs" color="gray.500" whiteSpace="nowrap">{new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                         </VStack>
                     </HStack>
-                    <Button size="xs" variant="ghost" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap">View Note</Button>
+                    <HStack spacing={2} wrap="nowrap">
+                        <Button 
+                            as={NextLink} 
+                            href={`/dashboard/client/session?url=${encodeURIComponent(appt.meeting_link || `https://8x8.vc/vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406/${appt.id}`)}`}
+                            size="xs" 
+                            bg="#56756D" 
+                            color="white" 
+                            borderRadius="full" 
+                            px={4} 
+                            whiteSpace="nowrap"
+                            _hover={{ bg: '#455c56' }}
+                        >
+                            Join Session
+                        </Button>
+                        <Button size="xs" variant="ghost" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap">View Note</Button>
+                    </HStack>
                 </HStack>
             )) : (
                 <Text color="gray.500" fontSize="sm">No sessions scheduled for today.</Text>

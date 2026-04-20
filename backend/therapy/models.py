@@ -929,6 +929,12 @@ class Appointment(models.Model):
         default=False,
         help_text="True if this appointment is a 30-min free session."
     )
+    meeting_link = models.URLField(
+        max_length=500, 
+        blank=True, 
+        null=True,
+        help_text="Secure Jitsi/JaaS room URL for this session."
+    )
 
     class Status(models.TextChoices):
         SCHEDULED = "scheduled", "Scheduled"

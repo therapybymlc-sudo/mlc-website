@@ -361,7 +361,19 @@ export default function ClientDashboardOverview() {
                             <Text fontSize="xs" opacity={0.8} noOfLines={1}>With {nextAppt.therapist_name || 'Therapist'}</Text>
                         </VStack>
                     </HStack>
-                    <Button w="full" bg="white" color="#56756D" borderRadius="xl" fontSize="sm" fontWeight="800">Join Session</Button>
+                    <Button 
+                        as={NextLink}
+                        href={`/dashboard/client/session?url=${encodeURIComponent(nextAppt.meeting_link || `https://8x8.vc/vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406/${nextAppt.id}`)}`}
+                        w="full" 
+                        bg="white" 
+                        color="#56756D" 
+                        borderRadius="xl" 
+                        fontSize="sm" 
+                        fontWeight="800"
+                        _hover={{ bg: 'teal.50' }}
+                    >
+                        Join Session
+                    </Button>
                 </VStack>
             ) : (
                 <VStack align="start" spacing={6}>

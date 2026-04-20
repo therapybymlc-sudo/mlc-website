@@ -96,12 +96,19 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "updated_at",
             "cancelled_at",
             "completed_at",
+            "meeting_link",
+            "client_name",
         ]
         read_only_fields = [
             "status_label",
             "created_at",
             "updated_at",
+            "client_name",
         ]
+
+    def get_client_name(self, obj):
+        client = obj.client
+        return client.name or f"{client.first_name} {client.last_name}".strip() or client.email
 
 
 class AvailabilitySlotSerializer(serializers.ModelSerializer):
