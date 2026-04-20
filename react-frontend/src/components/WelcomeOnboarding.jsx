@@ -45,21 +45,22 @@ function getSlideContent(link) {
   };
 
   // Client pages
+  // Client pages
   if (href === '/dashboard/client') {
     return {
       ...base,
-      title: 'Overview',
-      subtitle: 'Your Clinical Compass',
+      title: 'Dashboard Overview',
+      subtitle: 'Your home base',
       body: [
-        'Welcome to your home base. This orientation is designed to reduce decision fatigue by surfacing only what matters most right now.',
-        'Use this space to ground yourself before sessions and track your immediate priorities.'
+        'Welcome to your personal MLC dashboard. We designed this space to make managing your therapy simple and stress-free.',
+        'Check this page daily to see your upcoming tasks and any updates from your therapist.'
       ],
       sections: [
-        { title: "Dashboard Insights", items: ['Immediate next steps', 'Quick access to active care tools', 'Session countdowns'] },
-        { title: 'The Rhythm', items: ['Start every day here', 'Use it for a 2-minute mindful check-in', 'Return here when feeling overwhelmed'] },
+        { title: "What's here?", items: ['Your next appointment time', 'Quick links to journals and goals', 'Daily mood check-ins'] },
+        { title: 'Best way to use this', items: ['Check it every morning', 'Log how you are feeling', 'See what goals you want to focus on today'] },
       ],
       tips: [
-        'Treat the Overview as a digital ritual to prepare for your therapeutic work.',
+        'Think of this page as your starting point for every session.',
       ],
     };
   }
@@ -68,16 +69,16 @@ function getSlideContent(link) {
     return {
       ...base,
       title: 'Appointments',
-      subtitle: 'Synchronized Care',
+      subtitle: 'Manage your sessions',
       body: [
-        'A single, secure source of truth for your therapeutic sessions. No more hunting through emails for links.',
+        'This is where you view your schedule and join your video calls. It keeps all your session links in one organized place.',
       ],
       sections: [
-        { title: "Utility", items: ['Direct secure join links', 'Historical session log', 'Upcoming schedule at a glance'] },
-        { title: 'Best Practice', items: ['Open the portal 5 minutes early', 'Test your connection here', 'Review the session focus'] },
+        { title: "Features", items: ['One-click links to join calls', 'A history of your past sessions', 'Upcoming appointment details'] },
+        { title: 'Helpful Tips', items: ['Log in 5 minutes before your session', 'Test your camera and mic here', 'Review your last session notes if shared'] },
       ],
       tips: [
-        'If a session is missing, check your timezone settings in the profile area.',
+        'Need to reschedule? Contact your therapist directly through our support link.',
       ],
     };
   }
@@ -86,16 +87,16 @@ function getSlideContent(link) {
     return {
       ...base,
       title: 'My Goals',
-      subtitle: 'Progressive Intent',
+      subtitle: 'Track your progress',
       body: [
-        'Goals translate therapeutic insights into tangible momentum. This is where we track the building blocks of your healing.',
+        'Use this area to set and track small goals for your healing journey. Growth happens one step at a time.',
       ],
       sections: [
-        { title: 'Philosophy', items: ['Progress over perfection', 'Small, iterative wins', 'Radical honesty in tracking'] },
-        { title: 'Mechanism', items: ['Define clear markers', 'Update after major breakthroughs', 'Review with your therapist'] },
+        { title: 'How it works', items: ['Focus on small, achievable steps', 'Be honest with your progress', 'Celebrate your wins, no matter how small'] },
+        { title: 'Getting started', items: ['Add your first goal today', 'Update it as you move forward', 'Discuss these goals with your clinician'] },
       ],
       tips: [
-        'Smallest possible steps move the fastest. Keep goals microscopic if needed.',
+        'Keep your goals small! Tiny steps lead to big changes.',
       ],
     };
   }
@@ -103,17 +104,17 @@ function getSlideContent(link) {
   if (href === '/dashboard/client/journal') {
     return {
       ...base,
-      title: 'Therapeutic Journal',
-      subtitle: 'A Private Sanctuary',
+      title: 'Personal Journal',
+      subtitle: 'A private space for your thoughts',
       body: [
-        'Your digital space for reflection, observation, and pattern-spotting. This is a secure area for your thoughts alone.',
+        'This is your private digital notebook. It is a secure place to write down your thoughts, feelings, and questions.',
       ],
       sections: [
-        { title: 'The Value', items: ['Capture emotions in real-time', 'Spot recurring behavioral patterns', 'Prepare themes for your next session'] },
-        { title: 'Frequency', items: ['Post-session reflections', 'Daily morning pages', 'Crisis venting'] },
+        { title: 'Why use it?', items: ['Track how your mood changes over time', 'Note down things to talk about in session', 'Release stress by writing it down'] },
+        { title: 'When to write', items: ['Just after a session', 'When you feel overwhelmed', 'Every morning for clarity'] },
       ],
       tips: [
-        'Don\'t edit for grammar. Let the words fall out exactly as they feel.',
+        'Don\'t worry about spelling or grammar—this is for you only.',
       ],
     };
   }
@@ -122,12 +123,12 @@ function getSlideContent(link) {
     return {
       ...base,
       title: 'Care Tools',
-      subtitle: 'Skills for Resilience',
+      subtitle: 'Worksheets & Meditations',
       body: [
-        'A curated library of evidence-based tools, worksheets, and meditations tailored to your journey.',
+        'Explore a library of helpful tools, exercises, and audio guides chosen specifically to support your care.',
       ],
       sections: [
-        { title: 'How to practice', items: ['Pick one skill per week', 'Practice during low-stress times', 'Apply during high-stress moments'] },
+        { title: 'How to use tools', items: ['Try one new skill each week', 'Practice when you are calm', 'Use them when you feel stressed'] },
       ],
     };
   }
@@ -136,12 +137,12 @@ function getSlideContent(link) {
     return {
       ...base,
       title: 'Safety Plan',
-      subtitle: 'Support Infrastructure',
+      subtitle: 'Your support guide',
       body: [
-        'Your immediate roadmap for when things feel urgent. Designed for clarity when cognitive load is high.',
+        'A simple roadmap for when things feel difficult. It is designed to be clear and easy to follow when you need help.',
       ],
       sections: [
-        { title: 'Critical Steps', items: ['Grounding techniques', 'Contact chains', 'Safe environments'] },
+        { title: 'Key Steps', items: ['Calming techniques', 'Who to call for support', 'Safe places to go'] },
       ],
     };
   }
@@ -149,10 +150,10 @@ function getSlideContent(link) {
   if (href === '/dashboard/client/premium') {
     return {
       ...base,
-      title: 'The Lux Studio',
-      subtitle: 'Elevated Support',
+      title: 'Premium Tools',
+      subtitle: 'Advanced Support',
       body: [
-        'Deep-dive tools for those seeking an immersive therapeutic experience with rich structure.',
+        'Special deep-dive resources for those looking for extra support and detailed growth tools.',
       ],
     };
   }
@@ -160,7 +161,7 @@ function getSlideContent(link) {
   // Fallback
   return {
     ...base,
-    subtitle: 'Dashboard Component',
+    subtitle: 'Dashboard Feature',
     body: ['Explore this area to manage your care journey.'],
   };
 }
@@ -170,44 +171,44 @@ function buildWalkthroughSlides(links) {
 
   const intro = {
     key: 'intro',
-    title: 'Welcome Home',
-    subtitle: 'The MLC Therapeutic Ecosystem',
+    title: 'Welcome to MLC',
+    subtitle: 'Your secure care portal',
     body: [
-      'Your dashboard is more than a tool—it is a secure digital architecture built to support your mental health and personal growth.',
-      'This 2-minute orientation will guide you through the primary touchpoints of your new workspace.'
+      'This dashboard is your private space to manage your therapy, track your progress, and access helpful tools.',
+      'This quick 2-minute tour will show you where everything is located.'
     ],
     sections: [
-      { title: 'The Approach', items: ['Clarity above noise', 'Compassion in design', 'Structure for healing'] },
+      { title: 'Our Goal', items: ['Simple to use', 'Safe and secure', 'Designed for your healing'] },
     ],
-    tips: ['You can restart this journey at any time from the top menu.'],
+    tips: ['You can restart this tour anytime from the top menu.'],
     href: null,
     icon: null,
   };
 
   const navigation = {
     key: 'navigation',
-    title: 'Intuitive Navigation',
-    subtitle: 'Effortless Movement',
+    title: 'Finding Your Way',
+    subtitle: 'Easy navigation',
     body: [
-      'The sidebar is your central nervous system. Every link leads to a specific clinical or supportive domain.',
+      'Use the sidebar to move between different areas of your dashboard.',
     ],
     sections: [
-      { title: 'Sidebar Logic', items: ['Overview is your reset point', 'Support tools are always accessible', 'Notifications keep you updated'] },
+      { title: 'Quick Guide', items: ['The Overview is your home base', 'Tools and resources are always one click away', 'Notifications keep you updated'] },
     ],
-    tips: ['On smaller screens, use the menu icon to toggle your view.'],
+    tips: ['On your phone? Use the menu icon at the top to see the sidebar.'],
     href: null,
     icon: null,
   };
 
   const outro = {
     key: 'outro',
-    title: 'The Path Forward',
-    subtitle: 'Everything is in Place',
+    title: 'Ready to Begin',
+    subtitle: 'Everything is ready for you',
     body: [
-      'Healing is not linear, but your support can be. You are now equipped with the tools to manage your sessions, goals, and reflections.',
-      'We are honored to be part of your journey.'
+      'You are all set. You now have everything you need to manage your sessions, goals, and reflections.',
+      'We are honored to support you on your journey.'
     ],
-    sections: [{ title: 'Immediate Step', items: ['Explore the Overview', 'Check your next session time', 'Record your first journal entry'] }],
+    sections: [{ title: 'First Steps', items: ['Check your next session time', 'Write your first journal entry', 'Explore your care tools'] }],
     tips: [],
     href: null,
     icon: null,
