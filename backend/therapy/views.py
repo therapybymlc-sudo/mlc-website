@@ -723,8 +723,14 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # ULTIMATE DIAGNOSIS: Show EVERY slot in the entire database
-        slots = AvailabilitySlot.objects.all().order_by("-created_at")
+        # Re-attach to specific therapist and enforce 14-day window
+        two_weeks_from_now = timezone.now() + timezone.timedelta(days=14)
+        slots = AvailabilitySlot.objects.filter(
+            therapist_id=therapist_id,
+            status=AvailabilitySlot.Status.OPEN,
+            start_time__gt=timezone.now(),
+            start_time__lte=two_weeks_from_now,
+        ).order_by("start_time")
 
         serializer = AvailabilitySlotPublicSerializer(slots, many=True)
         return Response(serializer.data)
