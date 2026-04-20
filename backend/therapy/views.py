@@ -720,13 +720,8 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # DIAGNOSTIC MODE: Show ALL slots for 14 days regardless of ID to find the mismatch
-        two_weeks_from_now = timezone.now() + timezone.timedelta(days=14)
-        slots = AvailabilitySlot.objects.filter(
-            status__in=[AvailabilitySlot.Status.OPEN, AvailabilitySlot.Status.HELD],
-            start_time__gt=timezone.now(),
-            start_time__lte=two_weeks_from_now,
-        ).order_by("start_time")
+        # ULTIMATE DIAGNOSIS: Show EVERY slot in the entire database
+        slots = AvailabilitySlot.objects.all().order_by("-created_at")
 
         serializer = AvailabilitySlotPublicSerializer(slots, many=True)
         return Response(serializer.data)
