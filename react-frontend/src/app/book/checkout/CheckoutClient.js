@@ -4,14 +4,20 @@ import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { 
   Box, Container, VStack, HStack, Heading, Text, Button, 
-  Image, Badge, Divider, Icon, Spinner, Center, useToast,
-  Link as ChakraLink
+  Image, Badge, Divider, Icon, Spinner, Center, SimpleGrid,
+  Link as ChakraLink, useToast
 } from "@chakra-ui/react";
 import { FiCheckCircle, FiClock, FiCalendar, FiShield, FiLock, FiArrowLeft } from "react-icons/fi";
 import Link from 'next/link';
 
 export default function CheckoutClient() {
+  const [isMounted, setIsMounted] = useState(false);
   const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   const therapistId = searchParams.get('therapist');
   const slotId = searchParams.get('slot');
 
@@ -89,6 +95,8 @@ export default function CheckoutClient() {
     rzp.open();
     setIsProcessing(false);
   };
+
+  if (!isMounted) return <Box h="100vh" bg="#F9FBFA" />;
 
   if (isLoading) return <Center h="80vh"><VStack pb={10}><Spinner size="xl" color="mlc.green" /><Text>Preparing your secure checkout...</Text></VStack></Center>;
 
