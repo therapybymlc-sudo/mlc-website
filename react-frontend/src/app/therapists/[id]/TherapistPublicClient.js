@@ -1,5 +1,5 @@
 'use client'
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from "next/link";
 import Script from "next/script";
 
@@ -16,35 +16,29 @@ import {
   SimpleGrid, 
   Icon, 
   Divider, 
-  List, 
-  ListItem, 
-  ListIcon,
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-  AccordionIcon,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Spinner,
-  Center,
-  useToast,
+  Breadcrumb, 
+  BreadcrumbItem, 
+  BreadcrumbLink, 
+  Spinner, 
+  Center, 
+  useToast, 
 } from "@chakra-ui/react";
 import { 
-  FiCheckCircle, FiClock, FiVideo, FiMapPin, FiAward, 
+  FiCheckCircle, FiClock, FiVideo, 
   FiGlobe, FiMessageCircle, FiHeart, FiCalendar 
 } from "react-icons/fi";
 
-export default function PublicProfileClient({ therapist }) {
-  const [isMounted, setIsMounted] = React.useState(false);
-  const [slots, setSlots] = React.useState([]);
-  const [profile, setProfile] = React.useState(therapist);
-  const [isLoadingProfile, setIsLoadingProfile] = React.useState(!therapist);
-  const [isLoadingSlots, setIsLoadingSlots] = React.useState(true);
+export default function TherapistPublicClient({ therapist }) {
+  const [isMounted, setIsMounted] = useState(false);
+  const [slots, setSlots] = useState([]);
+  const [profile, setProfile] = useState(therapist);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(!therapist);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [availableDates, setAvailableDates] = useState([]);
   const toast = useToast();
 
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMounted(true);
     if (!profile) {
       const fetchProfile = async () => {
@@ -63,20 +57,17 @@ export default function PublicProfileClient({ therapist }) {
     }
   }, [profile]);
 
-  React.useEffect(() => {
+  useEffect(() => {
      if (!profile?.id) return;
      const fetchSlots = async () => {
        try {
-             // Native Next.js cache-busting (Safe for CORS)
              const res = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${profile.id}&cache_refresh=${Date.now()}`, { 
                next: { revalidate: 0 } 
              });
              if (res.ok) {
                const data = await res.json();
-               console.log("Slots arrived from DB:", data);
                setSlots(data.results || data);
              } else {
-               // Log the detailed error from the server (User Suggested Enhancement)
                const errorText = await res.text();
                console.error(`Server Error (${res.status}):`, errorText);
              }
@@ -89,55 +80,52 @@ export default function PublicProfileClient({ therapist }) {
      fetchSlots();
   }, [profile?.id]);
 
+  useEffect(() => {
+    // Extract unique days that actually have slots
+    const uniqueDates = [...new Set(slots.map(s => {
+      const d = new Date(s.start_time);
+      return d.toISOString().split('T')[0];
+    }))];
+    setAvailableDates(uniqueDates);
+  }, [slots]);
+
+  const slotsForSelectedDate = slots.filter(s => {
+    if (!selectedDate) return false;
+    const d = new Date(s.start_time);
+    return d.toISOString().split('T')[0] === selectedDate;
+  });
+
+  // Calendar Logic: Next 30 days
+  const today = new Date();
+  const calendarDays = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date();
+    d.setDate(today.getDate() + i);
+    return d;
+  });
+
   if (!isMounted) return <Box h="100vh" bg="white" />;
   if (isLoadingProfile) return <Center p={20} h="60vh"><VStack><Spinner size="xl" color="mlc.green" /><Text>Loading specialist profile...</Text></VStack></Center>;
   if (!profile) return (
     <Box p={20} textAlign="center">
       <VStack spacing={4}>
         <Text fontSize="xl" fontWeight="700">Specialist Profile Currently Syncing</Text>
-        <Text color="gray.500">We are retrieving the latest clinical credentials. Please refresh in a moment!</Text>
+        <Text color="gray.500">Retrieving latest clinical credentials...</Text>
         <Button as={Link} href="/therapists/discovery" variant="outline" borderRadius="full">Return to Discovery</Button>
       </VStack>
     </Box>
   );
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Psychologist",
-    "name": profile.name,
-    "description": profile.headline || profile.bio?.substring(0, 160),
-    "image": profile.profile_image_url,
-    "jobTitle": profile.title || "Psychotherapist",
-    "knowsAbout": profile.specialties || profile.focus_areas,
-    "knowsLanguage": profile.languages,
-    "provider": {
-      "@type": "MedicalOrganization",
-      "name": "MLC Health and Wellness Centre",
-      "url": "https://www.mlchealth.in"
-    }
-  };
-
   return (
     <Box bg="white" pb={20}>
-      <Script
-        id="therapist-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <Script id="therapist-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Psychologist", "name": profile.name }) }} />
       
       {/* 🧭 Breadcrumbs */}
       <Box bg="#F9FBFA" py={4} borderBottom="1px solid" borderColor="gray.100">
         <Container maxW="6xl">
           <Breadcrumb fontSize="xs" color="gray.500">
-            <BreadcrumbItem>
-              <BreadcrumbLink as={Link} href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem>
-              <BreadcrumbLink as={Link} href="/therapists/discovery">Find a Therapist</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbItem isCurrentPage>
-              <BreadcrumbLink fontWeight="bold" color="mlc.greenDark">{profile?.name || "Specialist"}</BreadcrumbLink>
-            </BreadcrumbItem>
+            <BreadcrumbItem><BreadcrumbLink as={Link} href="/">Home</BreadcrumbLink></BreadcrumbItem>
+            <BreadcrumbItem><BreadcrumbLink as={Link} href="/therapists/discovery">Experts</BreadcrumbLink></BreadcrumbItem>
+            <BreadcrumbItem isCurrentPage><BreadcrumbLink fontWeight="bold" color="mlc.greenDark">{profile.name}</BreadcrumbLink></BreadcrumbItem>
           </Breadcrumb>
         </Container>
       </Box>
@@ -149,189 +137,101 @@ export default function PublicProfileClient({ therapist }) {
             <VStack align="start" spacing={6}>
               <HStack spacing={4}>
                 <Badge bg="rgba(86, 117, 109, 0.1)" color="mlc.greenDark" borderRadius="full" px={4} py={1} fontSize="xs">ACTIVE CLINICIAN</Badge>
-                {profile?.is_accepting_new && <Badge bg="green.50" color="green.600" borderRadius="full" px={4} py={1} fontSize="xs">ACCEPTING NEW CLIENTS</Badge>}
+                {profile.is_accepting_new && <Badge bg="green.50" color="green.600" borderRadius="full" px={4} py={1} fontSize="xs">ACCEPTING NEW CLIENTS</Badge>}
               </HStack>
               <VStack align="start" spacing={2}>
-                <Heading as="h1" size="2xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">
-                  {profile?.name}
-                </Heading>
-                <Text fontSize="xl" color="gray.600" fontWeight="500">{profile?.title || "Psychotherapist"}</Text>
+                <Heading as="h1" size="2xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">{profile.name}</Heading>
+                <Text fontSize="xl" color="gray.600" fontWeight="500">{profile.title || "Psychotherapist"}</Text>
               </VStack>
-              <Text fontSize="lg" color="gray.500" fontStyle="italic" lineHeight="tall">
-                "{profile?.headline || `Dedicated to supporting your mental health journey through evidence-based practice.`}"
-              </Text>
+              <Text fontSize="lg" color="gray.500" fontStyle="italic">"{profile.headline || `Dedicated to supporting your mental health journey.`}"</Text>
               <HStack spacing={4} pt={4}>
-                <Button as="a" href="#booking-calendar" size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }} shadow="xl">
-                  Book a Consultation
-                </Button>
-                <Button size="lg" variant="outline" borderRadius="full" borderColor="mlc.green" color="mlc.green" leftIcon={<FiMessageCircle />}>
-                  Send Inquiry
-                </Button>
+                <Button as="a" href="#booking-calendar" size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }}>Book Session</Button>
+                <Button size="lg" variant="outline" borderRadius="full" borderColor="mlc.green" color="mlc.green" leftIcon={<FiMessageCircle />}>Inquire</Button>
               </HStack>
             </VStack>
-            
             <Box position="relative">
-              <Box position="absolute" top="-20px" left="-20px" boxSize="100px" bg="mlc.gold" opacity="0.1" borderRadius="full" />
-              <Image 
-                src={profile?.profile_image_url || "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=600"}
-                alt={`${profile?.name} - ${profile?.title}`}
-                borderRadius="3xl"
-                shadow="2xl"
-                border="8px solid white"
-              />
-              <Box bg="white" p={4} borderRadius="2xl" shadow="xl" position="absolute" bottom="20px" right="-20px" border="1px solid" borderColor="gray.100">
-                <HStack spacing={3}>
-                  <Icon as={FiCheckCircle} color="blue.400" boxSize={6} />
-                  <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" fontSize="sm">MLC Verified</Text>
-                    <Text fontSize="xs" color="gray.500">Credentials Authenticated</Text>
-                  </VStack>
-                </HStack>
-              </Box>
+              <Image src={profile.profile_image_url || "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=600"} borderRadius="3xl" shadow="2xl" border="8px solid white" />
             </Box>
           </SimpleGrid>
         </Container>
       </Box>
 
-      {/* 📖 Content Body */}
+      {/* 📖 Booking section */}
       <Container maxW="6xl" mt={-10}>
         <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={12}>
           <Box gridColumn={{ lg: "span 2" }}>
             <VStack align="stretch" spacing={12}>
-              {/* Live Availability Section */}
-              <Box id="booking-calendar" p={8} bg="#F9FBFA" borderRadius="3rem" border="1px solid" borderColor="teal.50">
-                <VStack align="stretch" spacing={6}>
-                   <HStack justify="space-between">
-                      <VStack align="start" spacing={0}>
-                         <Heading size="md" color="mlc.greenDark">Reserve a Session</Heading>
-                         <Text fontSize="xs" color="gray.500">Choose an available time slot below.</Text>
-                      </VStack>
-                      <Icon as={FiCalendar} color="mlc.green" boxSize={6} />
-                   </HStack>
+              
+              {/* 🗓️ MLC Mini Calendar */}
+              <Box id="booking-calendar" p={8} bg="white" borderRadius="3rem" shadow="xl" border="1px solid" borderColor="gray.50">
+                <VStack align="stretch" spacing={8}>
+                   <VStack align="start" spacing={1}>
+                      <Heading size="lg" color="mlc.greenDark" fontFamily="'Playfair Display', serif">Reserve a Session</Heading>
+                      <Text fontSize="sm" color="gray.500">Click a highlighted date to see available times.</Text>
+                   </VStack>
                    
-                   {isLoadingSlots ? (
-                     <Center py={10}><Spinner color="mlc.green" /></Center>
-                   ) : slots.length === 0 ? (
-                     <Box py={8} px={6} textAlign="center" bg="white" borderRadius="2xl" border="1px dashed" borderColor="mlc.green">
-                        <VStack spacing={4}>
-                           <Icon as={FiMessageCircle} color="mlc.green" boxSize={8} />
-                           <Text color="gray.600" fontWeight="600">No public slots currently listed</Text>
-                           <Text color="gray.500" fontSize="sm">You can still start your journey with {profile?.name || "this specialist"} by sending a direct inquiry.</Text>
-                           <Button as={Link} href={`/book?therapist=${profile.id}`} bg="mlc.green" color="white" borderRadius="full" px={10} _hover={{ bg: 'mlc.greenDark' }}>
-                              Send Booking Inquiry
-                           </Button>
-                        </VStack>
-                     </Box>
+                   <Box>
+                      <SimpleGrid columns={{ base: 4, md: 7 }} spacing={3}>
+                         {calendarDays.map((day, idx) => {
+                            const dateStr = day.toISOString().split('T')[0];
+                            const isAvailable = availableDates.includes(dateStr);
+                            const isSelected = selectedDate === dateStr;
+                            const dayName = day.toLocaleDateString('en-US', { weekday: 'short' });
+                            return (
+                               <VStack 
+                                  key={idx} p={4} borderRadius="2xl" transition="all 0.2s"
+                                  cursor={isAvailable ? "pointer" : "default"}
+                                  bg={isSelected ? "mlc.green" : "transparent"}
+                                  color={isSelected ? "white" : isAvailable ? "mlc.black" : "gray.200"}
+                                  border="1px solid" borderColor={isSelected ? "mlc.green" : isAvailable ? "mlc.green" : "gray.100"}
+                                  _hover={isAvailable ? { transform: 'translateY(-2px)', bg: isSelected ? 'mlc.green' : 'teal.50' } : {}}
+                                  onClick={() => isAvailable && setSelectedDate(dateStr)}
+                               >
+                                  <Text fontSize="2xs" fontWeight="700">{dayName.toUpperCase()}</Text>
+                                  <Text fontSize="lg" fontWeight="800">{day.getDate()}</Text>
+                               </VStack>
+                            );
+                         })}
+                      </SimpleGrid>
+                   </Box>
+
+                   {selectedDate ? (
+                      <VStack align="stretch" spacing={6} pt={6} borderTop="1px solid" borderColor="gray.100">
+                         <Heading size="sm" color="mlc.greenDark">Available times on {new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</Heading>
+                         <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4}>
+                            {slotsForSelectedDate.map(slot => (
+                               <Button
+                                 key={slot.id} variant="outline" py={6} borderColor="mlc.green" borderRadius="2xl"
+                                 _hover={{ bg: 'mlc.green', color: 'white' }}
+                                 onClick={() => window.location.href = `/book/checkout?therapist=${profile.id}&slot=${slot.id}`}
+                               >
+                                 <Text fontWeight="bold">{new Date(slot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</Text>
+                               </Button>
+                            ))}
+                         </SimpleGrid>
+                      </VStack>
                    ) : (
-                     <VStack align="stretch" spacing={6} key={`slots-v-${slots.length}`}>
-                        <HStack justify="space-between" bg="blue.50" p={2} borderRadius="md" border="1px solid" borderColor="blue.100">
-                           <Text fontSize="xs" fontWeight="700" color="blue.700">LIVE SYNC: {slots.length} UPCOMING SESSION{slots.length > 1 ? 'S' : ''} DETECTED</Text>
-                           <Icon as={FiCheckCircle} color="blue.500" />
-                        </HStack>
-                        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                           {slots.map(slot => {
-                              const date = new Date(slot.start_time);
-                              const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                              const dayStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                              
-                              return (
-                                <Button
-                                  key={slot.id}
-                                  variant="outline"
-                                  size="md"
-                                  borderColor="mlc.green"
-                                  color="mlc.black"
-                                  borderRadius="full"
-                                  _hover={{ bg: 'mlc.green', color: 'white' }}
-                                  flexDirection="column"
-                                  h="auto"
-                                  py={3}
-                                  onClick={() => window.location.href = `/book?therapist=${profile.id}&slot=${slot.id}`}
-                                >
-                                  <VStack spacing={0}>
-                                    <Text fontSize="xs" fontWeight="normal">{dayStr}</Text>
-                                    <Text fontSize="sm" fontWeight="bold">{timeStr}</Text>
-                                  </VStack>
-                                </Button>
-                              );
-                           })}
-                        </SimpleGrid>
-                     </VStack>
+                      <Center py={10} bg="gray.50" borderRadius="3xl" border="1px dashed" borderColor="gray.200">
+                         <Text color="gray.400" fontSize="sm">Please select a highlighted date to continue</Text>
+                      </Center>
                    )}
                 </VStack>
               </Box>
 
-              {/* About Section */}
-              <Box>
-                <Heading as="h2" size="lg" mb={6} color="mlc.greenDark">About My Practice</Heading>
-                <Text fontSize="md" color="gray.600" lineHeight="1.8" whiteSpace="pre-wrap">
-                  {profile?.bio || "No biography provided yet."}
-                </Text>
-              </Box>
-
-              {/* Focus areas */}
-              <Box>
-                <Heading as="h2" size="lg" mb={6} color="mlc.greenDark">Focus & Expertise</Heading>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <Box>
-                    <Text fontWeight="bold" mb={3} color="mlc.gold">Main Concerns</Text>
-                    <VStack align="start" spacing={3}>
-                      {(profile?.focus_areas || profile?.specialties || []).map(topic => (
-                        <HStack key={topic} fontSize="sm" color="gray.600">
-                          <Icon as={FiHeart} color="mlc.green" />
-                          <Text>{topic}</Text>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  </Box>
-                  <Box>
-                    <Text fontWeight="bold" mb={3} color="mlc.gold">Modalities</Text>
-                    <HStack spacing={2} wrap="wrap">
-                      {(profile?.modalities || []).map(m => (
-                        <Badge key={m} variant="subtle" colorScheme="teal" borderRadius="full" px={3} py={1}>{m}</Badge>
-                      ))}
-                    </HStack>
-                  </Box>
-                </SimpleGrid>
-              </Box>
+              <Box><Heading as="h2" size="lg" mb={6} color="mlc.greenDark">About My Practice</Heading><Text color="gray.600" lineHeight="1.8">{profile.bio || "Bio coming soon."}</Text></Box>
             </VStack>
           </Box>
 
-          {/* 🏷️ Sidebar Highlights */}
           <Box>
             <VStack align="stretch" spacing={6}>
               <Box bg="white" p={8} borderRadius="3xl" shadow="xl" border="1px solid" borderColor="gray.100" position="sticky" top="100px">
-                <Heading size="md" mb={6} color="mlc.greenDark">Details</Heading>
-                <VStack align="stretch" spacing={4}>
-                  <HStack justify="space-between">
-                    <HStack spacing={3} color="gray.600">
-                      <Icon as={FiClock} color="mlc.green" />
-                      <Text fontSize="sm">Experience</Text>
-                    </HStack>
-                    <Text fontSize="sm" fontWeight="700">{profile?.years_experience || "5"}+ Years</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <HStack spacing={3} color="gray.600">
-                      <Icon as={FiVideo} color="mlc.green" />
-                      <Text fontSize="sm">Format</Text>
-                    </HStack>
-                    <Text fontSize="sm" fontWeight="700">Online Video</Text>
-                  </HStack>
-                  <HStack justify="space-between">
-                    <HStack spacing={3} color="gray.600">
-                      <Icon as={FiGlobe} color="mlc.green" />
-                      <Text fontSize="sm">Languages</Text>
-                    </HStack>
-                    <Text fontSize="sm" fontWeight="700">{(profile?.languages || ["English"]).join(", ")}</Text>
-                  </HStack>
+                <Heading size="md" mb={6} color="mlc.greenDark">Therapy Details</Heading>
+                <VStack align="stretch" spacing={4} fontSize="sm">
+                  <HStack justify="space-between"><Text color="gray.600">Rate</Text><Text fontWeight="bold">KD {profile.hourly_rate || "45"}</Text></HStack>
+                  <HStack justify="space-between"><Text color="gray.600">Session</Text><Text fontWeight="bold">60 Minutes</Text></HStack>
+                  <HStack justify="space-between"><Text color="gray.600">Method</Text><Badge colorScheme="teal" borderRadius="full">Online Video</Badge></HStack>
                   <Divider my={4} />
-                  <VStack align="stretch" spacing={2}>
-                    <Text fontSize="2xl" fontWeight="800" color="mlc.greenDark">KD {profile?.hourly_rate || "45"}</Text>
-                    <Text fontSize="xs" color="gray.500">Per individual session</Text>
-                  </VStack>
-                  <Button as="a" href="#booking-calendar" mt={4} size="lg" bg="mlc.gold" color="white" borderRadius="full" _hover={{ bg: 'mlc.green' }}>
-                    View Schedule
-                  </Button>
+                  <Button as="a" href="#booking-calendar" w="full" bg="mlc.gold" color="white" borderRadius="full">Reserve Now</Button>
                 </VStack>
               </Box>
             </VStack>
