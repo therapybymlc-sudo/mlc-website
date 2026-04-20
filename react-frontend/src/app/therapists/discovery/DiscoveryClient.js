@@ -223,6 +223,7 @@ export default function DiscoveryClient() {
   const [finalInterpretations, setFinalInterpretations] = useState(null);
   const toast = useToast();
   const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
+  const { isAuthenticated, user: authUser } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
     setIsMounted(true);
