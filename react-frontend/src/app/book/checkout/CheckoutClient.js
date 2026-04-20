@@ -159,7 +159,7 @@ export default function CheckoutClient() {
                           </HStack>
                           <HStack spacing={4}>
                              <Center bg="teal.50" boxSize={10} borderRadius="full" color="mlc.green"><Icon as={FiShield} /></Center>
-                             <Text fontWeight="600">60-Minute Relational Therapy</Text>
+                             <Text fontWeight="600">Therapy Session</Text>
                           </HStack>
                        </VStack>
                     </VStack>
@@ -214,7 +214,7 @@ export default function CheckoutClient() {
                  <Box p={6} borderRadius="2xl" border="1px dashed" borderColor="gray.300">
                     <HStack spacing={4}>
                        <Icon as={FiCheckCircle} color="mlc.green" boxSize={5} />
-                       <Text fontSize="xs" color="gray.500">Your session invitation (Jitsi link) will be sent instantly after payment.</Text>
+                       <Text fontSize="xs" color="gray.500">Your secure session invitation will be sent instantly after payment.</Text>
                     </HStack>
                  </Box>
               </VStack>
