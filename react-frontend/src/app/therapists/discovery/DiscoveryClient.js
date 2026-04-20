@@ -936,7 +936,7 @@ export default function DiscoveryClient() {
   // 🔹 View Router
   // ===========================
 
-  if (view === "checking") return <Box py={40} textAlign="center"><Spinner size="xl" color="teal.500" /><Text mt={4} color="gray.500">Retrieving your profile...</Text></Box>;
+  if (view === "checking" || !isMounted) return <Box py={40} textAlign="center"><Spinner size="xl" color="teal.500" /><Text mt={4} color="gray.500">Retrieving your profile...</Text></Box>;
   if (view === "auth_gate") return <AuthGate />;
   if (view === "welcome_back") return renderWelcomeBack();
   if (view === "high_risk") return (
