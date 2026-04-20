@@ -197,7 +197,16 @@ export default function ProfileClient() {
     setProfile({...profile, [field]: updated});
   };
 
-  if (!isMounted) return null;
+  if (!isMounted) {
+    return (
+      <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="#FAFAFA">
+        <VStack spacing={4}>
+          <Spinner size="xl" thickness="4px" color="#56756D" />
+          <Text color="gray.500" fontFamily="'Playfair Display', serif">Loading Identity Hub...</Text>
+        </VStack>
+      </Box>
+    );
+  }
 
   return (
     <Box maxW="1200px" mx="auto" pb={20}>

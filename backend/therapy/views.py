@@ -154,7 +154,7 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if therapist_profile:
         return therapist_profile
 
-    # Step 1: Try to find by email from user or token
+    # Step 1: Try to find by email from user or token (Ruthless Match)
     payload = getattr(request, "auth", {})
     payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
     email = getattr(user, "email", None) or payload_email
@@ -162,14 +162,14 @@ def _resolve_therapist_from_request(request, allow_create=False):
     therapist = None
     if email:
         therapist = TherapistProfile.objects.filter(email__iexact=email).first()
-        if therapist and therapist.user_id != user.id:
-            therapist.user = user
-            therapist.save(update_fields=["user"])
+        if therapist:
+            # If we found it by email, FORCE the link to the current user
+            if therapist.user_id != user.id:
+                therapist.user = user
+                therapist.save(update_fields=["user"])
+            return therapist
 
-    if therapist:
-        return therapist
-
-    # Step 2: Check roles to see if we SHOULD create a profile
+    # Step 2: If fail by email, check roles for NEW profile creation
     roles = _extract_roles_from_auth(request)
     is_admin = "admin" in roles
     is_therapist = any(role in roles for role in ["therapist", "premium_therapist", "admin"])
@@ -180,7 +180,7 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if not is_therapist:
         return None
 
-    # Step 3: Create or Get one last time to prevent race conditions
+    # Step 3: Create NEW profile (Safe get_or_create)
     name = (
         getattr(user, "get_full_name", lambda: "")().strip()
         or getattr(user, "username", None)
