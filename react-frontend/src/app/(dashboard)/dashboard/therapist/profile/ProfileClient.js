@@ -63,8 +63,13 @@ const CURRENCIES = ["KD", "INR", "USD", "AED", "GBP"];
 
 export default function ProfileClient() {
   const toast = useToast();
+  const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keywordInput, setKeywordInput] = useState("");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   const [profile, setProfile] = useState({
     // 1. Identity
@@ -182,6 +187,8 @@ export default function ProfileClient() {
     const updated = current.includes(item) ? current.filter(i => i !== item) : [...current, item];
     setProfile({...profile, [field]: updated});
   };
+
+  if (!isMounted) return null;
 
   return (
     <Box maxW="1200px" mx="auto" pb={20}>

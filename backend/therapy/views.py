@@ -154,7 +154,11 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if therapist_profile:
         return therapist_profile
 
-    email = getattr(user, "email", None)
+    # Step 1: Try to find by email from user or token
+    payload = getattr(request, "auth", {})
+    payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
+    email = getattr(user, "email", None) or payload_email
+    
     therapist = None
     if email:
         therapist = TherapistProfile.objects.filter(email__iexact=email).first()
@@ -165,22 +169,34 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if therapist:
         return therapist
 
+    # Step 2: Check roles to see if we SHOULD create a profile
     roles = _extract_roles_from_auth(request)
     is_admin = "admin" in roles
+    is_therapist = any(role in roles for role in ["therapist", "premium_therapist", "admin"])
 
     if not allow_create and not is_admin:
         return None
 
-    if not any(role in roles for role in ["therapist", "premium_therapist", "admin"]):
+    if not is_therapist:
         return None
 
+    # Step 3: Create or Get one last time to prevent race conditions
     name = (
         getattr(user, "get_full_name", lambda: "")().strip()
         or getattr(user, "username", None)
         or "Unnamed Therapist"
     )
     email = email or f"therapist_{user.pk or 'nouser'}@local"
-    return TherapistProfile.objects.create(user=user, name=name, email=email)
+    
+    therapist, created = TherapistProfile.objects.get_or_create(
+        email__iexact=email,
+        defaults={"user": user, "name": name, "email": email}
+    )
+    if not created and therapist.user_id != user.id:
+        therapist.user = user
+        therapist.save(update_fields=["user"])
+        
+    return therapist
 
 
 def _resolve_client_from_request(request):
@@ -336,6 +352,14 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         if not therapist:
             return TherapistProfile.objects.none()
         return TherapistProfile.objects.filter(id=therapist.id)
+
+    def create(self, request, *args, **kwargs):
+        # Resilience: if trying to create but it exists, resolve and return me
+        therapist = _resolve_therapist_from_request(request, allow_create=True)
+        if therapist:
+            serializer = self.get_serializer(therapist)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return super().create(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
