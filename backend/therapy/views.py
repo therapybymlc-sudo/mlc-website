@@ -723,13 +723,27 @@ class AvailabilitySlotPublicView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Re-attach to specific therapist and enforce 14-day window
-        two_weeks_from_now = timezone.now() + timezone.timedelta(days=14)
+        # NEW: Email-based 'Deep Match' (Bypasses ID mismatches)
+        email_param = request.query_params.get("email")
+        if not email_param:
+            t_obj = TherapistProfile.objects.filter(id=therapist_id).first()
+            email_param = t_obj.email if t_obj else None
+
+        if email_param:
+            # Match by email to find ALL profiles linked to this clinician (Ghost ID fix)
+            therapist_ids = TherapistProfile.objects.filter(email__iexact=email_param).values_list('id', flat=True)
+        else:
+            therapist_ids = [therapist_id]
+
+        # Timezone Safety Buffer: Show slots from 6 hours ago up to 14 days ahead
+        start_buffer = timezone.now() - timezone.timedelta(hours=6)
+        end_buffer = timezone.now() + timezone.timedelta(days=14)
+
         slots = AvailabilitySlot.objects.filter(
-            therapist_id=therapist_id,
+            therapist_id__in=therapist_ids,
             status=AvailabilitySlot.Status.OPEN,
-            start_time__gt=timezone.now(),
-            start_time__lte=two_weeks_from_now,
+            start_time__gt=start_buffer,
+            start_time__lte=end_buffer,
         ).order_by("start_time")
 
         serializer = AvailabilitySlotPublicSerializer(slots, many=True)
