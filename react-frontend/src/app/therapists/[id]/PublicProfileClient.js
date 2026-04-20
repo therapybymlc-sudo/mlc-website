@@ -215,22 +215,40 @@ export default function PublicProfileClient({ therapist }) {
                         </VStack>
                      </Box>
                    ) : (
-                     <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                        {slots.map(slot => (
-                          <Button 
-                            key={slot.id} 
-                            variant="outline" 
-                            borderColor="mlc.green" 
-                            color="mlc.greenDark"
-                            borderRadius="xl"
-                            _hover={{ bg: "mlc.green", color: "white" }}
-                            as={NextLink}
-                            href={`/book?therapist=${profile.id}&slot=${slot.id}`}
-                          >
-                             {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </Button>
-                        ))}
-                     </SimpleGrid>
+                     <VStack align="stretch" spacing={6}>
+                        <HStack justify="space-between" bg="blue.50" p={2} borderRadius="md" border="1px solid" borderColor="blue.100">
+                           <Text fontSize="xs" fontWeight="700" color="blue.700">FOUND {slots.length} UPCOMING SLOTS</Text>
+                           <Icon as={FiCheckCircle} color="blue.500" />
+                        </HStack>
+                        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                           {slots.map(slot => {
+                              const date = new Date(slot.start_time);
+                              const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                              const dayStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                              
+                              return (
+                                <Button
+                                  key={slot.id}
+                                  variant="outline"
+                                  size="md"
+                                  borderColor="mlc.green"
+                                  color="mlc.black"
+                                  borderRadius="full"
+                                  _hover={{ bg: 'mlc.green', color: 'white' }}
+                                  flexDirection="column"
+                                  h="auto"
+                                  py={3}
+                                  onClick={() => window.location.href = `/book?therapist=${profile.id}&slot=${slot.id}`}
+                                >
+                                  <VStack spacing={0}>
+                                    <Text fontSize="xs" fontWeight="normal">{dayStr}</Text>
+                                    <Text fontSize="sm" fontWeight="bold">{timeStr}</Text>
+                                  </VStack>
+                                </Button>
+                              );
+                           })}
+                        </SimpleGrid>
+                     </VStack>
                    )}
                 </VStack>
               </Box>
