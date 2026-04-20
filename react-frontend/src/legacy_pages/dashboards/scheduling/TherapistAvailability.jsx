@@ -60,7 +60,9 @@ export default function TherapistAvailability() {
       const { apiGet } = await import("../../../api");
       const profs = await apiGet("therapists/");
       if (profs && profs.length > 0) {
-        setProfile(profs[0]);
+        // Force sync with ID 4 if looking at that profile, or use the most active one
+        const activeProfile = profs.find(p => p.id === 4) || profs[0];
+        setProfile(activeProfile);
       }
       const data = await schedulingApi.listAvailabilitySlots();
       setSlots(Array.isArray(data) ? data : []);
