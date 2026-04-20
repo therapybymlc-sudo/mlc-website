@@ -731,7 +731,6 @@ class AvailabilitySlotPublicView(APIView):
             therapist_ids = [therapist_id]
 
         # NEW: Dynamic 'Actual Calendar' Sync (Teal Blocks)
-        from datetime import datetime, timedelta
         
         # 1. Resolve the primary profile
         profile = TherapistProfile.objects.filter(id=therapist_id).first()
