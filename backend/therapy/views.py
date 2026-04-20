@@ -730,19 +730,66 @@ class AvailabilitySlotPublicView(APIView):
         else:
             therapist_ids = [therapist_id]
 
-        # Professional 14-day booking window with timezone buffer
-        start_buffer = timezone.now() - timezone.timedelta(hours=6)
-        end_buffer = timezone.now() + timezone.timedelta(days=14)
+        # NEW: Dynamic 'Actual Calendar' Sync (Teal Blocks)
+        from datetime import datetime, timedelta
+        
+        # 1. Resolve the primary profile
+        profile = TherapistProfile.objects.filter(id=therapist_id).first()
+        if not profile:
+            return Response({"detail": "Profile not found"}, status=404)
 
-        slots = AvailabilitySlot.objects.filter(
-            therapist_id__in=therapist_ids,
+        # 2. Get any 'One-Off' manual slots
+        existing_slots = AvailabilitySlot.objects.filter(
+            therapist__email__iexact=profile.email,
             status=AvailabilitySlot.Status.OPEN,
             start_time__gt=start_buffer,
             start_time__lte=end_buffer,
-        ).order_by("start_time")
+        )
 
-        serializer = AvailabilitySlotPublicSerializer(slots, many=True)
-        return Response(serializer.data)
+        # 3. Dynamic Injection: Build slots from your Weekly Business Hours
+        dynamic_slots = []
+        if profile.business_hours:
+            current_day = timezone.now().date()
+            DAY_MAP = {"0": "sunday", "1": "monday", "2": "tuesday", "3": "wednesday", "4": "thursday", "5": "friday", "6": "saturday"}
+            
+            for i in range(14): 
+                check_date = current_day + timedelta(days=i)
+                weekday_idx = str(check_date.isoweekday() % 7)
+                day_name = DAY_MAP.get(weekday_idx)
+                
+                day_blocks = profile.business_hours.get(weekday_idx) or profile.business_hours.get(day_name) or []
+                for block in day_blocks:
+                    try:
+                        start_t = timezone.make_aware(datetime.strptime(f"{check_date} {block['startTime']}", "%Y-%m-%d %H:%M"))
+                        end_t = timezone.make_aware(datetime.strptime(f"{check_date} {block['endTime']}", "%Y-%m-%d %H:%M"))
+                        
+                        if start_t < timezone.now(): continue
+                        
+                        # Filter out Pink blocks (ScheduleEvents)
+                        has_conflict = ScheduleEvent.objects.filter(
+                            therapist__email__iexact=profile.email,
+                            start_time__lt=end_t,
+                            end_time__gt=start_t
+                        ).exists()
+                        
+                        if not has_conflict:
+                            dynamic_slots.append({
+                                "id": f"dyn-{start_t.timestamp()}",
+                                "therapist": profile.id,
+                                "start_time": start_t.isoformat(),
+                                "end_time": end_t.isoformat(),
+                                "status_label": "Open",
+                                "is_dynamic": True
+                            })
+                    except Exception: continue
+
+        # 4. Merge manual + dynamic slots
+        serializer = AvailabilitySlotPublicSerializer(existing_slots, many=True)
+        final_data = serializer.data + dynamic_slots
+        # Sort chronologically
+        final_data.sort(key=lambda x: x['start_time'])
+        
+        return Response(final_data)
 
 
 class PublicTherapistDirectoryView(APIView):
