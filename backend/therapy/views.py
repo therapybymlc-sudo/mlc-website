@@ -939,10 +939,14 @@ class ClientAppointmentViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsClientOwnerOfAppointment]
 
     def get_queryset(self):
-        client = _resolve_client_from_request(self.request)
-        if not client:
+        try:
+            client = _resolve_client_from_request(self.request)
+            if not client:
+                return Appointment.objects.none()
+            return Appointment.objects.filter(client=client).order_by("start_time")
+        except Exception:
+            # Absolute fail-safe to prevent 500 Internal Server Errors
             return Appointment.objects.none()
-        return Appointment.objects.filter(client=client).order_by("start_time")
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsClientOwnerOfAppointment])
     def cancel(self, request, pk=None):
