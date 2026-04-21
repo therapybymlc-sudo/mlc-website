@@ -188,22 +188,25 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if not is_therapist:
         return None
 
-    # Step 3: Create NEW profile (Safe get_or_create)
+    # Step 3: Create NEW profile if needed
     name = (
         getattr(user, "get_full_name", lambda: "")().strip()
         or getattr(user, "username", None)
         or "Unnamed Therapist"
     )
-    email = email or f"therapist_{user.pk or 'nouser'}@local"
+    final_email = email or f"therapist_{user.pk or 'nouser'}@local"
     
-    therapist, created = TherapistProfile.objects.get_or_create(
-        email__iexact=email,
-        defaults={"user": user, "name": name, "email": email}
-    )
-    if not created and therapist.user_id != user.id:
+    therapist = TherapistProfile.objects.filter(email__iexact=final_email).first()
+    if not therapist:
+        therapist = TherapistProfile.objects.create(
+            user=user,
+            email=final_email,
+            name=name
+        )
+    elif therapist.user_id != user.id:
         therapist.user = user
         therapist.save(update_fields=["user"])
-        
+
     return therapist
 
 
