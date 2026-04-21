@@ -292,7 +292,7 @@ export default function ClientsClient() {
            colorScheme="teal" 
            size="sm" 
            borderRadius="full"
-           onClick={() => router.push('/dashboard/therapist/notes')}
+           onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}`)}
          >
            New Clinical Note
          </Button>
