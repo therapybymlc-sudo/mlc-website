@@ -294,44 +294,93 @@ export default function ClientsClient() {
     </VStack>
   );
 
+  const RenderClinicalData = ({ note }) => {
+    const template = noteTemplates.find(t => String(t.id) === String(note.template));
+    if (!template) return <Text fontSize="xs" color="gray.400">{JSON.stringify(note.data)}</Text>;
+
+    const fieldsByLabel = {};
+    (template.fields || []).forEach(f => { fieldsByLabel[f.id] = f; });
+
+    // Bundle by sections
+    const sections = template.sections && template.sections.length > 0
+      ? template.sections
+      : [{ title: "General Observations", fields: template.fields }];
+
+    return (
+      <VStack align="stretch" spacing={6} mt={4}>
+         {sections.map((section, idx) => {
+           const sectionFields = section.fields || [];
+           const fieldedData = sectionFields.filter(sf => note.data[sf.id]);
+
+           if (fieldedData.length === 0) return null;
+
+           return (
+             <Box key={idx} bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.100">
+                <Text fontWeight="bold" fontSize="xs" color="teal.600" textTransform="uppercase" mb={3} letterSpacing="wider">{section.title || "Observation"}</Text>
+                <VStack align="stretch" spacing={3}>
+                   {sectionFields.map(field => {
+                      const val = note.data[field.id];
+                      if (!val) return null;
+                      return (
+                        <Box key={field.id}>
+                           <Text fontSize="xs" color="gray.500" fontWeight="bold">{field.label}</Text>
+                           {Array.isArray(val) ? (
+                              <HStack spacing={2} mt={1} wrap="wrap">
+                                 {val.map((v, i) => <Badge key={i} colorScheme="teal" variant="subtle" borderRadius="full" px={2} textTransform="none">{v}</Badge>)}
+                              </HStack>
+                           ) : (
+                              <Text fontSize="sm" color="gray.800" whiteSpace="pre-wrap">{String(val)}</Text>
+                           )}
+                        </Box>
+                      );
+                   })}
+                </VStack>
+             </Box>
+           );
+         })}
+      </VStack>
+    );
+  };
+
   const renderNotesSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
-      <HStack justify="space-between" mb={4}>
-         <Heading size="md">Session Documentation</Heading>
-         <Button 
-           leftIcon={<FiClipboard />} 
-           colorScheme="teal" 
-           size="sm" 
-           borderRadius="full"
-           onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}`)}
-         >
-           New Clinical Note
-         </Button>
-      </HStack>
-      {clientNotes.length === 0 ? (
-        <Center py={20} bg="white" borderRadius="3xl" border="1px dashed" borderColor="gray.200">
-           <VStack spacing={2}>
-              <Icon as={FiEdit3} w={8} h={8} color="gray.300" />
-              <Text color="gray.500">No session notes for this patient yet.</Text>
-           </VStack>
-        </Center>
-      ) : (
-        clientNotes.map(note => (
-          <Box key={note.id} bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.100" shadow="sm">
-             <HStack justify="space-between" mb={3}>
-                <VStack align="start" spacing={0}>
-                   <Text fontWeight="bold">{note.template_name || "Note"}</Text>
-                   <Text fontSize="xs" color="gray.400">{new Date(note.created_at).toLocaleString()}</Text>
-                </VStack>
-                <Badge borderRadius="full" px={3} colorScheme={note.status === 'final' ? 'green' : 'orange'}>{note.status}</Badge>
-             </HStack>
-             <Divider py={2} />
-             <Box mt={4} fontSize="sm">
-                <Text noOfLines={3}>{JSON.stringify(note.data)}</Text>
-             </Box>
-          </Box>
-        ))
-      )}
+       <HStack justify="space-between" mb={4}>
+          <Heading size="md">Session Documentation</Heading>
+          <Button 
+            leftIcon={<FiClipboard />} 
+            colorScheme="teal" 
+            size="sm" 
+            borderRadius="full"
+            onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}`)}
+          >
+            New Clinical Note
+          </Button>
+       </HStack>
+       {clientNotes.length === 0 ? (
+         <Center py={20} bg="white" borderRadius="3xl" border="1px dashed" borderColor="gray.200">
+            <VStack spacing={2}>
+               <Icon as={FiEdit3} w={8} h={8} color="gray.300" />
+               <Text color="gray.500">No session notes for this patient yet.</Text>
+            </VStack>
+         </Center>
+       ) : (
+         clientNotes.map(note => (
+           <Box key={note.id} bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.100" shadow="sm">
+              <HStack justify="space-between" mb={3}>
+                 <VStack align="start" spacing={0}>
+                    <Text fontWeight="bold">{note.template_name || "Note"}</Text>
+                    <Text fontSize="xs" color="gray.400">{new Date(note.created_at).toLocaleString()}</Text>
+                 </VStack>
+                 <HStack>
+                    <Button size="xs" variant="ghost" leftIcon={<FiDownload />} onClick={(e) => { e.stopPropagation(); exportNoteToPDF(selectedClient, note, "MLC Professional"); }}>PDF</Button>
+                    <Badge borderRadius="full" px={3} colorScheme={note.status === 'final' ? 'green' : 'orange'} variant="subtle">{note.status.toUpperCase()}</Badge>
+                 </HStack>
+              </HStack>
+              <Divider />
+              <RenderClinicalData note={note} />
+           </Box>
+         ))
+       )}
     </VStack>
   );
 
