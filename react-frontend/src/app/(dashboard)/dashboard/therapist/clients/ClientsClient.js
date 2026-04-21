@@ -209,7 +209,7 @@ export default function ClientsClient() {
               borderColor="teal.200" 
               color="teal.600" 
               borderRadius="full"
-              onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Therapist")}
+              onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Professional", noteTemplates)}
             >
               Export Full Records
             </Button>
@@ -374,7 +374,11 @@ export default function ClientsClient() {
                     <Text fontSize="xs" color="gray.400">{new Date(note.created_at).toLocaleString()}</Text>
                  </VStack>
                  <HStack>
-                    <Button size="xs" variant="ghost" leftIcon={<FiDownload />} onClick={(e) => { e.stopPropagation(); exportNoteToPDF(selectedClient, note, "MLC Professional"); }}>PDF</Button>
+                    <Button size="xs" variant="ghost" leftIcon={<FiDownload />} onClick={(e) => { 
+                      e.stopPropagation(); 
+                      const tpl = noteTemplates.find(t => String(t.id) === String(note.template));
+                      exportNoteToPDF(selectedClient, note, "MLC Professional", tpl); 
+                    }}>PDF</Button>
                     <Badge borderRadius="full" px={3} colorScheme={note.status === 'final' ? 'green' : 'orange'} variant="subtle">{note.status.toUpperCase()}</Badge>
                  </HStack>
               </HStack>

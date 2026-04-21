@@ -5,21 +5,23 @@ import autoTable from 'jspdf-autotable';
  * ClinicalPDFService
  * Handles high-fidelity clinical record exports with watermarking and legal disclaimers.
  */
-export const exportNoteToPDF = async (client, note, therapistName) => {
+export const exportNoteToPDF = async (client, note, therapistName, template) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // 🔹 1. Institutional Branding & Watermark
+  // 🔹 1. Institutional Branding & Grid Watermark
   const addWatermark = (pdf) => {
     pdf.saveGraphicsState();
     pdf.setGState(new pdf.GState({ opacity: 0.05 }));
-    pdf.setFontSize(40);
+    pdf.setFontSize(35);
     pdf.setTextColor(150, 150, 150);
-    pdf.text("MLC Health and Wellness Centre", pageWidth / 2, pageHeight / 2, {
-      align: 'center',
-      angle: 45
-    });
+    
+    // 3-point Grid Pattern
+    pdf.text("MLC Health and Wellness Centre", pageWidth / 2, 80, { align: 'center', angle: 45 });
+    pdf.text("MLC Health and Wellness Centre", pageWidth / 4, pageHeight / 2, { align: 'center', angle: 45 });
+    pdf.text("MLC Health and Wellness Centre", (pageWidth * 0.75), pageHeight * 0.8, { align: 'center', angle: 45 });
+    
     pdf.restoreGraphicsState();
   };
 
@@ -52,15 +54,21 @@ export const exportNoteToPDF = async (client, note, therapistName) => {
 
   doc.setFontSize(12);
   doc.setTextColor(40, 40, 40);
-  doc.text(`Patient: ${client.name || 'N/A'}`, 20, 55);
+  doc.text(`Patient: ${client?.name || 'N/A'}`, 20, 55);
   doc.text(`Clinician: ${therapistName || 'MLC Professional'}`, 20, 62);
-  doc.text(`Template: ${note.template_name || 'Standard Note'}`, 20, 69);
+  doc.text(`Session Model: ${template?.name || note?.template_name || 'Standard Note'}`, 20, 69);
 
-  // Content Table
-  const tableData = Object.entries(note.data || {}).map(([key, val]) => [
-    key.replace(/_/g, ' ').toUpperCase(),
-    Array.isArray(val) ? val.join(', ') : String(val)
-  ]);
+  // Content Table - Mapping IDs to Labels
+  const fieldsById = {};
+  if (template?.fields) template.fields.forEach(f => { fieldsById[f.id] = f.label; });
+
+  const tableData = Object.entries(note.data || {}).map(([key, val]) => {
+    const label = fieldsById[key] || `Observation (${key})`;
+    return [
+      label.toUpperCase(),
+      Array.isArray(val) ? val.join(', ') : String(val)
+    ];
+  });
 
   autoTable(doc, {
     startY: 80,
@@ -75,20 +83,22 @@ export const exportNoteToPDF = async (client, note, therapistName) => {
     }
   });
 
-  doc.save(`MLC_Note_${client.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+  doc.save(`MLC_Note_${client?.name?.replace(/\s+/g, '_') || 'Record'}_${new Date().getTime()}.pdf`);
 };
 
-export const exportAllClientNotes = async (client, notes, therapistName) => {
+export const exportAllClientNotes = async (client, notes, therapistName, allTemplates = []) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  const addWatermark = (pdf) => {
+  const addGridWatermark = (pdf) => {
     pdf.saveGraphicsState();
     pdf.setGState(new pdf.GState({ opacity: 0.05 }));
-    pdf.setFontSize(40);
+    pdf.setFontSize(35);
     pdf.setTextColor(150, 150, 150);
-    pdf.text("MLC Health and Wellness Centre", pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
+    pdf.text("MLC Health and Wellness Centre", pageWidth / 2, 80, { align: 'center', angle: 45 });
+    pdf.text("MLC Health and Wellness Centre", pageWidth / 4, pageHeight / 2, { align: 'center', angle: 45 });
+    pdf.text("MLC Health and Wellness Centre", (pageWidth * 0.75), pageHeight * 0.8, { align: 'center', angle: 45 });
     pdf.restoreGraphicsState();
   };
 
@@ -101,7 +111,7 @@ export const exportAllClientNotes = async (client, notes, therapistName) => {
   };
 
   // 🔹 First Page: Patient Dossier
-  addWatermark(doc);
+  addGridWatermark(doc);
   doc.setFontSize(26);
   doc.setTextColor(86, 117, 109);
   doc.text("MLC HEALTH", pageWidth / 2, 50, { align: 'center' });
@@ -113,7 +123,7 @@ export const exportAllClientNotes = async (client, notes, therapistName) => {
 
   doc.setFontSize(12);
   doc.setTextColor(50, 50, 50);
-  doc.text(`CLIENT FULL NAME: ${client.name}`, 40, 85);
+  doc.text(`CLIENT FULL NAME: ${client?.name || 'N/A'}`, 40, 85);
   doc.text(`PRIMARY CLINICIAN: ${therapistName}`, 40, 95);
   doc.text(`RECORDS GENERATED: ${new Date().toLocaleString()}`, 40, 105);
   doc.text(`TOTAL SESSIONS RECORDED: ${notes.length}`, 40, 115);
@@ -123,22 +133,29 @@ export const exportAllClientNotes = async (client, notes, therapistName) => {
   // 🔹 Sequential Notes
   notes.forEach((note, idx) => {
     doc.addPage();
-    addWatermark(doc);
+    addGridWatermark(doc);
     
+    const template = allTemplates.find(t => String(t.id) === String(note.template));
+    const fieldsById = {};
+    if (template?.fields) template.fields.forEach(f => { fieldsById[f.id] = f.label; });
+
     doc.setFontSize(18);
     doc.setTextColor(86, 117, 109);
     doc.text(`Session Record #${idx + 1}`, 20, 25);
     doc.setFontSize(10);
-    doc.text(`Template: ${note.template_name || 'Note'}`, 20, 32);
+    doc.text(`Model: ${template?.name || note.template_name || 'Note'}`, 20, 32);
 
-    const tableData = Object.entries(note.data || {}).map(([key, val]) => [
-      key.toUpperCase(),
-      Array.isArray(val) ? val.join(', ') : String(val)
-    ]);
+    const tableData = Object.entries(note.data || {}).map(([key, val]) => {
+        const label = fieldsById[key] || `Inquiry ${key}`;
+        return [
+            label.toUpperCase(),
+            Array.isArray(val) ? val.join(', ') : String(val)
+        ];
+    });
 
     autoTable(doc, {
       startY: 40,
-      head: [['Field', 'Clinical Content']],
+      head: [['Clinical Inquiry', 'Observations / Plan']],
       body: tableData,
       theme: 'plain',
       headStyles: { fillColor: [245, 245, 245], textColor: [86, 117, 109] },
@@ -149,5 +166,5 @@ export const exportAllClientNotes = async (client, notes, therapistName) => {
     });
   });
 
-  doc.save(`MLC_Dossier_${client.name.replace(/\s+/g, '_')}.pdf`);
+  doc.save(`MLC_Dossier_${client?.name?.replace(/\s+/g, '_') || 'Patient'}.pdf`);
 };

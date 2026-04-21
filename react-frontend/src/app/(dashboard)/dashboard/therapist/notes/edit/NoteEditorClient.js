@@ -180,8 +180,8 @@ export default function NoteEditorClient() {
                   borderColor="teal.200" 
                   color="teal.600" 
                   borderRadius="full"
-                  onClick={() => exportNoteToPDF(client, record, "MLC Therapist")}
-                  isDisabled={!record?.id}
+                  onClick={() => exportNoteToPDF(client, { data: values, template: selectedTemplateId, template_name: selectedTemplate?.name }, "MLC Professional", selectedTemplate)}
+                  isDisabled={!selectedTemplateId}
                 >
                   Export PDF
                 </Button>
