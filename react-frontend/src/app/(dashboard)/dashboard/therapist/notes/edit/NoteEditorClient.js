@@ -4,7 +4,7 @@ import {
   Box, Heading, Text, VStack, HStack, Button, Table, Thead, Tbody, Tr, Th, Td,
   FormControl, FormLabel, Input, Textarea, Select, useToast, Spinner, Divider, Checkbox, Badge,
   SimpleGrid, Tabs, TabList, TabPanels, Tab, TabPanel, InputGroup, InputLeftElement,
-  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, SliderMark, Flex,
+  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, Slider, SliderTrack, SliderFilledTrack, SliderThumb, SliderMark, Flex,
   Center, Grid, GridItem
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
@@ -18,10 +18,61 @@ import { useRouter, useSearchParams } from "next/navigation";
 function FieldInput({ field, value, onChange, isReadOnly = false }) {
   const { field_type, options = {} } = field;
   const set = (val) => onChange(field.id, val);
+  const choices = Array.isArray(options.choices) ? options.choices : [];
 
   switch (field_type) {
     case "textarea":
       return <Textarea value={value ?? ""} onChange={(e) => set(e.target.value)} isReadOnly={isReadOnly} borderRadius="xl" bg="gray.50" rows={4} />;
+    case "select":
+      return (
+        <Select value={value ?? ""} onChange={(e) => set(e.target.value)} isReadOnly={isReadOnly} borderRadius="xl" bg="gray.50">
+          <option value="">Select Option...</option>
+          {choices.map((c, idx) => <option key={idx} value={c}>{c}</option>)}
+        </Select>
+      );
+    case "checkboxes":
+      const currentValues = Array.isArray(value) ? value : [];
+      const toggle = (choice) => {
+        if (isReadOnly) return;
+        const next = currentValues.includes(choice) ? currentValues.filter(v => v !== choice) : [...currentValues, choice];
+        set(next);
+      };
+      return (
+        <Wrap spacing={3}>
+          {choices.map((c, idx) => (
+            <WrapItem key={idx}>
+              <Button 
+                size="sm" 
+                variant={currentValues.includes(c) ? "solid" : "outline"} 
+                colorScheme={currentValues.includes(c) ? "teal" : "gray"}
+                borderRadius="full"
+                onClick={() => toggle(c)}
+                isDisabled={isReadOnly}
+              >
+                {c}
+              </Button>
+            </WrapItem>
+          ))}
+        </Wrap>
+      );
+    case "likert":
+      const min = Number(options.min) || 1;
+      const max = Number(options.max) || 5;
+      return (
+        <VStack align="stretch" spacing={4} p={2}>
+           <HStack justify="space-between" fontSize="xs" color="gray.500" fontWeight="bold">
+              <Text>{options.min_label || "LOW"}</Text>
+              <Text>{options.max_label || "HIGH"}</Text>
+           </HStack>
+           <Slider value={Number(value) || min} min={min} max={max} step={1} onChange={val => set(val)} isDisabled={isReadOnly}>
+              <SliderTrack bg="teal.50"><SliderFilledTrack bg="teal.500" /></SliderTrack>
+              <SliderThumb boxSize={6}><Box color="teal.500" as={FiCheckCircle} /></SliderThumb>
+              {Array.from({ length: max - min + 1 }).map((_, i) => (
+                <SliderMark key={i} value={min + i} mt={2} ml={-1} fontSize="xs">{min + i}</SliderMark>
+              ))}
+           </Slider>
+        </VStack>
+      );
     default:
       return <Input value={value ?? ""} onChange={(e) => set(e.target.value)} isReadOnly={isReadOnly} borderRadius="xl" bg="gray.50" />;
   }
