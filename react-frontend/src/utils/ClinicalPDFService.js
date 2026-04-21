@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 /**
  * ClinicalPDFService
@@ -62,7 +62,7 @@ export const exportNoteToPDF = async (client, note, therapistName) => {
     Array.isArray(val) ? val.join(', ') : String(val)
   ]);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 80,
     head: [['Clinical Inquiry', 'Observations / Plan']],
     body: tableData,
@@ -136,7 +136,7 @@ export const exportAllClientNotes = async (client, notes, therapistName) => {
       Array.isArray(val) ? val.join(', ') : String(val)
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [['Field', 'Clinical Content']],
       body: tableData,
