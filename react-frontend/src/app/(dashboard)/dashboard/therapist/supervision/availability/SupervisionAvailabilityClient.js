@@ -31,9 +31,48 @@ export default function SupervisionAvailabilityClient() {
       
       setProfile(profileData);
       
-      // Merge logic: Total Visibility (Recurring + Manual)
+      // --- 🧠 True Reflection Logic ---
       const manual = (slotsData || []).filter(s => s.status === 'open');
-      setSlots(manual.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
+      const businessHours = profileData.business_hours || {};
+      const generated = [];
+      const today = new Date();
+
+      // Generate virtual slots for next 14 days
+      for (let i = 0; i < 14; i++) {
+        const date = addDays(today, i);
+        const dayName = format(date, 'EEEE').toLowerCase();
+        const times = businessHours[dayName] || [];
+
+        times.forEach(timeStr => {
+          const [hours, minutes] = timeStr.split(':');
+          const start = new Date(date);
+          start.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          
+          const end = new Date(start);
+          end.setHours(start.getHours() + 1); // 1-hour sessions
+
+          const isoStart = start.toISOString();
+          
+          // Check if we already have a manual override for this exact time
+          const existing = manual.find(s => s.start_time === isoStart);
+          
+          if (existing) {
+            generated.push(existing);
+          } else {
+            // Create a "Ghost Slot" (Virtual)
+            generated.push({
+              id: `ghost-${isoStart}`,
+              start_time: isoStart,
+              end_time: end.toISOString(),
+              visible_to_supervisees: false,
+              visible_to_clients: true,
+              is_ghost: true
+            });
+          }
+        });
+      }
+
+      setSlots(generated.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
     } catch (err) {
       toast({ title: "Sync Error", description: "Failed to load clinical calendar.", status: "error" });
     } finally {
@@ -41,23 +80,46 @@ export default function SupervisionAvailabilityClient() {
     }
   };
 
-  const toggleVisibility = async (slotId, currentStatus) => {
+  const toggleVisibility = async (slot) => {
     try {
-      await apiPatch(`availability-slots/${slotId}/`, {
-        visible_to_supervisees: !currentStatus
-      });
-      setSlots(slots.map(s => s.id === slotId ? { ...s, visible_to_supervisees: !currentStatus } : s));
+      let slotToUpdate = slot;
+      
+      // If it's a "Ghost", we must first "Anchor" it to the DB
+      if (slot.is_ghost) {
+        slotToUpdate = await apiPost("availability-slots/", {
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          status: 'open',
+          visible_to_supervisees: true,
+          visible_to_clients: true
+        });
+      } else {
+        await apiPatch(`availability-slots/${slot.id}/`, {
+          visible_to_supervisees: !slot.visible_to_supervisees
+        });
+      }
+      
+      fetchData(); // Refresh all
       toast({ title: "Preference Saved", status: "success", duration: 1000 });
     } catch (err) {
-      toast({ title: "Update Failed", status: "error" });
+      toast({ title: "Sync Failed", status: "error" });
     }
   };
 
-  const deleteSlot = async (slotId) => {
+  const deleteSlot = async (slot) => {
     if (!window.confirm("Are you sure you want to remove this clinical time block?")) return;
     try {
-      await apiDelete(`availability-slots/${slotId}/`);
-      setSlots(slots.filter(s => s.id !== slotId));
+      if (slot.is_ghost) {
+        // Create as 'closed' to override business hours
+        await apiPost("availability-slots/", {
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          status: 'closed'
+        });
+      } else {
+        await apiDelete(`availability-slots/${slot.id}/`);
+      }
+      fetchData();
       toast({ title: "Slot Removed", status: "info" });
     } catch (err) {
       toast({ title: "Delete Failed", status: "error" });
@@ -205,7 +267,7 @@ export default function SupervisionAvailabilityClient() {
                                          id={`sup-${slot.id}`} 
                                          colorScheme="teal" 
                                          isChecked={slot.visible_to_supervisees}
-                                         onChange={() => toggleVisibility(slot.id, slot.visible_to_supervisees)}
+                                         onChange={() => toggleVisibility(slot)}
                                       />
                                    </FormControl>
                                    <IconButton 
@@ -214,7 +276,8 @@ export default function SupervisionAvailabilityClient() {
                                       variant="ghost" 
                                       colorScheme="red" 
                                       size="sm"
-                                      onClick={() => deleteSlot(slot.id)}
+                                      disabled={slot.status === 'booked'}
+                                      onClick={() => deleteSlot(slot)}
                                    />
                                 </HStack>
                              </Td>
