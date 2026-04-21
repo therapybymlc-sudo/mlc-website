@@ -1143,6 +1143,14 @@ class NoteTemplate(models.Model):
     """Reusable template for therapist notes (e.g., Intake, Progress Note)."""
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
+    event_type = models.ForeignKey(
+        "EventType", 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="templates",
+        help_text="Link this template to a specific appointment type"
+    )
     sections = models.JSONField(default=list, blank=True)
 
     def __str__(self) -> str:
@@ -1196,6 +1204,14 @@ class Note(models.Model):
         ClientProfile, on_delete=models.CASCADE, related_name="notes"
     )
     template = models.ForeignKey(NoteTemplate, on_delete=models.CASCADE)
+    appointment = models.ForeignKey(
+        "Appointment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="clinical_notes",
+        help_text="Link this note to a specific calendar event"
+    )
     data = models.JSONField(default=dict)
 
     # 🕓 workflow tracking

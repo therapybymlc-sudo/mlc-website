@@ -8,9 +8,10 @@ import {
   Center, Grid, GridItem
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
-import { FiArrowLeft, FiSave, FiCheckCircle, FiCopy, FiClock, FiSearch, FiUser, FiCalendar, FiAlertCircle, FiClipboard } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiCheckCircle, FiCopy, FiClock, FiSearch, FiUser, FiCalendar, FiAlertCircle, FiClipboard, FiDownload } from "react-icons/fi";
 import { apiGet, apiPost, apiPut } from "../../../../../../api.js";
 import { useRouter, useSearchParams } from "next/navigation";
+import { exportNoteToPDF } from "../../../../../../utils/ClinicalPDFService.js";
 
 /* =========================================
    Structured Field Renderer
@@ -172,10 +173,33 @@ export default function NoteEditorClient() {
                </HStack>
             </VStack>
          </HStack>
-         <HStack spacing={3}>
-            <Button leftIcon={<FiSave />} variant="ghost" size="sm" onClick={() => handleSave("draft")} isDisabled={isReadOnly}>Save Draft</Button>
-            <Button bg="#E45353" color="white" _hover={{ bg: "#C74343" }} borderRadius="full" px={8} leftIcon={<FiCheckCircle />} onClick={() => handleSave("final")} isDisabled={isReadOnly}>Finalize Record</Button>
-         </HStack>
+              <HStack spacing={3}>
+                <Button 
+                  leftIcon={<FiDownload />} 
+                  variant="outline" 
+                  borderColor="teal.200" 
+                  color="teal.600" 
+                  borderRadius="full"
+                  onClick={() => exportNoteToPDF(client, record, "MLC Therapist")}
+                  isDisabled={!record?.id}
+                >
+                  Export PDF
+                </Button>
+                <Button leftIcon={<FiSave />} variant="ghost" color="gray.500" onClick={() => saveNote('draft')} isDisabled={isReadOnly}>
+                  Save Draft
+                </Button>
+                <Button 
+                  leftIcon={<FiCheckCircle />} 
+                  bg="#DB4437" 
+                  color="white" 
+                  px={8} 
+                  borderRadius="full" 
+                  onClick={() => saveNote('final')}
+                  isDisabled={isReadOnly}
+                >
+                  {isReadOnly ? "Record Finalized" : "Finalize Record"}
+                </Button>
+              </HStack>
       </Flex>
 
       <Grid templateColumns={{ base: "1fr", xl: "1fr 380px" }} gap={8}>

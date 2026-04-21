@@ -33,11 +33,17 @@ export default function NotesClient() {
     fields: [{ label: "Section 1", field_type: "section", order: 0 }]
   });
 
+  const [eventTypes, setEventTypes] = useState([]);
+
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const res = await apiGet("note-templates/");
-      setTemplates(Array.isArray(res) ? res : res.results || []);
+      const [tpls, ets] = await Promise.all([
+        apiGet("note-templates/"),
+        apiGet("event-types/"),
+      ]);
+      setTemplates(Array.isArray(tpls) ? tpls : tpls.results || []);
+      setEventTypes(Array.isArray(ets) ? ets : ets.results || []);
     } catch (e) {
       toast({ title: "Sync Error", status: "error" });
     } finally {
@@ -99,6 +105,7 @@ export default function NotesClient() {
       const payload = {
         name: form.name,
         description: form.description,
+        event_type: form.event_type || null,
         new_fields: form.fields
       };
       if (editingTemplate) await apiPut(`note-templates/${editingTemplate.id}/`, payload);
@@ -130,10 +137,18 @@ export default function NotesClient() {
     <VStack align="stretch" spacing={8} maxW="4xl" mx="auto" animation="fadeIn 0.5s">
       <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
          <VStack spacing={6} align="stretch">
-            <FormControl isRequired>
-               <FormLabel fontWeight="bold">Template Identity</FormLabel>
-               <Input fontSize="lg" fontWeight="bold" placeholder="e.g., SOAP Progress Note" value={form.name} onChange={e => setForm({...form, name: e.target.value})} variant="flushed" />
-            </FormControl>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+               <FormControl isRequired>
+                  <FormLabel fontWeight="bold">Template Identity</FormLabel>
+                  <Input fontSize="lg" fontWeight="bold" placeholder="e.g., SOAP Progress Note" value={form.name} onChange={e => setForm({...form, name: e.target.value})} variant="flushed" />
+               </FormControl>
+               <FormControl>
+                  <FormLabel fontWeight="bold">Associated Appointment Type</FormLabel>
+                  <Select borderRadius="xl" placeholder="Generic (Use anywhere)" value={form.event_type || ""} onChange={e => setForm({...form, event_type: e.target.value})}>
+                     {eventTypes.map(et => <option key={et.id} value={et.id}>{et.name}</option>)}
+                  </Select>
+               </FormControl>
+            </SimpleGrid>
             <FormControl>
                <FormLabel fontWeight="bold">Clinical Intent (Description)</FormLabel>
                <Textarea placeholder="Explain when to use this clinical blueprint..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} borderRadius="xl" />

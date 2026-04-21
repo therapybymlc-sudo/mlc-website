@@ -34,6 +34,8 @@
     "chakra-react-select": "^4.10.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^10.18.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "jszip": "^3.10.1",
     "lucide-react": "latest",
     "next": "latest",

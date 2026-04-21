@@ -41,6 +41,7 @@ import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiG
 import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 // Dynamic import for FullCalendar to avoid SSR hydration issues
 const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
@@ -55,6 +56,7 @@ const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
 export default function ScheduleClient() {
   const { user } = useUser();
   const { isAdmin } = useAuth();
+  const router = useRouter();
   const toast = useToast();
   
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -619,6 +621,22 @@ export default function ScheduleClient() {
                 ) : <Box />}
                 <HStack spacing={4}>
                     <Button variant="ghost" onClick={onClose} borderRadius="full">Back</Button>
+                    {isEditMode && form.client && (
+                        <Button 
+                            bg="teal.50" 
+                            color="teal.700" 
+                            border="1px solid" 
+                            borderColor="teal.200" 
+                            borderRadius="full" 
+                            leftIcon={<FiFileText />}
+                            onClick={() => {
+                                const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
+                                router.push(`/dashboard/therapist/notes/edit?clientId=${form.client}&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
+                            }}
+                        >
+                            Write Session Note
+                        </Button>
+                    )}
                     <Button bg="#56756C" color="white" borderRadius="full" px={8} onClick={isEditMode ? handleUpdate : handleCreate} _hover={{ bg: '#3E5B54' }}>
                         {isEditMode ? "Save Changes" : "Confirm Appointment"}
                     </Button>

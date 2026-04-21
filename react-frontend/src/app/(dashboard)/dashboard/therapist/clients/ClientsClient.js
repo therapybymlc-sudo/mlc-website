@@ -4,9 +4,10 @@ import {
   Box, Heading, Text, Input, Button, VStack, HStack, Table, Thead, Tbody, Tr, Th, Td, useToast, Spinner, SimpleGrid, FormControl, FormLabel, Badge, Divider, Icon, Stack, Grid, GridItem, Progress, Flex, Avatar, Center, Select, Textarea, Checkbox, CheckboxGroup, Radio, RadioGroup, Link,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
 import { apiGet, apiPost, apiPut } from "../../../../../api.js";
 import { useRouter } from "next/navigation";
+import { exportAllClientNotes } from "../../../../../utils/ClinicalPDFService.js";
 
 const initialClient = {
   name: "",
@@ -200,6 +201,16 @@ export default function ClientsClient() {
       <HStack spacing={3}>
         {viewMode === "detail" ? (
           <>
+            <Button 
+              leftIcon={<FiDownload />} 
+              variant="outline" 
+              borderColor="teal.200" 
+              color="teal.600" 
+              borderRadius="full"
+              onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Therapist")}
+            >
+              Export Full Records
+            </Button>
             <Button leftIcon={<FiCalendar />} colorScheme="teal" borderRadius="full" onClick={() => router.push('/dashboard/therapist/schedule')}>Book Appointment</Button>
             <Button leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} variant={isEditing ? "solid" : "outline"} colorScheme={isEditing ? "green" : "gray"} borderRadius="full" onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}>
               {isEditing ? "Save Changes" : "Edit Profile"}
