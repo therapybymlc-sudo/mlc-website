@@ -40,11 +40,18 @@ export default function SupervisionAvailabilityClient() {
       // Generate virtual slots for next 14 days
       for (let i = 0; i < 14; i++) {
         const date = addDays(today, i);
-        const dayName = format(date, 'EEEE').toLowerCase();
-        const times = businessHours[dayName] || [];
+        // Map JS day (0-6, Sun-Sat) to Cliniko/MLC day (1-7, Mon-Sun)
+        const jsDay = date.getDay();
+        const mlcDay = jsDay === 0 ? "7" : jsDay.toString();
+        
+        const times = businessHours[mlcDay] || [];
 
         times.forEach(timeStr => {
-          const [hours, minutes] = timeStr.split(':');
+          // Handle both 'HH:mm' string format or Cliniko-style objects if present
+          const time = typeof timeStr === 'string' ? timeStr : timeStr.startTime;
+          if (!time) return;
+
+          const [hours, minutes] = time.split(':');
           const start = new Date(date);
           start.setHours(parseInt(hours), parseInt(minutes), 0, 0);
           
