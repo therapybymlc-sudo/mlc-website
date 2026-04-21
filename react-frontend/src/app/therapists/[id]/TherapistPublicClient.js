@@ -137,11 +137,15 @@ export default function TherapistPublicClient({ therapist }) {
             <VStack align="start" spacing={6}>
               <HStack spacing={4}>
                 <Badge bg="rgba(86, 117, 109, 0.1)" color="mlc.greenDark" borderRadius="full" px={4} py={1} fontSize="xs">ACTIVE CLINICIAN</Badge>
+                {profile.is_supervisor && <Badge bg="mlc.gold" color="white" borderRadius="full" px={4} py={1} fontSize="xs">CERTIFIED CLINICAL SUPERVISOR</Badge>}
                 {profile.is_accepting_new && <Badge bg="green.50" color="green.600" borderRadius="full" px={4} py={1} fontSize="xs">ACCEPTING NEW CLIENTS</Badge>}
               </HStack>
               <VStack align="start" spacing={2}>
                 <Heading as="h1" size="2xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">{profile.name}</Heading>
-                <Text fontSize="xl" color="gray.600" fontWeight="500">{profile.title || "Psychotherapist"}</Text>
+                <Text fontSize="xl" color="gray.600" fontWeight="500">
+                  {profile.title || "Psychotherapist"}
+                  {profile.is_supervisor && " & Clinical Supervisor"}
+                </Text>
               </VStack>
               <Text fontSize="lg" color="gray.500" fontStyle="italic">"{profile.headline || `Dedicated to supporting your mental health journey.`}"</Text>
               <HStack spacing={4} pt={4}>

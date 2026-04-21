@@ -45,6 +45,16 @@ class TherapistProfile(models.Model):
     concerns = models.JSONField(default=list, blank=True) # Tags like "Anxiety", "Depression", etc.
     affiliations = models.TextField(blank=True, null=True) # e.g. "Psychiatric Social Worker at Amaha"
     modalities = models.JSONField(default=list, blank=True) # e.g. ["CBT", "DBT"]
+    
+    # Supervision Role Management
+    is_supervisor = models.BooleanField(default=False)
+    supervision_status = models.CharField(
+        max_length=20, 
+        choices=[("none", "None"), ("pending", "Pending"), ("approved", "Approved")], 
+        default="none"
+    )
+    supervision_bio = models.TextField(blank=True, null=True)
+    supervision_years_experience = models.PositiveIntegerField(default=0)
 
     def __str__(self) -> str:
         return self.name

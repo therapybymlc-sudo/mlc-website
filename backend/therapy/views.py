@@ -458,12 +458,19 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"], url_path="me")
+    @action(detail=False, methods=["get", "patch"], url_path="me")
     def me(self, request):
-        """Resiliently resolve the current user's profile."""
+        """Resiliently resolve and optionally update the current user's profile."""
         therapist = _resolve_therapist_from_request(request, allow_create=True)
         if not therapist:
             return Response({"detail": "Therapist profile not found and could not be initialized."}, status=status.HTTP_404_NOT_FOUND)
+        
+        if request.method == "PATCH":
+            serializer = self.get_serializer(therapist, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+            
         serializer = self.get_serializer(therapist)
         return Response(serializer.data)
 

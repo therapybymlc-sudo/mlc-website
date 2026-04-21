@@ -20,7 +20,7 @@ import {
   Center,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings } from "react-icons/fi";
+import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings, FiAward } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
 import NextLink from 'next/link';
 import { apiGet } from "../../../../api.js";
@@ -30,13 +30,16 @@ export default function TherapistDashboardOverview() {
   const toast = useToast();
   const [stats, setStats] = useState({ clients: 0, appointments: 0, requests: 0 });
   const [upcoming, setUpcoming] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, apptData] = await Promise.all([
+        const [clientData, apptData, profileData] = await Promise.all([
           apiGet("clients/"),
           apiGet("appointments/"),
+          apiGet("therapist-profile/me/"),
         ]);
         setStats({
           clients: clientData?.length || 0,
@@ -44,12 +47,32 @@ export default function TherapistDashboardOverview() {
           requests: 0 // Fetch from dedicated endpoint later
         });
         setUpcoming(apptData || []);
+        setProfile(profileData);
       } catch (err) {
         console.warn("Dashboard sync failed", err);
       }
     };
     fetchData();
   }, []);
+
+  const handleApplySupervision = async () => {
+    setIsApplying(true);
+    try {
+      const res = await fetch("https://api.mlchealth.in/api/therapist-profile/me/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supervision_status: "pending" }),
+      });
+      if (res.ok) {
+        toast({ title: "Application Sent!", description: "MLC is reviewing your clinical seniority 🌿", status: "success" });
+        setProfile(prev => ({ ...prev, supervision_status: "pending" }));
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to submit request", status: "error" });
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   return (
     <Box>
@@ -182,6 +205,71 @@ export default function TherapistDashboardOverview() {
           </SimpleGrid>
         </Box>
       </SimpleGrid>
+      <Divider my={10} />
+
+      {/* 🏛️ Supervision Advancement Card */}
+      <Box 
+        bg="white" 
+        p={8} 
+        borderRadius="3xl" 
+        shadow="xl" 
+        border="2px solid" 
+        borderColor={profile?.supervision_status === 'approved' ? "mlc.gold" : "gray.50"}
+        position="relative"
+        overflow="hidden"
+      >
+        {profile?.supervision_status === 'approved' && (
+          <Box position="absolute" top="0" right="0" bg="mlc.gold" color="white" px={6} py={1} borderBottomLeftRadius="xl" fontSize="xs" fontWeight="bold">CERTIFIED SUPERVISOR</Box>
+        )}
+        
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} alignItems="center">
+          <Box gridColumn={{ md: "span 2" }}>
+            <HStack spacing={4} mb={4}>
+              <Icon as={FiAward} boxSize={8} color="mlc.gold" />
+              <VStack align="start" spacing={0}>
+                <Heading size="md" color="mlc.greenDark">Clinical Supervision Program</Heading>
+                <Text fontSize="sm" color="gray.500">Mentoring the next generation of clinical excellence.</Text>
+              </VStack>
+            </HStack>
+            <Text color="gray.600" fontSize="md">
+              {profile?.years_experience < 4 
+                ? `Continue your clinical journey with MLC. Once you reach 4 years of experience, you'll be eligible to apply for supervisory status.`
+                : profile?.supervision_status === 'pending'
+                ? `Your application for Clinical Supervision is under review by the MLC Clinical Board. We will notify you once your credentials are confirmed.`
+                : profile?.supervision_status === 'approved'
+                ? `You are an active MLC Clinical Supervisor. You can now list separate availability for supervisees and manage mentorship sessions here.`
+                : `You are eligible to apply for Clinical Supervision status. This unlocks specialized tools and a dedicated supervisor profile tab.`
+              }
+            </Text>
+          </Box>
+          
+          <VStack align={{ base: "stretch", md: "end" }} spacing={4}>
+            {profile?.years_experience < 4 ? (
+              <Badge variant="subtle" colorScheme="gray" p={3} borderRadius="xl" textAlign="center">
+                Requires {4 - profile?.years_experience} more years experience
+              </Badge>
+            ) : profile?.supervision_status === 'none' ? (
+              <Button 
+                size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} 
+                isLoading={isApplying}
+                _hover={{ bg: 'mlc.greenDark' }}
+                onClick={handleApplySupervision}
+              >
+                Apply for Supervisor Role
+              </Button>
+            ) : profile?.supervision_status === 'pending' ? (
+              <Badge variant="solid" colorScheme="orange" p={3} borderRadius="xl" textAlign="center">
+                Credentialing in Progress
+              </Badge>
+            ) : (
+              <Button variant="outline" borderColor="mlc.gold" color="mlc.gold" borderRadius="full" px={10} as={NextLink} href="/dashboard/therapist/supervision">
+                Enter Supervision Suite
+              </Button>
+            )}
+          </VStack>
+        </SimpleGrid>
+      </Box>
+
     </Box>
   );
 }
