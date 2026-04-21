@@ -51,6 +51,8 @@ from therapy.models import (
     ContactMessage,
     QuickBooking,
     SafetyPlan,
+    SupervisoryRelationship,
+    SupervisionNote,
 )
 from therapy.utils import (
     calculate_dass_scores,
@@ -100,6 +102,8 @@ from therapy.serializers import (
     QuickBookingSerializer,
     SafetyPlanSerializer,
     TherapeuticRelationshipSerializer,
+    SupervisoryRelationshipSerializer,
+    SupervisionNoteSerializer,
 )
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,

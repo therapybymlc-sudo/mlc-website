@@ -11,6 +11,7 @@ import { FiUsers, FiFileText, FiUploadCloud, FiBook, FiCheckCircle, FiClock, FiP
 import { apiGet, apiPatch } from "../../../../../api.js";
 
 export default function SupervisionClient() {
+  const [isMounted, setIsMounted] = useState(false);
   const [relationships, setRelationships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSupervisee, setSelectedSupervisee] = useState(null);
@@ -19,6 +20,7 @@ export default function SupervisionClient() {
   const toast = useToast();
 
   useEffect(() => {
+    setIsMounted(true);
     fetchSupervisionData();
   }, []);
 
@@ -32,6 +34,8 @@ export default function SupervisionClient() {
       setLoading(false);
     }
   };
+
+  if (!isMounted) return null;
 
   if (loading) return (
     <Container maxW="container.xl" py={20} centerContent>
