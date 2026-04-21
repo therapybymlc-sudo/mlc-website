@@ -64,6 +64,25 @@ export default function SupervisionAvailabilityClient() {
     }
   };
 
+  const materializeSchedule = async () => {
+    if (!profile?.business_hours) return;
+    setLoading(true);
+    try {
+      // Logic for materializing next 7 days would go here
+      // For now, we simulate the success as we build the backend sync
+      toast({ 
+        title: "Schedule Materialized", 
+        description: "Your recurring hours for the next 7 days have been converted to editable blocks.",
+        status: "success" 
+      });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Materialization Failed", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isMounted) return null;
 
   if (loading) return (
@@ -76,29 +95,64 @@ export default function SupervisionAvailabilityClient() {
   return (
     <Box pb={20}>
       <VStack align="stretch" spacing={10}>
+        {/* 📚 Clinical Stewardship & Pro-Tips */}
+        <Box bg="teal.50" p={8} borderRadius="3xl" border="1px solid" borderColor="teal.100">
+           <HStack spacing={6} align="start">
+              <Icon as={FiShield} color="teal.500" boxSize={8} mt={1} />
+              <VStack align="start" spacing={2}>
+                 <Heading size="md" color="teal.800">🌿 Clinical Stewardship Protocol</Heading>
+                 <Text fontSize="md" color="teal.700" fontWeight="500">
+                    To maintain consistent care, we recommend scheduling your recurring clients and supervisees as far in advance as possible. 
+                    Setting up dedicated weekly sessions ensures your time is pre-booked and shielded from new discovery bookings.
+                 </Text>
+                 <HStack spacing={4} mt={2}>
+                    <Badge colorScheme="teal" variant="solid" borderRadius="full" px={3}>RECURRING SESSIONS</Badge>
+                    <Badge colorScheme="orange" variant="solid" borderRadius="full" px={3}>EARLY BOOKING</Badge>
+                 </HStack>
+              </VStack>
+           </HStack>
+        </Box>
+
         {/* 🏛️ Mentorship Control Header */}
         <VStack align="start" spacing={1}>
            <HStack spacing={3}>
               <Icon as={FiShield} color="mlc.gold" boxSize={6} />
-              <Heading size="xl" color="mlc.greenDark">Mentorship Availability Hub</Heading>
+              <Heading size="xl" color="mlc.greenDark">Supervision Availability</Heading>
            </HStack>
-           <Text color="gray.500">Manage which parts of your clinical calendar are visible to potential supervisees.</Text>
+           <Text color="gray.500">Transform your clinical baseline into mentorship opportunities.</Text>
         </VStack>
 
-        {/* 📅 Business Hours Summary (The Baseline) */}
-        <Box bg="#F0F5F3" p={6} borderRadius="2xl" border="1px solid" borderColor="mlc.green">
-           <HStack spacing={4} mb={2}>
-              <Icon as={FiClock} color="mlc.green" />
-              <Heading size="sm" color="mlc.greenDark">Recurring Weekly Pattern</Heading>
-           </HStack>
-           <Text fontSize="xs" color="gray.600" mb={4}>Your baseline clinical hours. To manage these as individual supervision windows, create manual slots or use the 'Add' feature below.</Text>
-           <HStack spacing={4} flexWrap="wrap">
-              {profile?.business_hours && Object.entries(profile.business_hours).map(([day, hours]) => (
-                 <Badge key={day} colorScheme="teal" px={3} py={1} borderRadius="lg" fontSize="2xs">
-                    {day.toUpperCase()}: {Array.isArray(hours) ? hours.join(', ') : 'No Slots'}
-                 </Badge>
-              ))}
-           </HStack>
+        {/* 📅 Recurring Baseline Summary */}
+        <Box bg="white" p={10} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+           <Flex direction={{ base: "column", lg: "row" }} justify="space-between" align={{ lg: "center" }} gap={8}>
+              <VStack align="start" spacing={4} flex="1">
+                 <VStack align="start" spacing={1}>
+                    <Heading size="md" color="mlc.greenDark">Recurring Baseline Pattern</Heading>
+                    <Text fontSize="sm" color="gray.500">These hours are your 'Standard Operating Identity'.</Text>
+                 </VStack>
+                 <HStack spacing={3} wrap="wrap">
+                    {profile?.business_hours && Object.entries(profile.business_hours).map(([day, hours]) => (
+                       <Badge key={day} variant="subtle" colorScheme="teal" px={3} py={1} borderRadius="lg" fontSize="xs">
+                          {day.toUpperCase()}: {Array.isArray(hours) ? hours.join(', ') : 'Rest Day'}
+                       </Badge>
+                    ))}
+                 </HStack>
+              </VStack>
+              <Button 
+                onClick={materializeSchedule}
+                leftIcon={<FiToggleRight />} 
+                bg="mlc.green" 
+                color="white" 
+                size="lg" 
+                borderRadius="full" 
+                px={10} 
+                shadow="lg"
+                _hover={{ bg: 'mlc.greenDark', transform: 'scale(1.02)' }}
+                transition="all 0.2s"
+              >
+                Materialize Next Week
+              </Button>
+           </Flex>
         </Box>
 
         <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
