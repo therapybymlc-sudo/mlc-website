@@ -25,6 +25,7 @@ import {
   Textarea,
   Badge,
   Icon,
+  Avatar,
   SimpleGrid,
   Center,
   Divider,
@@ -37,7 +38,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle, FiMaximize2, FiVideo } from "react-icons/fi";
+import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle, FiMaximize2, FiVideo, FiCopy } from "react-icons/fi";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
@@ -247,10 +248,15 @@ export default function ScheduleClient() {
     onOpen();
   };
 
-  const renderSummaryView = () => {
+  const SessionSummaryView = () => {
     const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
     const typeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
-    const start = new Date(form.start_time).toLocaleString();
+    
+    // Defensive date string for hydration stability
+    const [displayDate, setDisplayDate] = useState("");
+    useEffect(() => {
+        if (form.start_time) setDisplayDate(new Date(form.start_time).toLocaleString());
+    }, [form.start_time]);
 
     return (
         <VStack spacing={0} align="stretch" bg="white" borderRadius="3xl" overflow="hidden">
@@ -263,7 +269,7 @@ export default function ScheduleClient() {
                         <Avatar size="md" name={selectedClientObj?.name} bg="whiteAlpha.200" />
                         <VStack align="start" spacing={0}>
                             <Text fontSize="lg" fontWeight="bold">{selectedClientObj?.name || "Patient Unknown"}</Text>
-                            <Text fontSize="sm" opacity={0.9}>{start}</Text>
+                            <Text fontSize="sm" opacity={0.9}>{displayDate}</Text>
                         </VStack>
                     </HStack>
                     <Button 
@@ -360,7 +366,7 @@ export default function ScheduleClient() {
     );
   };
 
-  const renderFormView = () => (
+  const SessionFormView = () => (
     <>
       <ModalHeader borderBottom="1px solid" borderColor="gray.100" pb={6}>
         <HStack spacing={4}>
@@ -753,7 +759,7 @@ export default function ScheduleClient() {
       <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered scrollBehavior="inside">
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
         <ModalContent borderRadius="3xl" overflow="hidden">
-           {isFormView ? renderFormView() : renderSummaryView()}
+           {isFormView ? <SessionFormView /> : <SessionSummaryView />}
         </ModalContent>
       </Modal>
 
