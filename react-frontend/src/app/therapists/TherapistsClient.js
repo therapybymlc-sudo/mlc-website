@@ -202,7 +202,42 @@ export default function TherapistsClient() {
                           Our cohorts transcend simple case-by-case troubleshooting—they are designed for the <b>holistic evolution of your therapeutic identity</b>, helping you cultivate the clinical depth and personal presence required to truly hold space for the human experience.
                         </Text>
                      </VStack>
-                     <Button as={NextLink} href="/supervision" variant="link" color="teal.800" rightIcon={<FiChevronDown />} fontWeight="800">Explore Supervision</Button>
+                     <VStack align="stretch" spacing={6} w="full" bg="white" p={8} borderRadius="2xl" shadow="sm" border="1px solid" borderColor="teal.100">
+                        <HStack spacing={3}>
+                           <Icon as={FiZap} color="mlc.gold" />
+                           <Heading size="xs" color="teal.800" textTransform="uppercase" letterSpacing="widest">Find Your Mentor</Heading>
+                        </HStack>
+                        
+                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                           <VStack align="start" spacing={1}>
+                              <Text fontSize="2xs" fontWeight="800" color="gray.400">FOCUS AREA</Text>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={2} borderRadius="md" fontSize="sm" color="gray.500" cursor="pointer" _hover={{ bg: 'gray.50' }}>Clinical Supervision</Box>
+                           </VStack>
+                           <VStack align="start" spacing={1}>
+                              <Text fontSize="2xs" fontWeight="800" color="gray.400">CLINICAL MODALITY</Text>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={2} borderRadius="md" fontSize="sm" color="gray.500" cursor="pointer" _hover={{ bg: 'gray.50' }}>Integrative Therapy</Box>
+                           </VStack>
+                           <VStack align="start" spacing={1}>
+                              <Text fontSize="2xs" fontWeight="800" color="gray.400">EXPERIENCE</Text>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={2} borderRadius="md" fontSize="sm" color="gray.500" cursor="pointer" _hover={{ bg: 'gray.50' }}>10+ Years Mastery</Box>
+                           </VStack>
+                        </SimpleGrid>
+
+                        <Button 
+                           as={NextLink} 
+                           href="/therapists/discovery?role=supervisor" 
+                           bg="mlc.green" 
+                           color="white" 
+                           borderRadius="full" 
+                           size="md" 
+                           fontWeight="800"
+                           boxShadow="0 4px 15px rgba(86, 117, 109, 0.2)"
+                           _hover={{ bg: 'teal.900', transform: 'scale(1.02)' }}
+                           transition="all 0.2s"
+                        >
+                           Match with Supervisor
+                        </Button>
+                     </VStack>
                   </VStack>
 
                   {/* Therapist Community */}
