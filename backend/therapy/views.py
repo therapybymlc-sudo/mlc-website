@@ -531,6 +531,23 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         client = serializer.save(therapist=therapist)
         _ensure_relationship(therapist, client, make_primary=True)
 
+    @action(detail=False, methods=["post"], url_path="link_by_email")
+    def link_by_email(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"detail": "Email required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        therapist = _resolve_therapist_from_request(request, allow_create=True)
+        client = ClientProfile.objects.filter(email__iexact=email).first()
+        
+        if not client:
+            return Response({"detail": "No record found with this email."}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Build the bridge
+        _ensure_relationship(therapist, client, make_primary=False)
+        
+        return Response({"detail": "Client successfully linked to your caseload.", "client_id": client.id})
+
 
 class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AppointmentSerializer

@@ -60,23 +60,47 @@ export default function ClientsClient() {
     }
   }, [selectedClient, viewMode]);
 
+  const handleLinkClient = async (email) => {
+    try {
+      setLoading(true);
+      await apiPost("clients/link_by_email/", { email });
+      setNewClient(initialClient); // Reset
+      setViewMode("list");
+      fetchClients();
+      toast({ title: "Relationship Secured", description: "This client is now linked to your caseload.", status: "success" });
+    } catch (e) {
+      toast({ 
+        title: "Search Failed", 
+        description: e.response?.data?.detail || "Could not find a record with this email. Try registering them as a new client.", 
+        status: "info" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddClient = async () => {
     if (!newClient.first_name || !newClient.last_name || !newClient.email) {
       toast({ title: "Please fill required fields", status: "warning" });
       return;
     }
     try {
-      // Backend expects 'name' + individual fields
-      await apiPost("clients/", {
-        ...newClient,
-        name: `${newClient.first_name} ${newClient.last_name}`.trim(),
-      });
-      setNewClient(initialClient);
-      setViewMode("list");
-      fetchClients();
-      toast({ title: "Client added successfully", status: "success" });
-    } catch (e) {
-      toast({ title: "Error adding client", description: "Ensure the email isn't already registered.", status: "error" });
+      // First, try linking in case they exist
+      await handleLinkClient(newClient.email);
+    } catch (err) {
+      // If linking fails, proceed with registration
+      try {
+        await apiPost("clients/", {
+          ...newClient,
+          name: `${newClient.first_name} ${newClient.last_name}`.trim(),
+        });
+        setNewClient(initialClient);
+        setViewMode("list");
+        fetchClients();
+        toast({ title: "New File Created", status: "success" });
+      } catch (e) {
+        toast({ title: "Registration Error", description: "This profile could not be created.", status: "error" });
+      }
     }
   };
 
