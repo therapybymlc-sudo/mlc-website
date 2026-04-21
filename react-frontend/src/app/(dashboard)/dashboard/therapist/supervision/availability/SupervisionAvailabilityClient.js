@@ -7,7 +7,7 @@ import {
   Table, Thead, Tbody, Tr, Th, Td, IconButton
 } from "@chakra-ui/react";
 import { FiCalendar, FiClock, FiCheckCircle, FiShield, FiToggleRight, FiInfo } from "react-icons/fi";
-import { apiGet, apiPatch } from "../../../../api.js";
+import { apiGet, apiPatch } from "../../../../../../api.js";
 import { format, parseISO, addDays, startOfWeek } from 'date-fns';
 
 export default function SupervisionAvailabilityClient() {
