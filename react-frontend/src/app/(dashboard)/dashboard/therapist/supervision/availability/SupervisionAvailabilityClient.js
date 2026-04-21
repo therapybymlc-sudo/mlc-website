@@ -6,27 +6,34 @@ import {
   Badge, Flex, useToast, Spinner, Switch, FormControl, FormLabel, Divider, Tooltip,
   Table, Thead, Tbody, Tr, Th, Td, IconButton
 } from "@chakra-ui/react";
-import { FiCalendar, FiClock, FiCheckCircle, FiShield, FiToggleRight, FiInfo } from "react-icons/fi";
-import { apiGet, apiPatch } from "../../../../../../api.js";
+import { FiCalendar, FiClock, FiCheckCircle, FiShield, FiToggleRight, FiInfo, FiTrash2, FiPlus } from "react-icons/fi";
+import { apiGet, apiPatch, apiDelete, apiPost } from "../../../../../../api.js";
 import { format, parseISO, addDays, startOfWeek } from 'date-fns';
 
 export default function SupervisionAvailabilityClient() {
+  const [isMounted, setIsMounted] = useState(false);
   const [slots, setSlots] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
   useEffect(() => {
-    fetchSlots();
+    setIsMounted(true);
+    fetchData();
   }, []);
 
-  const fetchSlots = async () => {
+  const fetchData = async () => {
     try {
-      const data = await apiGet("availability-slots/");
-      // Only show upcoming open slots for management
-      const upcoming = data
-        .filter(s => s.status === 'open')
-        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-      setSlots(upcoming);
+      const [slotsData, profileData] = await Promise.all([
+        apiGet("availability-slots/"),
+        apiGet("therapist-profile/me/")
+      ]);
+      
+      setProfile(profileData);
+      
+      // Merge logic: Total Visibility (Recurring + Manual)
+      const manual = (slotsData || []).filter(s => s.status === 'open');
+      setSlots(manual.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)));
     } catch (err) {
       toast({ title: "Sync Error", description: "Failed to load clinical calendar.", status: "error" });
     } finally {
@@ -45,6 +52,19 @@ export default function SupervisionAvailabilityClient() {
       toast({ title: "Update Failed", status: "error" });
     }
   };
+
+  const deleteSlot = async (slotId) => {
+    if (!window.confirm("Are you sure you want to remove this clinical time block?")) return;
+    try {
+      await apiDelete(`availability-slots/${slotId}/`);
+      setSlots(slots.filter(s => s.id !== slotId));
+      toast({ title: "Slot Removed", status: "info" });
+    } catch (err) {
+      toast({ title: "Delete Failed", status: "error" });
+    }
+  };
+
+  if (!isMounted) return null;
 
   if (loading) return (
     <Container maxW="container.xl" py={20} centerContent>
@@ -65,14 +85,33 @@ export default function SupervisionAvailabilityClient() {
            <Text color="gray.500">Manage which parts of your clinical calendar are visible to potential supervisees.</Text>
         </VStack>
 
+        {/* 📅 Business Hours Summary (The Baseline) */}
+        <Box bg="#F0F5F3" p={6} borderRadius="2xl" border="1px solid" borderColor="mlc.green">
+           <HStack spacing={4} mb={2}>
+              <Icon as={FiClock} color="mlc.green" />
+              <Heading size="sm" color="mlc.greenDark">Recurring Weekly Pattern</Heading>
+           </HStack>
+           <Text fontSize="xs" color="gray.600" mb={4}>Your baseline clinical hours. To manage these as individual supervision windows, create manual slots or use the 'Add' feature below.</Text>
+           <HStack spacing={4} flexWrap="wrap">
+              {profile?.business_hours && Object.entries(profile.business_hours).map(([day, hours]) => (
+                 <Badge key={day} colorScheme="teal" px={3} py={1} borderRadius="lg" fontSize="2xs">
+                    {day.toUpperCase()}: {Array.isArray(hours) ? hours.join(', ') : 'No Slots'}
+                 </Badge>
+              ))}
+           </HStack>
+        </Box>
+
         <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
            <VStack align="stretch" spacing={8}>
               <HStack justify="space-between" wrap="wrap" gap={4}>
                  <VStack align="start" spacing={1}>
-                    <Heading size="md" color="mlc.greenDark">Upcoming Clinical Slots</Heading>
-                    <Text fontSize="sm" color="gray.400">Total {slots.length} slots found in the next 14 days.</Text>
+                    <Heading size="md" color="mlc.greenDark">Active Supervision Windows</Heading>
+                    <Text fontSize="sm" color="gray.400">Total {slots.length} managed slots found in the next 14 days.</Text>
                  </VStack>
-                 <Badge colorScheme="teal" p={3} borderRadius="xl" fontSize="xs">UNIFIED CALENDAR MODE</Badge>
+                 <HStack>
+                    <Button variant="ghost" colorScheme="teal" size="sm" leftIcon={<FiPlus />} as="a" href="/dashboard/therapist/availability">Manage Baseline</Button>
+                    <Badge colorScheme="teal" p={3} borderRadius="xl" fontSize="xs">UNIFIED CALENDAR MODE</Badge>
+                 </HStack>
               </HStack>
 
               <Box overflowX="auto">
@@ -81,7 +120,7 @@ export default function SupervisionAvailabilityClient() {
                        <Tr>
                           <Th color="gray.400" fontSize="2xs" letterSpacing="widest">DATE & TIME</Th>
                           <Th color="gray.400" fontSize="2xs" letterSpacing="widest">ADAPTABILITY</Th>
-                          <Th color="gray.400" fontSize="2xs" letterSpacing="widest" textAlign="right">SUPERVISION VISIBILITY</Th>
+                          <Th color="gray.400" fontSize="2xs" letterSpacing="widest" textAlign="right">MANAGEMENT</Th>
                        </Tr>
                     </Thead>
                     <Tbody>
@@ -106,17 +145,24 @@ export default function SupervisionAvailabilityClient() {
                                 )}
                              </Td>
                              <Td textAlign="right">
-                                <FormControl display="flex" alignItems="center" justifyContent="flex-end">
-                                   <FormLabel htmlFor={`sup-${slot.id}`} mb="0" fontSize="xs" color="gray.500">
-                                      Visible to Supervisees?
-                                   </FormLabel>
-                                   <Switch 
-                                      id={`sup-${slot.id}`} 
-                                      colorScheme="teal" 
-                                      isChecked={slot.visible_to_supervisees}
-                                      onChange={() => toggleVisibility(slot.id, slot.visible_to_supervisees)}
+                                <HStack justify="flex-end" spacing={6}>
+                                   <FormControl display="flex" alignItems="center" w="auto">
+                                      <Switch 
+                                         id={`sup-${slot.id}`} 
+                                         colorScheme="teal" 
+                                         isChecked={slot.visible_to_supervisees}
+                                         onChange={() => toggleVisibility(slot.id, slot.visible_to_supervisees)}
+                                      />
+                                   </FormControl>
+                                   <IconButton 
+                                      icon={<FiTrash2 />} 
+                                      aria-label="Delete Slot" 
+                                      variant="ghost" 
+                                      colorScheme="red" 
+                                      size="sm"
+                                      onClick={() => deleteSlot(slot.id)}
                                    />
-                                </FormControl>
+                                </HStack>
                              </Td>
                           </Tr>
                        ))}
