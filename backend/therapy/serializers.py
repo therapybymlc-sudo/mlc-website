@@ -519,8 +519,20 @@ class NoteTemplateSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
-    template_name = serializers.CharField(source="template.name", read_only=True)
-    client_name = serializers.CharField(source="client.name", read_only=True)
+    template_name = serializers.SerializerMethodField()
+    client_name = serializers.SerializerMethodField()
+
+    def get_template_name(self, obj):
+        try:
+            return obj.template.name
+        except:
+            return "Untitled Note"
+
+    def get_client_name(self, obj):
+        try:
+            return obj.client.name
+        except:
+            return "Unknown Client"
 
     # Keep your read serializers:
     cosigners = TherapistProfileSerializer(many=True, read_only=True)
