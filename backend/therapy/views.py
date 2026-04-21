@@ -279,7 +279,7 @@ def _active_client_ids_for_therapist(therapist):
     primaries = ClientProfile.objects.filter(therapist=therapist).values_list("id", flat=True)
     
     # Combine (union)
-    return set(list(rels) + list(primaries))
+    return list(set(list(rels) + list(primaries)))
 
 
 def _ensure_relationship(therapist, client, make_primary=False):
@@ -569,7 +569,10 @@ class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Appointment.objects.filter(therapist=therapist).order_by("-date")
         client_id = self.request.query_params.get("client")
         if client_id:
-            qs = qs.filter(client_id=client_id)
+            # Sanitize: strip trailing slashes or non-numeric noise
+            clean_id = "".join(filter(str.isdigit, str(client_id)))
+            if clean_id:
+                qs = qs.filter(client_id=clean_id)
         return qs
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsTherapistOwnerOfAppointment])
@@ -1209,7 +1212,10 @@ class NoteViewSet(viewsets.ModelViewSet):
 
         client_id = self.request.query_params.get("client")
         if client_id:
-            qs = qs.filter(client_id=client_id)
+            # Sanitize: strip trailing slashes or non-numeric noise
+            clean_id = "".join(filter(str.isdigit, str(client_id)))
+            if clean_id:
+                qs = qs.filter(client_id=clean_id)
             
         return qs.order_by("-created_at")
 
@@ -1270,7 +1276,10 @@ class ClientFileViewSet(viewsets.ModelViewSet):
         qs = ClientFile.objects.filter(client_id__in=client_ids).order_by("-uploaded_at")
         client_id = self.request.query_params.get("client")
         if client_id:
-            qs = qs.filter(client_id=client_id)
+            # Sanitize: strip trailing slashes or non-numeric noise
+            clean_id = "".join(filter(str.isdigit, str(client_id)))
+            if clean_id:
+                qs = qs.filter(client_id=clean_id)
         return qs
 
     def perform_create(self, serializer):

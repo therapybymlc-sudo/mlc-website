@@ -287,7 +287,15 @@ export default function ClientsClient() {
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
       <HStack justify="space-between" mb={4}>
          <Heading size="md">Session Documentation</Heading>
-         <Button leftIcon={<FiClipboard />} colorScheme="teal" size="sm" borderRadius="full">New Clinical Note</Button>
+         <Button 
+           leftIcon={<FiClipboard />} 
+           colorScheme="teal" 
+           size="sm" 
+           borderRadius="full"
+           onClick={() => router.push('/dashboard/therapist/notes')}
+         >
+           New Clinical Note
+         </Button>
       </HStack>
       {clientNotes.length === 0 ? (
         <Center py={20} bg="white" borderRadius="3xl" border="1px dashed" borderColor="gray.200">
