@@ -7,7 +7,7 @@ import {
   Spinner, Divider, Checkbox, Badge, CheckboxGroup, Stack, Slider, SliderTrack,
   SliderFilledTrack, SliderThumb, Tag, TagLabel, SimpleGrid,
   Tabs, TabList, TabPanels, Tab, TabPanel, InputGroup, InputLeftElement,
-  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, SliderMark, Flex,
+  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, SliderMark, Flex, Center,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiSave, FiArrowLeft, FiClipboard, FiClock, FiCheckCircle, FiCopy, FiRefreshCcw, FiAlertCircle, FiChevronUp, FiChevronDown, FiPlusCircle } from "react-icons/fi";
@@ -75,6 +75,7 @@ export default function NotesClient() {
   const router = useRouter();
   const toast = useToast();
   const [viewMode, setViewMode] = useState("list"); // list, builder, entry
+  const [mounted, setMounted] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -97,7 +98,9 @@ export default function NotesClient() {
     }
   };
 
-  useEffect(() => { loadTemplates(); }, []);
+  useEffect(() => { setMounted(true); loadTemplates(); }, []);
+
+  if (!mounted) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
 
   const handleSaveTemplate = async () => {
     try {
