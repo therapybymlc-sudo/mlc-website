@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
 import { apiGet, apiPost, apiPut } from "../../../../../api.js";
 import { useRouter } from "next/navigation";
-import { exportAllClientNotes } from "../../../../../utils/ClinicalPDFService.js";
+import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
 
 const initialClient = {
   name: "",
@@ -62,6 +62,7 @@ const initialClient = {
 
 export default function ClientsClient() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("list"); // list, add, detail
@@ -114,6 +115,7 @@ export default function ClientsClient() {
   };
 
   useEffect(() => {
+    setMounted(true);
     fetchClients();
   }, []);
 
@@ -438,6 +440,15 @@ export default function ClientsClient() {
           </Box>
        </DetailCard>
     </VStack>
+  );
+
+  if (!mounted) return (
+    <Center minH="400px">
+      <VStack spacing={4}>
+        <Spinner size="xl" color="teal.500" thickness="4px" />
+        <Text color="gray.500" fontWeight="600">Restoring Patient Dossiers...</Text>
+      </VStack>
+    </Center>
   );
 
   return (
