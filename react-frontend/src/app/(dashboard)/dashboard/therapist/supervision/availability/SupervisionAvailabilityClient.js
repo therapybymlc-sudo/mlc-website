@@ -26,7 +26,7 @@ export default function SupervisionAvailabilityClient() {
     try {
       const [slotsData, profileData] = await Promise.all([
         apiGet("availability-slots/"),
-        apiGet("therapist-profile/me/")
+        apiGet("therapists/me/")
       ]);
       
       setProfile(profileData);
