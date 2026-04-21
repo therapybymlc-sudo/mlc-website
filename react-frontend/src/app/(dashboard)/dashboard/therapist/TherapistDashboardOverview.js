@@ -210,7 +210,7 @@ export default function TherapistDashboardOverview() {
       {/* 🏛️ Supervision Advancement Card */}
       <Box 
         bg="white" 
-        p={8} 
+        p={{ base: 6, md: 10 }} 
         borderRadius="3xl" 
         shadow="xl" 
         border="2px solid" 
@@ -219,19 +219,19 @@ export default function TherapistDashboardOverview() {
         overflow="hidden"
       >
         {profile?.supervision_status === 'approved' && (
-          <Box position="absolute" top="0" right="0" bg="mlc.gold" color="white" px={6} py={1} borderBottomLeftRadius="xl" fontSize="xs" fontWeight="bold">CERTIFIED SUPERVISOR</Box>
+          <Box position="absolute" top="0" right="0" bg="mlc.gold" color="white" px={6} py={1} borderBottomLeftRadius="xl" fontSize="2xs" fontWeight="bold">CERTIFIED SUPERVISOR</Box>
         )}
         
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} alignItems="center">
-          <Box gridColumn={{ md: "span 2" }}>
+        <Flex direction={{ base: "column", lg: "row" }} gap={8} align={{ base: "stretch", lg: "center" }}>
+          <Box flex="1">
             <HStack spacing={4} mb={4}>
-              <Icon as={FiAward} boxSize={8} color="mlc.gold" />
+              <Icon as={FiAward} boxSize={{ base: 6, md: 8 }} color="mlc.gold" />
               <VStack align="start" spacing={0}>
-                <Heading size="md" color="mlc.greenDark">Clinical Supervision Program</Heading>
-                <Text fontSize="sm" color="gray.500">Mentoring the next generation of clinical excellence.</Text>
+                <Heading size={{ base: "sm", md: "md" }} color="mlc.greenDark">Clinical Supervision Program</Heading>
+                <Text fontSize="xs" color="gray.500">Mentoring the next generation of clinical excellence.</Text>
               </VStack>
             </HStack>
-            <Text color="gray.600" fontSize="md">
+            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }} lineHeight="relaxed">
               {profile?.years_experience < 5 
                 ? `Continue your clinical journey with MLC. Once you reach 5 years of experience, you'll be eligible to apply for supervisory status.`
                 : profile?.supervision_status === 'pending'
@@ -243,14 +243,14 @@ export default function TherapistDashboardOverview() {
             </Text>
           </Box>
           
-          <VStack align={{ base: "stretch", md: "end" }} spacing={4}>
+          <VStack align={{ base: "stretch", lg: "end" }} spacing={4} minW={{ lg: "240px" }}>
             {profile?.years_experience < 5 ? (
-              <Badge variant="subtle" colorScheme="gray" p={3} borderRadius="xl" textAlign="center">
+              <Badge variant="subtle" colorScheme="gray" p={{ base: 3, md: 4 }} borderRadius="2xl" textAlign="center" whiteSpace="normal">
                 Requires {5 - profile?.years_experience} more years experience
               </Badge>
             ) : profile?.supervision_status === 'none' ? (
               <Button 
-                size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} 
+                size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} h={{ base: 14, md: 16 }}
                 isLoading={isApplying}
                 _hover={{ bg: 'mlc.greenDark' }}
                 onClick={handleApplySupervision}
@@ -258,16 +258,16 @@ export default function TherapistDashboardOverview() {
                 Apply for Supervisor Role
               </Button>
             ) : profile?.supervision_status === 'pending' ? (
-              <Badge variant="solid" colorScheme="orange" p={3} borderRadius="xl" textAlign="center">
+              <Badge variant="solid" colorScheme="orange" p={{ base: 3, md: 4 }} borderRadius="2xl" textAlign="center">
                 Credentialing in Progress
               </Badge>
             ) : (
-              <Button variant="outline" borderColor="mlc.gold" color="mlc.gold" borderRadius="full" px={10} as={NextLink} href="/dashboard/therapist/supervision">
+              <Button variant="outline" borderColor="mlc.gold" color="mlc.gold" borderRadius="full" px={10} h={14} as={NextLink} href="/dashboard/therapist/supervision">
                 Enter Supervision Suite
               </Button>
             )}
           </VStack>
-        </SimpleGrid>
+        </Flex>
       </Box>
 
     </Box>

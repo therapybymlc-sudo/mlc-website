@@ -202,24 +202,24 @@ export default function TherapistsClient() {
                           Our cohorts transcend simple case-by-case troubleshooting—they are designed for the <b>holistic evolution of your therapeutic identity</b>, helping you cultivate the clinical depth and personal presence required to truly hold space for the human experience.
                         </Text>
                      </VStack>
-                     <VStack align="stretch" spacing={6} w="full" bg="white" p={8} borderRadius="2xl" shadow="sm" border="1px solid" borderColor="teal.100">
+                     <VStack align="stretch" spacing={6} w="full" bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="teal.100">
                         <HStack spacing={3}>
-                           <Icon as={FiZap} color="mlc.gold" />
-                           <Heading size="xs" color="teal.800" textTransform="uppercase" letterSpacing="widest">Find Your Mentor</Heading>
+                           <Icon as={FiZap} color="mlc.gold" boxSize={5} />
+                           <Heading size="xs" color="teal.800" textTransform="uppercase" letterSpacing="widest" fontWeight="800">Find Your Mentor</Heading>
                         </HStack>
                         
-                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
                            <VStack align="start" spacing={1}>
-                              <Text fontSize="2xs" fontWeight="800" color="gray.400">FOCUS AREA</Text>
-                              <Box w="full" border="1px solid" borderColor="gray.100" p={2} borderRadius="md" fontSize="sm" color="gray.500" cursor="pointer" _hover={{ bg: 'gray.50' }}>Clinical Supervision</Box>
+                              <Text fontSize="2xs" fontWeight="800" color="gray.400" letterSpacing="wider">FOCUS AREA</Text>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={3} borderRadius="xl" fontSize="sm" color="gray.600" cursor="pointer" _hover={{ bg: 'gray.50' }}>Clinical Supervision</Box>
                            </VStack>
                            <VStack align="start" spacing={1}>
-                              <Text fontSize="2xs" fontWeight="800" color="gray.400">CLINICAL MODALITY</Text>
-                              <Box w="full" border="1px solid" borderColor="gray.100" p={2} borderRadius="md" fontSize="sm" color="gray.500" cursor="pointer" _hover={{ bg: 'gray.50' }}>Integrative Therapy</Box>
+                              <Text fontSize="2xs" fontWeight="800" color="gray.400" letterSpacing="wider">MODALITY</Text>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={3} borderRadius="xl" fontSize="sm" color="gray.600" cursor="pointer" _hover={{ bg: 'gray.50' }}>Integrative Therapy</Box>
                            </VStack>
                            <VStack align="start" spacing={1}>
-                              <Text fontSize="2xs" fontWeight="800" color="gray.400">EXPERIENCE</Text>
-                              <Box w="full" border="1px solid" borderColor="gray.100" p={2} borderRadius="md" fontSize="sm" color="gray.500" cursor="pointer" _hover={{ bg: 'gray.50' }}>10+ Years Mastery</Box>
+                              <Text fontSize="2xs" fontWeight="800" color="gray.400" letterSpacing="wider">EXPERIENCE</Text>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={3} borderRadius="xl" fontSize="sm" color="gray.600" cursor="pointer" _hover={{ bg: 'gray.50' }}>10+ Years Mastery</Box>
                            </VStack>
                         </SimpleGrid>
 
@@ -229,10 +229,11 @@ export default function TherapistsClient() {
                            bg="mlc.green" 
                            color="white" 
                            borderRadius="full" 
-                           size="md" 
+                           size="lg" 
+                           h={14}
                            fontWeight="800"
                            boxShadow="0 4px 15px rgba(86, 117, 109, 0.2)"
-                           _hover={{ bg: 'teal.900', transform: 'scale(1.02)' }}
+                           _hover={{ bg: 'teal.900', transform: 'translateY(-2px)' }}
                            transition="all 0.2s"
                         >
                            Match with Supervisor
