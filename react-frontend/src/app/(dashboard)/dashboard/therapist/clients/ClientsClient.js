@@ -23,6 +23,9 @@ export default function ClientsClient() {
   const [search, setSearch] = useState("");
   const toast = useToast();
 
+  const [clientNotes, setClientNotes] = useState([]);
+  const [fetchingNotes, setFetchingNotes] = useState(false);
+
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -35,9 +38,27 @@ export default function ClientsClient() {
     }
   };
 
+  const fetchClientNotes = async (clientId) => {
+    try {
+      setFetchingNotes(true);
+      const res = await apiGet(`notes/?client=${clientId}`);
+      setClientNotes(res.results || res || []);
+    } catch (e) {
+      toast({ title: "Error fetching clinical notes", status: "error" });
+    } finally {
+      setFetchingNotes(false);
+    }
+  };
+
   useEffect(() => {
     fetchClients();
   }, []);
+
+  useEffect(() => {
+    if (selectedClient && viewMode === "detail") {
+      fetchClientNotes(selectedClient.id);
+    }
+  }, [selectedClient, viewMode]);
 
   const handleAddClient = async () => {
     if (!newClient.first_name || !newClient.last_name || !newClient.email) {
@@ -45,16 +66,17 @@ export default function ClientsClient() {
       return;
     }
     try {
+      // Backend expects 'name' + individual fields
       await apiPost("clients/", {
         ...newClient,
-        name: `${newClient.first_name} ${newClient.last_name}`,
+        name: `${newClient.first_name} ${newClient.last_name}`.trim(),
       });
       setNewClient(initialClient);
       setViewMode("list");
       fetchClients();
-      toast({ title: "Client added", status: "success" });
+      toast({ title: "Client added successfully", status: "success" });
     } catch (e) {
-      toast({ title: "Error adding client", status: "error" });
+      toast({ title: "Error adding client", description: "Ensure the email isn't already registered.", status: "error" });
     }
   };
 
@@ -77,31 +99,53 @@ export default function ClientsClient() {
         <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap={8}>
           {/* Left Column: Profile Card */}
           <GridItem>
-            <VStack spacing={6} align="stretch" bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-               <VStack spacing={2} align="center" py={4}>
-                  <Box p={4} bg="teal.50" borderRadius="full"><Icon as={FiUser} w={8} h={8} color="teal.500" /></Box>
-                  <Heading size="md">{selectedClient.name}</Heading>
-                  <Text color="gray.500" fontSize="sm">{selectedClient.email}</Text>
-                  <Badge colorScheme="green" borderRadius="full" px={3}>ACTIVE CLIENT</Badge>
-               </VStack>
-               
-               <Divider />
-               
-               <VStack align="start" spacing={4}>
-                  <Heading size="xs" textTransform="uppercase" color="gray.400">Basic Info</Heading>
-                  <Box>
-                     <Text fontSize="xs" fontWeight="bold" color="gray.500">Age</Text>
-                     <Text fontSize="sm">{screening?.age || "—"}</Text>
-                  </Box>
-                  <Box>
-                     <Text fontSize="xs" fontWeight="bold" color="gray.500">Gender</Text>
-                     <Text fontSize="sm">{screening?.gender || "—"}</Text>
-                  </Box>
-                  <Box>
-                     <Text fontSize="xs" fontWeight="bold" color="gray.500">Preferred Language</Text>
-                     <Text fontSize="sm">{screening?.languages?.join(", ") || "—"}</Text>
-                  </Box>
-               </VStack>
+            <VStack spacing={6} align="stretch">
+               <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                  <VStack spacing={2} align="center" py={4}>
+                     <Box p={4} bg="teal.50" borderRadius="full"><Icon as={FiUser} w={8} h={8} color="teal.500" /></Box>
+                     <Heading size="md">{selectedClient.name}</Heading>
+                     <Text color="gray.500" fontSize="sm">{selectedClient.email}</Text>
+                     <Badge colorScheme="green" borderRadius="full" px={3}>ACTIVE CLIENT</Badge>
+                  </VStack>
+                  
+                  <Divider my={6} />
+                  
+                  <VStack align="start" spacing={4}>
+                     <Heading size="xs" textTransform="uppercase" color="gray.400">Clinical Basics</Heading>
+                     <Box w="full">
+                        <HStack justify="space-between" fontSize="sm">
+                           <Text fontWeight="bold" color="gray.500">Gender</Text>
+                           <Text>{screening?.gender || "—"}</Text>
+                        </HStack>
+                     </Box>
+                     <Box w="full">
+                        <HStack justify="space-between" fontSize="sm">
+                           <Text fontWeight="bold" color="gray.500">Age</Text>
+                           <Text>{screening?.age || "—"}</Text>
+                        </HStack>
+                     </Box>
+                  </VStack>
+               </Box>
+
+               <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" borderTop="4px solid" borderTopColor="teal.500">
+                  <HStack mb={6}><Icon as={FiFileText} color="teal.500" /><Heading size="sm">Session Notes</Heading></HStack>
+                  <VStack align="stretch" spacing={4}>
+                     {fetchingNotes ? <Spinner size="sm" /> : clientNotes.length > 0 ? clientNotes.map(note => (
+                        <Box key={note.id} p={3} bg="gray.50" borderRadius="xl" cursor="pointer" _hover={{ bg: 'gray.100' }}>
+                           <HStack justify="space-between">
+                              <VStack align="start" spacing={0}>
+                                 <Text fontSize="xs" fontWeight="bold">{note.template_name || "Clinical Note"}</Text>
+                                 <Text fontSize="2xs" color="gray.500">{new Date(note.created_at).toLocaleDateString()}</Text>
+                              </VStack>
+                              <Badge size="xs" colorScheme={note.status === 'final' ? 'green' : 'orange'}>{note.status}</Badge>
+                           </HStack>
+                        </Box>
+                     )) : (
+                        <Text fontSize="xs" color="gray.400" fontStyle="italic">No notes recorded in this file yet.</Text>
+                     )}
+                     <Button size="sm" colorScheme="teal" variant="ghost" borderRadius="full" leftIcon={<FiActivity />}>Add Clinical Note</Button>
+                  </VStack>
+               </Box>
             </VStack>
           </GridItem>
 
