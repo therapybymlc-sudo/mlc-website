@@ -30,7 +30,8 @@ import {
   FiUser,
   FiCheckCircle,
   FiTarget,
-  FiAward
+  FiAward,
+  FiClipboard
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
