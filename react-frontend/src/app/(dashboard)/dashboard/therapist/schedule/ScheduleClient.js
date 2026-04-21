@@ -83,6 +83,7 @@ export default function ScheduleClient() {
     start_time: "",
     end_time: "",
     notes: "",
+    status: "scheduled"
   });
 
   // One-off Availability Form
@@ -149,6 +150,7 @@ export default function ScheduleClient() {
               client_name: ev.client_name,
               event_type: ev.event_type,
               notes: ev.notes,
+              status: ev.status,
           }
         };
       });
@@ -218,6 +220,7 @@ export default function ScheduleClient() {
       start_time: toLocalISO(start),
       end_time: toLocalISO(end),
       notes: "",
+      status: "scheduled"
     });
     setSelectedEvent(null);
     onOpen();
@@ -235,6 +238,7 @@ export default function ScheduleClient() {
         start_time: toLocalISO(event.start),
         end_time: toLocalISO(event.end),
         notes: event.extendedProps.notes || "",
+        status: event.extendedProps.status || "scheduled"
     });
     onOpen();
   };
@@ -286,6 +290,7 @@ export default function ScheduleClient() {
           start_time: form.start_time,
           end_time: form.end_time,
           notes: form.notes,
+          status: form.status || "scheduled",
           color: selectedTypeObj?.color || "#E8E8E8",
         };
         await apiPost("schedule-events/", payload);
@@ -331,6 +336,7 @@ export default function ScheduleClient() {
         start_time: form.start_time,
         end_time: form.end_time,
         notes: form.notes,
+        status: form.status,
         color: selectedTypeObj?.color || selectedEvent.backgroundColor,
       };
       await apiPut(`schedule-events/${originalId}/`, payload);
@@ -614,34 +620,69 @@ export default function ScheduleClient() {
                 </FormControl>
             </VStack>
           </ModalBody>
-          <ModalFooter pb={8} px={10}>
-            <HStack w="full" justify="space-between">
-                {isEditMode ? (
-                    <Button variant="ghost" colorScheme="red" onClick={handleDelete} borderRadius="full">Cancel Appointment</Button>
-                ) : <Box />}
-                <HStack spacing={4}>
-                    <Button variant="ghost" onClick={onClose} borderRadius="full">Back</Button>
-                    {isEditMode && form.client && (
-                        <Button 
-                            bg="teal.50" 
-                            color="teal.700" 
-                            border="1px solid" 
-                            borderColor="teal.200" 
-                            borderRadius="full" 
-                            leftIcon={<FiFileText />}
-                            onClick={() => {
-                                const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
-                                router.push(`/dashboard/therapist/notes/edit?clientId=${form.client}&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
-                            }}
-                        >
-                            Write Session Note
+          <ModalFooter pb={8} px={10} bg="gray.50" borderBottomRadius="3xl">
+            <VStack w="full" spacing={6}>
+                {isEditMode && (
+                    <HStack w="full" justify="space-between" bg="white" p={4} borderRadius="2xl" border="1px solid" borderColor="gray.100">
+                        <VStack align="start" spacing={0}>
+                            <Text fontSize="xs" fontWeight="bold" color="gray.400">SESSION STATUS</Text>
+                            <Badge colorScheme={form.status === 'completed' ? 'green' : form.status === 'no_show' ? 'red' : 'blue'} borderRadius="full" px={3}>
+                                {form.status?.toUpperCase() || 'SCHEDULED'}
+                            </Badge>
+                        </VStack>
+                        <HStack spacing={2}>
+                            <Button size="xs" colorScheme="blue" variant={form.status === 'arrived' ? 'solid' : 'outline'} borderRadius="full" onClick={() => setForm({ ...form, status: 'arrived' })}>Arrived</Button>
+                            <Button size="xs" colorScheme="red" variant={form.status === 'no_show' ? 'solid' : 'outline'} borderRadius="full" onClick={() => setForm({ ...form, status: 'no_show' })}>No Show</Button>
+                            <Button size="xs" colorScheme="green" variant={form.status === 'completed' ? 'solid' : 'outline'} borderRadius="full" onClick={() => setForm({ ...form, status: 'completed' })}>Completed</Button>
+                        </HStack>
+                    </HStack>
+                )}
+
+                <HStack w="full" justify="space-between">
+                    <HStack spacing={3}>
+                        {isEditMode ? (
+                            <Button variant="ghost" colorScheme="red" size="sm" onClick={handleDelete} borderRadius="full">Cancel Appt.</Button>
+                        ) : <Button variant="ghost" size="sm" onClick={onClose} borderRadius="full">Discard</Button>}
+                    </HStack>
+
+                    <HStack spacing={4}>
+                        {isEditMode && (
+                            <Button 
+                                leftIcon={<FiVideo />} 
+                                colorScheme="purple" 
+                                variant="solid" 
+                                borderRadius="full"
+                                onClick={() => {
+                                    const room = `MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
+                                    window.open(`/conference/${room}`, '_blank');
+                                }}
+                            >
+                                Join Call
+                            </Button>
+                        )}
+
+                        {isEditMode && form.client && (
+                            <Button 
+                                bg="teal.50" 
+                                color="teal.700" 
+                                border="1px solid" 
+                                borderColor="teal.200" 
+                                borderRadius="full" 
+                                leftIcon={<FiFileText />}
+                                onClick={() => {
+                                    const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
+                                    router.push(`/dashboard/therapist/notes/edit?clientId=${form.client}&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
+                                }}
+                            >
+                                Write Note
+                            </Button>
+                        )}
+                        <Button bg="#56756C" color="white" borderRadius="full" px={10} onClick={isEditMode ? handleUpdate : handleCreate} _hover={{ bg: '#3E5B54' }}>
+                            {isEditMode ? "Save Changes" : "Book Session"}
                         </Button>
-                    )}
-                    <Button bg="#56756C" color="white" borderRadius="full" px={8} onClick={isEditMode ? handleUpdate : handleCreate} _hover={{ bg: '#3E5B54' }}>
-                        {isEditMode ? "Save Changes" : "Confirm Appointment"}
-                    </Button>
+                    </HStack>
                 </HStack>
-            </HStack>
+            </VStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
