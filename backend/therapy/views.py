@@ -269,12 +269,17 @@ def _resolve_client_from_request(request):
 def _active_client_ids_for_therapist(therapist):
     if not therapist:
         return ClientProfile.objects.none().values_list("id", flat=True)
+    
+    # Get all clients where therapist has ANY relationship
     rels = TherapeuticRelationship.objects.filter(
-        therapist=therapist, status=TherapeuticRelationship.Status.ACTIVE
+        therapist=therapist
     ).values_list("client_id", flat=True)
-    if rels.exists():
-        return rels
-    return ClientProfile.objects.filter(therapist=therapist).values_list("id", flat=True)
+    
+    # Also include clients where therapist is the primary therapist
+    primaries = ClientProfile.objects.filter(therapist=therapist).values_list("id", flat=True)
+    
+    # Combine (union)
+    return set(list(rels) + list(primaries))
 
 
 def _ensure_relationship(therapist, client, make_primary=False):
@@ -1192,20 +1197,20 @@ class NoteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
+        if not therapist:
+            return Note.objects.none()
+            
+        # Resilient filtering by therapist identity
         qs = Note.objects.filter(
             therapist=therapist,
             archived=False
-        ).select_related("template", "client").prefetch_related("cosigners", "cosigned_by")
+        ).select_related("client") # Removed "template" join to prevent crashes on missing links
 
         client_id = self.request.query_params.get("client")
-        status_param = self.request.query_params.get("status")
-
         if client_id:
             qs = qs.filter(client_id=client_id)
-        if status_param in {"draft", "final"}:
-            qs = qs.filter(status=status_param)
-
+            
         return qs.order_by("-created_at")
 
     def get_serializer_context(self):
