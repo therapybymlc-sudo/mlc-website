@@ -55,6 +55,14 @@ class TherapistProfile(models.Model):
     )
     supervision_bio = models.TextField(blank=True, null=True)
     supervision_years_experience = models.PositiveIntegerField(default=0)
+    supervision_areas = models.JSONField(default=list, blank=True) # e.g. ["Clinical", "Organizational"]
+    supervision_modalities = models.JSONField(default=list, blank=True) # Max 3 major ones
+    
+    # Physical Space Support (Hybrid Clinic)
+    has_physical_space = models.BooleanField(default=False)
+    physical_space_images = models.JSONField(default=list, blank=True) # List of image URLs
+    physical_space_location = models.TextField(blank=True, null=True) # Address/City info
+    physical_space_notes = models.TextField(blank=True, null=True)
 
     def __str__(self) -> str:
         return self.name

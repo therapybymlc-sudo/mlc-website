@@ -232,8 +232,8 @@ export default function TherapistDashboardOverview() {
               </VStack>
             </HStack>
             <Text color="gray.600" fontSize="md">
-              {profile?.years_experience < 4 
-                ? `Continue your clinical journey with MLC. Once you reach 4 years of experience, you'll be eligible to apply for supervisory status.`
+              {profile?.years_experience < 5 
+                ? `Continue your clinical journey with MLC. Once you reach 5 years of experience, you'll be eligible to apply for supervisory status.`
                 : profile?.supervision_status === 'pending'
                 ? `Your application for Clinical Supervision is under review by the MLC Clinical Board. We will notify you once your credentials are confirmed.`
                 : profile?.supervision_status === 'approved'
@@ -244,9 +244,9 @@ export default function TherapistDashboardOverview() {
           </Box>
           
           <VStack align={{ base: "stretch", md: "end" }} spacing={4}>
-            {profile?.years_experience < 4 ? (
+            {profile?.years_experience < 5 ? (
               <Badge variant="subtle" colorScheme="gray" p={3} borderRadius="xl" textAlign="center">
-                Requires {4 - profile?.years_experience} more years experience
+                Requires {5 - profile?.years_experience} more years experience
               </Badge>
             ) : profile?.supervision_status === 'none' ? (
               <Button 
