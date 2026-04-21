@@ -7,7 +7,7 @@ import {
   Spinner, Divider, Checkbox, Badge, CheckboxGroup, Stack, Slider, SliderTrack,
   SliderFilledTrack, SliderThumb, Tag, TagLabel, SimpleGrid,
   Tabs, TabList, TabPanels, Tab, TabPanel, InputGroup, InputLeftElement,
-  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, SliderMark,
+  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, SliderMark, Flex,
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useState } from "react";
 import { FiPlus, FiEdit2, FiTrash2, FiSave, FiArrowLeft, FiClipboard, FiClock, FiCheckCircle, FiCopy, FiRefreshCcw, FiAlertCircle, FiChevronUp, FiChevronDown, FiPlusCircle } from "react-icons/fi";

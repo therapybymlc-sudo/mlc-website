@@ -4,7 +4,8 @@ import {
   Box, Heading, Text, VStack, HStack, Button, Table, Thead, Tbody, Tr, Th, Td,
   FormControl, FormLabel, Input, Textarea, Select, useToast, Spinner, Divider, Checkbox, Badge,
   SimpleGrid, Tabs, TabList, TabPanels, Tab, TabPanel, InputGroup, InputLeftElement,
-  Icon, Flex, Avatar, IconButton, SlideFade, Center
+  Wrap, WrapItem, Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, IconButton, Icon, SliderMark, Flex,
+  Center, Grid, GridItem
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import { FiArrowLeft, FiSave, FiCheckCircle, FiCopy, FiClock, FiSearch, FiUser, FiCalendar, FiAlertCircle, FiClipboard } from "react-icons/fi";
@@ -37,6 +38,7 @@ export default function NoteEditorClient() {
   const clientId = searchParams.get("clientId");
   const noteId = searchParams.get("noteId");
   
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [client, setClient] = useState(null);
   const [templates, setTemplates] = useState([]);
@@ -76,7 +78,7 @@ export default function NoteEditorClient() {
     }
   };
 
-  useEffect(() => { loadData(); }, [clientId, noteId]);
+  useEffect(() => { setMounted(true); loadData(); }, [clientId, noteId]);
 
   const selectedTemplate = useMemo(() => 
     templates.find(t => String(t.id) === String(selectedTemplateId)), 
@@ -103,7 +105,7 @@ export default function NoteEditorClient() {
     }
   };
 
-  if (loading) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
+  if (!mounted || loading) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
 
   return (
     <Box>
@@ -218,14 +220,6 @@ export default function NoteEditorClient() {
       </Grid>
     </Box>
   );
-}
-
-function Grid({ children, ...props }) {
-  return <SimpleGrid columns={[1, 1, 1, 1, 2]} {...props}>{children}</SimpleGrid>;
-}
-
-function GridItem({ children, ...props }) {
-  return <Box {...props}>{children}</Box>;
 }
 
 function DataPiece({ label, value }) {
