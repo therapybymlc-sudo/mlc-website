@@ -185,7 +185,7 @@ export default function NoteEditorClient() {
                 >
                   Export PDF
                 </Button>
-                <Button leftIcon={<FiSave />} variant="ghost" color="gray.500" onClick={() => saveNote('draft')} isDisabled={isReadOnly}>
+                <Button leftIcon={<FiSave />} variant="ghost" color="gray.500" onClick={() => handleSave('draft')} isDisabled={isReadOnly}>
                   Save Draft
                 </Button>
                 <Button 
@@ -194,7 +194,7 @@ export default function NoteEditorClient() {
                   color="white" 
                   px={8} 
                   borderRadius="full" 
-                  onClick={() => saveNote('final')}
+                  onClick={() => handleSave('final')}
                   isDisabled={isReadOnly}
                 >
                   {isReadOnly ? "Record Finalized" : "Finalize Record"}
