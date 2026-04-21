@@ -150,7 +150,10 @@ export default function NoteEditorClient() {
                     </VStack>
                  </Center>
                ) : (
-                 (selectedTemplate.sections || [{ title: "General Notes", fields: selectedTemplate.fields }]).map((section, si) => (
+                 (selectedTemplate.sections && selectedTemplate.sections.length > 0 
+                   ? selectedTemplate.sections 
+                   : [{ title: "General Assessment", fields: selectedTemplate.fields }]
+                 ).map((section, si) => (
                    <Box key={si} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
                       <Box bg="teal.50" px={8} py={3} borderBottom="1px solid" borderColor="teal.50">
                          <Heading size="xs" color="teal.700" letterSpacing="wider">{section.title || "Observation"}</Heading>

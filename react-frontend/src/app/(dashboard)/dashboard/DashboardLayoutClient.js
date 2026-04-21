@@ -64,6 +64,7 @@ export default function DashboardLayout({ children }) {
     const therapistLinks = [
       { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
       { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
+      { label: 'Clinical Blueprints', icon: FiClipboard, href: '/dashboard/therapist/notes' },
       { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
       { label: 'Availability', icon: FiClock, href: '/dashboard/therapist/availability' },
       { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
