@@ -7,8 +7,9 @@ import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
   useDisclosure, Textarea, IconButton
 } from "@chakra-ui/react";
-import { FiUsers, FiFileText, FiUploadCloud, FiBook, FiCheckCircle, FiClock, FiPlus } from "react-icons/fi";
+import { FiUsers, FiFileText, FiUploadCloud, FiBook, FiCheckCircle, FiClock, FiPlus, FiCalendar } from "react-icons/fi";
 import { apiGet, apiPatch } from "../../../../../api.js";
+import NextLink from "next/link";
 
 export default function SupervisionClient() {
   const [isMounted, setIsMounted] = useState(false);
@@ -48,11 +49,25 @@ export default function SupervisionClient() {
     <Box pb={20}>
       <VStack align="stretch" spacing={10}>
         {/* 🌿 Headers */}
-        <VStack align="start" spacing={1}>
-          <Badge bg="mlc.gold" color="white" px={3} py={1} borderRadius="full" fontSize="2xs">ACTIVE SUPERVISOR</Badge>
-          <Heading size="xl" color="mlc.greenDark">Clinical Supervision Suite</Heading>
-          <Text color="gray.500">Manage your mentorship caseload and private session records.</Text>
-        </VStack>
+        <HStack justify="space-between" align="end" wrap="wrap" gap={4}>
+          <VStack align="start" spacing={1}>
+            <Badge bg="mlc.gold" color="white" px={3} py={1} borderRadius="full" fontSize="2xs">ACTIVE SUPERVISOR</Badge>
+            <Heading size="xl" color="mlc.greenDark">Clinical Supervision Suite</Heading>
+            <Text color="gray.500">Manage your mentorship caseload and private session records.</Text>
+          </VStack>
+          <Button 
+            as={NextLink} 
+            href="/dashboard/therapist/supervision/availability" 
+            leftIcon={<FiCalendar />} 
+            variant="outline" 
+            borderColor="mlc.green" 
+            color="mlc.green" 
+            borderRadius="full"
+            _hover={{ bg: 'mlc.green', color: 'white' }}
+          >
+            Manage Mentorship Hours
+          </Button>
+        </HStack>
 
         <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={10}>
           {/* 👥 Supervisee Caseload (Responsive Column) */}
