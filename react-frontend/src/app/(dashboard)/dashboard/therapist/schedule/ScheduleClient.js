@@ -65,6 +65,8 @@ export default function ScheduleClient() {
 
   const [mounted, setMounted] = useState(false);
   
+  const [isFormView, setIsFormView] = useState(true);
+  
   const [events, setEvents] = useState([]);
   const [clients, setClients] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
@@ -210,6 +212,7 @@ export default function ScheduleClient() {
 
   const handleSelect = (info) => {
     setIsEditMode(false);
+    setIsFormView(true);
     const start = new Date(info.start);
     const end = new Date(info.end);
     
@@ -229,6 +232,7 @@ export default function ScheduleClient() {
   const handleEventClick = (info) => {
     const { event } = info;
     setIsEditMode(true);
+    setIsFormView(false);
     setSelectedEvent(event);
 
     setForm({
@@ -242,6 +246,226 @@ export default function ScheduleClient() {
     });
     onOpen();
   };
+
+  const renderSummaryView = () => {
+    const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
+    const typeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
+    const start = new Date(form.start_time).toLocaleString();
+
+    return (
+        <VStack spacing={0} align="stretch" bg="white" borderRadius="3xl" overflow="hidden">
+            {/* Command Header */}
+            <Box bg="#2C8B9A" p={10} color="white">
+                <VStack align="start" spacing={1}>
+                    <Heading size="md" fontWeight="800" letterSpacing="tight">{typeObj?.name || form.title || "Clinical Session"}</Heading>
+                    <Divider borderColor="whiteAlpha.400" my={4} />
+                    <HStack spacing={4}>
+                        <Avatar size="md" name={selectedClientObj?.name} bg="whiteAlpha.200" />
+                        <VStack align="start" spacing={0}>
+                            <Text fontSize="lg" fontWeight="bold">{selectedClientObj?.name || "Patient Unknown"}</Text>
+                            <Text fontSize="sm" opacity={0.9}>{start}</Text>
+                        </VStack>
+                    </HStack>
+                    <Button 
+                        mt={6} 
+                        leftIcon={<FiVideo />} 
+                        bg="#E74C3C" 
+                        color="white" 
+                        size="md" 
+                        px={10} 
+                        borderRadius="full"
+                        onClick={() => {
+                            const room = `MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
+                            window.open(`/conference/${room}`, '_blank');
+                        }}
+                        _hover={{ bg: '#C0392B' }}
+                    >
+                        Join video call
+                    </Button>
+                </VStack>
+            </Box>
+
+            <ModalBody p={10}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
+                    {/* Patient Details */}
+                    <VStack align="start" spacing={4}>
+                        <Box>
+                            <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={2}>PATIENT CONTACT</Text>
+                            <VStack align="start" spacing={2}>
+                                <HStack color="#2C8B9A"><Icon as={FiUser} /><Text fontWeight="bold">{selectedClientObj?.name}</Text></HStack>
+                                <HStack color="gray.600" fontSize="sm"><Icon as={FiClock} /><Text>{selectedClientObj?.phone_number || "No Phone Registered"}</Text></HStack>
+                                <HStack color="gray.600" fontSize="sm"><Icon as={FiGlobe} /><Text>{selectedClientObj?.email || "No Email Registered"}</Text></HStack>
+                            </VStack>
+                        </Box>
+                        
+                        <Box pt={4}>
+                            <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={2}>SESSION NOTES</Text>
+                            <Text fontSize="sm" color="gray.700" fontStyle={!form.notes ? "italic" : "normal"}>
+                                {form.notes || "No private notes for this session."}
+                            </Text>
+                        </Box>
+                    </VStack>
+
+                    {/* Operational Toggles */}
+                    <VStack align="stretch" spacing={4}>
+                        <Box bg="gray.50" p={5} borderRadius="2xl" border="1px solid" borderColor="gray.100">
+                             <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={4}>ATTENDANCE</Text>
+                             <VStack align="stretch" spacing={2}>
+                                <Button size="sm" colorScheme="teal" variant={form.status === 'arrived' ? 'solid' : 'outline'} borderRadius="xl" onClick={() => { setForm({...form, status: 'arrived'}); handleUpdate(); }}>Mark as Arrived</Button>
+                                <Button size="sm" colorScheme="red" variant={form.status === 'no_show' ? 'solid' : 'outline'} borderRadius="xl" onClick={() => { setForm({...form, status: 'no_show'}); handleUpdate(); }}>No Show</Button>
+                                <Button size="sm" colorScheme="green" variant={form.status === 'completed' ? 'solid' : 'outline'} borderRadius="xl" onClick={() => { setForm({...form, status: 'completed'}); handleUpdate(); }}>Session Completed</Button>
+                             </VStack>
+                        </Box>
+                        
+                        <Button 
+                            leftIcon={<FiFileText />} 
+                            variant="outline" 
+                            borderColor="#2C8B9A" 
+                            color="#2C8B9A"
+                            borderRadius="xl"
+                            onClick={() => {
+                                const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
+                                router.push(`/dashboard/therapist/notes/edit?clientId=${form.client}&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
+                            }}
+                        >
+                            Treatment notes
+                        </Button>
+                        <Button 
+                            leftIcon={<FiCopy />} 
+                            variant="ghost" 
+                            size="sm" 
+                            color="gray.500"
+                            onClick={() => {
+                                const room = `https://mlchealth.in/conference/MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
+                                navigator.clipboard.writeText(room);
+                                toast({ title: "Invite link copied", status: "success" });
+                            }}
+                        >
+                            Copy video invite link
+                        </Button>
+                    </VStack>
+                </SimpleGrid>
+            </ModalBody>
+
+            <ModalFooter bg="gray.100" p={6} borderBottomRadius="3xl">
+                <HStack w="full" justify="space-between">
+                    <HStack spacing={4}>
+                       <Button size="sm" variant="ghost" color="gray.600" onClick={() => setIsFormView(true)}>Edit Details</Button>
+                       <Button size="sm" variant="ghost" color="red.500" onClick={handleDelete}>Cancel Session</Button>
+                    </HStack>
+                    <Button px={8} borderRadius="full" bg="#56756C" color="white" onClick={onClose}>Close</Button>
+                </HStack>
+            </ModalFooter>
+        </VStack>
+    );
+  };
+
+  const renderFormView = () => (
+    <>
+      <ModalHeader borderBottom="1px solid" borderColor="gray.100" pb={6}>
+        <HStack spacing={4}>
+            <Box p={3} bg="teal.50" borderRadius="xl"><Icon as={FiCalendar} color="teal.500" /></Box>
+            <VStack align="start" spacing={0}>
+                <Heading size="md" color="gray.700">{isEditMode ? "Edit Session Details" : "New Clinical Appointment"}</Heading>
+                <Text fontSize="xs" color="gray.400" fontWeight="bold" letterSpacing="wider">SCHEDULING COCKPIT</Text>
+            </VStack>
+        </HStack>
+      </ModalHeader>
+      <ModalCloseButton borderRadius="full" m={2} />
+      <ModalBody py={10} px={10}>
+        <VStack spacing={8} align="stretch">
+            <FormControl isRequired>
+                <FormLabel fontWeight="700" color="gray.600">Event Type</FormLabel>
+                <Select 
+                    placeholder="Select clinical model..." 
+                    value={form.event_type}
+                    onChange={(e) => {
+                        const typeId = e.target.value;
+                        const typeObj = eventTypes.find(t => String(t.id) === String(typeId));
+                        if (typeObj && !isEditMode) {
+                            const start = new Date(form.start_time);
+                            const end = new Date(start.getTime() + (typeObj.default_duration || 50) * 60000);
+                            setForm({ 
+                                ...form, 
+                                event_type: typeId, 
+                                end_time: toLocalISO(end),
+                                notes: form.notes || typeObj.default_notes || ""
+                            });
+                        } else {
+                            setForm({ ...form, event_type: typeId });
+                        }
+                    }}
+                    borderRadius="xl" h={12}
+                >
+                    {Object.entries(eventTypes.reduce((acc, t) => {
+                        const g = t.group || "General";
+                        if (!acc[g]) acc[g] = [];
+                        acc[g].push(t);
+                        return acc;
+                    }, {})).map(([groupName, types]) => (
+                        <optgroup label={groupName} key={groupName}>
+                            {types.map(t => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                        </optgroup>
+                    ))}
+                </Select>
+            </FormControl>
+
+            <FormControl>
+                <FormLabel fontWeight="700" color="gray.600">Patient</FormLabel>
+                <Select 
+                    placeholder="Select client (optional)" 
+                    value={form.client}
+                    onChange={(e) => setForm({ ...form, client: e.target.value })}
+                    borderRadius="xl" h={12}
+                >
+                    {clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                </Select>
+            </FormControl>
+
+            <FormControl>
+                <FormLabel fontWeight="700" color="gray.600">Session Name (Optional overridden title)</FormLabel>
+                <Input 
+                    placeholder="e.g. Art Therapy Follow-up" 
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    borderRadius="xl" h={12}
+                />
+            </FormControl>
+
+            <SimpleGrid columns={2} spacing={6}>
+                <FormControl isRequired>
+                    <FormLabel fontWeight="700" color="gray.600">Start Time</FormLabel>
+                    <Input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} borderRadius="xl" />
+                </FormControl>
+                <FormControl isRequired>
+                    <FormLabel fontWeight="700" color="gray.600">End Time</FormLabel>
+                    <Input type="datetime-local" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} borderRadius="xl" />
+                </FormControl>
+            </SimpleGrid>
+
+            <FormControl>
+                <FormLabel fontWeight="700" color="gray.600">Clinical Notes</FormLabel>
+                <Textarea 
+                    placeholder="Private notes for the session..." 
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    borderRadius="2xl" rows={4}
+                />
+            </FormControl>
+        </VStack>
+      </ModalBody>
+      <ModalFooter pb={8} px={10}>
+          <HStack w="full" justify="space-between">
+              <Button variant="ghost" onClick={isEditMode ? () => setIsFormView(false) : onClose} borderRadius="full">Back</Button>
+              <Button bg="#56756C" color="white" borderRadius="full" px={10} onClick={isEditMode ? handleUpdate : handleCreate} _hover={{ bg: '#3E5B54' }}>
+                  {isEditMode ? "Save Changes" : "Confirm Booking"}
+              </Button>
+          </HStack>
+      </ModalFooter>
+    </>
+  );
 
   const handleCreateType = async () => {
     if (!newType.name.trim()) return;
@@ -526,164 +750,10 @@ export default function ScheduleClient() {
           </Box>
       </Box>
 
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay backdropFilter="blur(5px)" />
-        <ModalContent borderRadius="3xl" p={4}>
-          <ModalHeader>
-            <HStack spacing={3}>
-                <Icon as={FiCalendar} color="#56756C" />
-                <Text>{isEditMode ? "Session Details" : "New Appointment"}</Text>
-            </HStack>
-          </ModalHeader>
-          <ModalCloseButton mt={6} mr={6} />
-          <ModalBody>
-            <VStack spacing={6}>
-                <FormControl isRequired>
-                    <FormLabel fontWeight="700" color="gray.600">Event Type</FormLabel>
-                    <Select 
-                        placeholder="Select type" 
-                        value={form.event_type}
-                        onChange={(e) => {
-                            const typeId = e.target.value;
-                            const typeObj = eventTypes.find(t => String(t.id) === String(typeId));
-                            if (typeObj && form.start_time) {
-                                const start = new Date(form.start_time);
-                                const end = new Date(start.getTime() + (typeObj.default_duration || 50) * 60000);
-                                setForm({ 
-                                    ...form, 
-                                    event_type: typeId, 
-                                    end_time: toLocalISO(end),
-                                    notes: form.notes || typeObj.default_notes || ""
-                                });
-                            } else {
-                                setForm({ ...form, event_type: typeId });
-                            }
-                        }}
-                        borderRadius="xl" h={12}
-                    >
-                        {Object.entries(eventTypes.reduce((acc, t) => {
-                            const g = t.group || "General";
-                            if (!acc[g]) acc[g] = [];
-                            acc[g].push(t);
-                            return acc;
-                        }, {})).map(([groupName, types]) => (
-                            <optgroup label={groupName} key={groupName}>
-                                {types.map(t => (
-                                    <option key={t.id} value={t.id}>{t.name}</option>
-                                ))}
-                            </optgroup>
-                        ))}
-                    </Select>
-                </FormControl>
-
-                <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Patient</FormLabel>
-                    <Select 
-                        placeholder="Select client (optional)" 
-                        value={form.client}
-                        onChange={(e) => setForm({ ...form, client: e.target.value })}
-                        borderRadius="xl" h={12}
-                    >
-                        {clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                    </Select>
-                </FormControl>
-
-                <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Session Name (Optional overridden title)</FormLabel>
-                    <Input 
-                        placeholder="e.g. Art Therapy Follow-up" 
-                        value={form.title}
-                        onChange={(e) => setForm({ ...form, title: e.target.value })}
-                        borderRadius="xl" h={12}
-                    />
-                </FormControl>
-
-                <SimpleGrid columns={2} spacing={4} w="full">
-                    <FormControl isRequired>
-                        <FormLabel fontWeight="700" color="gray.600">Start Time</FormLabel>
-                        <Input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} borderRadius="xl" />
-                    </FormControl>
-                    <FormControl isRequired>
-                        <FormLabel fontWeight="700" color="gray.600">End Time</FormLabel>
-                        <Input type="datetime-local" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} borderRadius="xl" />
-                    </FormControl>
-                </SimpleGrid>
-
-                <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Clinical Notes</FormLabel>
-                    <Textarea 
-                        placeholder="Private notes for the session..." 
-                        value={form.notes}
-                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                        borderRadius="2xl" rows={4}
-                    />
-                </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter pb={8} px={10} bg="gray.50" borderBottomRadius="3xl">
-            <VStack w="full" spacing={6}>
-                {isEditMode && (
-                    <HStack w="full" justify="space-between" bg="white" p={4} borderRadius="2xl" border="1px solid" borderColor="gray.100">
-                        <VStack align="start" spacing={0}>
-                            <Text fontSize="xs" fontWeight="bold" color="gray.400">SESSION STATUS</Text>
-                            <Badge colorScheme={form.status === 'completed' ? 'green' : form.status === 'no_show' ? 'red' : 'blue'} borderRadius="full" px={3}>
-                                {form.status?.toUpperCase() || 'SCHEDULED'}
-                            </Badge>
-                        </VStack>
-                        <HStack spacing={2}>
-                            <Button size="xs" colorScheme="blue" variant={form.status === 'arrived' ? 'solid' : 'outline'} borderRadius="full" onClick={() => setForm({ ...form, status: 'arrived' })}>Arrived</Button>
-                            <Button size="xs" colorScheme="red" variant={form.status === 'no_show' ? 'solid' : 'outline'} borderRadius="full" onClick={() => setForm({ ...form, status: 'no_show' })}>No Show</Button>
-                            <Button size="xs" colorScheme="green" variant={form.status === 'completed' ? 'solid' : 'outline'} borderRadius="full" onClick={() => setForm({ ...form, status: 'completed' })}>Completed</Button>
-                        </HStack>
-                    </HStack>
-                )}
-
-                <HStack w="full" justify="space-between">
-                    <HStack spacing={3}>
-                        {isEditMode ? (
-                            <Button variant="ghost" colorScheme="red" size="sm" onClick={handleDelete} borderRadius="full">Cancel Appt.</Button>
-                        ) : <Button variant="ghost" size="sm" onClick={onClose} borderRadius="full">Discard</Button>}
-                    </HStack>
-
-                    <HStack spacing={4}>
-                        {isEditMode && (
-                            <Button 
-                                leftIcon={<FiVideo />} 
-                                colorScheme="purple" 
-                                variant="solid" 
-                                borderRadius="full"
-                                onClick={() => {
-                                    const room = `MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
-                                    window.open(`/conference/${room}`, '_blank');
-                                }}
-                            >
-                                Join Call
-                            </Button>
-                        )}
-
-                        {isEditMode && form.client && (
-                            <Button 
-                                bg="teal.50" 
-                                color="teal.700" 
-                                border="1px solid" 
-                                borderColor="teal.200" 
-                                borderRadius="full" 
-                                leftIcon={<FiFileText />}
-                                onClick={() => {
-                                    const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
-                                    router.push(`/dashboard/therapist/notes/edit?clientId=${form.client}&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
-                                }}
-                            >
-                                Write Note
-                            </Button>
-                        )}
-                        <Button bg="#56756C" color="white" borderRadius="full" px={10} onClick={isEditMode ? handleUpdate : handleCreate} _hover={{ bg: '#3E5B54' }}>
-                            {isEditMode ? "Save Changes" : "Book Session"}
-                        </Button>
-                    </HStack>
-                </HStack>
-            </VStack>
-          </ModalFooter>
+      <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered scrollBehavior="inside">
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
+        <ModalContent borderRadius="3xl" overflow="hidden">
+           {isFormView ? renderFormView() : renderSummaryView()}
         </ModalContent>
       </Modal>
 
