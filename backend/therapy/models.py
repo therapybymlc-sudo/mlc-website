@@ -1852,3 +1852,33 @@ class SafetyPlan(models.Model):
 
     def __str__(self):
         return f"Safety Plan for {self.client.name}"
+
+
+class SupervisoryRelationship(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACTIVE = "active", "Active"
+        TERMINATED = "terminated", "Terminated"
+
+    supervisor = models.ForeignKey(TherapistProfile, on_delete=models.CASCADE, related_name="supervising_relationships")
+    supervisee = models.ForeignKey(TherapistProfile, on_delete=models.CASCADE, related_name="being_supervised_relationships")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['supervisor', 'supervisee'], name='unique_supervision_link')
+        ]
+
+class SupervisionNote(models.Model):
+    relationship = models.ForeignKey(SupervisoryRelationship, on_delete=models.CASCADE, related_name="notes")
+    appointment = models.OneToOneField("Appointment", on_delete=models.SET_NULL, null=True, blank=True)
+    content = models.TextField()
+    attachments = models.JSONField(default=list, blank=True) # JSON list of file URLs
+    is_private = models.BooleanField(default=True, help_text="Always True - only visible to supervisor")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Supervision Note for {self.relationship.supervisee.name} on {self.created_at.date()}"

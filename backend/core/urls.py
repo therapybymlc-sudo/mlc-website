@@ -57,6 +57,8 @@ from therapy.views import (
     QuickBookingViewSet,
     SafetyPlanViewSet,
     TherapeuticRelationshipViewSet,
+    SupervisoryRelationshipViewSet,
+    SupervisionNoteViewSet,
 )
 
 # ----------------------------
@@ -102,6 +104,8 @@ router.register(r"contact-messages", ContactMessageViewSet, basename="contact-me
 router.register(r"quick-bookings", QuickBookingViewSet, basename="quick-bookings")
 router.register(r"safety-plans", SafetyPlanViewSet, basename="safety-plans")
 router.register(r"therapist-relationships", TherapeuticRelationshipViewSet, basename="therapist-relationships")
+router.register(r"supervisory-relationships", SupervisoryRelationshipViewSet, basename="supervisory-relationships")
+router.register(r"supervision-notes", SupervisionNoteViewSet, basename="supervision-notes")
 
 # ----------------------------
 # Small utility/test endpoints

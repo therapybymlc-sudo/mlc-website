@@ -29,7 +29,8 @@ import {
   FiClock,
   FiUser,
   FiCheckCircle,
-  FiTarget
+  FiTarget,
+  FiAward
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
@@ -68,6 +69,7 @@ export default function DashboardLayout({ children }) {
       { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
       { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
       { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
+      { label: 'Supervision Hub', icon: FiAward, href: '/dashboard/therapist/supervision' },
       { label: 'The Therapist OS', icon: FiTarget, href: '/dashboard/therapist/premium' },
     ];
 

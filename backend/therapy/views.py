@@ -2348,3 +2348,30 @@ class TherapeuticRelationshipViewSet(viewsets.ReadOnlyModelViewSet):
             return TherapeuticRelationship.objects.filter(therapist=therapist, status="active")
             
         return TherapeuticRelationship.objects.none()
+
+class SupervisoryRelationshipViewSet(viewsets.ModelViewSet):
+    serializer_class = SupervisoryRelationshipSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        if not therapist:
+            return SupervisoryRelationship.objects.none()
+            
+        # Can see relationships where I am supervisor OR supervisee
+        from django.db.models import Q
+        return SupervisoryRelationship.objects.filter(
+            Q(supervisor=therapist) | Q(supervisee=therapist)
+        )
+
+class SupervisionNoteViewSet(viewsets.ModelViewSet):
+    serializer_class = SupervisionNoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        if not therapist:
+            return SupervisionNote.objects.none()
+            
+        # Notes are private to the SUPERVISOR of the relationship
+        return SupervisionNote.objects.filter(relationship__supervisor=therapist)
