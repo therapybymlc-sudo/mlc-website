@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
 from django.db import transaction, models, IntegrityError
+from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime, date, time, timedelta
@@ -750,8 +751,13 @@ class AvailabilitySlotPublicView(APIView):
             start_buffer = timezone.now() - timezone.timedelta(hours=6)
             end_buffer = timezone.now() + timezone.timedelta(days=14)
 
-            # 2. Get manual slots (Always show these even if dynamic fails)
+            # 2. Get manual slots with specific visibility
+            for_supervision = self.request.query_params.get("for_sv") == "true"
+            
+            visibility_filter = Q(visible_to_supervisees=True) if for_supervision else Q(visible_to_clients=True)
+
             existing_slots = AvailabilitySlot.objects.filter(
+                visibility_filter,
                 therapist__email__iexact=profile.email,
                 status=AvailabilitySlot.Status.OPEN,
                 start_time__gt=start_buffer,

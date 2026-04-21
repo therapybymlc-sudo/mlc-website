@@ -480,6 +480,10 @@ class AvailabilitySlot(models.Model):
         default=True,
         help_text="If true, this slot can appear in the client booking interface.",
     )
+    visible_to_supervisees = models.BooleanField(
+        default=True,
+        help_text="If true, this slot can appear in the supervisor discovery interface.",
+    )
     held_until = models.DateTimeField(
         null=True,
         blank=True,
