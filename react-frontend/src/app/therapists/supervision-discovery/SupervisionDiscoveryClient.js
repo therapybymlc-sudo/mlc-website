@@ -8,7 +8,7 @@ import {
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiArrowLeft, FiArrowRight, FiCheck, FiShield, FiBriefcase, FiAward, FiBookOpen, FiActivity, FiUsers, FiStar, FiUser
+  FiArrowLeft, FiArrowRight, FiCheck, FiShield, FiBriefcase, FiAward, FiBookOpen, FiActivity, FiUsers, FiStar, FiUser, FiLock
 } from "react-icons/fi";
 import { apiPost } from "../../../api.js";
 import TherapistCard from "../../../components/TherapistCard";

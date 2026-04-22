@@ -77,6 +77,8 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             return (user, payload)
 
         except jwt.ExpiredSignatureError:
-            raise exceptions.AuthenticationFailed("Token expired")
-        except Exception as e:
-            raise exceptions.AuthenticationFailed(f"Token invalid: {str(e)}")
+            # Graceful fallback: treat as AnonymousUser for public endpoints
+            return None
+        except Exception:
+            # Graceful fallback for invalid/malformed tokens
+            return None
