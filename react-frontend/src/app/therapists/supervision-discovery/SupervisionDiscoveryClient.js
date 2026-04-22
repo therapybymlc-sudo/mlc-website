@@ -141,12 +141,12 @@ export default function SupervisionDiscoveryClient() {
                 aligns with your growth journey.
               </Text>
               <Box p={8} bg="teal.50" borderRadius="3xl" border="1px solid" borderColor="teal.100" mt={6}>
-                <HStack align="start" spacing={4}>
+                <Stack direction={{ base: "column", sm: "row" }} align="start" spacing={4}>
                   <Radio isChecked={formData.consent} onClick={() => setFormData({...formData, consent: !formData.consent})} />
                   <Text fontSize="sm" fontWeight="600" textAlign="left" color="teal.900">
                     I consent to sharing my clinical background and professional goals for the purpose of supervisory matching within the MLC ecosystem.
                   </Text>
-                </HStack>
+                </Stack>
               </Box>
             </VStack>
           </VStack>
@@ -279,19 +279,19 @@ export default function SupervisionDiscoveryClient() {
       <Container maxW="4xl">
         <VStack spacing={12} align="stretch">
           {/* Header */}
-          <HStack justify="space-between" align="center">
-            <HStack spacing={4}>
+          <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} spacing={6}>
+            <Stack direction={{ base: "column", sm: "row" }} spacing={4} align={{ base: "start", sm: "center" }}>
                <Icon as={FiAward} w={8} h={8} color="teal.600" />
                <VStack align="start" spacing={0}>
                  <Heading size="md" color="teal.900" fontFamily="'Playfair Display', serif">Supervision Discovery</Heading>
                  <Text fontSize="xs" color="gray.500">Aligning Clinical Growth & Mastery</Text>
                </VStack>
-            </HStack>
-            <VStack align="end" spacing={1}>
+            </Stack>
+            <VStack align={{ base: "start", md: "end" }} spacing={1}>
               <Text fontSize="2xs" fontWeight="900" color="teal.800">STEP {currentSection + 1} OF {SECTIONS.length}</Text>
               <Text fontSize="sm" fontWeight="700" color="gray.400">{SECTIONS[currentSection]}</Text>
             </VStack>
-          </HStack>
+          </Stack>
 
           <Progress value={progress} size="xs" colorScheme="teal" borderRadius="full" bg="teal.50" />
 
@@ -302,10 +302,10 @@ export default function SupervisionDiscoveryClient() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
             bg="white"
-            p={{ base: 8, md: 16 }}
-            borderRadius="4rem"
+            p={{ base: 6, md: 16 }}
+            borderRadius={{ base: "2.5rem", md: "4rem" }}
             shadow="xl"
-            minH="600px"
+            minH={{ base: "auto", md: "600px" }}
             display="flex"
             flexDirection="column"
             justifyContent="center"

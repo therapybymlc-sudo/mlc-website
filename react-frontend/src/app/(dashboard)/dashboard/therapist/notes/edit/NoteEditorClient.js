@@ -259,13 +259,13 @@ export default function NoteEditorClient() {
                 )}
                 
                 {selectedTemplate && (
-                  <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" mt={4}>
-                    <HStack justify="space-between" align="center">
+                  <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" mt={4}>
+                    <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} spacing={6}>
                        <VStack align="start" spacing={1}>
                           <Text fontWeight="bold" fontSize="sm" color="gray.600">Session Status: {noteStatus.toUpperCase()}</Text>
                           <Text fontSize="xs" color="gray.400">Ensure all clinical fields are accurate before finalization.</Text>
                        </VStack>
-                       <HStack spacing={4}>
+                       <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
                           <Button 
                             leftIcon={<FiSave />} 
                             variant="ghost" 
@@ -289,8 +289,8 @@ export default function NoteEditorClient() {
                           >
                             {isReadOnly ? "Record Finalized" : "Finalize Clinical Record"}
                           </Button>
-                       </HStack>
-                    </HStack>
+                       </Stack>
+                    </Stack>
                   </Box>
                 )}
              </VStack>
