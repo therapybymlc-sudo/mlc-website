@@ -38,6 +38,7 @@ import ClientCheckinQuiz from "./legacy_pages/ClientCheckinQuiz";
 import TherapistSignupPreview from "./legacy_pages/TherapistSignupPreview";
 import TherapistDiscovery from "./legacy_pages/TherapistDiscovery";
 import TherapistProfileDetail from "./legacy_pages/TherapistProfileDetail";
+import Conference from "./legacy_pages/Conference";
 
 // 🩺 Therapist Dashboard Pages
 import RoleSelectionLogin from "./legacy_pages/login/RoleSelectionLogin";
@@ -218,6 +219,7 @@ export default function App() {
                 }
               />
 
+              <Route path="/conference/:roomId" element={<Conference />} />
               {/* 🪶 Fallback: anything unknown → Home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
