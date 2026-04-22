@@ -925,93 +925,96 @@ class RazorpayCreateOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        client = _resolve_client_from_request(request)
-        if not client:
-            return _profile_required_response("client")
+        try:
+            client = _resolve_client_from_request(request)
+            if not client:
+                return _profile_required_response("client")
 
-        therapist_id = request.data.get("therapist_id") or request.data.get("therapist")
-        slot_id = request.data.get("slot_id") or request.data.get("slot")
-        if not therapist_id or not slot_id:
-            return Response({"detail": "therapist_id and slot_id are required."}, status=status.HTTP_400_BAD_REQUEST)
+            therapist_id = request.data.get("therapist_id") or request.data.get("therapist")
+            slot_id = request.data.get("slot_id") or request.data.get("slot")
+            if not therapist_id or not slot_id:
+                return Response({"detail": "therapist_id and slot_id are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        therapist = TherapistProfile.objects.filter(pk=therapist_id).first()
-        slot = AvailabilitySlot.objects.filter(pk=slot_id).select_related("therapist").first()
-        if not therapist or not slot:
-            return Response({"detail": "Therapist or slot not found."}, status=status.HTTP_404_NOT_FOUND)
+            therapist = TherapistProfile.objects.filter(pk=therapist_id).first()
+            slot = AvailabilitySlot.objects.filter(pk=slot_id).select_related("therapist").first()
+            if not therapist or not slot:
+                return Response({"detail": "Therapist or slot not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Ensure slot therapist matches
-        if slot.therapist_id != therapist.id:
-            return Response({"detail": "Therapist must match the slot therapist."}, status=status.HTTP_400_BAD_REQUEST)
+            # Ensure slot therapist matches
+            if slot.therapist_id != therapist.id:
+                return Response({"detail": "Therapist must match the slot therapist."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if slot.status != AvailabilitySlot.Status.OPEN or not slot.visible_to_clients:
-            return Response({"detail": "This slot is not available for booking."}, status=status.HTTP_400_BAD_REQUEST)
+            if slot.status != AvailabilitySlot.Status.OPEN or not slot.visible_to_clients:
+                return Response({"detail": "This slot is not available for booking."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if slot.start_time <= timezone.now():
-            return Response({"detail": "This slot is no longer available."}, status=status.HTTP_400_BAD_REQUEST)
+            if slot.start_time <= timezone.now():
+                return Response({"detail": "This slot is no longer available."}, status=status.HTTP_400_BAD_REQUEST)
 
-        hold_minutes = int(getattr(settings, "BOOKING_REQUEST_HOLD_MINUTES", 15))
-        held_until = timezone.now() + timedelta(minutes=hold_minutes) if hold_minutes > 0 else None
+            hold_minutes = int(getattr(settings, "BOOKING_REQUEST_HOLD_MINUTES", 15))
+            held_until = timezone.now() + timedelta(minutes=hold_minutes) if hold_minutes > 0 else None
 
-        # Amount: use therapist hourly_rate (assumed INR) in paise.
-        # If hourly_rate is missing, reject to avoid charging wrong amounts.
-        if therapist.hourly_rate is None:
-            return Response({"detail": "Therapist hourly rate is not configured."}, status=status.HTTP_400_BAD_REQUEST)
-        amount_paise = int((Decimal(therapist.hourly_rate) * Decimal("100")).to_integral_value())
-        currency = getattr(settings, "RAZORPAY_CURRENCY", "INR")
+            # Amount: use therapist hourly_rate (assumed INR) in paise.
+            if therapist.hourly_rate is None:
+                return Response({"detail": "Therapist hourly rate is not configured."}, status=status.HTTP_400_BAD_REQUEST)
+            amount_paise = int((Decimal(therapist.hourly_rate) * Decimal("100")).to_integral_value())
+            currency = getattr(settings, "RAZORPAY_CURRENCY", "INR")
 
-        with transaction.atomic():
-            try:
-                booking_request = BookingRequest.objects.create(
-                    client=client,
-                    therapist=therapist,
-                    availability_slot=slot,
-                    status=BookingRequest.Status.PENDING,
-                    message_from_client=request.data.get("message_from_client", ""),
-                    expires_at=held_until,
-                    is_first_session_free=False,
-                )
-            except IntegrityError:
-                return Response({"detail": "This slot already has an active request."}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                try:
+                    booking_request = BookingRequest.objects.create(
+                        client=client,
+                        therapist=therapist,
+                        availability_slot=slot,
+                        status=BookingRequest.Status.PENDING,
+                        message_from_client=request.data.get("message_from_client", ""),
+                        expires_at=held_until,
+                        is_first_session_free=False,
+                    )
+                except IntegrityError:
+                    return Response({"detail": "This slot already has an active request."}, status=status.HTTP_400_BAD_REQUEST)
 
-            slot.status = AvailabilitySlot.Status.HELD
-            slot.held_until = held_until
-            slot.save(update_fields=["status", "held_until", "updated_at"])
+                slot.status = AvailabilitySlot.Status.HELD
+                slot.held_until = held_until
+                slot.save(update_fields=["status", "held_until", "updated_at"])
 
-            order = _razorpay_request(
-                "POST",
-                "/v1/orders",
-                {
-                    "amount": amount_paise,
-                    "currency": currency,
-                    "receipt": f"booking_request_{booking_request.id}",
-                    "notes": {
-                        "booking_request_id": str(booking_request.id),
-                        "therapist_id": str(therapist.id),
-                        "slot_id": str(slot.id),
+                order = _razorpay_request(
+                    "POST",
+                    "/v1/orders",
+                    {
+                        "amount": amount_paise,
+                        "currency": currency,
+                        "receipt": f"booking_request_{booking_request.id}",
+                        "notes": {
+                            "booking_request_id": str(booking_request.id),
+                            "therapist_id": str(therapist.id),
+                            "slot_id": str(slot.id),
+                        },
                     },
-                },
-            )
+                )
 
-            payment = RazorpayPayment.objects.create(
-                booking_request=booking_request,
-                amount=amount_paise,
-                currency=currency,
-                status=RazorpayPayment.Status.CREATED,
-                razorpay_order_id=order.get("id", ""),
-                raw={"order": order},
-            )
+                payment = RazorpayPayment.objects.create(
+                    booking_request=booking_request,
+                    amount=amount_paise,
+                    currency=currency,
+                    status=RazorpayPayment.Status.CREATED,
+                    razorpay_order_id=order.get("id", ""),
+                    raw={"order": order},
+                )
 
-        return Response(
-            {
-                "key_id": _razorpay_key_id(),
-                "order_id": payment.razorpay_order_id,
-                "amount": payment.amount,
-                "currency": payment.currency,
-                "booking_request_id": booking_request.id,
-                "expires_at": booking_request.expires_at.isoformat() if booking_request.expires_at else None,
-                "therapist_name": therapist.name,
-            }
-        )
+            return Response(
+                {
+                    "key_id": _razorpay_key_id(),
+                    "order_id": payment.razorpay_order_id,
+                    "amount": payment.amount,
+                    "currency": payment.currency,
+                    "booking_request_id": booking_request.id,
+                    "expires_at": booking_request.expires_at.isoformat() if booking_request.expires_at else None,
+                    "therapist_name": therapist.name,
+                }
+            )
+        except Exception as e:
+            print(f"RAZORPAY ERROR: {str(e)}")
+            return Response({"detail": f"Razorpay processing error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class RazorpayVerifyPaymentView(APIView):
