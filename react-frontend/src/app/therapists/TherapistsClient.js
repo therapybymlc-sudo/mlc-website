@@ -225,7 +225,7 @@ export default function TherapistsClient() {
 
                         <Button 
                            as={NextLink} 
-                           href="/therapists/discovery?role=supervisor" 
+                           href="/therapists/supervision-discovery" 
                            bg="mlc.green" 
                            color="white" 
                            borderRadius="full" 
