@@ -936,9 +936,39 @@ class RazorpayCreateOrderView(APIView):
                 return Response({"detail": "therapist_id and slot_id are required."}, status=status.HTTP_400_BAD_REQUEST)
 
             therapist = TherapistProfile.objects.filter(pk=therapist_id).first()
-            slot = AvailabilitySlot.objects.filter(pk=slot_id).select_related("therapist").first()
-            if not therapist or not slot:
-                return Response({"detail": "Therapist or slot not found."}, status=status.HTTP_404_NOT_FOUND)
+            if not therapist:
+                return Response({"detail": "Therapist not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Handle dynamic slots (dyn-timestamp)
+            if isinstance(slot_id, str) and slot_id.startswith("dyn-"):
+                try:
+                    ts = float(slot_id.replace("dyn-", ""))
+                    # Convert timestamp to datetime
+                    slot_start = timezone.make_aware(datetime.fromtimestamp(ts))
+                    slot_end = slot_start + timedelta(hours=1) 
+
+                    # Try to find if this slot was already created
+                    slot = AvailabilitySlot.objects.filter(
+                        therapist=therapist,
+                        start_time=slot_start
+                    ).first()
+
+                    if not slot:
+                        # Materialize it
+                        slot = AvailabilitySlot.objects.create(
+                            therapist=therapist,
+                            start_time=slot_start,
+                            end_time=slot_end,
+                            status=AvailabilitySlot.Status.OPEN,
+                            visible_to_clients=True
+                        )
+                except Exception as e:
+                    return Response({"detail": f"Invalid dynamic slot format: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                slot = AvailabilitySlot.objects.filter(pk=slot_id).select_related("therapist").first()
+
+            if not slot:
+                return Response({"detail": "Availability slot not found."}, status=status.HTTP_404_NOT_FOUND)
 
             # Ensure slot therapist matches
             if slot.therapist_id != therapist.id:
