@@ -30,6 +30,13 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
     ? roomUrl.split('/').filter(Boolean).pop() 
     : "MLC-Secure-Lounge";
   const roomName = `${JAAS_APP_ID}/${rawRoom}`;
+  
+  console.log("🌿 [TherapyRoom] Initializing session:", {
+    rawRoom,
+    roomName,
+    appId: JAAS_APP_ID,
+    hasJwt: !!jwt
+  });
 
   const handleApiReady = (jitsiApi) => {
     setApi(jitsiApi);

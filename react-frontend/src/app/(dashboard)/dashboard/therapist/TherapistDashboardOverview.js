@@ -129,7 +129,7 @@ export default function TherapistDashboardOverview() {
                     <HStack spacing={2} wrap="nowrap">
                         <Button 
                             as={NextLink} 
-                            href={`/dashboard/client/session?url=${encodeURIComponent(appt.meeting_link || `https://8x8.vc/vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406/${appt.id}`)}`}
+                            href={`/conference/MLC_${appt.id}`}
                             size="xs" 
                             bg="#56756D" 
                             color="white" 

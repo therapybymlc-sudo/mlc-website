@@ -1279,14 +1279,9 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
               borderRadius="md"
               px={6}
               onClick={() => {
-                const link = getSessionLinkForTherapist(
-                  selectedEvent?.extendedProps?.therapist || selectedEvent?.getResources?.()?.[0]?.id
-                );
-                if (!link?.url) {
-                  toast({ status: "warning", title: "No session link set for this therapist" });
-                  return;
-                }
-                window.open(link.url, "_blank");
+                const originalId = selectedEvent?.extendedProps?.originalId || selectedEvent?.id?.replace(/^(apt|event)-/, "");
+                const room = `MLC_${originalId}`;
+                window.open(`/conference/${room}`, "_blank");
               }}
             >
               Join video call

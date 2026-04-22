@@ -306,7 +306,9 @@ export default function ScheduleClient() {
                         px={10} 
                         borderRadius="full"
                         onClick={() => {
-                            const room = `MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
+                            const rawId = selectedEvent.extendedProps?.originalId || selectedEvent.id.replace(/^(apt|event)-/, "");
+                            const room = `MLC_${rawId}`;
+                            console.log("🌿 [Schedule] Joining video room:", room);
                             window.open(`/conference/${room}`, '_blank');
                         }}
                         _hover={{ bg: '#C0392B' }}
