@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Box, Container, VStack, Heading, Text, SimpleGrid, Breadcrumb, BreadcrumbItem, BreadcrumbLink,
-  Icon, Badge, Circle, Spinner, Center
+  Box, Container, VStack, HStack, Heading, Text, SimpleGrid, Breadcrumb, BreadcrumbItem, BreadcrumbLink,
+  Icon, Badge, Circle, Spinner, Center, Button
 } from "@chakra-ui/react";
 import { FiArrowRight, FiAward, FiShield } from "react-icons/fi";
 import { apiGet } from "../../../api.js";
