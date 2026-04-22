@@ -39,7 +39,7 @@ export default function TherapistDashboardOverview() {
         const [clientData, apptData, profileData] = await Promise.all([
           apiGet("clients/"),
           apiGet("appointments/"),
-          apiGet("therapist-profile/me/"),
+          apiGet("therapists/me/"),
         ]);
         setStats({
           clients: clientData?.length || 0,
@@ -58,7 +58,7 @@ export default function TherapistDashboardOverview() {
   const handleApplySupervision = async () => {
     setIsApplying(true);
     try {
-      const res = await fetch("https://api.mlchealth.in/api/therapist-profile/me/", {
+      const res = await fetch("https://api.mlchealth.in/api/therapists/me/", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ supervision_status: "pending" }),
