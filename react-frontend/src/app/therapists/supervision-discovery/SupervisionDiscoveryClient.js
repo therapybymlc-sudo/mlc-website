@@ -8,7 +8,7 @@ import {
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiArrowLeft, FiArrowRight, FiCheck, FiShield, FiBriefcase, FiAward, FiBookOpen, FiActivity, FiUsers, FiStar
+  FiArrowLeft, FiArrowRight, FiCheck, FiShield, FiBriefcase, FiAward, FiBookOpen, FiActivity, FiUsers, FiStar, FiUser
 } from "react-icons/fi";
 import { apiPost } from "../../../api.js";
 import NextLink from "next/link";
@@ -134,17 +134,17 @@ export default function SupervisionDiscoveryClient() {
           <VStack spacing={10} align="center" textAlign="center" py={6}>
             <Icon as={FiAward} w={16} h={16} color="teal.600" />
             <VStack spacing={4}>
-              <Heading size="xl" color="teal.800" fontFamily="'Playfair Display', serif">Supervisory Stewardship</Heading>
+              <Heading size="xl" color="teal.800" fontFamily="'Playfair Display', serif">Supervisee & Mentor Alignment</Heading>
               <Text color="gray.600" fontSize="lg" maxW="lg">
-                Mentorship at MLC is designed for the holistic evolution of your therapeutic identity. 
-                Your clinical context helps us match you with a supervisor whose seniority and modality orientation 
-                aligns with your growth journey.
+                Mentorship at MLC is designed to elevate your clinical identity. 
+                As a <b>Supervisee</b>, your professional context helps us match you with a mentor whose mastery 
+                aligns with your specific growth journey.
               </Text>
               <Box p={8} bg="teal.50" borderRadius="3xl" border="1px solid" borderColor="teal.100" mt={6}>
                 <Stack direction={{ base: "column", sm: "row" }} align="start" spacing={4}>
                   <Radio isChecked={formData.consent} onClick={() => setFormData({...formData, consent: !formData.consent})} />
                   <Text fontSize="sm" fontWeight="600" textAlign="left" color="teal.900">
-                    I consent to sharing my clinical background and professional goals for the purpose of supervisory matching within the MLC ecosystem.
+                    I am applying as a <b>Supervisee</b> and consent to sharing my clinical background for the purpose of matching with an MLC Supervisor.
                   </Text>
                 </Stack>
               </Box>
@@ -252,9 +252,9 @@ export default function SupervisionDiscoveryClient() {
           <VStack spacing={10} align="center" textAlign="center" py={6}>
             <Circle size="100px" bg="teal.50" color="teal.500"><Icon as={FiArrowRight} w={10} h={10} /></Circle>
             <VStack spacing={4}>
-              <Heading size="xl" color="teal.800" fontFamily="'Playfair Display', serif">Finalize Clinical Path</Heading>
+              <Heading size="xl" color="teal.800" fontFamily="'Playfair Display', serif">Finalize Supervisee Path</Heading>
               <Text color="gray.600" fontSize="lg">
-                Ready to align your clinical mastery? Once submitted, our team will review your professional profile against our senior supervisor network.
+                Ready to align your practice? Once submitted, our team will review your Supervisee profile against our Senior Supervisor network.
               </Text>
             </VStack>
             <VStack spacing={6} w="full" bg="#FDFBFA" p={8} borderRadius="3rem" border="1px dashed" borderColor="teal.200">
