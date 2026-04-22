@@ -57,6 +57,8 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
   const calendarRef = useRef(null);
   const miniCalendarRef = useRef(null);
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const [events, setEvents] = useState([]);
   const [sessionLinks, setSessionLinks] = useState([]);
@@ -852,6 +854,8 @@ export default function Schedule({ preselectClientId, onPreselectConsumed }) {
       )}
     </Box>
   );
+
+  if (!mounted) return <Box p={10} textAlign="center"><Spinner size="xl" /></Box>;
 
   return (
     <Box p={{ base: 4, md: 8 }} bg="gray.50" borderRadius="xl">

@@ -91,6 +91,8 @@ export default function TherapistDashboard() {
   })();
   const { isOpen: isSidebarOpen, onOpen: onSidebarOpen, onClose: onSidebarClose } = useDisclosure();
   const [activeTab, setActiveTab] = useState("overview");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [preselectClientId, setPreselectClientId] = useState("");
   const [sessionLinks, setSessionLinks] = useState([]);
   const [newSessionLink, setNewSessionLink] = useState({ name: "", url: "", is_default: false });
@@ -1408,6 +1410,8 @@ export default function TherapistDashboard() {
       </Button>
     </VStack>
   );
+
+  if (!mounted) return <Flex minH="100vh" align="center" justify="center"><Spinner size="xl" color="teal.500" /></Flex>;
 
   return (
     <Flex minH="100vh" overflow="hidden" direction={{ base: "column", md: "row" }}>
