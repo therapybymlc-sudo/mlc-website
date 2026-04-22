@@ -594,7 +594,12 @@ export default function ScheduleClient() {
         status: form.status,
         color: selectedTypeObj?.color || selectedEvent.backgroundColor,
       };
-      await apiPut(`schedule-events/${originalId}/`, payload);
+
+      const endpoint = selectedEvent.extendedProps?.model === 'appointment' 
+        ? 'appointments' 
+        : 'schedule-events';
+
+      await apiPut(`${endpoint}/${originalId}/`, payload);
       toast({ title: "Session updated", status: "success" });
       onClose();
       fetchData();
@@ -608,7 +613,11 @@ export default function ScheduleClient() {
     const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
     if (!window.confirm("Delete this appointment?")) return;
     try {
-      await apiDelete(`schedule-events/${originalId}/`);
+      const endpoint = selectedEvent.extendedProps?.model === 'appointment' 
+        ? 'appointments' 
+        : 'schedule-events';
+
+      await apiDelete(`${endpoint}/${originalId}/`);
       toast({ title: "Deleted", status: "success" });
       onClose();
       fetchData();

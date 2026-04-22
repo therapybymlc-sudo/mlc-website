@@ -26,8 +26,7 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
 
   // JaaS Naming Convention: AppID/RoomName
   const JAAS_APP_ID = "vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406";
-  const rawRoom = roomUrl ? roomUrl.split('/').pop() : "MLC-Secure-Lounge";
-  const roomName = `${JAAS_APP_ID}/${rawRoom}`;
+  const roomName = roomUrl ? roomUrl.split('/').pop() : "MLC-Secure-Lounge";
 
   const handleApiReady = (jitsiApi) => {
     setApi(jitsiApi);
