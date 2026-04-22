@@ -23,7 +23,7 @@ export default function Conference() {
     const fetchToken = async () => {
       try {
         const endpoint = isTherapist ? 'therapists' : 'clients';
-        const res = await apiGet(`${endpoint}/jitsi-token/`, { room: roomId });
+        const res = await apiGet(`${endpoint}/jitsi-token/?room=${roomId}`);
         if (res?.token) {
           setJwt(res.token);
         }

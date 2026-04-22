@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, Container, VStack, HStack, Heading, Text, Button, Center, Icon, useToast, Spinner } from '@chakra-ui/react';
+import { Box, VStack, HStack, Heading, Text, Button, Center, Icon, useToast, Spinner } from '@chakra-ui/react';
 import { FiArrowLeft, FiShield } from 'react-icons/fi';
 import dynamic from 'next/dynamic';
 
@@ -25,7 +25,7 @@ export default function SessionPage() {
   const searchParams = useSearchParams();
   const toast = useToast();
   
-  const roomUrl = searchParams.get('url') || "https://8x8.vc/vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406/MLC-Secure-Lounge"; 
+  const roomUrl = searchParams.get('url') || "https://mlchealth.in/conference/MLC-Secure-Lounge"; 
   const [sessionActive, setSessionActive] = useState(true);
   const [sessionToken, setSessionToken] = useState(null);
 
@@ -33,10 +33,10 @@ export default function SessionPage() {
     // Automatically fetch a professional JaaS token from our backend
     const fetchToken = async () => {
       try {
-        const roomIdentifier = roomUrl.split('/').pop();
-        // Try both therapist and client endpoints to see where the user is profile-linked
-        const response = await apiGet(`therapists/me/jitsi-token/?room=${roomIdentifier}`)
-          .catch(() => apiGet(`clients/me/jitsi-token/?room=${roomIdentifier}`));
+        const roomIdentifier = roomUrl.split('/').filter(Boolean).pop();
+        // Try both therapist and client endpoints
+        const response = await apiGet(`therapists/jitsi-token/?room=${roomIdentifier}`)
+          .catch(() => apiGet(`clients/jitsi-token/?room=${roomIdentifier}`));
         
         if (response?.token) {
           setSessionToken(response.token);
@@ -103,4 +103,3 @@ export default function SessionPage() {
     </Box>
   );
 }
-
