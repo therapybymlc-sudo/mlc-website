@@ -15,7 +15,7 @@ import TherapistCard from "../../../components/TherapistCard";
 import NextLink from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../context/AuthContext";
-import { FiLock } from "react-icons/fi";
+
 
 const MotionBox = motion(Box);
 
