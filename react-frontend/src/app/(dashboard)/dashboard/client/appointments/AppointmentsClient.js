@@ -127,7 +127,7 @@ export default function AppointmentsClient() {
                                 <Td textAlign="right">
                                     <Button 
                                         as={NextLink}
-                                        href={`/dashboard/client/session?id=${appt.id}`}
+                                        href={`/conference/MLC_${appt.id}`}
                                         size="sm" 
                                         variant="solid" 
                                         bg="teal.800" 

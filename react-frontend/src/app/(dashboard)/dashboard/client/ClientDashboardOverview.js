@@ -363,7 +363,7 @@ export default function ClientDashboardOverview() {
                     </HStack>
                     <Button 
                         as={NextLink}
-                        href={`/dashboard/client/session?url=${encodeURIComponent(nextAppt.meeting_link || `https://8x8.vc/vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406/${nextAppt.id}`)}`}
+                        href={`/conference/MLC_${nextAppt.id}`}
                         w="full" 
                         bg="white" 
                         color="#56756D" 
