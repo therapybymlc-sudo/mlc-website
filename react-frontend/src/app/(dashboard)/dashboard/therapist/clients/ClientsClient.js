@@ -258,6 +258,7 @@ export default function ClientsClient() {
         <GridItem>
           <VStack align="stretch" spacing={2} bg="white" p={4} borderRadius="2xl" border="1px solid" borderColor="gray.100">
             <NavButton icon={FiUser} label="Clinical Details" active={activeSection === "details"} onClick={() => setActiveSection("details")} />
+            <NavButton icon={FiActivity} label="Clinical Intake" active={activeSection === "intake"} onClick={() => setActiveSection("intake")} />
             <NavButton icon={FiClipboard} label="Session Notes" active={activeSection === "notes"} count={clientNotes.length} onClick={() => setActiveSection("notes")} />
             <NavButton icon={FiPaperclip} label="Record Vault" active={activeSection === "files"} count={clientFiles.length} onClick={() => setActiveSection("files")} />
             <NavButton icon={FiCalendar} label="Appointments" active={activeSection === "appointments"} count={clientAppointments.length} onClick={() => setActiveSection("appointments")} />
@@ -268,6 +269,7 @@ export default function ClientsClient() {
         {/* Main Content Area */}
         <GridItem overflow="hidden">
            {activeSection === "details" && renderDetailsSection()}
+           {activeSection === "intake" && renderIntakeSection()}
            {activeSection === "notes" && renderNotesSection()}
            {activeSection === "files" && renderFilesSection()}
            {activeSection === "appointments" && renderAppointmentsSection()}
@@ -453,6 +455,71 @@ export default function ClientsClient() {
          </HStack>
       ))}
     </VStack>
+  );
+
+  const renderIntakeSection = () => (
+    <VStack align="stretch" spacing={6} animation="fadeIn 0.5s">
+       <DetailCard title="Initial Screening Results (DASS-21)">
+          {!selectedClient?.dass_scores ? (
+            <Center py={10} bg="gray.50" borderRadius="2xl" border="1px dashed" borderColor="gray.200">
+              <VStack spacing={2}>
+                <Icon as={FiActivity} w={8} h={8} color="gray.300" />
+                <Text color="gray.500" fontSize="sm">No DASS-21 screening data available for this profile.</Text>
+              </VStack>
+            </Center>
+          ) : (
+            <VStack align="stretch" spacing={6}>
+              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                 <Box p={4} bg="red.50" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="red.100">
+                    <Text fontSize="xs" fontWeight="bold" color="red.600">DEPRESSION</Text>
+                    <Heading size="lg" color="red.800">{selectedClient.dass_scores?.depression}</Heading>
+                    <Badge colorScheme="red" variant="subtle" borderRadius="full" px={2}>{selectedClient.dass_interpretations?.depression}</Badge>
+                 </Box>
+                 <Box p={4} bg="orange.50" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="orange.100">
+                    <Text fontSize="xs" fontWeight="bold" color="orange.600">ANXIETY</Text>
+                    <Heading size="lg" color="orange.800">{selectedClient.dass_scores?.anxiety}</Heading>
+                    <Badge colorScheme="orange" variant="subtle" borderRadius="full" px={2}>{selectedClient.dass_interpretations?.anxiety}</Badge>
+                 </Box>
+                 <Box p={4} bg="blue.50" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="blue.100">
+                    <Text fontSize="xs" fontWeight="bold" color="blue.600">STRESS</Text>
+                    <Heading size="lg" color="blue.800">{selectedClient.dass_scores?.stress}</Heading>
+                    <Badge colorScheme="blue" variant="subtle" borderRadius="full" px={2}>{selectedClient.dass_interpretations?.stress}</Badge>
+                 </Box>
+              </SimpleGrid>
+
+              <Box bg="teal.50" p={6} borderRadius="2xl" border="1px solid" borderColor="teal.100">
+                 <Heading size="xs" color="teal.800" textTransform="uppercase" mb={3} letterSpacing="wider">Clinical Discovery Summary</Heading>
+                 <Text fontSize="sm" color="gray.700" lineHeight="tall" whiteSpace="pre-wrap">
+                    {selectedClient.summary || "No automated summary provided."}
+                 </Text>
+              </Box>
+
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                 <DataPiece label="Primary Concern" value={selectedClient.primary_concern} />
+                 <DataPiece label="Daily Impact" value={selectedClient.impairment_level} />
+                 <DataPiece label="Life Context" value={selectedClient.life_stage_context} />
+                 <DataPiece label="Support Level" value={selectedClient.support_level} />
+              </SimpleGrid>
+            </VStack>
+          )}
+       </DetailCard>
+
+       <DetailCard title="Health & Background">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+             <DataPiece label="Prior Therapy" value={selectedClient.prior_therapy} />
+             <DataPiece label="On Medication" value={selectedClient.on_medication} />
+             <DataPiece label="Existing Diagnosis" value={selectedClient.has_diagnosis} />
+             <DataPiece label="Psychiatry History" value={selectedClient.psychiatry_history} />
+          </SimpleGrid>
+       </DetailCard>
+    </VStack>
+  );
+
+  const DataPiece = ({ label, value }) => (
+    <Box>
+       <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={1}>{label}</Text>
+       <Text fontSize="sm" fontWeight="600" color="gray.700">{value || "—"}</Text>
+    </Box>
   );
 
   const renderBillingSection = () => (

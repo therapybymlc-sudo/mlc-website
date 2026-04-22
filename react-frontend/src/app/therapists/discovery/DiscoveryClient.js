@@ -273,6 +273,8 @@ export default function DiscoveryClient() {
 
     email: authUser?.email || "",
     phone: "",
+    first_name: authUser?.firstName || "",
+    last_name: authUser?.lastName || "",
     whatsapp_marketing_consent: false,
     email_marketing_consent: false,
   });
@@ -347,8 +349,8 @@ export default function DiscoveryClient() {
       toast({ title: "Consent required", description: "Please acknowledge the consent form to proceed.", status: "warning" });
       return;
     }
-    if (currentSection === 1 && (!quizData.age || !quizData.gender)) {
-      toast({ title: "Missing information", description: "Please provide your age and gender.", status: "warning" });
+    if (currentSection === 1 && (!quizData.age || !quizData.gender || !quizData.first_name || !quizData.last_name)) {
+      toast({ title: "Missing information", description: "Please provide your name, age and gender.", status: "warning" });
       return;
     }
     if (currentSection === 7) {
@@ -413,6 +415,7 @@ export default function DiscoveryClient() {
 
     const payload = {
       ...quizData,
+      name: `${quizData.first_name} ${quizData.last_name}`.trim(),
       dass_scores: { depression: d_score, anxiety: a_score, stress: s_score },
       dass_interpretations: interpretations,
       summary: `DASS Results: D:${d_score}, A:${a_score}, S:${s_score}`
@@ -457,6 +460,14 @@ export default function DiscoveryClient() {
         return (
           <VStack spacing={{ base: 5, md: 8 }} align="stretch">
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }}>
+              <FormControl isRequired>
+                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>First Name</FormLabel>
+                <Input value={quizData.first_name} onChange={(e) => setQuizData({ ...quizData, first_name: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }} placeholder="Your first name" />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Last Name</FormLabel>
+                <Input value={quizData.last_name} onChange={(e) => setQuizData({ ...quizData, last_name: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }} placeholder="Your last name" />
+              </FormControl>
               <FormControl isRequired>
                 <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Age</FormLabel>
                 <Input type="number" value={quizData.age} onChange={(e) => setQuizData({ ...quizData, age: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }} />
