@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import SandboxBanner from "./components/SandboxBanner";
 
 // 🌿 Public Pages
 import Home from "./legacy_pages/Home";
@@ -71,6 +72,7 @@ function AppLayout({ children }) {
 
   return (
     <Flex direction="column" minH="100vh" bg="rgba(169, 203, 183, 0.12)">
+      <SandboxBanner />
       <Helmet>
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:url" content={canonicalUrl} />

@@ -413,9 +413,19 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             return queryset
 
         # 2. Public/Discovery Discovery View
-        # We allow ALL authenticated users to see VERIFIED therapists for matching
         if self.action in ["list", "retrieve"]:
-            return TherapistProfile.objects.filter(is_verified=True)
+            queryset = TherapistProfile.objects.filter(is_verified=True)
+            
+            is_supervisor = self.request.query_params.get("is_supervisor")
+            if is_supervisor is not None:
+                is_supervisor_bool = is_supervisor.lower() == "true"
+                queryset = queryset.filter(is_supervisor=is_supervisor_bool)
+                
+            supervision_status = self.request.query_params.get("supervision_status")
+            if supervision_status:
+                queryset = queryset.filter(supervision_status=supervision_status)
+                
+            return queryset
 
         # 3. For edits/dashboard actions, restrict to owner
         payload = getattr(self.request, "auth", {})
@@ -2388,6 +2398,7 @@ class TherapistMatchView(APIView):
                 supervisors = TherapistProfile.objects.filter(is_verified=True, years_experience__gte=5)
             
             matches = []
+            others = []
             target_modality = data.get("primary_modality", "").lower()
             target_context = data.get("current_context", "").lower()
             
@@ -2412,13 +2423,19 @@ class TherapistMatchView(APIView):
                 # Replace bio with supervision_bio if available
                 if s.supervision_bio:
                    s_data["bio"] = s.supervision_bio
-                matches.append(s_data)
+                
+                if s_score >= 40:
+                    matches.append(s_data)
+                else:
+                    others.append(s_data)
             
             matches.sort(key=lambda x: x["match_score"], reverse=True)
+            others.sort(key=lambda x: x["match_score"], reverse=True)
             
             return Response({
                 "discovery_type": "supervision",
                 "matches": matches[:5],
+                "others": others[:10],
                 "message": f"Successfully found {len(matches)} matching supervisors for your clinical growth path."
             })
 

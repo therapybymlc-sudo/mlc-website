@@ -15,29 +15,27 @@ export const AuthProvider = ({ children }) => {
                        (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_CLERK_JWT_TEMPLATE : null);
 
   const roles = useMemo(() => {
-    const metaRoles = user?.publicMetadata?.roles;
+    const metaRoles = user?.publicMetadata?.roles || user?.unsafeMetadata?.roles;
     if (Array.isArray(metaRoles)) return metaRoles;
-    if (user?.publicMetadata?.role) return [user.publicMetadata.role];
     
-    const unsafeRoles = user?.unsafeMetadata?.roles;
-    if (Array.isArray(unsafeRoles)) return unsafeRoles;
-    if (user?.unsafeMetadata?.role) return [user.unsafeMetadata.role];
+    const singleRole = user?.publicMetadata?.role || user?.unsafeMetadata?.role;
+    if (singleRole) return [singleRole];
 
     return [];
   }, [user]);
 
-  const premiumPreviewEnabled = ((typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_PREMIUM_PREVIEW : null) || 
-                                 (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_PREMIUM_PREVIEW : null)) === "true";
   const isAdmin = roles.includes("admin");
-  const isTherapist = isAdmin || roles.includes("therapist");
-  const isClient = !isTherapist;
-  const isPremium = premiumPreviewEnabled || isAdmin || roles.includes("premium");
+  const isTherapist = roles.includes("therapist");
+  const isClient = roles.includes("client");
+  const isNewUser = roles.length === 0;
+  
+  const isPremium = isAdmin || roles.includes("premium");
   const previewRole = typeof window !== 'undefined' ? localStorage.getItem("mlc_role_preview") : null;
   const signupRole = typeof window !== 'undefined' ? localStorage.getItem("mlc_signup_role") : null;
   const isTherapistPreview =
     previewRole === "therapist" &&
     signupRole === "therapist" &&
-    !isTherapist;
+    !isTherapist && !isAdmin;
   const [therapistProfile, setTherapistProfile] = useState(null);
   const [clientProfile, setClientProfile] = useState(null);
 
@@ -157,6 +155,7 @@ export const AuthProvider = ({ children }) => {
         isAdmin,
         isTherapist,
         isClient,
+        isNewUser,
         isPremium,
         therapistProfile,
         clientProfile,

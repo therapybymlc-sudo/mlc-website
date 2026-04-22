@@ -14,6 +14,8 @@ import { apiPost } from "../../../api.js";
 import TherapistCard from "../../../components/TherapistCard";
 import NextLink from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { useAuth } from "../../../context/AuthContext";
+import { FiLock } from "react-icons/fi";
 
 const MotionBox = motion(Box);
 
@@ -40,9 +42,10 @@ const WORK_CONTEXTS = [
 export default function SupervisionDiscoveryClient() {
   const [currentSection, setCurrentSection] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [view, setView] = useState("quiz"); // quiz, success
+  const [view, setView] = useState("checking"); // checking, auth_gate, quiz, results
   const toast = useToast();
-  const { user: clerkUser } = useUser();
+  const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
+  const { isTherapist, isAdmin } = useAuth();
   const [results, setResults] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -59,13 +62,44 @@ export default function SupervisionDiscoveryClient() {
     supervision_format_pref: "1:1 Sessions", 
     supervision_reason: "", 
     
-    supervisor_seniority_pref: "10+ Years",
+    supervisor_seniority_pref: "5+ Years",
     frequency_pref: "Weekly",
     
     additional_notes: "",
     email: "",
     phone: "",
   });
+
+  // 1. Initial State Persistence & Auth Check
+  useEffect(() => {
+    if (!clerkLoaded || !isMounted) return;
+
+    if (!isSignedIn || (!isTherapist && !isAdmin)) {
+      setView("auth_gate");
+      return;
+    }
+
+    // Load draft
+    const savedDraft = localStorage.getItem("mlc_supervision_draft");
+    const savedStep = localStorage.getItem("mlc_supervision_step");
+    if (savedDraft) {
+      try {
+        setFormData(prev => ({ ...prev, ...JSON.parse(savedDraft) }));
+        if (savedStep) setCurrentSection(parseInt(savedStep));
+      } catch (e) {
+        console.warn("Failed to parse draft", e);
+      }
+    }
+    setView("quiz");
+  }, [clerkLoaded, isSignedIn, isTherapist, isAdmin, isMounted]);
+
+  // 2. Save progress on every change
+  useEffect(() => {
+    if (view === "quiz") {
+      localStorage.setItem("mlc_supervision_draft", JSON.stringify(formData));
+      localStorage.setItem("mlc_supervision_step", currentSection.toString());
+    }
+  }, [formData, currentSection, view]);
 
   useEffect(() => {
     if (clerkUser?.primaryEmailAddress?.emailAddress) {
@@ -101,6 +135,8 @@ export default function SupervisionDiscoveryClient() {
       const res = await apiPost("therapists/match/", payload);
       setResults(res);
       setView("results");
+      localStorage.removeItem("mlc_supervision_draft");
+      localStorage.removeItem("mlc_supervision_step");
     } catch (err) {
       toast({ title: "Submission Error", description: "We encountered a clinical link error. Please try again.", status: "error" });
     } finally {
@@ -110,7 +146,29 @@ export default function SupervisionDiscoveryClient() {
 
   if (!isMounted) return null;
 
+  if (view === "auth_gate") {
+    return (
+      <Box bg="#FDFBFA" minH="100vh" py={{ base: 12, md: 24 }}>
+        <Container maxW="lg">
+          <VStack spacing={8} p={12} bg="white" borderRadius="3rem" shadow="2xl" textAlign="center">
+            <Circle size="80px" bg="teal.50" color="teal.600"><Icon as={FiLock} w={8} h={8} /></Circle>
+            <VStack spacing={3}>
+              <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Therapist Access Required</Heading>
+              <Text color="gray.500">Supervision Discovery is a professional resource for therapists. Please sign in with your therapist account to continue.</Text>
+            </VStack>
+            <Button as={NextLink} href="/login/therapist" bg="teal.800" color="white" borderRadius="full" px={10} w="full" h={14}>
+              Therapist Sign In
+            </Button>
+          </VStack>
+        </Container>
+      </Box>
+    );
+  }
+
   const renderResults = () => {
+    const hasMatches = results?.matches?.length > 0;
+    const hasOthers = results?.others?.length > 0;
+
     return (
       <Box p={4} bg="#FDFBFA" minH="100vh">
         <Container maxW="6xl" pt={{ base: 10, md: 20 }} pb={40}>
@@ -126,32 +184,59 @@ export default function SupervisionDiscoveryClient() {
                    </Text>
                    <HStack wrap="wrap" spacing={3}>
                       <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.supervision_format_pref}</Badge>
-                      <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.frequency_pref} Labs</Badge>
+                      <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.frequency_pref}</Badge>
                    </HStack>
                 </VStack>
              </Box>
 
              {/* Supervisor Matches */}
-             <VStack align="start" spacing={8}>
-                <HStack w="full" justify="space-between" align="end">
-                   <VStack align="start" spacing={1}>
-                      <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Matched Senior Supervisors</Heading>
-                      <Text color="gray.500" fontSize="sm">These specialists have verified mastery in your chosen modality.</Text>
-                   </VStack>
-                   <Button variant="link" color="teal.600" rightIcon={<FiArrowRight />} as={NextLink} href="/therapists">View All Clinicians</Button>
-                </HStack>
+             <VStack align="start" spacing={10}>
+                {hasMatches && (
+                  <VStack align="start" spacing={8} w="full">
+                    <HStack w="full" justify="space-between" align="end">
+                       <VStack align="start" spacing={1}>
+                          <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Matched Senior Supervisors</Heading>
+                          <Text color="gray.500" fontSize="sm">These specialists have verified mastery in your chosen modality.</Text>
+                       </VStack>
+                       <Button variant="link" color="teal.600" rightIcon={<FiArrowRight />} as={NextLink} href="/therapists/supervisors">View All Clinicians</Button>
+                    </HStack>
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
+                       {results.matches.map(mentor => (
+                         <TherapistCard key={mentor.id} therapist={mentor} isMatch={true} />
+                       ))}
+                    </SimpleGrid>
+                  </VStack>
+                )}
 
-                <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
-                   {(results?.matches || []).map(mentor => (
-                     <TherapistCard key={mentor.id} therapist={mentor} isMatch={true} />
-                   ))}
-                </SimpleGrid>
+                {!hasMatches && hasOthers && (
+                  <VStack align="start" spacing={6} w="full">
+                     <Text color="gray.600" fontSize="lg" fontWeight="500">
+                        No immediate mentors found for this specific modality, but here are our other available supervisors on the site:
+                     </Text>
+                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
+                        {results.others.map(mentor => (
+                          <TherapistCard key={mentor.id} therapist={mentor} isMatch={false} />
+                        ))}
+                     </SimpleGrid>
+                  </VStack>
+                )}
 
-                {(results?.matches || []).length === 0 && (
+                {hasMatches && hasOthers && (
+                  <VStack align="start" spacing={8} w="full" pt={10} borderTop="1px solid" borderColor="gray.100">
+                    <Heading size="md" color="gray.600" fontFamily="'Playfair Display', serif">Other Available Supervisors</Heading>
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
+                       {results.others.map(mentor => (
+                         <TherapistCard key={mentor.id} therapist={mentor} isMatch={false} />
+                       ))}
+                    </SimpleGrid>
+                  </VStack>
+                )}
+
+                {!hasMatches && !hasOthers && (
                    <Center w="full" py={20} bg="white" borderRadius="3rem" border="1px dashed" borderColor="teal.100">
                       <VStack spacing={4}>
                          <Icon as={FiStar} w={10} h={10} color="teal.200" />
-                         <Text color="gray.400">No immediate mentors found for this specific modality. Our Clinical Director will review your case manually.</Text>
+                         <Text color="gray.400">No immediate mentors found. Our Clinical Director will review your case manually.</Text>
                       </VStack>
                    </Center>
                 )}
@@ -173,7 +258,20 @@ export default function SupervisionDiscoveryClient() {
 
   const progress = (currentSection / (SECTIONS.length - 1)) * 100;
 
+
+
   if (view === "results") return renderResults();
+
+  if (view === "checking") {
+    return (
+      <Center minH="100vh" bg="#FDFBFA">
+        <VStack spacing={6}>
+          <Progress size="xs" isIndeterminate w="200px" colorScheme="teal" borderRadius="full" />
+          <Text fontSize="sm" color="gray.500" fontWeight="500">Checking clinical credentials...</Text>
+        </VStack>
+      </Center>
+    );
+  }
 
   const renderSection = () => {
     switch (currentSection) {
@@ -203,7 +301,7 @@ export default function SupervisionDiscoveryClient() {
         return (
           <VStack spacing={8} align="stretch">
             <FormControl isRequired>
-              <FormLabel fontWeight="700">Years of Clinical Experience (Licensed)</FormLabel>
+              <FormLabel fontWeight="700">Years of Clinical Experience</FormLabel>
               <Input type="number" placeholder="e.g., 5" value={formData.years_licensed} onChange={(e) => setFormData({...formData, years_licensed: e.target.value})} borderRadius="xl" size="lg" />
             </FormControl>
             <FormControl isRequired>
@@ -252,11 +350,10 @@ export default function SupervisionDiscoveryClient() {
             </FormControl>
             <FormControl isRequired>
                <FormLabel fontWeight="700">Preferred Format</FormLabel>
-               <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {[
                     { val: "1:1 Sessions", icon: FiUser },
                     { val: "Peer Cohorts", icon: FiUsers },
-                    { val: "Growth Labs", icon: FiStar }
                   ].map(f => (
                     <VStack 
                       key={f.val} 
@@ -321,7 +418,6 @@ export default function SupervisionDiscoveryClient() {
         return null;
     }
   };
-
   return (
     <Box bg="#FDFBFA" minH="100vh" py={{ base: 12, md: 24 }}>
       <Container maxW="4xl">

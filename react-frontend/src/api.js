@@ -6,7 +6,7 @@ import axios from "axios";
 const API_BASE = (
   (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) ||
   (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE : null) || 
-  "http://127.0.0.1:8000/api"
+  "http://localhost:8000/api"
 ).replace(/\/+$/, "");
 
 const api = axios.create({
@@ -75,11 +75,14 @@ api.interceptors.response.use(
 // Generic helpers (ensuring paths have trailing slash for Django)
 // ==============================
 function preparePath(path) {
-  let cleanPath = path.replace(/^\/+/, "");
-  if (cleanPath && !cleanPath.endsWith("/")) {
+  let [basePath, queryString] = path.split("?");
+  let cleanPath = basePath.replace(/^\/+/, "").replace(/\/+$/, "");
+  
+  if (cleanPath) {
     cleanPath += "/";
   }
-  return cleanPath;
+  
+  return queryString ? `${cleanPath}?${queryString}` : cleanPath;
 }
 
 export async function apiGet(path) {

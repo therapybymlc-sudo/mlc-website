@@ -169,8 +169,21 @@ def whoami(request):
         "admin_by_user_id": payload_sub in admin_user_ids,
     })
 
+@api_view(["GET"])
+def get_config(request):
+    """
+    Returns public configuration for the frontend.
+    """
+    return Response({
+        "environment": getattr(settings, "APP_ENVIRONMENT", "development"),
+        "debug": settings.DEBUG,
+    })
+
+
+# Simple health check
 def healthz(request):
     return JsonResponse({"status": "ok"})
+
 
 urlpatterns = [
     # Admin & simple test/probe routes
@@ -199,6 +212,7 @@ urlpatterns = [
 
     # Simple health check
     path("healthz", healthz, name="healthz"),
+    path("api/config/", get_config, name="get-config"),
 ]
 
 if settings.DEBUG:

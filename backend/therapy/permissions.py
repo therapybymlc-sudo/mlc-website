@@ -37,25 +37,42 @@ def get_current_therapist_profile(user):
 def get_current_client_profile(user):
     if not user or not user.is_authenticated:
         return None
+    
+    # 1. Direct relationship check (fastest)
     try:
         if hasattr(user, "client_profile"):
             return user.client_profile
-    except ClientProfile.DoesNotExist:
+    except Exception:
         pass
 
-    # Passive matching to prevent 500 errors during stale sessions
+    # 2. Check by email and sync user link if needed
     email = getattr(user, "email", None)
-    client = ClientProfile.objects.filter(email__iexact=email).first() if email else None
-    if client:
-        return client
-        
+    if email:
+        client = ClientProfile.objects.filter(email__iexact=email).first()
+        if client:
+            if client.user_id != user.id:
+                client.user = user
+                client.save(update_fields=["user"])
+            return client
+            
+    # 3. Create if missing
     display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
     safe_email = email or f"client_{user.pk or 'nouser'}@local"
-    client = ClientProfile.objects.create(
-        user=user,
-        name=display_name,
-        email=safe_email,
+    
+    # Use get_or_create to prevent race conditions or unique constraint crashes
+    client, created = ClientProfile.objects.get_or_create(
+        email__iexact=safe_email,
+        defaults={
+            "user": user,
+            "name": display_name,
+            "email": safe_email, # Original case or safe_email
+        }
     )
+    
+    if not created and client.user_id != user.id:
+        client.user = user
+        client.save(update_fields=["user"])
+        
     return client
 
 

@@ -16,6 +16,7 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import LinkButton from "../../components/LinkButton";
+import ActiveSupervisors from "../../components/ActiveSupervisors";
 
 export const metadata = {
   title: 'Therapist Supervision & Cohorts | MLC Health & Wellness Centre',
@@ -183,6 +184,11 @@ export default function SupervisionPage() {
             </SimpleGrid>
           </Box>
         </VStack>
+
+        {/* Active Supervisors Section */}
+        <Box mt={20}>
+          <ActiveSupervisors />
+        </Box>
 
         {/* FAQ */}
         <Box mt={16} bg="white" borderRadius="2xl" shadow="md" p={10}>

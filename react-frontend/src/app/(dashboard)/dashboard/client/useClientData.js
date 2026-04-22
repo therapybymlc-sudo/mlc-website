@@ -5,7 +5,7 @@ import { apiGet } from '../../../../api.js';
 import { useAuth } from '../../../../context/AuthContext';
 
 export function useClientData() {
-  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated, isClient } = useAuth();
   const [data, setData] = useState({
     goals: [],
     appointments: [],
@@ -17,7 +17,10 @@ export function useClientData() {
   });
 
   const refreshData = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isClient) {
+      if (!authLoading) setData(prev => ({ ...prev, loading: false }));
+      return;
+    }
     
     try {
       const [goals, appts, journals, checkins, resources, relations] = await Promise.all([

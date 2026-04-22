@@ -16,6 +16,8 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-placeholder")
 DEBUG = os.getenv("DEBUG", "True") == "True"
 ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
+APP_ENVIRONMENT = os.getenv("APP_ENVIRONMENT", "development").lower()
+
 
 # ==========================
 # Installed Apps
@@ -54,7 +56,7 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "react-frontend", "dist")],
+        "DIRS": [os.path.join(BASE_DIR.parent, "react-frontend", "dist")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -139,7 +141,7 @@ USE_TZ = True
 # Static Files
 # ==========================
 STATIC_URL = "static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "react-frontend", "dist", "assets")]
+STATICFILES_DIRS = [os.path.join(BASE_DIR.parent, "react-frontend", "dist", "assets")]
 MEDIA_URL = "media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
@@ -171,6 +173,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 _cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "")
 if _cors_env:
