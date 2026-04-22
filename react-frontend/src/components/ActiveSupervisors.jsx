@@ -10,6 +10,7 @@ import {
   Spinner,
   Center,
   Icon,
+  Badge,
 } from '@chakra-ui/react';
 import { FiUsers, FiStar } from 'react-icons/fi';
 import { apiGet } from '../api';
