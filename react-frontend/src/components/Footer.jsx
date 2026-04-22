@@ -1,5 +1,7 @@
 'use client'
 
+import React, { useState, useEffect } from "react";
+
 import {
   Box,
   VStack,
@@ -73,6 +75,11 @@ const SocialIcon = ({ icon, href, label }) => (
 );
 
 export default function Footer() {
+  const [year, setYear] = useState(null);
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <Box bg="#1A1A1A" color="white" pt={20} pb={10} borderTop="1px solid" borderColor="whiteAlpha.100">
       <Container maxW="1200px">
@@ -205,7 +212,7 @@ export default function Footer() {
         {/* 📜 Bottom Bar */}
         <Stack direction={{ base: "column", md: "row" }} justify="space-between" align="center" pt={8} spacing={4}>
           <Text fontSize="xs" color="whiteAlpha.500" fontWeight="500">
-            © {new Date().getFullYear()} MLC Health & Wellness Centre. All rights reserved.
+            © {year || '2026'} MLC Health & Wellness Centre. All rights reserved.
           </Text>
           <HStack spacing={6}>
             <Link as={NextLink} href="/privacy" fontSize="xs" color="whiteAlpha.500" _hover={{ color: "white" }}>

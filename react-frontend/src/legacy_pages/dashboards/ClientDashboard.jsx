@@ -35,6 +35,7 @@ import {
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
+  Stack,
   FormControl,
   FormLabel,
   Slider,

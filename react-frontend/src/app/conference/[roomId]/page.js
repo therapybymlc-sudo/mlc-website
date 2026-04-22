@@ -38,7 +38,7 @@ export default function ConferencePage() {
     const fetchToken = async () => {
       try {
         const endpoint = isTherapist ? 'therapists' : 'clients';
-        const res = await apiGet(`${endpoint}/jitsi-token/?room=${roomId}`);
+        const res = await apiGet(`${endpoint}/jitsi-token/?room=${roomId.toLowerCase()}`);
         if (res?.token) {
           setJwt(res.token);
         }

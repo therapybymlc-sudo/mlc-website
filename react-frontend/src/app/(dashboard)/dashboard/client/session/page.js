@@ -33,7 +33,7 @@ export default function SessionPage() {
     // Automatically fetch a professional JaaS token from our backend
     const fetchToken = async () => {
       try {
-        const roomIdentifier = roomUrl.split('/').filter(Boolean).pop();
+        const roomIdentifier = roomUrl.split('/').filter(Boolean).pop()?.toLowerCase();
         // Try both therapist and client endpoints
         const response = await apiGet(`therapists/jitsi-token/?room=${roomIdentifier}`)
           .catch(() => apiGet(`clients/jitsi-token/?room=${roomIdentifier}`));
