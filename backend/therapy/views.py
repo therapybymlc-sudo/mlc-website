@@ -2377,7 +2377,50 @@ class TherapistMatchView(APIView):
     def post(self, request):
         data = request.data
         
-        # 1. DASS-21 Scoring
+        # 1. Branch: Supervision Matching
+        if data.get("discovery_type") == "supervision" or data.get("role") == "supervisee_prospect":
+            # Filter for approved supervisors
+            supervisors = TherapistProfile.objects.filter(is_supervisor=True, supervision_status="approved", is_verified=True)
+            if not supervisors.exists():
+                # Fallback to any verified therapist with high experience
+                supervisors = TherapistProfile.objects.filter(is_verified=True, years_experience__gte=5)
+            
+            matches = []
+            target_modality = data.get("primary_modality", "").lower()
+            target_context = data.get("current_context", "").lower()
+            
+            for s in supervisors:
+                s_score = 0
+                s_modalities = [m.lower() for m in (s.supervision_modalities or [])]
+                s_areas = [a.lower() for a in (s.supervision_areas or [])]
+                
+                # Modality Match (Highest Weighted)
+                if target_modality and target_modality in s_modalities:
+                    s_score += 40
+                
+                # Context/Area Match
+                if target_context and any(kw in target_context for kw in s_areas):
+                    s_score += 20
+                
+                # Seniority Boost
+                s_score += (s.supervision_years_experience or 0) * 2
+                
+                s_data = TherapistProfileSerializer(s).data
+                s_data["match_score"] = s_score
+                # Replace bio with supervision_bio if available
+                if s.supervision_bio:
+                   s_data["bio"] = s.supervision_bio
+                matches.append(s_data)
+            
+            matches.sort(key=lambda x: x["match_score"], reverse=True)
+            
+            return Response({
+                "discovery_type": "supervision",
+                "matches": matches[:5],
+                "message": f"Successfully found {len(matches)} matching supervisors for your clinical growth path."
+            })
+
+        # 1. DASS-21 Scoring (Standard Pathology Path)
         dass_answers = data.get("dass_answers", {})
         dass_scores = calculate_dass_scores(dass_answers)
         dass_levels = get_dass_severity(dass_scores)

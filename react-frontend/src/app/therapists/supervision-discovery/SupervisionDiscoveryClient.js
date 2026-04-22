@@ -11,6 +11,7 @@ import {
   FiArrowLeft, FiArrowRight, FiCheck, FiShield, FiBriefcase, FiAward, FiBookOpen, FiActivity, FiUsers, FiStar, FiUser
 } from "react-icons/fi";
 import { apiPost } from "../../../api.js";
+import TherapistCard from "../../../components/TherapistCard";
 import NextLink from "next/link";
 import { useUser } from "@clerk/nextjs";
 
@@ -42,6 +43,7 @@ export default function SupervisionDiscoveryClient() {
   const [view, setView] = useState("quiz"); // quiz, success
   const toast = useToast();
   const { user: clerkUser } = useUser();
+  const [results, setResults] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => { setIsMounted(true); }, []);
@@ -52,10 +54,10 @@ export default function SupervisionDiscoveryClient() {
     current_context: "",
     primary_modality: "",
     other_modalities: [],
-    focus_areas: "", // e.g. "Trauma, Grief, Personality Disorders"
+    focus_areas: "", 
     
-    supervision_format_pref: "1:1 Sessions", // "1:1 Sessions", "Peer Cohorts", "Specialized Labs"
-    supervision_reason: "", // "Licensing", "Clinical Growth", "Case Review", "Burnout Support"
+    supervision_format_pref: "1:1 Sessions", 
+    supervision_reason: "", 
     
     supervisor_seniority_pref: "10+ Years",
     frequency_pref: "Weekly",
@@ -91,14 +93,14 @@ export default function SupervisionDiscoveryClient() {
   const submitForm = async () => {
     setIsLoading(true);
     try {
-      // Logic for supervisory matching
       const payload = {
         ...formData,
         role: 'supervisee_prospect',
         discovery_type: 'supervision'
       };
-      await apiPost("therapists/match/", payload);
-      setView("success");
+      const res = await apiPost("therapists/match/", payload);
+      setResults(res);
+      setView("results");
     } catch (err) {
       toast({ title: "Submission Error", description: "We encountered a clinical link error. Please try again.", status: "error" });
     } finally {
@@ -108,24 +110,70 @@ export default function SupervisionDiscoveryClient() {
 
   if (!isMounted) return null;
 
-  if (view === "success") {
+  const renderResults = () => {
     return (
       <Box p={4} bg="#FDFBFA" minH="100vh">
-        <Container maxW="2xl" pt={24} pb={40}>
-           <VStack spacing={8} bg="white" p={12} borderRadius="3xl" shadow="2xl" textAlign="center" border="1px solid" borderColor="teal.50">
-              <Circle size="100px" bg="teal.50" color="teal.500"><Icon as={FiCheck} w={12} h={12} /></Circle>
-              <VStack spacing={4}>
-                 <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900">Application Received</Heading>
-                 <Text color="gray.600" fontSize="lg">Your professional clinical profile has been logged in our supervisory suite. A senior mentor will review your mastery requirements and reach out to align your growth path.</Text>
-              </VStack>
-              <Button as={NextLink} href="/dashboard" bg="teal.800" color="white" px={10} borderRadius="full" height="60px" _hover={{ bg: 'teal.900' }}>Enter Dashboard</Button>
-           </VStack>
+        <Container maxW="6xl" pt={{ base: 10, md: 20 }} pb={40}>
+          <VStack spacing={12} align="stretch">
+             {/* Application Received Summary */}
+             <Box p={{ base: 8, md: 12 }} bg="white" borderRadius="3rem" shadow="2xl" border="1px solid" borderColor="teal.50">
+                <VStack align="start" spacing={6}>
+                   <Badge bg="teal.50" color="teal.600" px={4} py={1} borderRadius="full" fontSize="xs">APPLICATION REGISTERED</Badge>
+                   <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900">Your Clinical Growth Path</Heading>
+                   <Text fontSize="lg" color="gray.600" lineHeight="1.8">
+                      Thank you for sharing your professional trajectory. Your request for supervision focuses on <b>{formData.primary_modality}</b> within a <b>{formData.current_context}</b> context. 
+                      Clinicians at MLC prioritize modality-depth and clinical stewardship. Based on your seniority and growth goals, we have identified these senior mentors who align with your orientation.
+                   </Text>
+                   <HStack wrap="wrap" spacing={3}>
+                      <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.supervision_format_pref}</Badge>
+                      <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.frequency_pref} Labs</Badge>
+                   </HStack>
+                </VStack>
+             </Box>
+
+             {/* Supervisor Matches */}
+             <VStack align="start" spacing={8}>
+                <HStack w="full" justify="space-between" align="end">
+                   <VStack align="start" spacing={1}>
+                      <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Matched Senior Supervisors</Heading>
+                      <Text color="gray.500" fontSize="sm">These specialists have verified mastery in your chosen modality.</Text>
+                   </VStack>
+                   <Button variant="link" color="teal.600" rightIcon={<FiArrowRight />} as={NextLink} href="/therapists">View All Clinicians</Button>
+                </HStack>
+
+                <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
+                   {(results?.matches || []).map(mentor => (
+                     <TherapistCard key={mentor.id} therapist={mentor} isMatch={true} />
+                   ))}
+                </SimpleGrid>
+
+                {(results?.matches || []).length === 0 && (
+                   <Center w="full" py={20} bg="white" borderRadius="3rem" border="1px dashed" borderColor="teal.100">
+                      <VStack spacing={4}>
+                         <Icon as={FiStar} w={10} h={10} color="teal.200" />
+                         <Text color="gray.400">No immediate mentors found for this specific modality. Our Clinical Director will review your case manually.</Text>
+                      </VStack>
+                   </Center>
+                )}
+             </VStack>
+
+             {/* Action Bridge */}
+             <Box p={{ base: 8, md: 12 }} bg="teal.800" borderRadius="3rem" color="white" textAlign="center">
+                <VStack spacing={6}>
+                   <Heading size="md" fontFamily="'Playfair Display', serif">Need specialized board certification?</Heading>
+                   <Text fontSize="sm" opacity="0.8">If you are seeking supervision for specific institutional licensing, please book an alignment call with our director.</Text>
+                   <Button as={NextLink} href="/dashboard" variant="outline" color="white" borderColor="whiteAlpha.400" borderRadius="full" px={10} _hover={{ bg: 'whiteAlpha.100' }}>Enter Clinician Dashboard</Button>
+                </VStack>
+             </Box>
+          </VStack>
         </Container>
       </Box>
     );
-  }
+  };
 
   const progress = (currentSection / (SECTIONS.length - 1)) * 100;
+
+  if (view === "results") return renderResults();
 
   const renderSection = () => {
     switch (currentSection) {
