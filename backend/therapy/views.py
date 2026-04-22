@@ -61,6 +61,7 @@ from therapy.models import (
     SafetyPlan,
     SupervisoryRelationship,
     SupervisionNote,
+    SupervisionReport,
     RazorpayPayment,
 )
 from therapy.utils import (
@@ -113,6 +114,7 @@ from therapy.serializers import (
     TherapeuticRelationshipSerializer,
     SupervisoryRelationshipSerializer,
     SupervisionNoteSerializer,
+    SupervisionReportSerializer,
 )
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,
@@ -2707,6 +2709,79 @@ class SupervisoryRelationshipViewSet(viewsets.ModelViewSet):
         return SupervisoryRelationship.objects.filter(
             Q(supervisor=therapist) | Q(supervisee=therapist)
         )
+
+    @action(detail=True, methods=['post'], url_path='generate-report')
+    def generate_report(self, request, pk=None):
+        relationship = self.get_object()
+        therapist = _resolve_therapist_from_request(request)
+        
+        # Only supervisor can generate reports
+        if relationship.supervisor != therapist:
+            return Response({"detail": "Only the supervisor can generate mentorship reports."}, status=status.HTTP_403_FORBIDDEN)
+            
+        month_str = request.data.get("month") # e.g. "2024-04-01"
+        if not month_str:
+            return Response({"detail": "Month (YYYY-MM-DD) is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        from datetime import datetime
+        try:
+            report_month = datetime.strptime(month_str, "%Y-%m-%d").date().replace(day=1)
+        except ValueError:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Find all notes for this month
+        notes = SupervisionNote.objects.filter(
+            relationship=relationship,
+            created_at__year=report_month.year,
+            created_at__month=report_month.month
+        )
+        
+        total_sessions = notes.count()
+        total_minutes = 0
+        session_details = []
+        
+        for note in notes:
+            duration = 50 # Default
+            if note.appointment:
+                duration = (note.appointment.end_time - note.appointment.start_time).total_seconds() / 60
+            
+            total_minutes += duration
+            session_details.append({
+                "note_id": note.id,
+                "date": note.created_at.isoformat(),
+                "duration": int(duration),
+                "summary": note.content[:100] + "..." if len(note.content) > 100 else note.content
+            })
+            
+        # Calculate payable
+        rate = relationship.supervisor.supervision_hourly_rate or relationship.supervisor.hourly_rate or 0
+        total_hours = total_minutes / 60
+        total_payable = float(rate) * total_hours
+        
+        # Create or Update Report
+        report, created = SupervisionReport.objects.update_or_create(
+            relationship=relationship,
+            month=report_month,
+            defaults={
+                "total_sessions": total_sessions,
+                "total_minutes": int(total_minutes),
+                "total_payable": total_payable,
+                "report_data": {
+                    "sessions": session_details,
+                    "calculation_rate": float(rate),
+                    "generated_by": therapist.name
+                },
+                "status": SupervisionReport.Status.DRAFT
+            }
+        )
+        
+        return Response(SupervisionReportSerializer(report).data)
+
+    @action(detail=True, methods=['get'], url_path='reports')
+    def get_reports(self, request, pk=None):
+        relationship = self.get_object()
+        reports = relationship.reports.all()
+        return Response(SupervisionReportSerializer(reports, many=True).data)
 
 class SupervisionNoteViewSet(viewsets.ModelViewSet):
     serializer_class = SupervisionNoteSerializer

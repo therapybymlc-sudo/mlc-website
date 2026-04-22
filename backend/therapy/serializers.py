@@ -39,6 +39,7 @@ from therapy.models import (
     SafetyPlan,
     SupervisoryRelationship,
     SupervisionNote,
+    SupervisionReport,
 )
 
 from .utils import _resolve_therapist_from_request
@@ -1055,3 +1056,14 @@ class SupervisionNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupervisionNote
         fields = "__all__"
+
+class SupervisionReportSerializer(serializers.ModelSerializer):
+    supervisee_name = serializers.ReadOnlyField(source="relationship.supervisee.name")
+    month_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SupervisionReport
+        fields = "__all__"
+
+    def get_month_display(self, obj):
+        return obj.month.strftime("%B %Y")

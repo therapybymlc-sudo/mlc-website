@@ -41,6 +41,7 @@ class TherapistProfile(models.Model):
     state = models.CharField(max_length=100, blank=True, null=True)
     years_experience = models.PositiveIntegerField(default=0)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    supervision_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     session_duration = models.PositiveIntegerField(default=50) # in minutes
     concerns = models.JSONField(default=list, blank=True) # Tags like "Anxiety", "Depression", etc.
     affiliations = models.TextField(blank=True, null=True) # e.g. "Psychiatric Social Worker at Amaha"
@@ -1929,3 +1930,30 @@ class SupervisionNote(models.Model):
 
     def __str__(self):
         return f"Supervision Note for {self.relationship.supervisee.name} on {self.created_at.date()}"
+
+
+class SupervisionReport(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        FINALIZED = "finalized", "Finalized"
+        INVOICED = "invoiced", "Invoiced"
+        PAID = "paid", "Paid"
+
+    relationship = models.ForeignKey(SupervisoryRelationship, on_delete=models.CASCADE, related_name="reports")
+    month = models.DateField(help_text="The first day of the month this report covers.")
+    total_sessions = models.PositiveIntegerField(default=0)
+    total_minutes = models.PositiveIntegerField(default=0)
+    total_payable = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    report_data = models.JSONField(default=dict, blank=True, help_text="Detailed session breakdown and notes.")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-month"]
+        unique_together = ["relationship", "month"]
+
+    def __str__(self):
+        return f"Supervision Report - {self.relationship.supervisee.name} - {self.month.strftime('%B %Y')}"
