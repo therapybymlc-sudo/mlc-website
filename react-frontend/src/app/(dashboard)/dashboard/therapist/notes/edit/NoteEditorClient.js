@@ -102,6 +102,9 @@ export default function NoteEditorClient() {
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [searchNotes, setSearchNotes] = useState("");
 
+  const appointmentId = searchParams.get("appointmentId");
+  const eventTypeId = searchParams.get("eventTypeId");
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -111,11 +114,20 @@ export default function NoteEditorClient() {
         clientId ? apiGet(`notes/?client=${clientId}`) : Promise.resolve([]),
         clientId ? apiGet(`appointments/?client=${clientId}`) : Promise.resolve([]),
       ]);
-      setTemplates(Array.isArray(tpls) ? tpls : tpls.results || []);
+      const templatesList = Array.isArray(tpls) ? tpls : tpls.results || [];
+      setTemplates(templatesList);
       setClient(clnt);
       setPastNotes(Array.isArray(prev) ? prev : prev.results || []);
       setAppointments(Array.isArray(appts) ? appts : appts.results || []);
       
+      // Clinical Hot-Link: If coming from schedule, find the matching template
+      if (!noteId && eventTypeId && templatesList.length > 0) {
+        const matchingTemplate = templatesList.find(t => String(t.event_type) === String(eventTypeId));
+        if (matchingTemplate) {
+          setSelectedTemplateId(String(matchingTemplate.id));
+        }
+      }
+
       if (noteId) {
         const n = await apiGet(`notes/${noteId}/`);
         setSelectedTemplateId(String(n.template));
@@ -144,6 +156,7 @@ export default function NoteEditorClient() {
         template: Number(selectedTemplateId),
         data: values,
         status: status,
+        appointment: appointmentId ? Number(appointmentId) : null,
       };
       if (noteId) await apiPut(`notes/${noteId}/`, payload);
       else {
@@ -156,6 +169,10 @@ export default function NoteEditorClient() {
       toast({ title: "Save Failed", status: "error" });
     }
   };
+
+  const linkedAppointment = useMemo(() => 
+    appointments.find(a => String(a.id) === String(appointmentId)),
+  [appointments, appointmentId]);
 
   if (!mounted || loading) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
 
@@ -170,6 +187,11 @@ export default function NoteEditorClient() {
                <HStack>
                   <Badge colorScheme="blue" variant="subtle" borderRadius="full">{noteStatus.toUpperCase()}</Badge>
                   <Text fontSize="xs" color="gray.400">Clinical Session Documentation</Text>
+                  {linkedAppointment && (
+                    <Badge colorScheme="purple" variant="outline" borderRadius="full" px={3}>
+                      Linked to Session: {new Date(linkedAppointment.date || linkedAppointment.start_time).toLocaleDateString()}
+                    </Badge>
+                  )}
                </HStack>
             </VStack>
          </HStack>

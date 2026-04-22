@@ -331,7 +331,7 @@ export default function ScheduleClient() {
                             borderRadius="xl"
                             onClick={() => {
                                 const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
-                                router.push(`/dashboard/therapist/notes/edit?clientId=${form.client}&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
+                                router.push(`/dashboard/therapist/clients?id=${form.client}&section=notes&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
                             }}
                         >
                             Treatment notes

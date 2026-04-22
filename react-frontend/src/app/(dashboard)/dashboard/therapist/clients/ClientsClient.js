@@ -6,7 +6,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
 import { apiGet, apiPost, apiPut } from "../../../../../api.js";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
 
 const initialClient = {
@@ -62,7 +62,15 @@ const initialClient = {
 
 export default function ClientsClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
+  
+  // Mission Context from Schedule
+  const missionClientId = searchParams.get("id");
+  const missionSection = searchParams.get("section");
+  const missionApptId = searchParams.get("appointmentId");
+  const missionTypeId = searchParams.get("eventTypeId");
+
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("list"); // list, add, detail
@@ -120,10 +128,26 @@ export default function ClientsClient() {
   }, []);
 
   useEffect(() => {
+    if (mounted && missionClientId && clients.length > 0) {
+      const client = clients.find(c => String(c.id) === String(missionClientId));
+      if (client) {
+        setSelectedClient(client);
+        setViewMode("detail");
+        if (missionSection) setActiveSection(missionSection);
+        
+        // If we have an appointment documentation mission, forward to editor
+        if (missionSection === "notes" && missionApptId) {
+          router.push(`/dashboard/therapist/notes/edit?clientId=${missionClientId}&appointmentId=${missionApptId}&eventTypeId=${missionTypeId}`);
+        }
+      }
+    }
+  }, [mounted, missionClientId, clients.length]);
+
+  useEffect(() => {
     if (selectedClient && viewMode === "detail") {
       fetchFullClientDetails(selectedClient.id);
     }
-  }, [viewMode]);
+  }, [viewMode, selectedClient?.id]);
 
   const handleLinkClient = async (email) => {
     try {
