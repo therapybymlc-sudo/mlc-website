@@ -59,6 +59,9 @@ from therapy.views import (
     TherapeuticRelationshipViewSet,
     SupervisoryRelationshipViewSet,
     SupervisionNoteViewSet,
+    RazorpayCreateOrderView,
+    RazorpayVerifyPaymentView,
+    RazorpayWebhookView,
 )
 
 # ----------------------------
@@ -189,6 +192,9 @@ urlpatterns = [
 
     # REST API
     path("api/", include(router.urls)),
+    path("api/payments/razorpay/create-order/", RazorpayCreateOrderView.as_view(), name="razorpay-create-order"),
+    path("api/payments/razorpay/verify/", RazorpayVerifyPaymentView.as_view(), name="razorpay-verify"),
+    path("api/payments/razorpay/webhook/", RazorpayWebhookView.as_view(), name="razorpay-webhook"),
     path("api/therapist-applications/", TherapistApplicationCreateView.as_view(), name="therapist_applications"),
 
     # Simple health check

@@ -120,11 +120,16 @@ export default function NoteEditorClient() {
       setPastNotes(Array.isArray(prev) ? prev : prev.results || []);
       setAppointments(Array.isArray(appts) ? appts : appts.results || []);
       
-      // Clinical Hot-Link: If coming from schedule, find the matching template
+      // 🚀 Clinical Hot-Link: MISSION AUTO-PILOT
       if (!noteId && eventTypeId && templatesList.length > 0) {
-        const matchingTemplate = templatesList.find(t => String(t.event_type) === String(eventTypeId));
-        if (matchingTemplate) {
-          setSelectedTemplateId(String(matchingTemplate.id));
+        // Find template where event_type matches missionTypeId
+        const matching = templatesList.find(t => {
+          const tTypeId = (t.event_type && typeof t.event_type === 'object') ? t.event_type.id : t.event_type;
+          return String(tTypeId) === String(eventTypeId);
+        });
+
+        if (matching) {
+          setSelectedTemplateId(String(matching.id));
         }
       }
 
@@ -195,7 +200,7 @@ export default function NoteEditorClient() {
                </HStack>
             </VStack>
          </HStack>
-              <HStack spacing={3}>
+         <HStack spacing={3}>
                 <Button 
                   leftIcon={<FiDownload />} 
                   variant="outline" 
@@ -207,21 +212,7 @@ export default function NoteEditorClient() {
                 >
                   Export PDF
                 </Button>
-                <Button leftIcon={<FiSave />} variant="ghost" color="gray.500" onClick={() => handleSave('draft')} isDisabled={isReadOnly}>
-                  Save Draft
-                </Button>
-                <Button 
-                  leftIcon={<FiCheckCircle />} 
-                  bg="#DB4437" 
-                  color="white" 
-                  px={8} 
-                  borderRadius="full" 
-                  onClick={() => handleSave('final')}
-                  isDisabled={isReadOnly}
-                >
-                  {isReadOnly ? "Record Finalized" : "Finalize Record"}
-                </Button>
-              </HStack>
+          </HStack>
       </Flex>
 
       <Grid templateColumns={{ base: "1fr", xl: "1fr 380px" }} gap={8}>
@@ -265,9 +256,45 @@ export default function NoteEditorClient() {
                       </VStack>
                    </Box>
                  ))
-               )}
-            </VStack>
-         </GridItem>
+                )}
+                
+                {selectedTemplate && (
+                  <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" mt={4}>
+                    <HStack justify="space-between" align="center">
+                       <VStack align="start" spacing={1}>
+                          <Text fontWeight="bold" fontSize="sm" color="gray.600">Session Status: {noteStatus.toUpperCase()}</Text>
+                          <Text fontSize="xs" color="gray.400">Ensure all clinical fields are accurate before finalization.</Text>
+                       </VStack>
+                       <HStack spacing={4}>
+                          <Button 
+                            leftIcon={<FiSave />} 
+                            variant="ghost" 
+                            color="gray.500" 
+                            onClick={() => handleSave('draft')} 
+                            isDisabled={isReadOnly}
+                            _hover={{ bg: 'gray.50' }}
+                          >
+                            Save Draft
+                          </Button>
+                          <Button 
+                            leftIcon={<FiCheckCircle />} 
+                            bg="#2C8B9A" 
+                            color="white" 
+                            px={10} 
+                            borderRadius="full" 
+                            onClick={() => handleSave('final')}
+                            isDisabled={isReadOnly}
+                            _hover={{ bg: '#236e7a' }}
+                            shadow="lg"
+                          >
+                            {isReadOnly ? "Record Finalized" : "Finalize Clinical Record"}
+                          </Button>
+                       </HStack>
+                    </HStack>
+                  </Box>
+                )}
+             </VStack>
+          </GridItem>
 
          {/* RIGHT: Clinical Reference Sidebar */}
          <GridItem>

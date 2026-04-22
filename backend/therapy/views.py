@@ -11,6 +11,14 @@ from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime, date, time, timedelta
+import os
+import base64
+import hashlib
+import hmac
+import json
+import urllib.request
+import urllib.error
+from decimal import Decimal
 
 from therapy.models import (
     ScheduleEvent,
@@ -53,6 +61,7 @@ from therapy.models import (
     SafetyPlan,
     SupervisoryRelationship,
     SupervisionNote,
+    RazorpayPayment,
 )
 from therapy.utils import (
     calculate_dass_scores,
@@ -844,6 +853,260 @@ class AvailabilitySlotPublicView(APIView):
             print(f"CRITICAL CALENDAR SYNC ERROR: {str(e)}")
             return Response([], status=200) # Give an empty list to keep the UI stable
 
+
+def _razorpay_key_id():
+    return getattr(settings, "RAZORPAY_KEY_ID", None) or os.getenv("RAZORPAY_KEY_ID")
+
+
+def _razorpay_key_secret():
+    return getattr(settings, "RAZORPAY_KEY_SECRET", None) or os.getenv("RAZORPAY_KEY_SECRET")
+
+
+def _razorpay_webhook_secret():
+    return getattr(settings, "RAZORPAY_WEBHOOK_SECRET", None) or os.getenv("RAZORPAY_WEBHOOK_SECRET")
+
+
+def _razorpay_request(method: str, path: str, payload=None):
+    """
+    Minimal Razorpay REST client using stdlib only.
+    path example: "/v1/orders"
+    """
+    key_id = _razorpay_key_id()
+    key_secret = _razorpay_key_secret()
+    if not key_id or not key_secret:
+        raise ValidationError("Razorpay credentials are not configured.")
+
+    url = f"https://api.razorpay.com{path}"
+    body_bytes = None
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    auth = base64.b64encode(f"{key_id}:{key_secret}".encode("utf-8")).decode("ascii")
+    headers["Authorization"] = f"Basic {auth}"
+
+    if payload is not None:
+        body_bytes = json.dumps(payload).encode("utf-8")
+
+    req = urllib.request.Request(url, data=body_bytes, method=method.upper(), headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8") if e.fp else ""
+        raise ValidationError(f"Razorpay HTTP error {e.code}: {raw or e.reason}")
+    except Exception as e:
+        raise ValidationError(f"Razorpay request failed: {e}")
+
+
+def _verify_razorpay_checkout_signature(order_id: str, payment_id: str, signature: str) -> bool:
+    secret = _razorpay_key_secret()
+    if not secret:
+        return False
+    message = f"{order_id}|{payment_id}".encode("utf-8")
+    expected = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
+
+
+class RazorpayCreateOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        client = _resolve_client_from_request(request)
+        if not client:
+            return _profile_required_response("client")
+
+        therapist_id = request.data.get("therapist_id") or request.data.get("therapist")
+        slot_id = request.data.get("slot_id") or request.data.get("slot")
+        if not therapist_id or not slot_id:
+            return Response({"detail": "therapist_id and slot_id are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        therapist = TherapistProfile.objects.filter(pk=therapist_id).first()
+        slot = AvailabilitySlot.objects.filter(pk=slot_id).select_related("therapist").first()
+        if not therapist or not slot:
+            return Response({"detail": "Therapist or slot not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Ensure slot therapist matches
+        if slot.therapist_id != therapist.id:
+            return Response({"detail": "Therapist must match the slot therapist."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if slot.status != AvailabilitySlot.Status.OPEN or not slot.visible_to_clients:
+            return Response({"detail": "This slot is not available for booking."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if slot.start_time <= timezone.now():
+            return Response({"detail": "This slot is no longer available."}, status=status.HTTP_400_BAD_REQUEST)
+
+        hold_minutes = int(getattr(settings, "BOOKING_REQUEST_HOLD_MINUTES", 15))
+        held_until = timezone.now() + timedelta(minutes=hold_minutes) if hold_minutes > 0 else None
+
+        # Amount: use therapist hourly_rate (assumed INR) in paise.
+        # If hourly_rate is missing, reject to avoid charging wrong amounts.
+        if therapist.hourly_rate is None:
+            return Response({"detail": "Therapist hourly rate is not configured."}, status=status.HTTP_400_BAD_REQUEST)
+        amount_paise = int((Decimal(therapist.hourly_rate) * Decimal("100")).to_integral_value())
+        currency = getattr(settings, "RAZORPAY_CURRENCY", "INR")
+
+        with transaction.atomic():
+            try:
+                booking_request = BookingRequest.objects.create(
+                    client=client,
+                    therapist=therapist,
+                    availability_slot=slot,
+                    status=BookingRequest.Status.PENDING,
+                    message_from_client=request.data.get("message_from_client", ""),
+                    expires_at=held_until,
+                    is_first_session_free=False,
+                )
+            except IntegrityError:
+                return Response({"detail": "This slot already has an active request."}, status=status.HTTP_400_BAD_REQUEST)
+
+            slot.status = AvailabilitySlot.Status.HELD
+            slot.held_until = held_until
+            slot.save(update_fields=["status", "held_until", "updated_at"])
+
+            order = _razorpay_request(
+                "POST",
+                "/v1/orders",
+                {
+                    "amount": amount_paise,
+                    "currency": currency,
+                    "receipt": f"booking_request_{booking_request.id}",
+                    "notes": {
+                        "booking_request_id": str(booking_request.id),
+                        "therapist_id": str(therapist.id),
+                        "slot_id": str(slot.id),
+                    },
+                },
+            )
+
+            payment = RazorpayPayment.objects.create(
+                booking_request=booking_request,
+                amount=amount_paise,
+                currency=currency,
+                status=RazorpayPayment.Status.CREATED,
+                razorpay_order_id=order.get("id", ""),
+                raw={"order": order},
+            )
+
+        return Response(
+            {
+                "key_id": _razorpay_key_id(),
+                "order_id": payment.razorpay_order_id,
+                "amount": payment.amount,
+                "currency": payment.currency,
+                "booking_request_id": booking_request.id,
+                "expires_at": booking_request.expires_at.isoformat() if booking_request.expires_at else None,
+                "therapist_name": therapist.name,
+            }
+        )
+
+
+class RazorpayVerifyPaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        client = _resolve_client_from_request(request)
+        if not client:
+            return _profile_required_response("client")
+
+        booking_request_id = request.data.get("booking_request_id")
+        rzp_payment_id = request.data.get("razorpay_payment_id")
+        rzp_order_id = request.data.get("razorpay_order_id")
+        rzp_signature = request.data.get("razorpay_signature")
+        if not booking_request_id or not rzp_payment_id or not rzp_order_id or not rzp_signature:
+            return Response({"detail": "Missing Razorpay verification fields."}, status=status.HTTP_400_BAD_REQUEST)
+
+        booking_request = BookingRequest.objects.filter(pk=booking_request_id, client=client).select_related("availability_slot").first()
+        if not booking_request:
+            return Response({"detail": "Booking request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        payment = RazorpayPayment.objects.filter(booking_request=booking_request).first()
+        if not payment:
+            return Response({"detail": "Payment record not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Ensure order id matches server-side record
+        if payment.razorpay_order_id != rzp_order_id:
+            return Response({"detail": "Order ID mismatch."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify checkout signature (mandatory)
+        if not _verify_razorpay_checkout_signature(rzp_order_id, rzp_payment_id, rzp_signature):
+            return Response({"detail": "Invalid payment signature."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch payment status from Razorpay API and ensure it is captured
+        payment_details = _razorpay_request("GET", f"/v1/payments/{rzp_payment_id}", payload=None)
+        status_str = str(payment_details.get("status", "")).lower()
+        amount = int(payment_details.get("amount") or 0)
+        currency = str(payment_details.get("currency") or "").upper()
+
+        if amount != payment.amount or currency != payment.currency.upper():
+            return Response({"detail": "Payment amount or currency mismatch."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if status_str != "captured":
+            return Response({"detail": f"Payment not captured (status={status_str})."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            payment.razorpay_payment_id = rzp_payment_id
+            payment.razorpay_signature = rzp_signature
+            payment.status = RazorpayPayment.Status.PAID
+            payment.captured_at = timezone.now()
+            payment.raw = {**(payment.raw or {}), "payment": payment_details}
+            payment.save(update_fields=["razorpay_payment_id", "razorpay_signature", "status", "captured_at", "raw", "updated_at"])
+
+            # Confirm booking immediately upon verified payment.
+            if booking_request.can_be_confirmed:
+                booking_request.confirm(confirmed_by=request.user)
+
+        return Response({"detail": "Payment verified and booking confirmed."})
+
+
+class RazorpayWebhookView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        secret = _razorpay_webhook_secret()
+        if not secret:
+            return Response({"detail": "Webhook secret not configured."}, status=status.HTTP_400_BAD_REQUEST)
+
+        signature = request.headers.get("X-Razorpay-Signature") or request.META.get("HTTP_X_RAZORPAY_SIGNATURE")
+        if not signature:
+            return Response({"detail": "Missing webhook signature."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # IMPORTANT: Use raw body for signature verification.
+        raw_body = request.body or b""
+        expected = hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            return Response({"detail": "Invalid webhook signature."}, status=status.HTTP_400_BAD_REQUEST)
+
+        event = request.data.get("event")
+        payload = request.data.get("payload") or {}
+
+        if event == "payment.captured":
+            entity = ((payload.get("payment") or {}).get("entity") or {})
+            rzp_payment_id = entity.get("id")
+            rzp_order_id = entity.get("order_id")
+            if not rzp_payment_id or not rzp_order_id:
+                return Response({"detail": "Missing payment entity fields."}, status=status.HTTP_400_BAD_REQUEST)
+
+            payment = RazorpayPayment.objects.filter(razorpay_order_id=rzp_order_id).select_related("booking_request").first()
+            if not payment:
+                return Response({"detail": "Payment record not found."}, status=status.HTTP_200_OK)
+
+            with transaction.atomic():
+                if payment.status != RazorpayPayment.Status.PAID:
+                    payment.status = RazorpayPayment.Status.PAID
+                    payment.razorpay_payment_id = payment.razorpay_payment_id or rzp_payment_id
+                    payment.captured_at = payment.captured_at or timezone.now()
+                    payment.raw = {**(payment.raw or {}), "webhook": request.data}
+                    payment.save(update_fields=["status", "razorpay_payment_id", "captured_at", "raw", "updated_at"])
+
+                br = payment.booking_request
+                if br and br.can_be_confirmed:
+                    br.confirm(confirmed_by=None)
+
+        return Response({"detail": "ok"})
 
 class PublicTherapistDirectoryView(APIView):
     permission_classes = [IsAuthenticated]

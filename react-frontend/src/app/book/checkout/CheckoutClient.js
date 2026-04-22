@@ -9,10 +9,13 @@ import {
 } from "@chakra-ui/react";
 import { FiCheckCircle, FiClock, FiCalendar, FiShield, FiLock, FiArrowLeft } from "react-icons/fi";
 import Link from 'next/link';
+import { useUser } from "@clerk/nextjs";
+import { apiPost } from "../../../api.js";
 
 export default function CheckoutClient() {
   const [isMounted, setIsMounted] = useState(false);
   const searchParams = useSearchParams();
+  const { isLoaded, isSignedIn, user } = useUser();
   
   useEffect(() => {
     setIsMounted(true);
@@ -25,6 +28,7 @@ export default function CheckoutClient() {
   const [profile, setProfile] = useState(null);
   const [slot, setSlot] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [bookingRequestId, setBookingRequestId] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -32,10 +36,16 @@ export default function CheckoutClient() {
 
     const fetchData = async () => {
       try {
+        const base = (
+          (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+          (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE : null) ||
+          "http://127.0.0.1:8000/api"
+        ).replace(/\/+$/, "");
+
         // Fetch Profile
-        const profileRes = await fetch(`https://api.mlchealth.in/api/therapists/${therapistId}/`);
+        const profileRes = await fetch(`${base}/therapists/${therapistId}/`);
         // Fetch All Slots (to find our specific one)
-        const slotRes = await fetch(`https://api.mlchealth.in/api/availability-slots/public/?therapist=${therapistId}`);
+        const slotRes = await fetch(`${base}/availability-slots/public/?therapist=${therapistId}`);
         
         if (profileRes.ok && slotRes.ok) {
           const profileData = await profileRes.json();
@@ -55,45 +65,107 @@ export default function CheckoutClient() {
     fetchData();
   }, [therapistId, slotId]);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      toast({ title: "Please sign in to continue.", status: "info" });
+      const returnUrl = typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/book/checkout";
+      window.location.href = `/login/client?redirect_url=${encodeURIComponent(returnUrl)}`;
+      return;
+    }
     if (!window.Razorpay) {
       toast({ title: "Payment system loading...", status: "info" });
       return;
     }
     
-    setIsProcessing(true);
+    try {
+      setIsProcessing(true);
 
-    const options = {
-      key: "rzp_test_MLCPlaceholder", // 🛑 Replace with your real Key ID
-      amount: (profile?.hourly_rate || 45) * 100, // Amount in paise
-      currency: "INR",
-      name: "MLC Health",
-      description: `Session with ${profile?.name}`,
-      image: "https://www.mlchealth.in/logo.png",
-      handler: async function (response) {
-        // SUCCESS: Handled after payment
-        toast({
-          title: "Payment Successful!",
-          description: "Your session is confirmed. Check your email for details.",
-          status: "success",
-          duration: 8000
-        });
-        // Lead them back to a success page or dashboard
-        setTimeout(() => window.location.href = "/dashboard/client/appointments", 2000);
-      },
-      prefill: {
-        name: "",
-        email: "",
-        contact: ""
-      },
-      theme: {
-        color: "#56756D" // MLC Green
-      }
-    };
+      const order = await apiPost("payments/razorpay/create-order", {
+        therapist_id: therapistId,
+        slot_id: slotId,
+      });
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-    setIsProcessing(false);
+      setBookingRequestId(order.booking_request_id);
+
+      const fullName =
+        user?.fullName ||
+        [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+      const email = user?.primaryEmailAddress?.emailAddress || "";
+
+      const options = {
+        key: order.key_id,
+        order_id: order.order_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "MLC Health",
+        description: `Session with ${order.therapist_name || profile?.name || "Therapist"}`,
+        image: "https://www.mlchealth.in/logo.png",
+        handler: async function (response) {
+          try {
+            await apiPost("payments/razorpay/verify", {
+              booking_request_id: order.booking_request_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast({
+              title: "Payment Successful!",
+              description: "Your session is confirmed. Check your dashboard for details.",
+              status: "success",
+              duration: 8000
+            });
+            setTimeout(() => window.location.href = "/dashboard/client/appointments", 1500);
+          } catch (e) {
+            console.error(e);
+            toast({
+              title: "Payment verification failed",
+              description: "We received your payment but couldn't confirm your booking yet. Please contact support.",
+              status: "error",
+              duration: 10000
+            });
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        modal: {
+          ondismiss: async () => {
+            // Release held slot if the user cancels payment.
+            try {
+              if (order.booking_request_id) {
+                await apiPost(`booking-requests/${order.booking_request_id}/cancel`, {
+                  message_from_client: "Payment cancelled",
+                });
+              }
+            } catch (e) {
+              console.warn("Failed to cancel pending booking request", e);
+            } finally {
+              setIsProcessing(false);
+            }
+          }
+        },
+        prefill: {
+          name: fullName || "",
+          email: email || "",
+          contact: ""
+        },
+        theme: {
+          color: "#56756D"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Checkout error",
+        description: e?.response?.data?.detail || "Could not start checkout. Please try again.",
+        status: "error",
+        duration: 8000
+      });
+      setIsProcessing(false);
+    }
   };
 
   if (!isMounted) return <Box h="100vh" bg="#F9FBFA" />;
@@ -177,16 +249,16 @@ export default function CheckoutClient() {
                        <VStack align="stretch" spacing={3}>
                           <HStack justify="space-between" fontSize="sm" opacity={0.8}>
                              <Text>Clinical Consultation</Text>
-                             <Text>KD {profile.hourly_rate || "45"}.00</Text>
+                             <Text>INR {profile.hourly_rate || "45"}.00</Text>
                           </HStack>
                           <HStack justify="space-between" fontSize="sm" opacity={0.8}>
                              <Text>Administrative Fee</Text>
-                             <Text>KD 0.00</Text>
+                             <Text>INR 0.00</Text>
                           </HStack>
                           <Divider borderColor="whiteAlpha.300" py={1} />
                           <HStack justify="space-between" fontSize="xl" fontWeight="800">
                              <Text>Total Payable</Text>
-                             <Text>KD {profile.hourly_rate || "45"}.00</Text>
+                             <Text>INR {profile.hourly_rate || "45"}.00</Text>
                           </HStack>
                        </VStack>
 
