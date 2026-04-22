@@ -886,7 +886,7 @@ def _razorpay_request(method: str, path: str, payload=None):
     key_id = _razorpay_key_id()
     key_secret = _razorpay_key_secret()
     if not key_id or not key_secret:
-        raise ValidationError("Razorpay credentials are not configured.")
+        raise exceptions.ValidationError("Razorpay credentials are not configured.")
 
     url = f"https://api.razorpay.com{path}"
     body_bytes = None
@@ -907,9 +907,9 @@ def _razorpay_request(method: str, path: str, payload=None):
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8") if e.fp else ""
-        raise ValidationError(f"Razorpay HTTP error {e.code}: {raw or e.reason}")
+        raise exceptions.ValidationError(f"Razorpay HTTP error {e.code}: {raw or e.reason}")
     except Exception as e:
-        raise ValidationError(f"Razorpay request failed: {e}")
+        raise exceptions.ValidationError(f"Razorpay request failed: {str(e)}")
 
 
 def _verify_razorpay_checkout_signature(order_id: str, payment_id: str, signature: str) -> bool:
