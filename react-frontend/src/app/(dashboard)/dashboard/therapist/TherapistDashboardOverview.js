@@ -18,6 +18,7 @@ import {
   Divider,
   Flex,
   Center,
+  Badge,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings, FiAward } from "react-icons/fi";

@@ -22,6 +22,7 @@ import {
   Divider,
   Icon,
   Tag,
+  Badge,
   Wrap,
   WrapItem,
   Textarea,

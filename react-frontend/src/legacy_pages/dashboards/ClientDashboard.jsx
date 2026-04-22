@@ -10,6 +10,7 @@ import {
   Textarea,
   Tag,
   TagLabel,
+  Badge,
   Divider,
   useToast,
   Progress,

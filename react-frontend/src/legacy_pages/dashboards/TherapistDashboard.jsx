@@ -20,6 +20,7 @@ import {
   useDisclosure,
   Image,
   SimpleGrid,
+  Badge,
   Textarea,
   Tag,
   TagLabel,
