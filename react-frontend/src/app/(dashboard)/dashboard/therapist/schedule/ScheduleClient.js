@@ -123,11 +123,12 @@ export default function ScheduleClient() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [eventRes, clientRes, therapistRes, typesRes] = await Promise.all([
+      const [eventRes, clientRes, therapistRes, typesRes, appointmentRes] = await Promise.all([
         apiGet("schedule-events/"),
         apiGet("clients/"),
         apiGet("therapists/me/").catch(() => null),
-        apiGet("event-types/").catch(() => [])
+        apiGet("event-types/").catch(() => []),
+        apiGet("appointments/").catch(() => [])
       ]);
 
       const normalizedTypes = (Array.isArray(typesRes) ? typesRes : typesRes.results || [])
@@ -137,12 +138,14 @@ export default function ScheduleClient() {
       const typeMap = {};
       normalizedTypes.forEach(t => { typeMap[t.id] = t; });
 
+      // Process Schedule Events
       const eventData = Array.isArray(eventRes) ? eventRes : eventRes.results || [];
-      const unifiedEvents = eventData.map(ev => {
+      const scheduleEvents = eventData.map(ev => {
         const typeInfo = typeMap[ev.event_type] || {};
         return {
-          id: ev.id,
+          id: `event-${ev.id}`,
           originalId: ev.id,
+          model: 'schedule-event',
           title: ev.title,
           start: ev.start_time,
           end: ev.end_time,
@@ -158,7 +161,29 @@ export default function ScheduleClient() {
         };
       });
 
-      setEvents(unifiedEvents);
+      // Process Booked Appointments
+      const appointmentData = Array.isArray(appointmentRes) ? appointmentRes : appointmentRes.results || [];
+      const bookedAppointments = appointmentData.map(apt => {
+        return {
+          id: `apt-${apt.id}`,
+          originalId: apt.id,
+          model: 'appointment',
+          title: `[Booked] ${apt.client_name || 'Patient'}`,
+          start: apt.start_time,
+          end: apt.end_time,
+          backgroundColor: "#2C8B9A", // Distinct color for booked appts
+          borderColor: "#2C8B9A",
+          extendedProps: {
+              client_id: apt.client,
+              client_name: apt.client_name,
+              status: apt.status,
+              notes: apt.notes,
+              is_appointment: true
+          }
+        };
+      });
+
+      setEvents([...scheduleEvents, ...bookedAppointments]);
       setClients(Array.isArray(clientRes) ? clientRes : clientRes.results || []);
 
       if (therapistRes) {
