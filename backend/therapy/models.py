@@ -922,6 +922,37 @@ class BookingRequest(models.Model):
 
 
 # ===========================
+# 🔹 Payments (Razorpay)
+# ===========================
+class RazorpayPayment(models.Model):
+    class Status(models.TextChoices):
+        CREATED = "created", "Created"
+        PAID = "paid", "Paid"
+        FAILED = "failed", "Failed"
+
+    booking_request = models.OneToOneField(
+        BookingRequest,
+        on_delete=models.CASCADE,
+        related_name="razorpay_payment",
+    )
+    amount = models.PositiveIntegerField(help_text="Amount in the smallest currency unit (e.g. paise).")
+    currency = models.CharField(max_length=10, default="INR")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.CREATED)
+
+    razorpay_order_id = models.CharField(max_length=64, blank=True, default="")
+    razorpay_payment_id = models.CharField(max_length=64, blank=True, default="")
+    razorpay_signature = models.CharField(max_length=256, blank=True, default="")
+
+    captured_at = models.DateTimeField(null=True, blank=True)
+    raw = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"RazorpayPayment({self.status}) for BookingRequest {self.booking_request_id}"
+
+# ===========================
 # 🔹 Appointment & Session Models
 # ===========================
 class Appointment(models.Model):

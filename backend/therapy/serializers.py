@@ -446,7 +446,7 @@ class NoteTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NoteTemplate
-        fields = ["id", "name", "description", "fields", "new_fields", "sections"]
+        fields = ["id", "name", "description", "fields", "new_fields", "sections", "event_type"]
 
     def create(self, validated_data):
         new_fields = validated_data.pop("new_fields", [])
@@ -566,6 +566,7 @@ class NoteSerializer(serializers.ModelSerializer):
             "cosigned_by",      # read
             "cosigner_ids",     # write
             "cosign_completed",
+            "appointment",
             "created_at",
             "updated_at",
         ]
