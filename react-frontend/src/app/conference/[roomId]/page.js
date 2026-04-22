@@ -1,9 +1,11 @@
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, Spinner, Center, VStack, Heading, Text } from '@chakra-ui/react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '../../../context/AuthContext';
+import { apiGet } from '../../../api.js';
 
 const TherapyRoom = dynamic(() => import('../../../components/video/TherapyRoom'), {
   ssr: false,
@@ -20,7 +22,46 @@ const TherapyRoom = dynamic(() => import('../../../components/video/TherapyRoom'
 export default function ConferencePage() {
   const params = useParams();
   const router = useRouter();
+  const { isTherapist, isClient, isAuthenticated, loading: authLoading } = useAuth();
   const roomId = params.roomId;
+  
+  const [jwt, setJwt] = useState(null);
+  const [tokenLoading, setTokenLoading] = useState(true);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setTokenLoading(false);
+      return;
+    }
+
+    const fetchToken = async () => {
+      try {
+        const endpoint = isTherapist ? 'therapists' : 'clients';
+        const res = await apiGet(`${endpoint}/jitsi-token/`, { room: roomId });
+        if (res?.token) {
+          setJwt(res.token);
+        }
+      } catch (err) {
+        console.error("Failed to fetch Jitsi token:", err);
+      } finally {
+        setTokenLoading(false);
+      }
+    };
+
+    fetchToken();
+  }, [roomId, isTherapist, isClient, isAuthenticated, authLoading]);
+
+  if (authLoading || tokenLoading) {
+    return (
+      <Center h="100vh" bg="gray.950">
+        <VStack spacing={6}>
+          <Spinner size="xl" color="teal.500" thickness="4px" />
+          <Text color="whiteAlpha.700" fontFamily="'Playfair Display', serif">Authenticating Session...</Text>
+        </VStack>
+      </Center>
+    );
+  }
 
   if (!roomId) {
     return (
@@ -34,7 +75,6 @@ export default function ConferencePage() {
   }
 
   const handleLeave = () => {
-    // Redirect to home or dashboard after leaving
     router.push('/');
   };
 
@@ -43,6 +83,7 @@ export default function ConferencePage() {
       <TherapyRoom 
         roomUrl={`https://mlchealth.in/conference/${roomId}`} 
         onLeave={handleLeave}
+        jwt={jwt}
       />
     </Box>
   );
