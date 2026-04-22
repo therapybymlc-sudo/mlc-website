@@ -715,6 +715,7 @@ export default function ScheduleClient() {
               ".fc-timegrid-axis-cushion": { fontSize: { base: "0.6rem", md: "0.8rem" } }
           }}
       >
+        {mounted ? (
           <Box 
             overflowX="auto" 
             w="full" 
@@ -779,6 +780,9 @@ export default function ScheduleClient() {
           />
             </Box>
           </Box>
+        ) : (
+          <Center h="400px"><Spinner /></Center>
+        )}
       </Box>
 
       <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered scrollBehavior="inside">
