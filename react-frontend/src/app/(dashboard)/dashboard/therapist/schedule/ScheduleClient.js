@@ -40,6 +40,7 @@ import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle, FiMaximize2, FiVideo, FiCopy, FiChevronUp, FiChevronDown, FiTrash2 } from "react-icons/fi";
 import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from "../../../../../api.js";
+import { schedulingApi } from "../../../../../api/scheduling";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -87,7 +88,10 @@ export default function ScheduleClient() {
     start_time: "",
     end_time: "",
     notes: "",
-    status: "scheduled"
+    status: "scheduled",
+    repeat_enabled: false,
+    repeat_interval: "weekly",
+    repeat_count: 1,
   });
 
   // One-off Availability Form
@@ -256,7 +260,10 @@ export default function ScheduleClient() {
       start_time: toLocalISO(start),
       end_time: toLocalISO(end),
       notes: "",
-      status: "scheduled"
+      status: "scheduled",
+      repeat_enabled: false,
+      repeat_interval: "weekly",
+      repeat_count: 1,
     });
     setSelectedEvent(null);
     onOpen();
@@ -275,7 +282,10 @@ export default function ScheduleClient() {
         start_time: toLocalISO(event.start),
         end_time: toLocalISO(event.end),
         notes: event.extendedProps.notes || "",
-        status: event.extendedProps.status || "scheduled"
+        status: event.extendedProps.status || "scheduled",
+        repeat_enabled: false,
+        repeat_interval: "weekly",
+        repeat_count: 1,
     });
     onOpen();
   };
@@ -485,6 +495,50 @@ export default function ScheduleClient() {
                 </FormControl>
             </SimpleGrid>
 
+            {!isEditMode && (
+              <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.100">
+                <VStack align="stretch" spacing={3}>
+                  <FormControl display="flex" alignItems="center" justifyContent="space-between">
+                    <FormLabel mb="0" fontWeight="700" color="gray.600">Repeat this event</FormLabel>
+                    <Checkbox
+                      colorScheme="teal"
+                      isChecked={Boolean(form.repeat_enabled)}
+                      onChange={(e) => setForm({ ...form, repeat_enabled: e.target.checked })}
+                    />
+                  </FormControl>
+                  {form.repeat_enabled && (
+                    <SimpleGrid columns={2} spacing={4}>
+                      <FormControl>
+                        <FormLabel fontSize="sm" color="gray.600">Repeat every</FormLabel>
+                        <Select
+                          value={form.repeat_interval || "weekly"}
+                          onChange={(e) => setForm({ ...form, repeat_interval: e.target.value })}
+                          borderRadius="lg"
+                          bg="white"
+                        >
+                          <option value="daily">Day</option>
+                          <option value="weekly">Week</option>
+                          <option value="monthly">Month</option>
+                        </Select>
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel fontSize="sm" color="gray.600">Total occurrences</FormLabel>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={52}
+                          value={form.repeat_count ?? 1}
+                          onChange={(e) => setForm({ ...form, repeat_count: e.target.value })}
+                          borderRadius="lg"
+                          bg="white"
+                        />
+                      </FormControl>
+                    </SimpleGrid>
+                  )}
+                </VStack>
+              </Box>
+            )}
+
             <FormControl>
                 <FormLabel fontWeight="700" color="gray.600">Clinical Notes</FormLabel>
                 <Textarea 
@@ -586,20 +640,36 @@ export default function ScheduleClient() {
     try {
         const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
         const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
-        
-        const payload = {
-          title: form.title || (selectedClientObj ? selectedClientObj.name : (selectedTypeObj?.name || "Clinical Session")),
-          therapist: currentTherapistId,
-          client: form.client ? Number(form.client) : null,
-          event_type: form.event_type ? Number(form.event_type) : null,
-          start_time: form.start_time,
-          end_time: form.end_time,
-          notes: form.notes,
-          status: form.status || "scheduled",
-          color: selectedTypeObj?.color || "#E8E8E8",
+        const baseStart = new Date(form.start_time);
+        const baseEnd = new Date(form.end_time);
+        const repeatCount = form.repeat_enabled ? Math.max(1, parseInt(form.repeat_count, 10) || 1) : 1;
+
+        const shiftDate = (dateObj, interval, step) => {
+          const next = new Date(dateObj);
+          if (interval === "daily") next.setDate(next.getDate() + step);
+          else if (interval === "monthly") next.setMonth(next.getMonth() + step);
+          else next.setDate(next.getDate() + (7 * step)); // weekly default
+          return next;
         };
-        await apiPost("schedule-events/", payload);
-        toast({ title: "Appointment created", status: "success" });
+
+        for (let i = 0; i < repeatCount; i += 1) {
+          const startAt = i === 0 ? baseStart : shiftDate(baseStart, form.repeat_interval, i);
+          const endAt = i === 0 ? baseEnd : shiftDate(baseEnd, form.repeat_interval, i);
+          const payload = {
+            title: form.title || (selectedClientObj ? selectedClientObj.name : (selectedTypeObj?.name || "Clinical Session")),
+            therapist: currentTherapistId,
+            client: form.client ? Number(form.client) : null,
+            event_type: form.event_type ? Number(form.event_type) : null,
+            start_time: toLocalISO(startAt),
+            end_time: toLocalISO(endAt),
+            notes: form.notes,
+            status: form.status || "scheduled",
+            color: selectedTypeObj?.color || "#E8E8E8",
+          };
+          // eslint-disable-next-line no-await-in-loop
+          await apiPost("schedule-events/", payload);
+        }
+        toast({ title: repeatCount > 1 ? `${repeatCount} repeating sessions created` : "Appointment created", status: "success" });
         onClose();
         fetchData();
     } catch (err) {
@@ -663,11 +733,12 @@ export default function ScheduleClient() {
     const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
     if (!window.confirm("Delete this appointment?")) return;
     try {
-      const endpoint = selectedEvent.extendedProps?.model === 'appointment' 
-        ? 'appointments' 
-        : 'schedule-events';
-
-      await apiDelete(`${endpoint}/${originalId}/`);
+      const isAppointment = selectedEvent.extendedProps?.model === "appointment";
+      if (isAppointment) {
+        await schedulingApi.cancelTherapistAppointment(originalId, "Cancelled by therapist from calendar");
+      } else {
+        await apiDelete(`schedule-events/${originalId}/`);
+      }
       toast({ title: "Deleted", status: "success" });
       onClose();
       fetchData();
@@ -781,7 +852,7 @@ export default function ScheduleClient() {
                 <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={oneOffModal.onOpen} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }} size={{ base: "sm", md: "md" }}>
                     One-off Availability
                 </Button>
-                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "" }); onOpen(); }} _hover={{ bg: '#C9A960' }} size={{ base: "sm", md: "md" }}>
+                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "", status: "scheduled", repeat_enabled: false, repeat_interval: "weekly", repeat_count: 1 }); onOpen(); }} _hover={{ bg: '#C9A960' }} size={{ base: "sm", md: "md" }}>
                   Add Session
                 </Button>
             </Flex>

@@ -42,19 +42,39 @@ export default function CheckoutClient() {
           "http://127.0.0.1:8000/api"
         ).replace(/\/+$/, "");
 
+        const isDynamicSlot = typeof slotId === "string" && slotId.startsWith("dyn-");
+
         // Fetch Profile
         const profileRes = await fetch(`${base}/therapists/${therapistId}/`);
-        // Fetch All Slots (to find our specific one)
-        const slotRes = await fetch(`${base}/availability-slots/public/?therapist=${therapistId}`);
-        
-        if (profileRes.ok && slotRes.ok) {
+        // Fetch all slots only for non-dynamic slot ids
+        const slotRes = isDynamicSlot
+          ? null
+          : await fetch(`${base}/availability-slots/public/?therapist=${therapistId}`);
+
+        if (profileRes.ok && (isDynamicSlot || slotRes?.ok)) {
           const profileData = await profileRes.json();
-          const slotsData = await slotRes.json();
-          
           setProfile(profileData);
-          // Find our specific slot from the list
-          const foundSlot = (slotsData.results || slotsData).find(s => String(s.id).includes(slotId) || s.id == slotId);
-          setSlot(foundSlot);
+
+          if (isDynamicSlot) {
+            const ts = Number(String(slotId).replace("dyn-", ""));
+            const startTime = Number.isFinite(ts) ? new Date(ts * 1000) : null;
+            const endTime = startTime ? new Date(startTime.getTime() + 60 * 60 * 1000) : null;
+            setSlot(
+              startTime && endTime
+                ? {
+                    id: slotId,
+                    start_time: startTime.toISOString(),
+                    end_time: endTime.toISOString(),
+                    therapist: Number(therapistId),
+                  }
+                : null
+            );
+          } else {
+            const slotsData = await slotRes.json();
+            // Find our specific slot from the list
+            const foundSlot = (slotsData.results || slotsData).find((s) => String(s.id).includes(slotId) || s.id == slotId);
+            setSlot(foundSlot);
+          }
         }
       } catch (err) {
         console.error("Fetch failed", err);

@@ -52,6 +52,15 @@ const CATEGORIES = [
   { id: 'long_term', label: 'Long Term', color: '#B08968', icon: FiTarget },
 ];
 
+function normalizeRichTextHtml(html) {
+  if (!html) return "";
+  let out = String(html).trim();
+  // Some editors return a full HTML document; keep only body payload for safe embedding.
+  out = out.replace(/<!doctype[^>]*>/gi, "");
+  out = out.replace(/<\/?(html|head|body)[^>]*>/gi, "");
+  return out.trim();
+}
+
 export default function GoalsClient() {
   const toast = useToast();
   const { loading: authLoading, isAuthenticated } = useAuth();
@@ -84,9 +93,10 @@ export default function GoalsClient() {
     if (!newGoalTitle.trim()) return;
     setIsAdding(true);
     try {
+      const normalizedDescription = normalizeRichTextHtml(newGoalDesc);
       const saved = await apiPost("client-goals/", {
         title: newGoalTitle,
-        description: newGoalDesc,
+        description: normalizedDescription,
         category: activeCategory,
         color: CATEGORIES.find(c => c.id === activeCategory).color,
         is_completed: false,
@@ -312,6 +322,8 @@ function GoalItem({ goal, onToggle, onDelete }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const catColor = CATEGORIES.find(c => c.id === goal.category)?.color || '#56756D';
 
+  const safeDescription = normalizeRichTextHtml(goal.description || "");
+
   return (
     <Box 
       bg="white" 
@@ -364,7 +376,7 @@ function GoalItem({ goal, onToggle, onDelete }) {
           </HStack>
           
           <HStack spacing={2}>
-            {goal.description && (
+            {safeDescription && (
               <IconButton 
                 icon={isExpanded ? <FiChevronUp /> : <FiChevronDown />} 
                 variant="ghost" 
@@ -391,7 +403,7 @@ function GoalItem({ goal, onToggle, onDelete }) {
             fontSize="sm" 
             color="gray.600" 
             className="rich-text-content"
-            dangerouslySetInnerHTML={{ __html: goal.description }} 
+            dangerouslySetInnerHTML={{ __html: safeDescription }} 
           />
         </Box>
       </Collapse>

@@ -2011,8 +2011,13 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = _resolve_client_from_request(self.request)
+        client_id = self.request.data.get("client")
+        # Client self-service creation should not require passing a client id.
+        if client and not client_id:
+            serializer.save(client=client, therapist=client.therapist)
+            return
+
         if therapist:
-            client_id = self.request.data.get("client")
             client_obj = None
             if client_id:
                 client_obj = ClientProfile.objects.filter(
@@ -2021,7 +2026,9 @@ class ClientGoalViewSet(viewsets.ModelViewSet):
             if not client_obj:
                 raise exceptions.ValidationError({"client": "Valid client is required."})
             serializer.save(therapist=therapist, client=client_obj)
-        elif client:
+            return
+
+        if client:
             serializer.save(client=client, therapist=client.therapist)
 
 
