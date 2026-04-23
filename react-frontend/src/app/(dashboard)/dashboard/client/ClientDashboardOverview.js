@@ -44,6 +44,7 @@ export default function ClientDashboardOverview() {
   const { clientProfile } = useAuth();
   const toast = useToast();
   const { goals, appointments, journals, checkins, relationships, loading, refreshData } = useClientData();
+
   const [stats, setStats] = useState({
     journalStreak: 0,
     checkinsThisWeek: 0,
@@ -387,7 +388,7 @@ export default function ClientDashboardOverview() {
       </SimpleGrid>
 
       {/* 🩺 Your Therapeutic Guide Section */}
-      {(relationships.length > 0 || upcoming.length > 0) && (
+      {(relationships.length > 0 || appointments.length > 0) && (
         <Box mb={10}>
           <Heading size="md" color="#2E2E2E" mb={6} fontFamily="'Playfair Display', serif">Your Therapeutic Team</Heading>
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -438,8 +439,8 @@ export default function ClientDashboardOverview() {
                     color="white" 
                     borderRadius="full"
                     as={NextLink}
-                    href={nextAppt && nextAppt.therapist_id === rel.therapist_id 
-                      ? `/conference/MLC_${nextAppt.id}` 
+                    href={appointments && appointments[0] && appointments[0].therapist_id === rel.therapist_id 
+                      ? `/conference/MLC_${appointments[0].id}` 
                       : `/conference/MLC_Session_${rel.id}`}
                     _hover={{ bg: '#455c56' }}
                   >
