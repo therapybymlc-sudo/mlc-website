@@ -472,7 +472,9 @@ export default function ClientDashboardOverview() {
               <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">
                 {clientProfile?.name || 'Clinical Snapshot'}
               </Heading>
-              <Text fontSize="xs" color="gray.500">{clientProfile?.email || 'Latest assessment results'}</Text>
+              <Text fontSize="xs" color="gray.500">
+                {clientProfile?.email || 'No email'} • Profile ID: {clientProfile?.id}
+              </Text>
             </VStack>
             <Icon as={FiActivity} color="teal.400" boxSize={6} />
           </HStack>

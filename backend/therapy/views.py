@@ -588,6 +588,7 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         return Response({"token": token})
 
     def update(self, request, *args, **kwargs):
+        from django.db import transaction
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         email = request.data.get("email")
@@ -602,41 +603,49 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
-                # If existing profile is unclaimed or owned by current user
-                print(f"DEBUG: Merging Ghost Profile {instance.id} into Existing Profile {existing_profile.id}")
-                
-                # ⚡ OneToOne Safety: Unlink user from current ghost profile first
-                instance.user = None
-                instance.save(update_fields=["user"])
-                
-                # 1. Update the existing profile with any new data from the request
-                serializer = self.get_serializer(existing_profile, data=request.data, partial=True)
-                serializer.is_valid(raise_exception=True)
-                existing_profile = serializer.save(user=request.user)
-                
-                # 2. Migrate all related clinical data from Ghost to Real profile
-                from .models import Appointment, ClientGoal, ClientJournal, MoodCheckin, SafetyPlan
-                
-                # Migrate Appointments, Goals, Journals, Checkins
-                Appointment.objects.filter(client=instance).update(client=existing_profile)
-                ClientGoal.objects.filter(client=instance).update(client=existing_profile)
-                ClientJournal.objects.filter(client=instance).update(client=existing_profile)
-                MoodCheckin.objects.filter(client=instance).update(client=existing_profile)
-                
-                # Migrate Safety Plan (OneToOne)
-                ghost_sp = getattr(instance, 'safety_plan', None)
-                if ghost_sp and not hasattr(existing_profile, 'safety_plan'):
-                    ghost_sp.client = existing_profile
-                    ghost_sp.save()
-                
-                print(f"DEBUG: Migrated clinical data from {instance.id} to {existing_profile.id}")
+                print(f"DEBUG: STARTING MERGE - Ghost {instance.id} -> Real {existing_profile.id}")
+                try:
+                    with transaction.atomic():
+                        # ⚡ OneToOne Safety: Unlink user from current ghost profile first
+                        original_user = instance.user
+                        instance.user = None
+                        instance.save(update_fields=["user"])
+                        
+                        # 1. Update the existing profile with any new data from the request
+                        serializer = self.get_serializer(existing_profile, data=request.data, partial=True)
+                        serializer.is_valid(raise_exception=True)
+                        existing_profile = serializer.save(user=request.user)
+                        
+                        # 2. Migrate all related clinical data from Ghost to Real profile
+                        from .models import Appointment, ClientGoal, ClientJournal, ClientCheckin, SafetyPlan
+                        
+                        appts = Appointment.objects.filter(client=instance).update(client=existing_profile)
+                        goals = ClientGoal.objects.filter(client=instance).update(client=existing_profile)
+                        journals = ClientJournal.objects.filter(client=instance).update(client=existing_profile)
+                        checkins = ClientCheckin.objects.filter(client=instance).update(client=existing_profile)
+                        
+                        # Migrate Safety Plan (OneToOne)
+                        if hasattr(instance, 'safety_plan') and not hasattr(existing_profile, 'safety_plan'):
+                            sp = instance.safety_plan
+                            sp.client = existing_profile
+                            sp.save()
+                        
+                        print(f"DEBUG: MIGRATION COMPLETE - Appts: {appts}, Goals: {goals}, Journals: {journals}, Checkins: {checkins}")
 
-                # 3. Delete the temporary "Ghost" profile
-                if not TherapeuticRelationship.objects.filter(client=instance).exists():
-                    if not instance.name or instance.name.startswith("user_"):
-                        instance.delete()
-                
-                return Response(serializer.data)
+                        # 3. Delete the temporary "Ghost" profile ONLY if it has no remaining relationships
+                        if not TherapeuticRelationship.objects.filter(client=instance).exists():
+                            if not instance.name or instance.name.startswith("user_"):
+                                print(f"DEBUG: DELETING GHOST PROFILE {instance.id}")
+                                instance.delete()
+                        
+                        return Response(serializer.data)
+                except Exception as e:
+                    print(f"ERROR: MERGE FAILED - {str(e)}")
+                    # Restore link to ghost profile if possible
+                    if original_user:
+                        instance.user = original_user
+                        instance.save(update_fields=["user"])
+                    raise e
 
         return super().update(request, *args, **kwargs)
 
