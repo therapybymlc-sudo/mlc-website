@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Center, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
 import { useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const { roles = [], isTherapist, isClient, isAdmin } = useAuth();
   const router = useRouter();
   const [resolvingRole, setResolvingRole] = useState(false);
+  const attemptedRoleRef = useRef("");
   const toast = useToast();
   const searchParams = useSearchParams();
   const autoRole = String(searchParams.get("role") || "").toLowerCase();
@@ -39,6 +40,7 @@ export default function DashboardPage() {
     if (resolvingRole) return;
     const hintedRole = autoRole;
     if (hintedRole === "therapist" || hintedRole === "client") {
+      if (attemptedRoleRef.current === hintedRole) return;
       handleResolveRole(hintedRole);
       return;
     }
@@ -49,8 +51,11 @@ export default function DashboardPage() {
 
   const handleResolveRole = async (role) => {
     setResolvingRole(true);
+    attemptedRoleRef.current = role;
     try {
-      const token = await getToken();
+      const tokenTemplate =
+        (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) || undefined;
+      const token = await getToken(tokenTemplate ? { template: tokenTemplate } : undefined);
       if (!token) {
         throw new Error("Authentication token unavailable.");
       }
@@ -81,8 +86,16 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error(e);
-      toast({ status: "error", title: "Could not finalize account setup.", description: e?.message || "" });
-      router.replace("/login");
+      toast({
+        status: "error",
+        title: "Could not finalize account setup.",
+        description: e?.message || "Please sign in again.",
+      });
+      if (role === "therapist") {
+        router.replace("/login/therapist");
+      } else {
+        router.replace("/login/client");
+      }
     } finally {
       setResolvingRole(false);
     }

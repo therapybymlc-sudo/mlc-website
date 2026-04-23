@@ -33,12 +33,17 @@ export default function NotificationCenter({ isAuthenticated, authLoading }) {
 
   const fetchNotifications = async () => {
     if (!isAuthenticated) return;
+    if (typeof window !== "undefined" && !localStorage.getItem("access_token")) return;
     try {
       setLoading(true);
       const res = await apiGet("notifications/?is_read=false");
       setNotifications(Array.isArray(res) ? res : res.results || []);
     } catch (err) {
-      console.warn("Could not fetch notifications");
+      const status = err?.response?.status;
+      // Auth bootstrap races can briefly yield 401/403; avoid noisy loops in console.
+      if (status !== 401 && status !== 403) {
+        console.warn("Could not fetch notifications");
+      }
     } finally {
       setLoading(false);
     }
