@@ -37,16 +37,33 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             jwks_client = PyJWKClient(jwks_url)
             signing_key = jwks_client.get_signing_key_from_jwt(token)
 
-            decode_kwargs = {
-                "key": signing_key.key,
-                "algorithms": ["RS256"],
-                "options": {"verify_aud": False, "verify_exp": True},
-            }
-            expected_issuer = (settings.CLERK_ISSUER or token_issuer).strip()
-            if expected_issuer:
-                decode_kwargs["issuer"] = expected_issuer
+            configured_issuer = (settings.CLERK_ISSUER or "").strip()
+            issuers_to_try = []
+            if configured_issuer:
+                issuers_to_try.append(configured_issuer)
+            if token_issuer and token_issuer.rstrip("/") != configured_issuer.rstrip("/"):
+                issuers_to_try.append(token_issuer)
+            if not issuers_to_try:
+                issuers_to_try.append(None)
 
-            payload = jwt.decode(token, **decode_kwargs)
+            payload = None
+            last_decode_error = None
+            for issuer in issuers_to_try:
+                try:
+                    decode_kwargs = {
+                        "key": signing_key.key,
+                        "algorithms": ["RS256", "EdDSA"],
+                        "options": {"verify_aud": False, "verify_exp": True},
+                    }
+                    if issuer:
+                        decode_kwargs["issuer"] = issuer
+                    payload = jwt.decode(token, **decode_kwargs)
+                    break
+                except Exception as decode_exc:
+                    last_decode_error = decode_exc
+
+            if payload is None:
+                raise exceptions.AuthenticationFailed(f"Invalid Clerk token: {last_decode_error}")
 
             email = (
                 payload.get("email") 
