@@ -2868,12 +2868,11 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
                 email=app.email,
                 defaults={
                     "name": f"{app.first_name} {app.last_name}",
-                    "phone": app.phone,
                     "bio": app.relevant_experience or "Approved Therapist",
                     "languages": app.languages,
                     "concerns": app.therapeutic_stance or "",
                     "is_verified": True,
-                }
+                },
             )
             
             if not created:
