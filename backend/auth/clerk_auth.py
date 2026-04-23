@@ -216,4 +216,8 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             raise
         except Exception as exc:
             logger.exception("Clerk authentication unexpected error")
-            raise exceptions.AuthenticationFailed("Invalid Clerk token.") from exc
+            # Include exception class/message so clients/logs distinguish JWT verify
+            # failures (handled above) from decode errors, DB issues, etc.
+            raise exceptions.AuthenticationFailed(
+                f"Invalid Clerk token ({type(exc).__name__}): {exc}"
+            ) from exc
