@@ -28,7 +28,7 @@ export default function TherapistSignInPage() {
                 }
               }
             }}
-            fallbackRedirectUrl="/dashboard/therapist"
+            fallbackRedirectUrl="/dashboard?role=therapist"
           />
         </VStack>
       </Container>

@@ -35,9 +35,9 @@ export default function DashboardPage() {
       return;
     }
 
-    // No manual role picker: infer role from redirect hint or last signup intent.
+    // No manual role picker: infer role from explicit redirect hint only.
     if (resolvingRole) return;
-    const hintedRole = autoRole || (typeof window !== "undefined" ? localStorage.getItem("mlc_signup_role") : "");
+    const hintedRole = autoRole;
     if (hintedRole === "therapist" || hintedRole === "client") {
       handleResolveRole(hintedRole);
       return;

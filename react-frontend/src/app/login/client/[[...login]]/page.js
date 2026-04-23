@@ -28,7 +28,7 @@ export default function ClientSignInPage() {
                 }
               }
             }}
-            fallbackRedirectUrl="/dashboard/client"
+            fallbackRedirectUrl="/dashboard?role=client"
           />
         </VStack>
       </Container>
