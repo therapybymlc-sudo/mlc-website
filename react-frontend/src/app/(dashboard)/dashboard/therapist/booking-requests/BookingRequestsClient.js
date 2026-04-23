@@ -15,8 +15,8 @@ import {
   Center,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
-import { schedulingApi } from "../../../../../../api/scheduling";
-import { getSchedulingErrorMessage } from "../../../../../../utils/schedulingErrors";
+import { schedulingApi } from "../../../../../api/scheduling";
+import { getSchedulingErrorMessage } from "../../../../../utils/schedulingErrors";
 
 function normalizeList(data) {
   if (Array.isArray(data)) return data;
