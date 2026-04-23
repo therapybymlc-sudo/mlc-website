@@ -48,6 +48,7 @@ async function resolveClerkTokenFallback() {
 api.interceptors.request.use(async (config) => {
   let resolvedToken = null;
 
+  // 🔄 Priority 1: Use the tokenGetter (linked to useAuth().getToken() in AuthContext)
   if (tokenGetter) {
     try {
       resolvedToken = await tokenGetter();
@@ -56,39 +57,70 @@ api.interceptors.request.use(async (config) => {
     }
   }
 
+  // 🔄 Priority 2: Fallback to window.Clerk directly if getter failed
   if (!resolvedToken) {
     resolvedToken = await resolveClerkTokenFallback();
   }
 
   if (resolvedToken) {
     config.headers.Authorization = `Bearer ${resolvedToken}`;
+    // Sync to localStorage for legacy components that might expect it
     if (typeof window !== "undefined") {
       localStorage.setItem("access_token", resolvedToken);
     }
   }
 
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
-// Handle expired tokens globally
+// Handle expired tokens globally and implement a single retry
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     const detail = String(error.response?.data?.detail || "");
-    const isTokenExpired =
+    const isAuthError =
       error.response?.status === 401 ||
       (error.response?.status === 403 &&
         (detail === "Token expired" || detail.includes("Invalid Clerk token")));
 
-    if (isTokenExpired) {
-      console.warn("Invalid auth token detected. Clearing stale session.");
+    // 🚀 Retry logic: If it's an auth error and we haven't retried yet
+    if (isAuthError && !originalRequest._retry) {
+      originalRequest._retry = true;
+      console.warn("Auth token rejected. Attempting refresh and retry...");
       
+      try {
+        // Force a fresh token retrieval
+        let freshToken = null;
+        if (tokenGetter) {
+          freshToken = await tokenGetter();
+        } else {
+          freshToken = await resolveClerkTokenFallback();
+        }
+
+        if (freshToken) {
+          // Update the original request header and retry it
+          originalRequest.headers.Authorization = `Bearer ${freshToken}`;
+          if (typeof window !== "undefined") {
+            localStorage.setItem("access_token", freshToken);
+          }
+          return api(originalRequest);
+        }
+      } catch (retryError) {
+        console.error("Retry failed", retryError);
+      }
+    }
+
+    if (isAuthError) {
+      console.warn("Persistent auth failure. Clearing stale session.");
       if (typeof window !== "undefined") {
         localStorage.removeItem("access_token");
       }
       delete api.defaults.headers.Authorization;
     }
+    
     return Promise.reject(error);
   }
 );

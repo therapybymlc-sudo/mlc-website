@@ -142,7 +142,9 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                     break
 
             if payload is None:
-                logger.warning("Clerk JWT verify failed: %s", last_decode_error)
+                logger.error(f"Clerk JWT verify failed for user {username}. Last error: {last_decode_error}")
+                logger.error(f"Issuers tried: {ordered_issuers}")
+                logger.error(f"Algorithms tried: {algorithms_to_try}")
                 raise exceptions.AuthenticationFailed(f"Invalid Clerk token: {last_decode_error}")
 
             email = (

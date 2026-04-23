@@ -119,37 +119,8 @@ export const AuthProvider = ({ children }) => {
     isTherapistPreview,
   ]);
 
-  useEffect(() => {
-    let isMounted = true;
-    const syncToken = async () => {
-      try {
-        if (!isLoaded) return;
-        if (!isSignedIn) {
-          if (isMounted) {
-            localStorage.removeItem("access_token");
-            delete api.defaults.headers.Authorization;
-          }
-          return;
-        }
-        const token = await getApiToken();
-        if (isMounted && typeof window !== 'undefined') {
-          if (token) {
-            localStorage.setItem("access_token", token);
-            api.defaults.headers.Authorization = `Bearer ${token}`;
-          } else {
-            localStorage.removeItem("access_token");
-            delete api.defaults.headers.Authorization;
-          }
-        }
-      } catch (e) {
-        console.warn("Clerk token sync failed", e);
-      }
-    };
-    syncToken();
-    return () => {
-      isMounted = false;
-    };
-  }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
+  // Token synchronization is now handled dynamically by the api.js request interceptor
+  // which uses the setTokenGetter established below.
 
   useEffect(() => {
     if (!isLoaded) return;
