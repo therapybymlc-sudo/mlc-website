@@ -730,35 +730,38 @@ export default function ScheduleClient() {
           borderColor="gray.100" 
           overflow="hidden"
           sx={{
-              ".fc": { fontFamily: "inherit" },
+              ".fc": { fontFamily: "'Inter', var(--font-inter), system-ui, sans-serif", color: "#1F2937" },
               ".fc-timegrid-slot": { 
                   height: `${slotHeight}rem`,
-                  borderColor: "gray.50"
+                  borderColor: "#EEF2F7"
               },
-              ".fc-business-hour": { backgroundColor: "rgba(169, 203, 183, 0.12) !important" },
-              ".fc-non-business": { backgroundColor: "#F8F9FA !important" },
+              ".fc-business-hour": { backgroundColor: "rgba(86, 117, 109, 0.08) !important" },
+              ".fc-non-business": { backgroundColor: "#FAFBFC !important" },
+              ".fc-col-header": { background: "#F8FAFC" },
+              ".fc-col-header-cell": { borderColor: "#EEF2F7" },
               ".fc-event": {
-                  borderRadius: "2px",
-                  borderLeft: "4px solid rgba(0,0,0,0.1)",
-                  boxShadow: "sm",
+                  borderRadius: "8px",
+                  borderLeft: "4px solid rgba(17,24,39,0.18)",
+                  boxShadow: "0 2px 8px rgba(15, 23, 42, 0.08)",
                   padding: "0",
-                  color: "black !important",
+                  color: "#0F172A !important",
                   overflow: "hidden"
               },
               ".fc-event-main": {
                   padding: "0",
-                  color: "black !important"
+                  color: "#0F172A !important"
               },
-              ".fc-toolbar-title": { fontSize: { base: "0.8rem", sm: "0.9rem", md: "1.1rem" }, fontWeight: "800", color: "#2E2E2E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-              ".fc-button": { padding: { base: "4px 6px", md: "8px 16px" }, fontSize: { base: "0.6rem", md: "0.85rem" }, whiteSpace: "nowrap" },
+              ".fc-toolbar-title": { fontSize: { base: "0.9rem", sm: "1rem", md: "1.15rem" }, fontWeight: "700", color: "#1F2937", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+              ".fc-button": { padding: { base: "5px 8px", md: "8px 14px" }, fontSize: { base: "0.7rem", md: "0.85rem" }, whiteSpace: "nowrap", borderRadius: "10px" },
               ".fc-header-toolbar": { gap: { base: 1, md: 4 }, flexWrap: "nowrap !important", overflow: "hidden" },
               ".fc-col-header-cell-cushion": { 
                   whiteSpace: "nowrap !important", 
-                  fontSize: { base: "0.6rem", sm: "0.75rem", md: "0.85rem" },
+                  fontSize: { base: "0.67rem", sm: "0.78rem", md: "0.9rem" },
+                  fontWeight: 600,
                   padding: "2px !important",
                   display: "block !important"
               },
-              ".fc-timegrid-axis-cushion": { fontSize: { base: "0.6rem", md: "0.8rem" } }
+              ".fc-timegrid-axis-cushion": { fontSize: { base: "0.65rem", md: "0.82rem" }, color: "#64748B" }
           }}
       >
         {mounted ? (
@@ -794,9 +797,9 @@ export default function ScheduleClient() {
                   return (
                       <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden" minW={0}>
                           <Text 
-                            fontWeight="900 !important" 
+                            fontWeight="700 !important" 
                             fontSize={titleSize} 
-                            color="black !important" 
+                            color="#0F172A !important" 
                             whiteSpace="nowrap"
                             overflow="hidden"
                             textOverflow="ellipsis"
@@ -807,9 +810,9 @@ export default function ScheduleClient() {
                               {arg.event.title}
                           </Text>
                           <Text 
-                            fontWeight="800 !important" 
+                            fontWeight="600 !important" 
                             fontSize={timeSize} 
-                            color="black !important" 
+                            color="#334155 !important" 
                             whiteSpace="nowrap"
                             overflow="hidden"
                             textOverflow="ellipsis"

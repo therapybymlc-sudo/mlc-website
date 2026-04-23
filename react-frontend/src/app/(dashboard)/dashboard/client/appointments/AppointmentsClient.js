@@ -32,6 +32,31 @@ export default function AppointmentsClient() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const getPaymentMeta = (appt) => {
+    const paid = appt.payment_status === "paid" || Boolean(appt.booking_request);
+    if (paid) {
+      return {
+        label: "Completed",
+        colorScheme: "green",
+        actionLabel: "View Invoice",
+        actionHref: `/dashboard/client/invoice/${appt.id}`,
+      };
+    }
+
+    const ts = appt.start_time ? Math.floor(new Date(appt.start_time).getTime() / 1000) : null;
+    const checkoutHref =
+      appt.therapist && ts
+        ? `/book/checkout?therapist=${appt.therapist}&slot=dyn-${ts}`
+        : "/therapists/discovery";
+
+    return {
+      label: "Pending",
+      colorScheme: "orange",
+      actionLabel: "Pay Now",
+      actionHref: checkoutHref,
+    };
+  };
+
   async function fetchAppointments() {
     try {
       setLoading(true);
@@ -100,11 +125,14 @@ export default function AppointmentsClient() {
                             <Th whiteSpace="nowrap">Therapist</Th>
                             <Th whiteSpace="nowrap">Format</Th>
                             <Th whiteSpace="nowrap">Status</Th>
+                            <Th whiteSpace="nowrap">Payment Status</Th>
                             <Th whiteSpace="nowrap" textAlign="right">Action</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
-                        {appointments.map((appt) => (
+                        {appointments.map((appt) => {
+                            const paymentMeta = getPaymentMeta(appt);
+                            return (
                             <Tr key={appt.id} _hover={{ bg: 'gray.50' }}>
                                 <Td>
                                     <VStack align="start" spacing={0}>
@@ -122,26 +150,46 @@ export default function AppointmentsClient() {
                                     </HStack>
                                 </Td>
                                 <Td>
-                                    <Badge colorScheme="teal" borderRadius="full" px={3} py={1} fontSize="10px">CONFIRMED</Badge>
+                                    <Badge colorScheme={appt.status === "cancelled" ? "red" : "teal"} borderRadius="full" px={3} py={1} fontSize="10px">
+                                      {(appt.status_label || appt.status || "Scheduled").toUpperCase()}
+                                    </Badge>
+                                </Td>
+                                <Td>
+                                  <Badge colorScheme={paymentMeta.colorScheme} borderRadius="full" px={3} py={1} fontSize="10px">
+                                    {paymentMeta.label.toUpperCase()}
+                                  </Badge>
                                 </Td>
                                 <Td textAlign="right">
-                                    <Button 
-                                        as={NextLink}
-                                        href={`/conference/MLC_${appt.id}`}
-                                        size="sm" 
-                                        variant="solid" 
-                                        bg="teal.800" 
-                                        color="white" 
-                                        borderRadius="full"
-                                        _hover={{ bg: 'teal.900' }}
-                                    >
-                                        Join Room
-                                    </Button>
+                                    <HStack justify="flex-end" spacing={2}>
+                                      <Button
+                                          as={NextLink}
+                                          href={paymentMeta.actionHref}
+                                          size="sm"
+                                          variant={paymentMeta.label === "Completed" ? "outline" : "solid"}
+                                          colorScheme={paymentMeta.label === "Completed" ? "gray" : "orange"}
+                                          borderRadius="full"
+                                      >
+                                          {paymentMeta.actionLabel}
+                                      </Button>
+                                      <Button 
+                                          as={NextLink}
+                                          href={`/conference/MLC_${appt.id}`}
+                                          size="sm" 
+                                          variant="solid" 
+                                          bg="teal.800" 
+                                          color="white" 
+                                          borderRadius="full"
+                                          _hover={{ bg: 'teal.900' }}
+                                      >
+                                          Join Room
+                                      </Button>
+                                    </HStack>
                                 </Td>
                             </Tr>
-                        ))}
+                            );
+                        })}
                         {appointments.length === 0 && (
-                            <Tr><Td colSpan={5} textAlign="center" py={12} color="gray.400">No appointments scheduled.</Td></Tr>
+                            <Tr><Td colSpan={6} textAlign="center" py={12} color="gray.400">No appointments scheduled.</Td></Tr>
                         )}
                     </Tbody>
                 </Table>

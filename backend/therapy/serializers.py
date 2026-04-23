@@ -87,6 +87,8 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 class AppointmentSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
     client_display_name = serializers.SerializerMethodField()
+    therapist_name = serializers.CharField(source="therapist.name", read_only=True)
+    payment_status = serializers.SerializerMethodField()
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
@@ -109,6 +111,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "meeting_link",
             "client_name",
             "client_display_name",
+            "therapist_name",
+            "payment_status",
         ]
         read_only_fields = [
             "status_label",
@@ -117,6 +121,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "client_name",
             "client_display_name",
             "schedule_event",
+            "therapist_name",
+            "payment_status",
         ]
 
     def get_client_name(self, obj):
@@ -124,6 +130,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def get_client_display_name(self, obj):
         return client_preferred_display_name(obj.client)
+
+    def get_payment_status(self, obj):
+        # Client-initiated flow (booking request) is treated as paid once session exists.
+        if obj.booking_request_id:
+            return "paid"
+        # Therapist-initiated sessions require client payment completion.
+        return "pending"
 
 
 class AvailabilitySlotSerializer(serializers.ModelSerializer):
