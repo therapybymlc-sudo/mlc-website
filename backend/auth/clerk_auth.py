@@ -1,9 +1,22 @@
+import base64
+import json
+import logging
+
 import jwt
 from jwt import PyJWKClient
 from django.conf import settings
 from rest_framework import authentication, exceptions
 from django.contrib.auth import get_user_model
 from urllib.parse import urlparse
+
+logger = logging.getLogger(__name__)
+
+
+def _b64url_decode_json(segment: str) -> dict:
+    padding = 4 - len(segment) % 4
+    if padding != 4:
+        segment += "=" * padding
+    return json.loads(base64.urlsafe_b64decode(segment.encode("ascii")))
 
 
 class ClerkAuthentication(authentication.BaseAuthentication):
@@ -19,6 +32,9 @@ class ClerkAuthentication(authentication.BaseAuthentication):
         token = auth_header.split(" ", 1)[1].strip()
 
         try:
+            header = _b64url_decode_json(token.split(".")[0])
+            token_alg = (header.get("alg") or "RS256").strip()
+
             unverified_payload = jwt.decode(
                 token,
                 options={"verify_signature": False, "verify_exp": False, "verify_aud": False},
@@ -96,21 +112,37 @@ class ClerkAuthentication(authentication.BaseAuthentication):
 
             payload = None
             last_decode_error = None
+            algorithms_to_try = []
+            if token_alg in ("RS256", "ES256", "EdDSA", "ES384", "ES512"):
+                algorithms_to_try.append(token_alg)
+            for fallback in ("RS256", "EdDSA"):
+                if fallback not in algorithms_to_try:
+                    algorithms_to_try.append(fallback)
+
             for issuer in ordered_issuers:
-                try:
-                    decode_kwargs = {
-                        "key": signing_key.key,
-                        "algorithms": ["RS256", "EdDSA"],
-                        "options": {"verify_aud": False, "verify_exp": True},
-                    }
-                    if issuer:
-                        decode_kwargs["issuer"] = issuer
-                    payload = jwt.decode(token, **decode_kwargs)
+                payload = None
+                for alg in algorithms_to_try:
+                    try:
+                        kwargs = {
+                            "algorithms": [alg],
+                            "options": {"verify_aud": False, "verify_exp": True},
+                            "leeway": 120,
+                        }
+                        if issuer:
+                            kwargs["issuer"] = issuer
+                        try:
+                            payload = jwt.decode(token, signing_key, **kwargs)
+                        except TypeError:
+                            payload = jwt.decode(token, signing_key.key, **kwargs)
+                        break
+                    except Exception as decode_exc:
+                        last_decode_error = decode_exc
+                        payload = None
+                if payload is not None:
                     break
-                except Exception as decode_exc:
-                    last_decode_error = decode_exc
 
             if payload is None:
+                logger.warning("Clerk JWT verify failed: %s", last_decode_error)
                 raise exceptions.AuthenticationFailed(f"Invalid Clerk token: {last_decode_error}")
 
             email = (
@@ -176,4 +208,5 @@ class ClerkAuthentication(authentication.BaseAuthentication):
         except exceptions.AuthenticationFailed:
             raise
         except Exception as exc:
+            logger.exception("Clerk authentication unexpected error")
             raise exceptions.AuthenticationFailed("Invalid Clerk token.") from exc

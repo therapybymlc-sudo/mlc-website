@@ -76,9 +76,18 @@ export const AuthProvider = ({ children }) => {
           fetchTasks.push(Promise.resolve(null));
         }
 
-        // Only fetch client profile for users that can validly have one.
-        // Therapist-only sessions receive 403 on this endpoint by design.
-        if (isClient || (!isTherapist && !isAdmin)) {
+        // Only fetch client profile when appropriate. Therapist onboarding often has
+        // no Clerk roles yet — still skip clients/me if intent/signup says therapist.
+        const loginIntent =
+          typeof window !== "undefined" ? String(localStorage.getItem("mlc_login_intent") || "") : "";
+        const wantsTherapistOnly =
+          signupRole === "therapist" ||
+          loginIntent === "therapist" ||
+          isTherapistPreview;
+        if (
+          isClient ||
+          (!isTherapist && !isAdmin && !wantsTherapistOnly)
+        ) {
           fetchTasks.push(api.get("clients/me/", authConfig).catch(() => null));
         } else {
           fetchTasks.push(Promise.resolve(null));
@@ -98,7 +107,17 @@ export const AuthProvider = ({ children }) => {
     return () => {
       mounted = false;
     };
-  }, [isLoaded, isSignedIn, getToken, tokenTemplate, isTherapist]);
+  }, [
+    isLoaded,
+    isSignedIn,
+    getToken,
+    tokenTemplate,
+    isTherapist,
+    isClient,
+    isAdmin,
+    signupRole,
+    isTherapistPreview,
+  ]);
 
   useEffect(() => {
     let isMounted = true;
