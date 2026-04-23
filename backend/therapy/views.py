@@ -232,6 +232,17 @@ def _resolve_client_from_request(request):
     # 1. Check direct relationship
     client_profile = getattr(user, "client_profile", None)
     if client_profile:
+        # 🔄 Sync Check: If the profile has a 'user_' name or no email, try to update it from the User object
+        save_needed = False
+        full_name = user.get_full_name()
+        if full_name and (not client_profile.name or client_profile.name.startswith("user_")):
+            client_profile.name = full_name
+            save_needed = True
+        if user.email and (not client_profile.email or "@example.invalid" in client_profile.email):
+            client_profile.email = user.email
+            save_needed = True
+        if save_needed:
+            client_profile.save(update_fields=["name", "email"])
         return client_profile
 
     # 2. Guard: Strictly separate roles (unless admin)

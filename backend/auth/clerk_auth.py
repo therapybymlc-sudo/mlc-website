@@ -33,10 +33,17 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 decode_kwargs["issuer"] = settings.CLERK_ISSUER
 
             payload = jwt.decode(token, **decode_kwargs)
+            print(f"DEBUG: Clerk Payload: {payload}")
 
-            email = payload.get("email") or payload.get("email_address")
+            email = (
+                payload.get("email") 
+                or payload.get("email_address") 
+                or payload.get("primary_email_address")
+                or payload.get("primaryEmailAddress")
+            )
             username = (
                 payload.get("preferred_username")
+                or payload.get("username")
                 or email
                 or payload.get("sub")
             )
@@ -63,8 +70,8 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             
             # Sync names, staff status and email if they changed
             save_needed = False
-            first_name = payload.get("given_name") or ""
-            last_name = payload.get("family_name") or ""
+            first_name = payload.get("given_name") or payload.get("first_name") or payload.get("firstName") or ""
+            last_name = payload.get("family_name") or payload.get("last_name") or payload.get("lastName") or ""
             
             if first_name and user.first_name != first_name:
                 user.first_name = first_name
