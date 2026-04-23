@@ -296,20 +296,51 @@ export default function Navbar() {
                 >
                   Sign In
                 </Button>
-                <Button
-                  as={NextLink}
-                  href="/signup/client"
-                  bg="#56756D"
-                  color="white"
-                  fontWeight="600"
-                  fontSize="sm"
-                  borderRadius="full"
-                  px={6}
-                  _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
-                  transition="all 0.2s"
-                >
-                  Join MLC
-                </Button>
+                <Menu gutter={10} placement="bottom-end">
+                  <MenuButton
+                    as={Button}
+                    bg="#56756D"
+                    color="white"
+                    fontWeight="600"
+                    fontSize="sm"
+                    borderRadius="full"
+                    px={6}
+                    rightIcon={<ChevronDownIcon />}
+                    _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
+                    transition="all 0.2s"
+                  >
+                    Join MLC
+                  </MenuButton>
+                  <MenuList
+                    boxShadow="0 10px 30px rgba(0,0,0,0.1)"
+                    border="1px solid"
+                    borderColor="gray.100"
+                    borderRadius="xl"
+                    p={2}
+                    minW="220px"
+                  >
+                    <MenuItem
+                      as={NextLink}
+                      href="/signup/therapist"
+                      borderRadius="lg"
+                      fontSize="sm"
+                      fontWeight="600"
+                      py={3}
+                    >
+                      Sign up as Therapist
+                    </MenuItem>
+                    <MenuItem
+                      as={NextLink}
+                      href="/signup/client"
+                      borderRadius="lg"
+                      fontSize="sm"
+                      fontWeight="600"
+                      py={3}
+                    >
+                      Sign up as Client
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
               </HStack>
             )
           ) : (
@@ -374,15 +405,25 @@ export default function Navbar() {
                 </Button>
                 <Button
                   as={NextLink}
-                  href="/signup/client"
+                  href="/signup/therapist"
                   bg="#C9A960"
                   color="#2E2E2E"
                   py={6}
                   mt={2}
+                  onClick={onClose}
+                >
+                  Sign up as Therapist
+                </Button>
+                <Button
+                  as={NextLink}
+                  href="/signup/client"
+                  bg="white"
+                  color="#2E2E2E"
+                  py={6}
                   mb={4}
                   onClick={onClose}
                 >
-                  Join MLC
+                  Sign up as Client
                 </Button>
               </>
             )}
