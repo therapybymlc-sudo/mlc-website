@@ -28,7 +28,8 @@ import {
   FiLayout, 
   FiCreditCard,
   FiClock,
-  FiBookOpen
+  FiBookOpen,
+  FiTarget
 } from "react-icons/fi";
 import NextLink from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
