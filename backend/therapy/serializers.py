@@ -42,7 +42,7 @@ from therapy.models import (
     SupervisionReport,
 )
 
-from .utils import _resolve_therapist_from_request
+from .utils import _resolve_therapist_from_request, client_preferred_display_name
 from django.utils import timezone
 from rest_framework import serializers
 import json
@@ -86,6 +86,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
+    client_display_name = serializers.SerializerMethodField()
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
@@ -96,6 +97,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "therapist",
             "booking_request",
             "availability_slot",
+            "schedule_event",
             "start_time",
             "end_time",
             "status",
@@ -106,17 +108,22 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "completed_at",
             "meeting_link",
             "client_name",
+            "client_display_name",
         ]
         read_only_fields = [
             "status_label",
             "created_at",
             "updated_at",
             "client_name",
+            "client_display_name",
+            "schedule_event",
         ]
 
     def get_client_name(self, obj):
-        client = obj.client
-        return client.name or f"{client.first_name} {client.last_name}".strip() or client.email
+        return client_preferred_display_name(obj.client)
+
+    def get_client_display_name(self, obj):
+        return client_preferred_display_name(obj.client)
 
 
 class AvailabilitySlotSerializer(serializers.ModelSerializer):
@@ -238,14 +245,7 @@ class BookingRequestSerializer(serializers.ModelSerializer):
         return getattr(obj.therapist, "name", None) or getattr(obj.therapist, "email", "")
 
     def get_client_display_name(self, obj):
-        client = obj.client
-        return (
-            client.preferred_first_name
-            or client.first_name
-            or client.name
-            or client.email
-            or ""
-        )
+        return client_preferred_display_name(obj.client)
 
     def get_slot_start_time(self, obj):
         if obj.availability_slot_id:
@@ -656,7 +656,7 @@ class EventTypeSerializer(serializers.ModelSerializer):
 class ScheduleEventSerializer(serializers.ModelSerializer):
     event_type_name = serializers.CharField(source="event_type.name", read_only=True)
     therapist_name = serializers.CharField(source="therapist.name", read_only=True)
-    client_name = serializers.CharField(source="client.name", read_only=True)
+    client_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ScheduleEvent
@@ -677,6 +677,11 @@ class ScheduleEventSerializer(serializers.ModelSerializer):
             "attendance_status",
             "created_at",
         ]
+
+    def get_client_name(self, obj):
+        if not obj.client_id:
+            return ""
+        return client_preferred_display_name(obj.client)
 
     def validate(self, attrs):
         start = attrs.get("start_time") or getattr(self.instance, "start_time", None)

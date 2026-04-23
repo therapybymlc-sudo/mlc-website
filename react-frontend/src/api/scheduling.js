@@ -33,6 +33,11 @@ export const schedulingApi = {
       therapist_response_note,
     });
   },
+  cancelTherapistBookingRequest(id, therapist_response_note) {
+    return apiPost(`therapist-booking-requests/${id}/cancel/`, {
+      therapist_response_note: therapist_response_note || "",
+    });
+  },
   listTherapistAppointments() {
     return apiGet("appointments/");
   },
@@ -56,6 +61,11 @@ export const schedulingApi = {
   },
   listClientBookingRequests() {
     return apiGet("booking-requests/");
+  },
+  cancelClientBookingRequest(id, message_from_client) {
+    return apiPost(`booking-requests/${id}/cancel/`, {
+      message_from_client: message_from_client || "",
+    });
   },
   listNotifications() {
     return apiGet("notifications/");

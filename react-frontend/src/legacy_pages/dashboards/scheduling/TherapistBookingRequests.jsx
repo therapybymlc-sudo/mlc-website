@@ -22,7 +22,8 @@ export default function TherapistBookingRequests() {
       setLoading(true);
       setError("");
       const data = await schedulingApi.listTherapistBookingRequests();
-      setRequests(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : data?.results || [];
+      setRequests(list);
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to load booking requests."));
     } finally {
@@ -50,6 +51,16 @@ export default function TherapistBookingRequests() {
       await loadRequests();
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to decline request."));
+    }
+  };
+
+  const handleCancel = async (id) => {
+    if (!window.confirm("Cancel this booking request?")) return;
+    try {
+      await schedulingApi.cancelTherapistBookingRequest(id, noteDrafts[id] || "");
+      await loadRequests();
+    } catch (err) {
+      setError(getSchedulingErrorMessage(err, "Unable to cancel request."));
     }
   };
 
@@ -119,6 +130,15 @@ export default function TherapistBookingRequests() {
                     onClick={() => handleDecline(req.id)}
                   >
                     Decline
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    colorScheme="gray"
+                    size="sm"
+                    borderRadius="full"
+                    onClick={() => handleCancel(req.id)}
+                  >
+                    Cancel request
                   </Button>
                 </ScheduleActionBar>
               </VStack>

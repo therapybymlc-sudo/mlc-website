@@ -977,6 +977,14 @@ class Appointment(models.Model):
         related_name="appointments",
         help_text="Availability slot linked to this appointment.",
     )
+    schedule_event = models.OneToOneField(
+        "ScheduleEvent",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="linked_appointment",
+        help_text="When set, this appointment was created from a therapist calendar (schedule) event.",
+    )
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
     is_first_session_free = models.BooleanField(

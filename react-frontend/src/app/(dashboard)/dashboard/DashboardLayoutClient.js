@@ -31,7 +31,8 @@ import {
   FiCheckCircle,
   FiTarget,
   FiAward,
-  FiClipboard
+  FiClipboard,
+  FiInbox
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
@@ -67,6 +68,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
       { label: 'Clinical Blueprints', icon: FiClipboard, href: '/dashboard/therapist/notes' },
       { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
+      { label: 'Booking requests', icon: FiInbox, href: '/dashboard/therapist/booking-requests' },
       { label: 'Availability', icon: FiClock, href: '/dashboard/therapist/availability' },
       { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
       { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
@@ -78,6 +80,7 @@ export default function DashboardLayout({ children }) {
     const clientLinks = [
       { label: 'Overview', icon: FiLayout, href: '/dashboard/client', isClient: true },
       { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
+      { label: 'Booking requests', icon: FiInbox, href: '/dashboard/client/booking-requests' },
       { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
       { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
       { label: 'My Profile', icon: FiUser, href: '/dashboard/client/profile' },

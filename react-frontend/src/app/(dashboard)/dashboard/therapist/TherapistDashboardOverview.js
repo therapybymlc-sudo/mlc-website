@@ -38,16 +38,19 @@ export default function TherapistDashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, apptData, profileData, relationData] = await Promise.all([
+        const [clientData, apptData, profileData, relationData, bookingReqRes] = await Promise.all([
           apiGet("clients/"),
           apiGet("appointments/"),
           apiGet("therapists/me/"),
           apiGet("therapist-relationships/"),
+          apiGet("therapist-booking-requests/").catch(() => []),
         ]);
+        const brList = Array.isArray(bookingReqRes) ? bookingReqRes : (bookingReqRes?.results || []);
+        const pendingRequests = brList.filter((r) => r.status === "pending").length;
         setStats({
           clients: clientData?.length || 0,
           appointments: apptData?.length || 0,
-          requests: 0 // Fetch from dedicated endpoint later
+          requests: pendingRequests,
         });
         setUpcoming(apptData || []);
         setProfile(profileData);
@@ -103,10 +106,22 @@ export default function TherapistDashboardOverview() {
           <StatHelpText noOfLines={1}>Next session soon</StatHelpText>
         </Stat>
 
-        <Stat bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+        <Stat
+          as={NextLink}
+          href="/dashboard/therapist/booking-requests"
+          bg="white"
+          p={6}
+          borderRadius="3xl"
+          shadow="sm"
+          border="1px solid"
+          borderColor="gray.100"
+          cursor="pointer"
+          transition="shadow 0.2s"
+          _hover={{ shadow: "md", borderColor: "orange.200" }}
+        >
           <StatLabel color="gray.500" fontWeight="700" fontSize="xs" letterSpacing="widest" whiteSpace="nowrap">NEW REQUESTS</StatLabel>
           <StatNumber fontSize="3xl" color="orange.400">{stats.requests}</StatNumber>
-          <StatHelpText noOfLines={1}>Pending review</StatHelpText>
+          <StatHelpText noOfLines={1}>Pending review — open to respond</StatHelpText>
         </Stat>
       </SimpleGrid>
 

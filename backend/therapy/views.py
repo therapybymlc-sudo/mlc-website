@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
 from django.db import transaction, models, IntegrityError
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
@@ -69,6 +70,7 @@ from therapy.utils import (
     get_dass_severity,
     generate_dass_summary,
 )
+from therapy.services.appointments import cancel_appointment
 from therapy.serializers import (
     TherapistProfileSerializer,
     TherapistApplicationSerializer,
@@ -136,6 +138,9 @@ from therapy.services.booking_requests import (
 )
 from therapy.services.resources import assign_resource_to_client
 from therapy.notifications import get_scheduling_action_url
+from urllib import request as urllib_request
+from urllib.error import URLError, HTTPError
+
 
 def _profile_required_response(profile_type: str):
     return Response(
@@ -146,11 +151,6 @@ def _profile_required_response(profile_type: str):
         },
         status=status.HTTP_403_FORBIDDEN,
     )
-from therapy.services.appointments import cancel_appointment
-from django.core.exceptions import ValidationError
-from urllib import request as urllib_request
-from urllib.error import URLError, HTTPError
-import json
 
 
 # ----------------------------
@@ -329,6 +329,89 @@ def _ensure_relationship(therapist, client, make_primary=False):
         relationship.is_primary = True
         relationship.save(update_fields=["is_primary", "updated_at"])
     return relationship
+
+
+def _client_has_active_booking_with_other_therapist(client, therapist):
+    """Block parallel open booking requests with a different therapist (relationship is created on confirm)."""
+    if not client or not therapist:
+        return False
+    return BookingRequest.objects.filter(
+        client=client,
+        status__in=[BookingRequest.Status.PENDING, BookingRequest.Status.CONFIRMED],
+    ).exclude(therapist_id=therapist.id).exists()
+
+
+def _sync_appointment_from_schedule_event(event, *, notify_new: bool = False):
+    """
+    When a therapist creates/edits a schedule event with a client, mirror a client-facing
+    Appointment and ensure an active relationship. If the client is removed from the event,
+    remove or cancel the linked appointment.
+    """
+    if not event.client_id:
+        linked = getattr(event, "linked_appointment", None)
+        if linked:
+            if linked.is_cancellable:
+                try:
+                    cancel_appointment(
+                        linked,
+                        cancelled_by=None,
+                        reason="Session removed or updated on the calendar.",
+                        reopen_slot=False,
+                    )
+                except ValidationError:
+                    linked.delete()
+            else:
+                linked.schedule_event = None
+                linked.save(update_fields=["schedule_event", "updated_at"])
+        return None
+
+    appt, ap_created = Appointment.objects.get_or_create(
+        schedule_event=event,
+        defaults={
+            "client_id": event.client_id,
+            "therapist_id": event.therapist_id,
+            "date": event.start_time,
+            "start_time": event.start_time,
+            "end_time": event.end_time,
+            "notes": event.notes or "",
+            "status": Appointment.Status.SCHEDULED,
+        },
+    )
+    if not ap_created:
+        appt.client_id = event.client_id
+        appt.therapist_id = event.therapist_id
+        appt.date = event.start_time
+        appt.start_time = event.start_time
+        appt.end_time = event.end_time
+        appt.notes = event.notes or ""
+        if appt.status in {Appointment.Status.SCHEDULED, Appointment.Status.RESCHEDULED}:
+            appt.save(
+                update_fields=[
+                    "client",
+                    "therapist",
+                    "date",
+                    "start_time",
+                    "end_time",
+                    "notes",
+                    "updated_at",
+                ]
+            )
+    _ensure_relationship(event.therapist, event.client, make_primary=False)
+    u = getattr(event.client, "user", None)
+    if notify_new and ap_created and u:
+        Notification.objects.create(
+            recipient_user_profile=u,
+            type=Notification.Type.APPOINTMENT_SCHEDULED,
+            title="New session scheduled",
+            body="Your therapist scheduled a session for you.",
+            related_model=Appointment.__name__,
+            related_id=str(appt.pk),
+            action_url=get_scheduling_action_url(
+                Notification.Type.APPOINTMENT_SCHEDULED,
+                recipient=u,
+            ),
+        )
+    return appt
 
 
 def _extract_roles_from_auth(request):
@@ -1142,6 +1225,21 @@ class RazorpayCreateOrderView(APIView):
             if slot.start_time <= timezone.now():
                 return Response({"detail": "This slot is no longer available."}, status=status.HTTP_400_BAD_REQUEST)
 
+            active_rel = client.relationships.filter(status="active").first()
+            if active_rel and active_rel.therapist_id != therapist.id:
+                return Response(
+                    {"detail": "You must terminate your existing therapeutic relationship before booking with a new therapist."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if _client_has_active_booking_with_other_therapist(client, therapist):
+                return Response(
+                    {
+                        "detail": "You already have a pending or confirmed booking with another therapist. "
+                        "Complete or cancel it before booking a different therapist."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             hold_minutes = int(getattr(settings, "BOOKING_REQUEST_HOLD_MINUTES", 15))
             held_until = timezone.now() + timedelta(minutes=hold_minutes) if hold_minutes > 0 else None
 
@@ -1388,6 +1486,14 @@ class BookingRequestViewSet(viewsets.ModelViewSet):
             if active_rel and active_rel.therapist_id != therapist.id:
                 return Response(
                     {"detail": "You must terminate your existing therapeutic relationship before booking with a new therapist."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if _client_has_active_booking_with_other_therapist(client, therapist):
+                return Response(
+                    {
+                        "detail": "You already have a pending or confirmed booking with another therapist. "
+                        "Complete or cancel it before booking a different therapist."
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -1777,6 +1883,28 @@ class ScheduleEventViewSet(viewsets.ModelViewSet):
         if therapist:
             return ScheduleEvent.objects.filter(therapist=therapist).order_by("-start_time")
         return ScheduleEvent.objects.none()
+
+    def perform_create(self, serializer):
+        event = serializer.save()
+        _sync_appointment_from_schedule_event(event, notify_new=True)
+
+    def perform_update(self, serializer):
+        event = serializer.save()
+        _sync_appointment_from_schedule_event(event, notify_new=False)
+
+    def perform_destroy(self, instance):
+        appt = getattr(instance, "linked_appointment", None)
+        if appt and appt.is_cancellable:
+            try:
+                cancel_appointment(
+                    appt,
+                    cancelled_by=self.request.user,
+                    reason="Session removed from the schedule.",
+                    reopen_slot=False,
+                )
+            except ValidationError:
+                pass
+        instance.delete()
 
 
 class WaitlistEntryViewSet(viewsets.ModelViewSet):

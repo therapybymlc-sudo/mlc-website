@@ -1,6 +1,43 @@
 from django.conf import settings
 from .models import TherapistProfile, ClientProfile
 
+
+def is_placeholder_client_label(value) -> bool:
+    if not value or not str(value).strip():
+        return True
+    t = str(value).strip()
+    lo = t.lower()
+    if lo in {"user", "new client", "unknown", "client", "patient"}:
+        return True
+    if lo.startswith("user_"):
+        return True
+    return False
+
+
+def client_preferred_display_name(client) -> str:
+    """
+    Stable label for therapist- and client-facing UIs. Avoids Clerk-style placeholders
+    (e.g. user_... / "User") when real email or other fields exist.
+    """
+    if not client:
+        return ""
+    for candidate in (
+        getattr(client, "preferred_first_name", None),
+        (f"{(client.first_name or '')} {(client.last_name or '')}").strip() or None,
+        client.name,
+    ):
+        if candidate and not is_placeholder_client_label(candidate):
+            return str(candidate)[:200]
+    email = (getattr(client, "email", None) or "").strip()
+    if email and not email.endswith("@local") and "@" in email:
+        return email
+    if email and not email.endswith("@local"):
+        return email
+    local = email.split("@", 0)[0] if email and "@" in email else (email or "")
+    if local and not is_placeholder_client_label(local):
+        return local
+    return f"Client #{getattr(client, 'pk', '')}"
+
 def _resolve_therapist_from_request(request, allow_create=False):
     """Resolve the logged-in therapist based on authenticated user info."""
     try:

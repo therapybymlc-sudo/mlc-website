@@ -43,6 +43,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import NextLink from "next/link";
 
 // Dynamic import for FullCalendar to avoid SSR hydration issues
 const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
@@ -107,7 +108,8 @@ export default function ScheduleClient() {
     order: 0
   });
 
-  const [editingType, setEditingType] = useState(null); 
+  const [editingType, setEditingType] = useState(null);
+  const [pendingBookingCount, setPendingBookingCount] = useState(0);
 
   const SAFE_COLORS = [
     { name: "Sky Blue", hex: "#D1E9FF" },
@@ -123,13 +125,16 @@ export default function ScheduleClient() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [eventRes, clientRes, therapistRes, typesRes, appointmentRes] = await Promise.all([
+      const [eventRes, clientRes, therapistRes, typesRes, appointmentRes, bookingReqRes] = await Promise.all([
         apiGet("schedule-events/"),
         apiGet("clients/"),
         apiGet("therapists/me/").catch(() => null),
         apiGet("event-types/").catch(() => []),
-        apiGet("appointments/").catch(() => [])
+        apiGet("appointments/").catch(() => []),
+        apiGet("therapist-booking-requests/").catch(() => []),
       ]);
+      const brList = Array.isArray(bookingReqRes) ? bookingReqRes : (bookingReqRes?.results || []);
+      setPendingBookingCount(brList.filter((r) => r.status === "pending").length);
 
       const normalizedTypes = (Array.isArray(typesRes) ? typesRes : typesRes.results || [])
         .sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name));
@@ -161,14 +166,16 @@ export default function ScheduleClient() {
         };
       });
 
-      // Process Booked Appointments
+      // Process Booked Appointments (skip rows mirrored from schedule events — those render as schedule-events)
       const appointmentData = Array.isArray(appointmentRes) ? appointmentRes : appointmentRes.results || [];
-      const bookedAppointments = appointmentData.map(apt => {
+      const bookedAppointments = appointmentData
+        .filter((apt) => !apt.schedule_event)
+        .map((apt) => {
         return {
           id: `apt-${apt.id}`,
           originalId: apt.id,
           model: 'appointment',
-          title: `[Booked] ${apt.client_name || 'Patient'}`,
+          title: `[Booked] ${apt.client_name || apt.client_display_name || 'Patient'}`,
           start: apt.start_time,
           end: apt.end_time,
           backgroundColor: "#2C8B9A", // Distinct color for booked appts
@@ -637,6 +644,34 @@ export default function ScheduleClient() {
             <Heading size="lg" color="#2E2E2E" fontWeight="800" whiteSpace="nowrap">Clinical Schedule</Heading>
             <Text color="gray.500" fontSize="sm" whiteSpace="nowrap">Manage your therapeutic sessions and availability.</Text>
         </VStack>
+
+        {pendingBookingCount > 0 && (
+          <Box
+            as={NextLink}
+            href="/dashboard/therapist/booking-requests"
+            w="full"
+            py={3}
+            px={4}
+            borderRadius="xl"
+            bg="orange.50"
+            border="1px solid"
+            borderColor="orange.200"
+            _hover={{ bg: "orange.100" }}
+            display="block"
+          >
+            <HStack justify="space-between" flexWrap="wrap" gap={2}>
+              <HStack>
+                <Icon as={FiAlertCircle} color="orange.500" boxSize={5} />
+                <Text fontSize="sm" fontWeight="600" color="gray.800">
+                  {pendingBookingCount} pending booking request{pendingBookingCount === 1 ? "" : "s"} need your response
+                </Text>
+              </HStack>
+              <Text fontSize="sm" color="teal.700" fontWeight="600">
+                Review & respond →
+              </Text>
+            </HStack>
+          </Box>
+        )}
         
         {/* Controls row */}
         <Flex 

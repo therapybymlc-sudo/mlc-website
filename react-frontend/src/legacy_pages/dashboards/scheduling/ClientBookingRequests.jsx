@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Text, VStack } from "@chakra-ui/react";
+import { Text, VStack, Button } from "@chakra-ui/react";
 import { schedulingApi } from "../../../api/scheduling";
 import SchedulePageHeader from "../../../components/scheduling/SchedulePageHeader";
 import ScheduleSectionCard from "../../../components/scheduling/ScheduleSectionCard";
@@ -20,7 +20,8 @@ export default function ClientBookingRequests() {
       setLoading(true);
       setError("");
       const data = await schedulingApi.listClientBookingRequests();
-      setRequests(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : data?.results || [];
+      setRequests(list);
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to load booking requests."));
     } finally {
@@ -31,6 +32,16 @@ export default function ClientBookingRequests() {
   useEffect(() => {
     loadRequests();
   }, []);
+
+  const handleCancel = async (id) => {
+    if (!window.confirm("Cancel this booking request?")) return;
+    try {
+      await schedulingApi.cancelClientBookingRequest(id, "");
+      await loadRequests();
+    } catch (err) {
+      setError(getSchedulingErrorMessage(err, "Unable to cancel (only pending requests can be cancelled here)."));
+    }
+  };
 
   if (loading) {
     return <ScheduleLoadingState label="Loading booking requests…" />;
@@ -46,7 +57,10 @@ export default function ClientBookingRequests() {
         title="Your booking requests"
         subtitle="Track upcoming confirmations and status updates."
       />
-      <ScheduleSectionCard title="Requests" subtitle="Pending, confirmed, or declined">
+      <ScheduleSectionCard
+        title="Requests"
+        subtitle="Pending, confirmed, declined, cancelled, or expired (if the hold timed out before your therapist responded)."
+      >
         {requests.length === 0 ? (
           <ScheduleEmptyState
             title="No booking requests"
@@ -67,6 +81,17 @@ export default function ClientBookingRequests() {
                     Note from therapist: {req.therapist_response_note}
                   </Text>
                 ) : null}
+                {req.status === "pending" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorScheme="red"
+                    borderRadius="full"
+                    onClick={() => handleCancel(req.id)}
+                  >
+                    Cancel request
+                  </Button>
+                )}
               </VStack>
             ))}
           </VStack>
