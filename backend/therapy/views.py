@@ -593,58 +593,68 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         email = request.data.get("email")
         
-        # 🔗 Merging Logic: If they are trying to change to an email that already exists
+        # 🔗 Merging Logic: Consolidate ALL profiles with this email
         if email and email.lower() != (instance.email or "").lower():
-            existing_profile = ClientProfile.objects.filter(email__iexact=email).exclude(id=instance.id).first()
-            if existing_profile:
-                if existing_profile.user and existing_profile.user != request.user:
-                    return Response(
-                        {"email": ["This email is already associated with another active account."]}, 
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                
-                print(f"DEBUG: STARTING MERGE - Ghost {instance.id} -> Real {existing_profile.id}")
+            other_profiles = ClientProfile.objects.filter(email__iexact=email).exclude(id=instance.id)
+            if other_profiles.exists():
+                print(f"DEBUG: Consolidating {other_profiles.count()} other profiles into {instance.id} or vice versa")
                 try:
                     with transaction.atomic():
-                        # ⚡ OneToOne Safety: Unlink user from current ghost profile first
-                        original_user = instance.user
-                        instance.user = None
-                        instance.save(update_fields=["user"])
+                        # We'll pick the most 'established' profile as the survivor (the one with the most appts/rels)
+                        all_candidates = list(other_profiles) + [instance]
                         
-                        # 1. Update the existing profile with any new data from the request
-                        serializer = self.get_serializer(existing_profile, data=request.data, partial=True)
-                        serializer.is_valid(raise_exception=True)
-                        existing_profile = serializer.save(user=request.user)
+                        def get_score(p):
+                            from .models import Appointment, TherapeuticRelationship
+                            return Appointment.objects.filter(client=p).count() + TherapeuticRelationship.objects.filter(client=p).count() * 5
                         
-                        # 2. Migrate all related clinical data from Ghost to Real profile
-                        from .models import Appointment, ClientGoal, ClientJournal, ClientCheckin, SafetyPlan
+                        survivor = max(all_candidates, key=get_score)
+                        print(f"DEBUG: SURVIVOR identified as Profile {survivor.id}")
                         
-                        appts = Appointment.objects.filter(client=instance).update(client=existing_profile)
-                        goals = ClientGoal.objects.filter(client=instance).update(client=existing_profile)
-                        journals = ClientJournal.objects.filter(client=instance).update(client=existing_profile)
-                        checkins = ClientCheckin.objects.filter(client=instance).update(client=existing_profile)
+                        # Move user link to survivor
+                        for p in all_candidates:
+                            if p.id != survivor.id and p.user:
+                                if p.user != request.user:
+                                     # Safety check
+                                     continue
+                                p.user = None
+                                p.save(update_fields=["user"])
                         
-                        # Migrate Safety Plan (OneToOne)
-                        if hasattr(instance, 'safety_plan') and not hasattr(existing_profile, 'safety_plan'):
-                            sp = instance.safety_plan
-                            sp.client = existing_profile
-                            sp.save()
-                        
-                        print(f"DEBUG: MIGRATION COMPLETE - Appts: {appts}, Goals: {goals}, Journals: {journals}, Checkins: {checkins}")
+                        survivor.user = request.user
+                        # Apply new data
+                        for key, value in request.data.items():
+                             if value and hasattr(survivor, key):
+                                 setattr(survivor, key, value)
+                        survivor.save()
 
-                        # 3. Delete the temporary "Ghost" profile ONLY if it has no remaining relationships
-                        if not TherapeuticRelationship.objects.filter(client=instance).exists():
-                            if not instance.name or instance.name.startswith("user_"):
-                                print(f"DEBUG: DELETING GHOST PROFILE {instance.id}")
-                                instance.delete()
+                        # Migrate ALL data from all others to survivor
+                        from .models import Appointment, ClientGoal, ClientJournal, ClientCheckin, SafetyPlan, TherapeuticRelationship
+                        for p in all_candidates:
+                            if p.id == survivor.id: continue
+                            
+                            Appointment.objects.filter(client=p).update(client=survivor)
+                            ClientGoal.objects.filter(client=p).update(client=survivor)
+                            ClientJournal.objects.filter(client=p).update(client=survivor)
+                            ClientCheckin.objects.filter(client=p).update(client=survivor)
+                            
+                            # Relationships
+                            existing_rels = TherapeuticRelationship.objects.filter(client=survivor).values_list('therapist_id', flat=True)
+                            TherapeuticRelationship.objects.filter(client=p).exclude(therapist_id__in=existing_rels).update(client=survivor)
+                            
+                            # Safety Plan
+                            if hasattr(p, 'safety_plan') and not hasattr(survivor, 'safety_plan'):
+                                sp = p.safety_plan
+                                sp.client = survivor
+                                sp.save()
+                            
+                            # Delete if it's a ghost or was just emptied
+                            if p.id != survivor.id:
+                                if not TherapeuticRelationship.objects.filter(client=p).exists():
+                                    p.delete()
                         
+                        serializer = self.get_serializer(survivor)
                         return Response(serializer.data)
                 except Exception as e:
-                    print(f"ERROR: MERGE FAILED - {str(e)}")
-                    # Restore link to ghost profile if possible
-                    if original_user:
-                        instance.user = original_user
-                        instance.save(update_fields=["user"])
+                    print(f"ERROR: CONSOLIDATION FAILED - {str(e)}")
                     raise e
 
         return super().update(request, *args, **kwargs)
