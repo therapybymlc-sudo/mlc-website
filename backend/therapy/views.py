@@ -587,6 +587,38 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Token generation failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"token": token})
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        email = request.data.get("email")
+        
+        # 🔗 Merging Logic: If they are trying to change to an email that already exists
+        if email and email.lower() != (instance.email or "").lower():
+            existing_profile = ClientProfile.objects.filter(email__iexact=email).exclude(id=instance.id).first()
+            if existing_profile:
+                if existing_profile.user and existing_profile.user != request.user:
+                    return Response(
+                        {"email": ["This email is already associated with another active account."]}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # If existing profile is unclaimed or owned by current user
+                print(f"DEBUG: Merging Ghost Profile {instance.id} into Existing Profile {existing_profile.id}")
+                
+                # 1. Update the existing profile with any new data from the request
+                serializer = self.get_serializer(existing_profile, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                existing_profile = serializer.save(user=request.user)
+                
+                # 2. If the current instance was a "Ghost" (no real data/relationships?), we can delete it
+                has_rel = TherapeuticRelationship.objects.filter(client=instance).exists()
+                if not has_rel and (not instance.name or instance.name.startswith("user_")):
+                    instance.delete()
+                
+                return Response(serializer.data)
+
+        return super().update(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = serializer.save(therapist=therapist)

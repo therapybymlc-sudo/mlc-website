@@ -80,6 +80,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
         fields = "__all__"
         extra_kwargs = {
             "therapist": {"read_only": True},
+            "email": {"validators": []}
         }
 
 
