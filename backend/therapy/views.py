@@ -558,9 +558,18 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
-        client_ids = _active_client_ids_for_therapist(therapist)
-        return ClientProfile.objects.filter(id__in=client_ids).order_by("name")
+        user = self.request.user
+        
+        # 1. Start with profiles where the user is the owner
+        queryset = ClientProfile.objects.filter(user=user)
+        
+        # 2. Add profiles managed by this user if they are a therapist
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if therapist:
+            client_ids = _active_client_ids_for_therapist(therapist)
+            queryset = queryset | ClientProfile.objects.filter(id__in=client_ids)
+            
+        return queryset.distinct().order_by("name")
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
