@@ -13,7 +13,7 @@ import {
 } from "react-icons/fi";
 import { apiUpload } from "../../api.js";
 import LinkButton from "../../components/LinkButton";
-import { useUser, SignInButton } from "@clerk/nextjs";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 
 const MotionBox = motion(Box);
 const STORAGE_KEY = "mlc_therapist_apply_v2";
@@ -240,9 +240,18 @@ export default function TherapistApplyClient() {
                  <Icon as={FiShield} w={12} h={12} color="teal.800" />
                  <Heading size="lg" fontFamily="'Playfair Display', serif">Secure Vetting Environment</Heading>
                  <Text color="gray.600">Please sign up or sign in to start your rigorous clinical application. Your progress will be saved automatically.</Text>
-                 <SignInButton mode="modal">
-                    <Button bg="teal.800" color="white" h={14} px={10} borderRadius="full" _hover={{ bg: "teal.900" }}>Begin Application Journey</Button>
-                 </SignInButton>
+                 <HStack spacing={4}>
+                    <SignUpButton mode="modal">
+                      <Button bg="teal.800" color="white" h={14} px={10} borderRadius="full" _hover={{ bg: "teal.900" }}>
+                        Sign up to apply
+                      </Button>
+                    </SignUpButton>
+                    <SignInButton mode="modal">
+                      <Button variant="outline" borderColor="teal.800" color="teal.800" h={14} px={10} borderRadius="full" _hover={{ bg: "teal.50" }}>
+                        Sign in
+                      </Button>
+                    </SignInButton>
+                 </HStack>
               </VStack>
            </Box>
         ) : (
