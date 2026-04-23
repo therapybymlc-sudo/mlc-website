@@ -81,20 +81,13 @@ api.interceptors.response.use(
       (error.response?.status === 403 &&
         (detail === "Token expired" || detail.includes("Invalid Clerk token")));
 
-    if (isTokenExpired && !originalRequest._retry) {
-      console.warn("Token expired detected. Clearing stale session.");
+    if (isTokenExpired) {
+      console.warn("Invalid auth token detected. Clearing stale session.");
       
       if (typeof window !== "undefined") {
         localStorage.removeItem("access_token");
       }
       delete api.defaults.headers.Authorization;
-      
-      // If it's a GET request, we can safely retry without a token (it might be public content)
-      if (originalRequest.method === 'get') {
-        originalRequest._retry = true;
-        delete originalRequest.headers.Authorization;
-        return api(originalRequest);
-      }
     }
     return Promise.reject(error);
   }

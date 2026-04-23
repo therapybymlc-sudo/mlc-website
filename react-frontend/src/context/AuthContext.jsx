@@ -75,9 +75,14 @@ export const AuthProvider = ({ children }) => {
         } else {
           fetchTasks.push(Promise.resolve(null));
         }
-        
-        // Always try client me as fallback or if client
-        fetchTasks.push(api.get("clients/me/", authConfig).catch(() => null));
+
+        // Only fetch client profile for users that can validly have one.
+        // Therapist-only sessions receive 403 on this endpoint by design.
+        if (isClient || (!isTherapist && !isAdmin)) {
+          fetchTasks.push(api.get("clients/me/", authConfig).catch(() => null));
+        } else {
+          fetchTasks.push(Promise.resolve(null));
+        }
 
         const [tRes, cRes] = await Promise.all(fetchTasks);
         
