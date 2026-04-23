@@ -19,28 +19,54 @@ export const setTokenGetter = (getter) => {
   tokenGetter = getter;
 };
 
+const CLERK_JWT_TEMPLATE =
+  (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) ||
+  (typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_CLERK_JWT_TEMPLATE : null) ||
+  null;
+
+async function resolveClerkTokenFallback() {
+  if (typeof window === "undefined" || !window.Clerk?.session?.getToken) return null;
+  try {
+    // Prefer explicit JWT template used by backend validation.
+    if (CLERK_JWT_TEMPLATE) {
+      const templated = await window.Clerk.session.getToken({ template: CLERK_JWT_TEMPLATE });
+      if (templated) return templated;
+    }
+    // Fallback token as last resort to keep auth bootstrap resilient.
+    return await window.Clerk.session.getToken();
+  } catch (e) {
+    console.warn("Clerk fallback token retrieval failed", e);
+    return null;
+  }
+}
+
 // Attach token automatically
 api.interceptors.request.use(async (config) => {
+  let resolvedToken = null;
+
   if (tokenGetter) {
     try {
-      const token = await tokenGetter();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-        // Keep localStorage in sync for other non-getter requests
-        if (typeof window !== "undefined") {
-          localStorage.setItem("access_token", token);
-        }
-      }
-      return config;
+      resolvedToken = await tokenGetter();
     } catch (e) {
       console.warn("API Token Getter failed", e);
     }
   }
-  
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  if (!resolvedToken) {
+    resolvedToken = await resolveClerkTokenFallback();
   }
+
+  if (!resolvedToken && typeof window !== "undefined") {
+    resolvedToken = localStorage.getItem("access_token");
+  }
+
+  if (resolvedToken) {
+    config.headers.Authorization = `Bearer ${resolvedToken}`;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("access_token", resolvedToken);
+    }
+  }
+
   return config;
 });
 

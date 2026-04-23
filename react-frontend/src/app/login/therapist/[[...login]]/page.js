@@ -1,7 +1,16 @@
+'use client'
+
 import { SignIn } from "@clerk/nextjs";
 import { Box, Container, Heading, VStack, Text } from "@chakra-ui/react";
+import { useEffect } from "react";
 
 export default function TherapistSignInPage() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Persist explicit therapist login intent across Clerk redirects.
+    localStorage.setItem("mlc_login_intent", "therapist");
+  }, []);
+
   return (
     <Box bg="rgba(169, 203, 183, 0.12)" minH="100vh" py={20}>
       <Container maxW="lg">
@@ -28,6 +37,7 @@ export default function TherapistSignInPage() {
                 }
               }
             }}
+            forceRedirectUrl="/dashboard?role=therapist"
             fallbackRedirectUrl="/dashboard?role=therapist"
           />
         </VStack>

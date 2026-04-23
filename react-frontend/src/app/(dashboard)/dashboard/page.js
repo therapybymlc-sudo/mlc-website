@@ -17,6 +17,8 @@ export default function DashboardPage() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const autoRole = String(searchParams.get("role") || "").toLowerCase();
+  const persistedIntent =
+    typeof window !== "undefined" ? String(localStorage.getItem("mlc_login_intent") || "").toLowerCase() : "";
 
   const hasExplicitRole = roles.length > 0;
 
@@ -29,12 +31,13 @@ export default function DashboardPage() {
 
     // If user explicitly came from role-specific login, honor that intent first.
     // This avoids forcing therapist logins into client dashboard when stale metadata exists.
-    const hintedRole = autoRole;
+    const hintedRole = autoRole || persistedIntent;
     if (hintedRole === "therapist" || hintedRole === "client") {
       const hasHintedRole =
         hintedRole === "therapist" ? (isTherapist || isAdmin) : isClient;
 
       if (hasHintedRole) {
+        if (typeof window !== "undefined") localStorage.removeItem("mlc_login_intent");
         router.replace(hintedRole === "therapist" ? "/dashboard/therapist" : "/dashboard/client");
         return;
       }
@@ -57,7 +60,7 @@ export default function DashboardPage() {
     // No manual role picker: infer role from explicit redirect hint only.
     // If role metadata is missing and we cannot infer intent, go to role-based login.
     router.replace("/login");
-  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, resolvingRole]);
+  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, persistedIntent, resolvingRole]);
 
   const handleResolveRole = async (role) => {
     setResolvingRole(true);
@@ -65,7 +68,15 @@ export default function DashboardPage() {
     try {
       const tokenTemplate =
         (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) || undefined;
-      const token = await getToken(tokenTemplate ? { template: tokenTemplate } : undefined);
+      let token = await getToken(tokenTemplate ? { template: tokenTemplate } : undefined);
+      if (!token) {
+        token = await getToken();
+      }
+      if (!token && typeof window !== "undefined" && window.Clerk?.session?.getToken) {
+        token = tokenTemplate
+          ? await window.Clerk.session.getToken({ template: tokenTemplate })
+          : await window.Clerk.session.getToken();
+      }
       if (!token) {
         throw new Error("Authentication token unavailable.");
       }
@@ -90,8 +101,10 @@ export default function DashboardPage() {
       await user.reload();
 
       if (role === 'therapist') {
+        if (typeof window !== "undefined") localStorage.removeItem("mlc_login_intent");
         router.replace("/dashboard/therapist");
       } else {
+        if (typeof window !== "undefined") localStorage.removeItem("mlc_login_intent");
         router.replace("/dashboard/client");
       }
     } catch (e) {
