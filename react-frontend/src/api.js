@@ -57,10 +57,6 @@ api.interceptors.request.use(async (config) => {
     resolvedToken = await resolveClerkTokenFallback();
   }
 
-  if (!resolvedToken && typeof window !== "undefined") {
-    resolvedToken = localStorage.getItem("access_token");
-  }
-
   if (resolvedToken) {
     config.headers.Authorization = `Bearer ${resolvedToken}`;
     if (typeof window !== "undefined") {
@@ -76,8 +72,11 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isTokenExpired = error.response?.status === 401 || 
-                          (error.response?.status === 403 && error.response?.data?.detail === "Token expired");
+    const detail = String(error.response?.data?.detail || "");
+    const isTokenExpired =
+      error.response?.status === 401 ||
+      (error.response?.status === 403 &&
+        (detail === "Token expired" || detail.includes("Invalid Clerk token")));
 
     if (isTokenExpired && !originalRequest._retry) {
       console.warn("Token expired detected. Clearing stale session.");
@@ -166,8 +165,9 @@ export async function apiUpload(path, formData) {
   let token = null;
   if (tokenGetter) {
     token = await tokenGetter();
-  } else if (typeof window !== "undefined") {
-    token = localStorage.getItem("access_token");
+  }
+  if (!token) {
+    token = await resolveClerkTokenFallback();
   }
   const url = `${API_BASE}/${path.replace(/^\/+/, "")}`;
   const res = await fetch(url, {
