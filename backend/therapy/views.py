@@ -234,13 +234,20 @@ def _resolve_client_from_request(request):
     if client_profile:
         # 🔄 Sync Check: If the profile has a 'user_' name or no email, try to update it from the User object
         save_needed = False
-        full_name = user.get_full_name()
+        full_name = user.get_full_name().strip()
+        
+        # Fallback to email prefix if no name provided by Clerk
+        if not full_name and user.email:
+            full_name = user.email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
+
         if full_name and (not client_profile.name or client_profile.name.startswith("user_")):
             client_profile.name = full_name
             save_needed = True
+        
         if user.email and (not client_profile.email or "@example.invalid" in client_profile.email):
             client_profile.email = user.email
             save_needed = True
+            
         if save_needed:
             client_profile.save(update_fields=["name", "email"])
         return client_profile
@@ -2751,12 +2758,22 @@ class TherapeuticRelationshipViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        # 1. Try resolving as a Client
         client = _resolve_client_from_request(self.request)
         if client:
-            # 🛠️ Auto-repair: if client has a therapist assigned but no relationship record exists, create it.
+            # 🛠️ Auto-repair Strategy 1: Primary Therapist assigned in Profile
             if client.therapist and not TherapeuticRelationship.objects.filter(client=client, therapist=client.therapist, status="active").exists():
-                print(f"DEBUG: Auto-repairing relationship for client {client.id} and therapist {client.therapist.id}")
+                print(f"DEBUG: Auto-repairing relationship (Profile Link) for client {client.id}")
                 _ensure_relationship(client.therapist, client, make_primary=True)
+            
+            # 🛠️ Auto-repair Strategy 2: Appointments exist but no Relationship record
+            if not TherapeuticRelationship.objects.filter(client=client, status="active").exists():
+                from .models import Appointment
+                latest_appt = Appointment.objects.filter(client=client).order_by("-start_time").first()
+                if latest_appt:
+                    print(f"DEBUG: Auto-repairing relationship (Appointment Link) for client {client.id} with therapist {latest_appt.therapist_id}")
+                    _ensure_relationship(latest_appt.therapist, client, make_primary=True)
+
             return TherapeuticRelationship.objects.filter(client=client, status="active")
         
         therapist = _resolve_therapist_from_request(self.request)

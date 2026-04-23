@@ -387,7 +387,7 @@ export default function ClientDashboardOverview() {
       </SimpleGrid>
 
       {/* 🩺 Your Therapeutic Guide Section */}
-      {relationships.length > 0 && (
+      {(relationships.length > 0 || upcoming.length > 0) && (
         <Box mb={10}>
           <Heading size="md" color="#2E2E2E" mb={6} fontFamily="'Playfair Display', serif">Your Therapeutic Team</Heading>
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
