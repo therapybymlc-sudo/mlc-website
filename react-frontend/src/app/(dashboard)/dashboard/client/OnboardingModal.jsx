@@ -18,7 +18,7 @@ import {
   Icon,
 } from '@chakra-ui/react';
 import { FiUserCheck } from 'react-icons/fi';
-import { apiPatch } from '../../api';
+import { apiPatch } from '../../../../api';
 
 export default function OnboardingModal({ isOpen, onClose, profileId, currentEmail }) {
   const [formData, setFormData] = useState({
