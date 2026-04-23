@@ -62,6 +62,10 @@ from therapy.views import (
     RazorpayCreateOrderView,
     RazorpayVerifyPaymentView,
     RazorpayWebhookView,
+    RazorpayCreateTherapistSubscriptionView,
+    RazorpayVerifyTherapistSubscriptionView,
+    TherapistSubscriptionStatusView,
+    TherapistCancelSubscriptionView,
 )
 
 # ----------------------------
@@ -207,6 +211,26 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/payments/razorpay/create-order/", RazorpayCreateOrderView.as_view(), name="razorpay-create-order"),
     path("api/payments/razorpay/verify/", RazorpayVerifyPaymentView.as_view(), name="razorpay-verify"),
+    path(
+        "api/payments/razorpay/subscriptions/create/",
+        RazorpayCreateTherapistSubscriptionView.as_view(),
+        name="razorpay-create-therapist-subscription",
+    ),
+    path(
+        "api/payments/razorpay/subscriptions/verify/",
+        RazorpayVerifyTherapistSubscriptionView.as_view(),
+        name="razorpay-verify-therapist-subscription",
+    ),
+    path(
+        "api/payments/therapist/subscription/status/",
+        TherapistSubscriptionStatusView.as_view(),
+        name="therapist-subscription-status",
+    ),
+    path(
+        "api/payments/therapist/subscription/cancel/",
+        TherapistCancelSubscriptionView.as_view(),
+        name="therapist-subscription-cancel",
+    ),
     path("api/payments/razorpay/webhook/", RazorpayWebhookView.as_view(), name="razorpay-webhook"),
     path("api/therapist-applications/", TherapistApplicationCreateView.as_view(), name="therapist_applications"),
 

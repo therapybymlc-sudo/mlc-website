@@ -45,6 +45,8 @@ import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
+import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
+import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 // Dynamic import for FullCalendar to avoid SSR hydration issues
 const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
@@ -61,6 +63,7 @@ export default function ScheduleClient() {
   const { isAdmin } = useAuth();
   const router = useRouter();
   const toast = useToast();
+  const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
   
   const { isOpen, onOpen, onClose } = useDisclosure();
   const typeModal = useDisclosure(); 
@@ -248,6 +251,7 @@ export default function ScheduleClient() {
   };
 
   const handleSelect = (info) => {
+    if (!requireBasicAccess()) return;
     setIsEditMode(false);
     setIsFormView(true);
     const start = new Date(info.start);
@@ -636,6 +640,7 @@ export default function ScheduleClient() {
   };
 
   const handleCreate = async () => {
+    if (!requireBasicAccess()) return;
     if (!form.start_time || !form.end_time || !currentTherapistId) return;
     try {
         const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
@@ -678,6 +683,7 @@ export default function ScheduleClient() {
   };
 
   const handleCreateOneOff = async () => {
+      if (!requireBasicAccess()) return;
       if (!oneOffForm.start_time || !oneOffForm.end_time || !currentTherapistId) return;
       try {
           const payload = {
@@ -698,6 +704,7 @@ export default function ScheduleClient() {
   };
 
   const handleUpdate = async () => {
+    if (!requireBasicAccess()) return;
     if (!selectedEvent || !currentTherapistId) return;
     const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
 
@@ -729,6 +736,7 @@ export default function ScheduleClient() {
   };
 
   const handleDelete = async () => {
+    if (!requireBasicAccess()) return;
     if (!selectedEvent) return;
     const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
     if (!window.confirm("Delete this appointment?")) return;
@@ -748,6 +756,10 @@ export default function ScheduleClient() {
   };
 
   const handleEventResize = async (info) => {
+    if (!requireBasicAccess()) {
+      info.revert();
+      return;
+    }
     const { event, revert } = info;
     const model = event.extendedProps?.model || (String(event.id).startsWith("apt-") ? "appointment" : "schedule-event");
     const originalId = event.extendedProps?.originalId || String(event.id).replace(/^(apt|event)-/, "");
@@ -847,17 +859,28 @@ export default function ScheduleClient() {
                 w={{ base: "full", lg: "auto" }}
             >
                 {isAdmin && (
-                    <Button variant="ghost" leftIcon={<FiSettings />} borderRadius="full" onClick={typeModal.onOpen} size={{ base: "sm", md: "md" }}>Manage Types</Button>
+                    <Button variant="ghost" leftIcon={<FiSettings />} borderRadius="full" onClick={() => requireBasicAccess(typeModal.onOpen)} size={{ base: "sm", md: "md" }}>Manage Types</Button>
                 )}
-                <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={oneOffModal.onOpen} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }} size={{ base: "sm", md: "md" }}>
+                <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={() => requireBasicAccess(oneOffModal.onOpen)} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }} size={{ base: "sm", md: "md" }}>
                     One-off Availability
                 </Button>
-                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "", status: "scheduled", repeat_enabled: false, repeat_interval: "weekly", repeat_count: 1 }); onOpen(); }} _hover={{ bg: '#C9A960' }} size={{ base: "sm", md: "md" }}>
+                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => requireBasicAccess(() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "", status: "scheduled", repeat_enabled: false, repeat_interval: "weekly", repeat_count: 1 }); onOpen(); })} _hover={{ bg: '#C9A960' }} size={{ base: "sm", md: "md" }}>
                   Add Session
                 </Button>
             </Flex>
         </Flex>
       </VStack>
+
+      {!hasBasicAccess && (
+        <Box p={4} borderRadius="xl" border="1px solid" borderColor="orange.200" bg="orange.50">
+          <Text fontSize="sm" color="orange.800" fontWeight="600">
+            Basic subscription required to create/manage events and availability.
+          </Text>
+          <Button as={NextLink} href="/dashboard/therapist/subscription" size="sm" mt={3} colorScheme="orange" borderRadius="full">
+            Activate plan
+          </Button>
+        </Box>
+      )}
 
       <Box 
           bg="white" 
@@ -930,8 +953,8 @@ export default function ScheduleClient() {
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
                   
                   // Even more aggressive mobile scaling to prevent warping
-                  const titleSize = { base: "0.72rem", md: `${Math.max(0.82, Math.min(1.02, 0.62 + (slotHeight * 0.12)))}rem` };
-                  const timeSize = { base: "0.62rem", md: `${Math.max(0.72, Math.min(0.9, 0.54 + (slotHeight * 0.1)))}rem` };
+                  const titleSize = { base: "0.8rem", md: `${Math.max(0.9, Math.min(1.08, 0.68 + (slotHeight * 0.12)))}rem` };
+                  const timeSize = { base: "0.7rem", md: `${Math.max(0.78, Math.min(0.96, 0.58 + (slotHeight * 0.1)))}rem` };
 
                   return (
                       <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden" minW={0}>
@@ -1151,6 +1174,11 @@ export default function ScheduleClient() {
           </ModalBody>
         </ModalContent>
       </Modal>
+      <TherapistSubscriptionGateway
+        isOpen={gateModal.isOpen}
+        onClose={gateModal.onClose}
+        contextLabel="Activate your Basic plan to create events, manage availability, and run your calendar on MLC."
+      />
     </VStack>
   );
 }

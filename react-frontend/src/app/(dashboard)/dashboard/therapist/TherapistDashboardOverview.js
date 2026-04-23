@@ -25,6 +25,8 @@ import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings, FiAward } from "r
 import { useUser } from "@clerk/nextjs";
 import NextLink from 'next/link';
 import { apiGet } from "../../../../api.js";
+import TherapistSubscriptionGateway from "../../../../components/TherapistSubscriptionGateway";
+import { useTherapistSubscriptionGate } from "../../../../hooks/useTherapistSubscriptionGate";
 
 export default function TherapistDashboardOverview() {
   const { user } = useUser();
@@ -34,6 +36,7 @@ export default function TherapistDashboardOverview() {
   const [relationships, setRelationships] = useState([]);
   const [profile, setProfile] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
+  const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -195,8 +198,7 @@ export default function TherapistDashboardOverview() {
                 cursor="pointer" 
                 _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
                 transition="all 0.2s"
-                as={NextLink}
-                href="/dashboard/therapist/clients"
+                onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/clients"))}
             >
                 <Icon as={FiUsers} boxSize={6} color="#56756D" />
                 <Text fontSize="sm" fontWeight="600">Add Client</Text>
@@ -207,8 +209,7 @@ export default function TherapistDashboardOverview() {
                 bg="#F9FAFB" 
                 cursor="pointer" 
                 _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
-                as={NextLink}
-                href="/dashboard/therapist/care"
+                onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/care"))}
             >
                 <Icon as={FiFileText} boxSize={6} color="#C9A960" />
                 <Text fontSize="sm" fontWeight="600">Session Note</Text>
@@ -219,8 +220,7 @@ export default function TherapistDashboardOverview() {
                 bg="#F9FAFB" 
                 cursor="pointer" 
                 _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
-                as={NextLink}
-                href="/dashboard/therapist/schedule"
+                onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/schedule"))}
             >
                 <Icon as={FiCalendar} boxSize={6} color="#56756D" />
                 <Text fontSize="sm" fontWeight="600">Availability</Text>
@@ -302,6 +302,22 @@ export default function TherapistDashboardOverview() {
           </VStack>
         </Flex>
       </Box>
+      {!hasBasicAccess && (
+        <Box mt={8} p={4} borderRadius="xl" border="1px solid" borderColor="orange.200" bg="orange.50">
+          <Text fontSize="sm" color="orange.800" fontWeight="600">
+            You can explore features, but activation is required to use core therapist tools.
+          </Text>
+          <Button as={NextLink} href="/dashboard/therapist/subscription" mt={3} size="sm" colorScheme="orange" borderRadius="full">
+            Activate Basic Plan
+          </Button>
+        </Box>
+      )}
+
+      <TherapistSubscriptionGateway
+        isOpen={gateModal.isOpen}
+        onClose={gateModal.onClose}
+        contextLabel="Activate Basic to add clients, schedule sessions, and unlock full therapist workflow."
+      />
 
     </Box>
   );

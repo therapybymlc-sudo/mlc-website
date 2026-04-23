@@ -1166,6 +1166,19 @@ def _verify_razorpay_checkout_signature(order_id: str, payment_id: str, signatur
     return hmac.compare_digest(expected, signature or "")
 
 
+def _verify_razorpay_subscription_signature(subscription_id: str, payment_id: str, signature: str) -> bool:
+    """
+    Razorpay subscription signature verification:
+    hmac_sha256(subscription_id|payment_id, key_secret)
+    """
+    secret = _razorpay_key_secret()
+    if not secret:
+        return False
+    message = f"{subscription_id}|{payment_id}".encode("utf-8")
+    expected = hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, signature or "")
+
+
 class RazorpayCreateOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1411,7 +1424,233 @@ class RazorpayWebhookView(APIView):
                 if br and br.can_be_confirmed:
                     br.confirm(confirmed_by=None)
 
+        # Therapist subscription lifecycle updates
+        if event in {"subscription.activated", "subscription.charged", "subscription.authenticated"}:
+            entity = ((payload.get("subscription") or {}).get("entity") or {})
+            sub_id = entity.get("id")
+            if sub_id:
+                therapist = TherapistProfile.objects.filter(razorpay_subscription_id=sub_id).first()
+                if therapist:
+                    therapist.is_basic_subscribed = True
+                    therapist.subscription_status = "active"
+                    therapist.save(update_fields=["is_basic_subscribed", "subscription_status"])
+
+        if event in {"subscription.cancelled", "subscription.halted"}:
+            entity = ((payload.get("subscription") or {}).get("entity") or {})
+            sub_id = entity.get("id")
+            if sub_id:
+                therapist = TherapistProfile.objects.filter(razorpay_subscription_id=sub_id).first()
+                if therapist:
+                    therapist.subscription_status = "cancelled"
+                    therapist.is_basic_subscribed = False
+                    therapist.save(update_fields=["subscription_status", "is_basic_subscribed"])
+
+        if event in {"subscription.completed", "subscription.expired"}:
+            entity = ((payload.get("subscription") or {}).get("entity") or {})
+            sub_id = entity.get("id")
+            if sub_id:
+                therapist = TherapistProfile.objects.filter(razorpay_subscription_id=sub_id).first()
+                if therapist:
+                    therapist.subscription_status = "expired"
+                    therapist.is_basic_subscribed = False
+                    therapist.save(update_fields=["subscription_status", "is_basic_subscribed"])
+
         return Response({"detail": "ok"})
+
+
+class RazorpayCreateTherapistSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return _profile_required_response("therapist")
+
+        plan_type = str(request.data.get("plan_type") or "").lower()
+        if plan_type not in {"monthly", "annual"}:
+            return Response({"detail": "plan_type must be monthly or annual."}, status=status.HTTP_400_BAD_REQUEST)
+
+        monthly_plan_id = (
+            getattr(settings, "RAZORPAY_BASIC_MONTHLY_PLAN_ID", None)
+            or os.getenv("RAZORPAY_BASIC_MONTHLY_PLAN_ID")
+        )
+        annual_plan_id = (
+            getattr(settings, "RAZORPAY_BASIC_ANNUAL_PLAN_ID", None)
+            or os.getenv("RAZORPAY_BASIC_ANNUAL_PLAN_ID")
+        )
+        plan_id = monthly_plan_id if plan_type == "monthly" else annual_plan_id
+        if not plan_id:
+            return Response({"detail": f"Razorpay {plan_type} plan is not configured."}, status=status.HTTP_400_BAD_REQUEST)
+
+        customer_notify = bool(request.data.get("customer_notify", 1))
+        total_count = 120 if plan_type == "monthly" else 10
+
+        payload = {
+            "plan_id": plan_id,
+            "customer_notify": 1 if customer_notify else 0,
+            "total_count": total_count,
+            "notes": {
+                "therapist_id": str(therapist.id),
+                "plan_type": plan_type,
+                "email": therapist.email or "",
+            },
+        }
+        sub = _razorpay_request("POST", "/v1/subscriptions", payload)
+        sub_id = sub.get("id")
+        if not sub_id:
+            return Response({"detail": "Failed to create subscription with Razorpay."}, status=status.HTTP_400_BAD_REQUEST)
+
+        therapist.razorpay_subscription_id = sub_id
+        therapist.subscription_status = "pending"
+        therapist.basic_plan = plan_type
+        therapist.save(update_fields=["razorpay_subscription_id", "subscription_status", "basic_plan"])
+
+        return Response(
+            {
+                "key_id": _razorpay_key_id(),
+                "subscription_id": sub_id,
+                "plan_type": plan_type,
+                "status": sub.get("status"),
+                "short_url": sub.get("short_url", ""),
+            }
+        )
+
+
+class RazorpayVerifyTherapistSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return _profile_required_response("therapist")
+
+        sub_id = request.data.get("razorpay_subscription_id")
+        payment_id = request.data.get("razorpay_payment_id")
+        signature = request.data.get("razorpay_signature")
+        if not sub_id or not payment_id or not signature:
+            return Response({"detail": "Missing Razorpay verification fields."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if therapist.razorpay_subscription_id and therapist.razorpay_subscription_id != sub_id:
+            return Response({"detail": "Subscription mismatch."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not _verify_razorpay_subscription_signature(sub_id, payment_id, signature):
+            return Response({"detail": "Invalid subscription signature."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Optional live fetch to confirm current status
+        sub_details = _razorpay_request("GET", f"/v1/subscriptions/{sub_id}", payload=None)
+        sub_status = str(sub_details.get("status") or "").lower()
+        is_active = sub_status in {"active", "authenticated"}
+
+        therapist.razorpay_subscription_id = sub_id
+        therapist.subscription_status = "active" if is_active else "pending"
+        therapist.is_basic_subscribed = bool(is_active)
+        # Preserve selected plan type if present in notes
+        notes = sub_details.get("notes") or {}
+        plan_type = str(notes.get("plan_type") or therapist.basic_plan or "none").lower()
+        if plan_type in {"monthly", "annual"}:
+            therapist.basic_plan = plan_type
+        therapist.save(
+            update_fields=[
+                "razorpay_subscription_id",
+                "subscription_status",
+                "is_basic_subscribed",
+                "basic_plan",
+            ]
+        )
+
+        return Response(
+            {
+                "detail": "Therapist subscription verified.",
+                "subscription_status": therapist.subscription_status,
+                "is_basic_subscribed": therapist.is_basic_subscribed,
+                "basic_plan": therapist.basic_plan,
+            }
+        )
+
+
+class TherapistSubscriptionStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return _profile_required_response("therapist")
+
+        sync = str(request.query_params.get("sync") or "").lower() in {"1", "true", "yes"}
+        razorpay_status = None
+        current_end = None
+
+        if sync and therapist.razorpay_subscription_id:
+            try:
+                sub = _razorpay_request("GET", f"/v1/subscriptions/{therapist.razorpay_subscription_id}", payload=None)
+                razorpay_status = str(sub.get("status") or "").lower() or None
+                current_end_ts = sub.get("current_end")
+                if current_end_ts:
+                    try:
+                        current_end = timezone.make_aware(datetime.fromtimestamp(int(current_end_ts))).isoformat()
+                    except Exception:
+                        current_end = None
+
+                if razorpay_status in {"active", "authenticated"}:
+                    therapist.subscription_status = "active"
+                    therapist.is_basic_subscribed = True
+                elif razorpay_status in {"cancelled", "halted"}:
+                    therapist.subscription_status = "cancelled"
+                    therapist.is_basic_subscribed = False
+                elif razorpay_status in {"completed", "expired"}:
+                    therapist.subscription_status = "expired"
+                    therapist.is_basic_subscribed = False
+                elif razorpay_status in {"created", "pending"}:
+                    therapist.subscription_status = "pending"
+                    therapist.is_basic_subscribed = False
+                therapist.save(update_fields=["subscription_status", "is_basic_subscribed"])
+            except Exception:
+                # Do not fail status view if Razorpay sync errors.
+                pass
+
+        return Response(
+            {
+                "is_basic_subscribed": therapist.is_basic_subscribed,
+                "basic_plan": therapist.basic_plan,
+                "subscription_status": therapist.subscription_status,
+                "razorpay_subscription_id": therapist.razorpay_subscription_id,
+                "razorpay_status": razorpay_status,
+                "current_end": current_end,
+            }
+        )
+
+
+class TherapistCancelSubscriptionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return _profile_required_response("therapist")
+
+        sub_id = therapist.razorpay_subscription_id
+        if not sub_id:
+            return Response({"detail": "No active Razorpay subscription found."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cancel_at_cycle_end = bool(request.data.get("cancel_at_cycle_end", True))
+        _razorpay_request(
+            "POST",
+            f"/v1/subscriptions/{sub_id}/cancel",
+            {"cancel_at_cycle_end": 1 if cancel_at_cycle_end else 0},
+        )
+
+        therapist.subscription_status = "cancelled" if not cancel_at_cycle_end else "pending"
+        if not cancel_at_cycle_end:
+            therapist.is_basic_subscribed = False
+        therapist.save(update_fields=["subscription_status", "is_basic_subscribed"])
+
+        return Response(
+            {
+                "detail": "Subscription cancel request submitted.",
+                "subscription_status": therapist.subscription_status,
+                "is_basic_subscribed": therapist.is_basic_subscribed,
+            }
+        )
 
 class PublicTherapistDirectoryView(APIView):
     permission_classes = [IsAuthenticated]

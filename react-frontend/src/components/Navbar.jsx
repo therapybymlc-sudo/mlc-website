@@ -248,6 +248,20 @@ export default function Navbar() {
                   >
                     Resources & Tools
                   </MenuItem>
+                  {(roles.includes("therapist") || roles.includes("admin")) && (
+                    <MenuItem
+                      as={NextLink}
+                      href="/dashboard/therapist/subscription"
+                      borderRadius="lg"
+                      icon={<Icon as={FiTarget} boxSize={4} color="#56756D" />}
+                      _hover={{ bg: "gray.50", color: "#C9A960" }}
+                      fontSize="sm"
+                      fontWeight="600"
+                      py={3}
+                    >
+                      Subscription
+                    </MenuItem>
+                  )}
                   </>
                   )
                 })()}

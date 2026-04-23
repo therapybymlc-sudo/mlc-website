@@ -10,6 +10,8 @@ import {
   FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX
 } from "react-icons/fi";
 import { apiGet, apiPut, apiPost } from "../../../../../api.js";
+import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
+import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 // ===========================
 // 🔹 Constants & Presets
@@ -65,6 +67,7 @@ const CURRENCIES = ["KD", "INR", "USD", "AED", "GBP"];
 export default function ProfileClient() {
   const toast = useToast();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keywordInput, setKeywordInput] = useState("");
@@ -182,6 +185,7 @@ export default function ProfileClient() {
   };
 
   const handleSaveAndNext = async () => {
+    if (!requireBasicAccess()) return;
     const success = await handleSave(false);
     if (success) {
       setTabIndex((prev) => (prev + 1) % 8);
@@ -229,8 +233,19 @@ export default function ProfileClient() {
               <Heading size={{ base: "lg", md: "xl" }} color="#2E2E2E" fontFamily="'Playfair Display', serif" whiteSpace="normal">Clinician Identity Hub</Heading>
               <Text color="gray.500" mt={1} fontSize={{ base: "sm", md: "md" }}>Define your professional scope, expertise, and public presence.</Text>
            </Box>
-           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={() => handleSave()} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl" w={{ base: "full", md: "auto" }} flexShrink={0}>Finalize & Sync</Button>
+           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={() => requireBasicAccess(() => handleSave())} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl" w={{ base: "full", md: "auto" }} flexShrink={0}>Finalize & Sync</Button>
         </Flex>
+        {!hasBasicAccess && (
+          <Alert status="warning" borderRadius="xl">
+            <AlertIcon />
+            <Box>
+              <AlertTitle fontSize="sm">Subscription needed to publish profile</AlertTitle>
+              <AlertDescription fontSize="sm">
+                Activate Basic to sync your profile publicly and receive client matches.
+              </AlertDescription>
+            </Box>
+          </Alert>
+        )}
       </VStack>
 
       <Tabs index={tabIndex} onChange={(i) => setTabIndex(i)} variant="enclosed" colorScheme="teal" isLazy>
@@ -797,6 +812,11 @@ export default function ProfileClient() {
             <Button size="lg" bg="white" color="mlc.greenDark" borderRadius="full" px={12} onClick={handleSave} isLoading={loading} w={{ base: "full", md: "auto" }} flexShrink={0}>Sync Now</Button>
          </Flex>
       </Box>
+      <TherapistSubscriptionGateway
+        isOpen={gateModal.isOpen}
+        onClose={gateModal.onClose}
+        contextLabel="Activate Basic to make your profile visible, sync updates, and start receiving matched clients."
+      />
     </Box>
   );
 }

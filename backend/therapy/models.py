@@ -22,6 +22,25 @@ class TherapistProfile(models.Model):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     is_premium = models.BooleanField(default=False)
+    is_basic_subscribed = models.BooleanField(default=False)
+    basic_plan = models.CharField(
+        max_length=20,
+        choices=[("none", "None"), ("monthly", "Monthly"), ("annual", "Annual")],
+        default="none",
+    )
+    subscription_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("inactive", "Inactive"),
+            ("pending", "Pending"),
+            ("active", "Active"),
+            ("cancelled", "Cancelled"),
+            ("expired", "Expired"),
+        ],
+        default="inactive",
+    )
+    razorpay_subscription_id = models.CharField(max_length=64, blank=True, default="")
+    razorpay_customer_id = models.CharField(max_length=64, blank=True, default="")
     business_hours = models.JSONField(
         default=dict,
         blank=True,

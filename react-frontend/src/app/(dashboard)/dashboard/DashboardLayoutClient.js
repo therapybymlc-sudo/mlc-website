@@ -71,6 +71,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Booking requests', icon: FiInbox, href: '/dashboard/therapist/booking-requests' },
       { label: 'Availability', icon: FiClock, href: '/dashboard/therapist/availability' },
       { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
+      { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
       { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
       { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
       { label: 'Supervision Hub', icon: FiAward, href: '/dashboard/therapist/supervision' },

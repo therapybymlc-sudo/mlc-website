@@ -2,6 +2,8 @@
 
 import { Box, Heading, Text, VStack, SimpleGrid, Icon, Button, Badge } from "@chakra-ui/react";
 import { FiBook, FiFolder, FiExternalLink, FiShare2 } from "react-icons/fi";
+import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
+import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 const RESOURCES = [
   { title: "Clinical Guidelines 2024", type: "PDF", category: "Standard" },
@@ -11,6 +13,8 @@ const RESOURCES = [
 ];
 
 export default function TherapistResourcesClient() {
+  const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
+
   return (
     <Box>
       <VStack align="start" spacing={1} mb={8}>
@@ -20,7 +24,18 @@ export default function TherapistResourcesClient() {
         <Text color="gray.500">Access clinical tools, templates, and organizational resources.</Text>
       </VStack>
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+      {!hasBasicAccess && (
+        <Box mb={6} p={4} borderRadius="xl" border="1px solid" borderColor="orange.200" bg="orange.50">
+          <Text fontSize="sm" color="orange.800" fontWeight="600">
+            Resource library is visible in preview mode. Activate Basic to download and upload resources.
+          </Text>
+          <Button size="sm" mt={3} colorScheme="orange" borderRadius="full" onClick={() => requireBasicAccess()}>
+            Activate to unlock
+          </Button>
+        </Box>
+      )}
+
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} opacity={hasBasicAccess ? 1 : 0.8}>
         {RESOURCES.map((res, i) => (
           <Box key={i} bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" _hover={{ shadow: 'md', transform: 'translateY(-2px)' }} transition="0.3s">
             <VStack align="start" spacing={3}>
@@ -32,7 +47,9 @@ export default function TherapistResourcesClient() {
                 <Heading size="sm" color="#2E2E2E">{res.title}</Heading>
                 <Text fontSize="xs" color="gray.400" mt={1}>{res.type} Document</Text>
               </VStack>
-              <Button size="sm" variant="ghost" rightIcon={<FiExternalLink />} colorScheme="teal" w="100%" justifyContent="space-between">Download</Button>
+              <Button size="sm" variant="ghost" rightIcon={<FiExternalLink />} colorScheme="teal" w="100%" justifyContent="space-between" onClick={() => requireBasicAccess()}>
+                Download
+              </Button>
             </VStack>
           </Box>
         ))}
@@ -45,11 +62,17 @@ export default function TherapistResourcesClient() {
           borderColor="gray.200"
           cursor="pointer"
           _hover={{ bg: 'gray.50' }}
+          onClick={() => requireBasicAccess()}
         >
           <Icon as={FiShare2} boxSize={8} color="gray.300" mb={2} />
           <Text fontWeight="600" color="gray.400">Upload New Resource</Text>
         </VStack>
       </SimpleGrid>
+      <TherapistSubscriptionGateway
+        isOpen={gateModal.isOpen}
+        onClose={gateModal.onClose}
+        contextLabel="Activate Basic to use the therapist resource library and go fully paperless."
+      />
     </Box>
   );
 }
