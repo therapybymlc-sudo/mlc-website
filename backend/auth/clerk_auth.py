@@ -25,19 +25,51 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             )
             token_issuer = (unverified_payload.get("iss") or "").strip()
 
-            jwks_url = (settings.CLERK_JWKS_URL or "").strip()
-            if not jwks_url and token_issuer:
-                parsed_issuer = urlparse(token_issuer)
-                if parsed_issuer.scheme and parsed_issuer.netloc:
-                    jwks_url = f"{parsed_issuer.scheme}://{parsed_issuer.netloc}/.well-known/jwks.json"
+            configured_issuer = (settings.CLERK_ISSUER or "").strip()
+            jwks_candidates = []
 
-            if not jwks_url:
+            configured_jwks = (settings.CLERK_JWKS_URL or "").strip()
+            if configured_jwks:
+                jwks_candidates.append(configured_jwks)
+
+            if configured_issuer:
+                parsed_config_issuer = urlparse(configured_issuer)
+                if parsed_config_issuer.scheme and parsed_config_issuer.netloc:
+                    jwks_candidates.append(
+                        f"{parsed_config_issuer.scheme}://{parsed_config_issuer.netloc}/.well-known/jwks.json"
+                    )
+
+            if token_issuer:
+                parsed_token_issuer = urlparse(token_issuer)
+                if parsed_token_issuer.scheme and parsed_token_issuer.netloc:
+                    jwks_candidates.append(
+                        f"{parsed_token_issuer.scheme}://{parsed_token_issuer.netloc}/.well-known/jwks.json"
+                    )
+
+            # Preserve order but remove duplicates.
+            seen = set()
+            ordered_jwks_candidates = []
+            for candidate in jwks_candidates:
+                if candidate and candidate not in seen:
+                    ordered_jwks_candidates.append(candidate)
+                    seen.add(candidate)
+
+            if not ordered_jwks_candidates:
                 raise exceptions.AuthenticationFailed("Unable to resolve Clerk JWKS URL.")
 
-            jwks_client = PyJWKClient(jwks_url)
-            signing_key = jwks_client.get_signing_key_from_jwt(token)
+            signing_key = None
+            signing_key_error = None
+            for jwks_url in ordered_jwks_candidates:
+                try:
+                    jwks_client = PyJWKClient(jwks_url)
+                    signing_key = jwks_client.get_signing_key_from_jwt(token)
+                    break
+                except Exception as key_exc:
+                    signing_key_error = key_exc
 
-            configured_issuer = (settings.CLERK_ISSUER or "").strip()
+            if signing_key is None:
+                raise exceptions.AuthenticationFailed(f"Invalid Clerk token: {signing_key_error}")
+
             issuers_to_try = []
             if configured_issuer:
                 issuers_to_try.append(configured_issuer)
