@@ -605,15 +605,20 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
                 # If existing profile is unclaimed or owned by current user
                 print(f"DEBUG: Merging Ghost Profile {instance.id} into Existing Profile {existing_profile.id}")
                 
+                # ⚡ OneToOne Safety: Unlink user from current ghost profile first
+                instance.user = None
+                instance.save(update_fields=["user"])
+                
                 # 1. Update the existing profile with any new data from the request
                 serializer = self.get_serializer(existing_profile, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 existing_profile = serializer.save(user=request.user)
                 
-                # 2. If the current instance was a "Ghost" (no real data/relationships?), we can delete it
-                has_rel = TherapeuticRelationship.objects.filter(client=instance).exists()
-                if not has_rel and (not instance.name or instance.name.startswith("user_")):
-                    instance.delete()
+                # 2. Delete the temporary "Ghost" profile
+                # We do this after successful merger
+                if not TherapeuticRelationship.objects.filter(client=instance).exists():
+                    if not instance.name or instance.name.startswith("user_"):
+                        instance.delete()
                 
                 return Response(serializer.data)
 
