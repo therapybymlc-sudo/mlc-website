@@ -61,8 +61,18 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 },
             )
             
-            # Sync staff status and email if they changed
+            # Sync names, staff status and email if they changed
             save_needed = False
+            first_name = payload.get("given_name") or ""
+            last_name = payload.get("family_name") or ""
+            
+            if first_name and user.first_name != first_name:
+                user.first_name = first_name
+                save_needed = True
+            if last_name and user.last_name != last_name:
+                user.last_name = last_name
+                save_needed = True
+                
             if email and (created or not user.email or user.email.endswith("@example.invalid")):
                 user.email = email
                 save_needed = True

@@ -31,16 +31,18 @@ export default function TherapistDashboardOverview() {
   const toast = useToast();
   const [stats, setStats] = useState({ clients: 0, appointments: 0, requests: 0 });
   const [upcoming, setUpcoming] = useState([]);
+  const [relationships, setRelationships] = useState([]);
   const [profile, setProfile] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, apptData, profileData] = await Promise.all([
+        const [clientData, apptData, profileData, relationData] = await Promise.all([
           apiGet("clients/"),
           apiGet("appointments/"),
           apiGet("therapists/me/"),
+          apiGet("therapist-relationships/"),
         ]);
         setStats({
           clients: clientData?.length || 0,
@@ -49,6 +51,7 @@ export default function TherapistDashboardOverview() {
         });
         setUpcoming(apptData || []);
         setProfile(profileData);
+        setRelationships(relationData || []);
       } catch (err) {
         console.warn("Dashboard sync failed", err);
       }
@@ -140,7 +143,21 @@ export default function TherapistDashboardOverview() {
                         >
                             Join Session
                         </Button>
-                        <Button size="xs" variant="ghost" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap">View Note</Button>
+                        {relationships.find(r => r.client === appt.client) && (
+                            <Button 
+                                as={NextLink} 
+                                href={`/conference/MLC_Session_${relationships.find(r => r.client === appt.client).id}`}
+                                size="xs" 
+                                variant="outline" 
+                                colorScheme="teal" 
+                                borderRadius="full" 
+                                px={4} 
+                                whiteSpace="nowrap"
+                            >
+                                Lounge
+                            </Button>
+                        )}
+                        <Button size="xs" variant="ghost" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap">Note</Button>
                     </HStack>
                 </HStack>
             )) : (

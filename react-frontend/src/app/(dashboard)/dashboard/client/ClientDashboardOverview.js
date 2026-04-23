@@ -36,10 +36,12 @@ import { useUser } from "@clerk/nextjs";
 import { apiGet, apiPost } from "../../../../api.js";
 import NextLink from 'next/link';
 import { useClientData } from "./useClientData";
+import { useAuth } from "../../../../context/AuthContext";
 
 export default function ClientDashboardOverview() {
   const [isMounted, setIsMounted] = useState(false);
   const { user } = useUser();
+  const { clientProfile } = useAuth();
   const toast = useToast();
   const { goals, appointments, journals, checkins, relationships, loading, refreshData } = useClientData();
   const [stats, setStats] = useState({
@@ -383,6 +385,116 @@ export default function ClientDashboardOverview() {
             )}
         </Box>
       </SimpleGrid>
+
+      {/* 🩺 Your Therapeutic Guide Section */}
+      {relationships.length > 0 && (
+        <Box mb={10}>
+          <Heading size="md" color="#2E2E2E" mb={6} fontFamily="'Playfair Display', serif">Your Therapeutic Team</Heading>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+            {relationships.map((rel) => (
+              <Box 
+                key={rel.id} 
+                bg="white" 
+                p={6} 
+                borderRadius="3xl" 
+                shadow="sm" 
+                border="1px solid" 
+                borderColor="gray.100"
+                transition="all 0.3s"
+                _hover={{ shadow: 'md', transform: 'translateY(-4px)' }}
+              >
+                <HStack spacing={4} mb={4}>
+                  <Avatar 
+                    size="lg" 
+                    name={rel.therapist_name} 
+                    src={rel.therapist_profile_image} 
+                    border="2px solid" 
+                    borderColor="teal.50"
+                  />
+                  <VStack align="start" spacing={0}>
+                    <Heading size="sm" color="#2E2E2E">{rel.therapist_name}</Heading>
+                    <Text fontSize="xs" color="gray.500" noOfLines={1}>{rel.therapist_title || 'Clinical Associate'}</Text>
+                    {rel.is_primary && (
+                      <Tag size="sm" mt={2} variant="subtle" colorScheme="teal" borderRadius="full">Primary Guide</Tag>
+                    )}
+                  </VStack>
+                </HStack>
+                
+                {rel.therapist_specialties && rel.therapist_specialties.length > 0 && (
+                  <HStack spacing={2} mb={6} wrap="wrap">
+                    {rel.therapist_specialties.slice(0, 2).map((s, idx) => (
+                      <Tag key={idx} size="sm" variant="ghost" color="#56756D" bg="rgba(86, 117, 109, 0.05)" borderRadius="full">
+                        {s}
+                      </Tag>
+                    ))}
+                  </HStack>
+                )}
+
+                <HStack spacing={3}>
+                  <Button 
+                    flex="1" 
+                    size="sm" 
+                    bg="#56756D" 
+                    color="white" 
+                    borderRadius="full"
+                    as={NextLink}
+                    href={nextAppt && nextAppt.therapist_id === rel.therapist_id 
+                      ? `/conference/MLC_${nextAppt.id}` 
+                      : `/conference/MLC_Session_${rel.id}`}
+                    _hover={{ bg: '#455c56' }}
+                  >
+                    Enter Room
+                  </Button>
+                  <Button 
+                    flex="1" 
+                    size="sm" 
+                    variant="outline" 
+                    colorScheme="teal" 
+                    borderRadius="full"
+                    as={NextLink}
+                    href="/therapists/discovery"
+                  >
+                    Reschedule
+                  </Button>
+                </HStack>
+              </Box>
+            ))}
+          </SimpleGrid>
+        </Box>
+      )}
+
+      {/* 📊 Clinical Snapshot Section */}
+      {clientProfile?.dass_scores && (
+        <Box mb={10} bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="teal.50">
+          <HStack justify="space-between" mb={6}>
+            <VStack align="start" spacing={1}>
+              <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">
+                {clientProfile?.name || 'Clinical Snapshot'}
+              </Heading>
+              <Text fontSize="xs" color="gray.500">{clientProfile?.email || 'Latest assessment results'}</Text>
+            </VStack>
+            <Icon as={FiActivity} color="teal.400" boxSize={6} />
+          </HStack>
+          
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+            {['depression', 'anxiety', 'stress'].map((type) => {
+              const score = clientProfile.dass_scores[type];
+              const level = clientProfile.dass_scores[`${type}_level`] || 'Normal';
+              const color = level === 'Normal' ? 'teal.400' : level.includes('Mild') ? 'orange.300' : 'red.400';
+              
+              return (
+                <VStack key={type} align="start" p={4} borderRadius="2xl" bg="gray.50" borderLeft="4px solid" borderLeftColor={color}>
+                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">{type}</Text>
+                  <HStack justify="space-between" w="full">
+                    <Text fontSize="lg" fontWeight="800" color="#2E2E2E">{score}</Text>
+                    <Tag size="sm" variant="subtle" colorScheme={level === 'Normal' ? 'teal' : 'orange'}>{level}</Tag>
+                  </HStack>
+                </VStack>
+              );
+            })}
+          </SimpleGrid>
+        </Box>
+      )}
 
       {relationships.length === 0 && !loading && (
         <Box 

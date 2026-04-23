@@ -248,10 +248,15 @@ def _resolve_client_from_request(request):
     if email:
         client = ClientProfile.objects.filter(email__iexact=email).first()
         if client:
+            print(f"DEBUG: Found client profile {client.id} by email {email}. Linking to user {user.id}")
             if client.user_id != user.id:
                 client.user = user
                 client.save(update_fields=["user"])
             return client
+        else:
+            print(f"DEBUG: No client profile found for email {email}")
+    else:
+        print(f"DEBUG: User {user.id} has no email set.")
         
     # 4. Create new profile
     display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
@@ -2737,6 +2742,10 @@ class TherapeuticRelationshipViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         client = _resolve_client_from_request(self.request)
         if client:
+            # 🛠️ Auto-repair: if client has a therapist assigned but no relationship record exists, create it.
+            if client.therapist and not TherapeuticRelationship.objects.filter(client=client, therapist=client.therapist, status="active").exists():
+                print(f"DEBUG: Auto-repairing relationship for client {client.id} and therapist {client.therapist.id}")
+                _ensure_relationship(client.therapist, client, make_primary=True)
             return TherapeuticRelationship.objects.filter(client=client, status="active")
         
         therapist = _resolve_therapist_from_request(self.request)

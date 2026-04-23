@@ -1038,6 +1038,9 @@ class SafetyPlanSerializer(serializers.ModelSerializer):
 
 class TherapeuticRelationshipSerializer(serializers.ModelSerializer):
     therapist_name = serializers.ReadOnlyField(source="therapist.name")
+    therapist_profile_image = serializers.ReadOnlyField(source="therapist.profile_image_url")
+    therapist_specialties = serializers.ReadOnlyField(source="therapist.specialties")
+    therapist_title = serializers.ReadOnlyField(source="therapist.affiliations") # Using affiliations as title fallback
     client_name = serializers.ReadOnlyField(source="client.name")
     
     class Meta:
