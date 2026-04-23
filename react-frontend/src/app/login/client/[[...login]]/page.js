@@ -14,6 +14,9 @@ export default function ClientSignInPage() {
           </VStack>
           
           <SignIn 
+            path="/login/client"
+            routing="path"
+            signUpUrl="/signup/client"
             appearance={{
               elements: {
                 formButtonPrimary: {

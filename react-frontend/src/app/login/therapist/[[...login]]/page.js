@@ -23,6 +23,9 @@ export default function TherapistSignInPage() {
           </VStack>
           
           <SignIn 
+            path="/login/therapist"
+            routing="path"
+            signUpUrl="/signup/therapist"
             appearance={{
               elements: {
                 formButtonPrimary: {

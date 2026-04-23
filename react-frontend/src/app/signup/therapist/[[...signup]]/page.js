@@ -1,7 +1,17 @@
+'use client'
+
+import { useEffect } from "react";
 import { SignUp } from "@clerk/nextjs";
 import { Box, Container, Heading, VStack, Text } from "@chakra-ui/react";
 
+const ROLE_META = { role: "therapist", roles: ["therapist"] };
+
 export default function TherapistSignUpPage() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("mlc_signup_role", "therapist");
+  }, []);
+
   return (
     <Box bg="rgba(169, 203, 183, 0.12)" minH="100vh" py={20}>
       <Container maxW="lg">
@@ -14,6 +24,9 @@ export default function TherapistSignUpPage() {
           </VStack>
 
           <SignUp
+            path="/signup/therapist"
+            routing="path"
+            signInUrl="/login/therapist"
             appearance={{
               elements: {
                 formButtonPrimary: {
@@ -29,7 +42,7 @@ export default function TherapistSignUpPage() {
                 },
               },
             }}
-            unsafeMetadata={{ role: "therapist", roles: ["therapist"] }}
+            unsafeMetadata={ROLE_META}
             fallbackRedirectUrl="/dashboard?role=therapist"
           />
         </VStack>
@@ -37,4 +50,3 @@ export default function TherapistSignUpPage() {
     </Box>
   );
 }
-

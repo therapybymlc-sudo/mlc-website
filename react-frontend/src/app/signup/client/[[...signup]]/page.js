@@ -1,7 +1,17 @@
+'use client'
+
+import { useEffect } from "react";
 import { SignUp } from "@clerk/nextjs";
 import { Box, Container, Heading, VStack, Text } from "@chakra-ui/react";
 
+const ROLE_META = { role: "client", roles: ["client"] };
+
 export default function ClientSignUpPage() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("mlc_signup_role", "client");
+  }, []);
+
   return (
     <Box bg="rgba(169, 203, 183, 0.12)" minH="100vh" py={20}>
       <Container maxW="lg">
@@ -12,8 +22,11 @@ export default function ClientSignUpPage() {
             </Heading>
             <Text color="gray.600">Create your private client account.</Text>
           </VStack>
-          
-          <SignUp 
+
+          <SignUp
+            path="/signup/client"
+            routing="path"
+            signInUrl="/login/client"
             appearance={{
               elements: {
                 formButtonPrimary: {
@@ -28,7 +41,7 @@ export default function ClientSignUpPage() {
                 }
               }
             }}
-            unsafeMetadata={{ role: "client", roles: ["client"] }}
+            unsafeMetadata={ROLE_META}
             fallbackRedirectUrl="/dashboard?role=client"
           />
         </VStack>
