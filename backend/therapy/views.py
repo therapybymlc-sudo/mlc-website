@@ -232,61 +232,59 @@ def _resolve_client_from_request(request):
     # 1. Check direct relationship
     client_profile = getattr(user, "client_profile", None)
     if client_profile:
-        # 🔄 Sync Check: If the profile has a 'user_' name or no email, try to update it from the User object
+        # 🔄 Sync Check: Update name from User object ONLY if it's a real name
         save_needed = False
-        full_name = user.get_full_name().strip()
+        first = user.first_name.strip()
+        last = user.last_name.strip()
+        full_name = f"{first} {last}".strip()
         
-        # Fallback to email prefix if no name provided by Clerk
-        if not full_name and user.email:
-            full_name = user.email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
-
-        if full_name and (not client_profile.name or client_profile.name.startswith("user_")):
-            client_profile.name = full_name
-            save_needed = True
+        # NEVER use "user_..." as a name
+        if full_name and not full_name.startswith("user_"):
+            if not client_profile.name or client_profile.name.startswith("user_") or client_profile.name == "Unknown":
+                client_profile.name = full_name
+                save_needed = True
         
-        if user.email and (not client_profile.email or "@example.invalid" in client_profile.email):
-            client_profile.email = user.email
-            save_needed = True
+        email = getattr(user, "email", None)
+        if email and not email.endswith("@example.invalid"):
+            if not client_profile.email or "@example.invalid" in client_profile.email:
+                client_profile.email = email
+                save_needed = True
             
         if save_needed:
             client_profile.save(update_fields=["name", "email"])
         return client_profile
 
-    # 2. Guard: Strictly separate roles (unless admin)
-    roles = _extract_roles_from_auth(request)
-    is_admin = "admin" in roles
-    therapist = _resolve_therapist_from_request(request)
-    
-    if therapist and not is_admin:
-        # If they are a therapist and NOT an admin, they cannot have a client profile
-        return None
-
-    # 3. Check by email
+    # 2. Aggressive Email Search (Before creating anything new)
     email = getattr(user, "email", None)
-    if email:
-        client = ClientProfile.objects.filter(email__iexact=email).first()
-        if client:
-            print(f"DEBUG: Found client profile {client.id} by email {email}. Linking to user {user.id}")
-            if client.user_id != user.id:
-                client.user = user
-                client.save(update_fields=["user"])
-            return client
-        else:
-            print(f"DEBUG: No client profile found for email {email}")
-    else:
-        print(f"DEBUG: User {user.id} has no email set.")
+    if not client_profile and email and not email.endswith("@example.invalid"):
+        client_profile = ClientProfile.objects.filter(email__iexact=email).first()
+        if client_profile:
+            print(f"DEBUG: Claiming profile {client_profile.id} for user {user.id} via email {email}")
+            client_profile.user = user
+            client_profile.save(update_fields=["user"])
+            return client_profile
+
+    # 3. Guard: Strictly separate roles
+    roles = _extract_roles_from_auth(request)
+    if "therapist" in roles and "admin" not in roles:
+        return None
         
-    # 4. Create new profile
-    display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
-    safe_email = email or f"client_{user.pk or 'nouser'}@local"
+    # 4. Create new profile as a LAST resort
+    first = user.first_name.strip()
+    last = user.last_name.strip()
+    display_name = f"{first} {last}".strip()
     
+    if not display_name or display_name.startswith("user_"):
+        display_name = "New Client"
+        
+    safe_email = email if (email and not email.endswith("@example.invalid")) else f"client_{user.pk or 'nouser'}@local"
+    
+    from django.db import IntegrityError
     try:
-        client, created = ClientProfile.objects.get_or_create(
+        client = ClientProfile.objects.create(
             user=user,
-            defaults={
-                "name": display_name,
-                "email": safe_email,
-            }
+            name=display_name,
+            email=safe_email
         )
         return client
     except IntegrityError:

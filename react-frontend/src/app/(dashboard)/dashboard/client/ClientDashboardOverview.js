@@ -37,6 +37,7 @@ import { apiGet, apiPost } from "../../../../api.js";
 import NextLink from 'next/link';
 import { useClientData } from "./useClientData";
 import { useAuth } from "../../../../context/AuthContext";
+import OnboardingModal from "./OnboardingModal";
 
 export default function ClientDashboardOverview() {
   const [isMounted, setIsMounted] = useState(false);
@@ -194,8 +195,20 @@ export default function ClientDashboardOverview() {
     }
   };
 
+  const showOnboarding = isMounted && (
+    clientProfile?.name === "New Client" || 
+    clientProfile?.name?.startsWith("user_") || 
+    clientProfile?.email?.includes("@example.invalid")
+  );
+
   return (
     <Box maxW="1200px" mx="auto">
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => {}} 
+        profileId={clientProfile?.id}
+        currentEmail={clientProfile?.email}
+      />
       {/* HEADER SECTION */}
       <Flex 
         direction={{ base: 'column', lg: 'row' }} 
