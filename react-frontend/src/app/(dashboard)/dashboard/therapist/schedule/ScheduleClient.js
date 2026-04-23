@@ -38,8 +38,8 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle, FiMaximize2, FiVideo, FiCopy } from "react-icons/fi";
-import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
+import { FiCalendar, FiPlus, FiClock, FiUser, FiFileText, FiTag, FiSettings, FiGlobe, FiAlertCircle, FiMaximize2, FiVideo, FiCopy, FiChevronUp, FiChevronDown, FiTrash2 } from "react-icons/fi";
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from "../../../../../api.js";
 import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -540,6 +540,47 @@ export default function ScheduleClient() {
       });
   };
 
+  const handleDeleteType = async (type) => {
+    if (!type?.id) return;
+    if (!window.confirm(`Delete "${type.name}" event type? Existing sessions will keep running.`)) return;
+    try {
+      await apiDelete(`event-types/${type.id}/`);
+      if (editingType?.id === type.id) {
+        setEditingType(null);
+      }
+      toast({ title: "Event type deleted", status: "success" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Failed to delete type", status: "error" });
+    }
+  };
+
+  const handleMoveType = async (typeId, direction) => {
+    const sorted = [...eventTypes].sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name));
+    const currentIndex = sorted.findIndex((t) => t.id === typeId);
+    if (currentIndex < 0) return;
+    const targetIndex = currentIndex + direction;
+    if (targetIndex < 0 || targetIndex >= sorted.length) return;
+
+    const reordered = [...sorted];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    try {
+      const updates = reordered
+        .map((t, idx) => ({ id: t.id, order: idx + 1 }))
+        .filter((entry) => {
+          const prev = sorted.find((s) => s.id === entry.id);
+          return (prev?.order ?? 0) !== entry.order;
+        });
+      await Promise.all(updates.map((entry) => apiPatch(`event-types/${entry.id}/`, { order: entry.order })));
+      toast({ title: "Event type order updated", status: "success" });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Failed to reorder event types", status: "error" });
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.start_time || !form.end_time || !currentTherapistId) return;
     try {
@@ -632,6 +673,32 @@ export default function ScheduleClient() {
       fetchData();
     } catch (err) {
       toast({ title: "Delete failed", status: "error" });
+    }
+  };
+
+  const handleEventResize = async (info) => {
+    const { event, revert } = info;
+    const model = event.extendedProps?.model || (String(event.id).startsWith("apt-") ? "appointment" : "schedule-event");
+    const originalId = event.extendedProps?.originalId || String(event.id).replace(/^(apt|event)-/, "");
+    const endpoint = model === "appointment" ? "appointments" : "schedule-events";
+
+    try {
+      const payload = {
+        title: event.title,
+        therapist: currentTherapistId,
+        client: event.extendedProps?.client_id ? Number(event.extendedProps.client_id) : null,
+        event_type: event.extendedProps?.event_type ? Number(event.extendedProps.event_type) : null,
+        start_time: event.start ? toLocalISO(event.start) : null,
+        end_time: event.end ? toLocalISO(event.end) : null,
+        notes: event.extendedProps?.notes || "",
+        status: event.extendedProps?.status || "scheduled",
+      };
+      await apiPut(`${endpoint}/${originalId}/`, payload);
+      toast({ title: "Session duration updated", status: "success" });
+      fetchData();
+    } catch (err) {
+      revert();
+      toast({ title: "Could not resize session", status: "error" });
     }
   };
 
@@ -783,6 +850,7 @@ export default function ScheduleClient() {
                   events={events} 
                   onSelect={handleSelect}
                   onEventClick={handleEventClick}
+                  onEventResize={handleEventResize}
                   businessHours={businessHours}
                   initialView="timeGridWeek"
                   dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'numeric', omitCommas: true }}
@@ -791,8 +859,8 @@ export default function ScheduleClient() {
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
                   
                   // Even more aggressive mobile scaling to prevent warping
-                  const titleSize = { base: "0.6rem", md: `${Math.max(0.7, Math.min(0.9, 0.55 + (slotHeight * 0.1)))}rem` };
-                  const timeSize = { base: "0.5rem", md: `${Math.max(0.6, Math.min(0.8, 0.45 + (slotHeight * 0.08)))}rem` };
+                  const titleSize = { base: "0.72rem", md: `${Math.max(0.82, Math.min(1.02, 0.62 + (slotHeight * 0.12)))}rem` };
+                  const timeSize = { base: "0.62rem", md: `${Math.max(0.72, Math.min(0.9, 0.54 + (slotHeight * 0.1)))}rem` };
 
                   return (
                       <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden" minW={0}>
@@ -901,14 +969,46 @@ export default function ScheduleClient() {
                 <Box>
                     <Text fontWeight="700" mb={3} fontSize="sm" color="gray.500">EXISTING TYPES</Text>
                     <SimpleGrid columns={1} spacing={2} maxH="300px" overflowY="auto" pr={2}>
-                        {eventTypes.map(t => (
+                        {eventTypes.map((t, idx) => (
                             <HStack key={t.id} justify="space-between" p={3} bg="gray.50" borderRadius="xl" _hover={{ bg: 'gray.100' }}>
                                 <HStack>
                                     <Box w={3} h={3} borderRadius="full" bg={t.color} />
                                     <Text fontWeight="600">{t.name}</Text>
                                     <Text fontSize="xs" color="gray.400">({t.default_duration}m)</Text>
                                 </HStack>
-                                <Button size="xs" variant="ghost" onClick={() => startEditType(t)}>Edit</Button>
+                                <HStack spacing={1}>
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => handleMoveType(t.id, -1)}
+                                    isDisabled={idx === 0}
+                                    title="Move up"
+                                    px={2}
+                                  >
+                                    <Icon as={FiChevronUp} />
+                                  </Button>
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => handleMoveType(t.id, 1)}
+                                    isDisabled={idx === eventTypes.length - 1}
+                                    title="Move down"
+                                    px={2}
+                                  >
+                                    <Icon as={FiChevronDown} />
+                                  </Button>
+                                  <Button size="xs" variant="ghost" onClick={() => startEditType(t)}>Edit</Button>
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    colorScheme="red"
+                                    onClick={() => handleDeleteType(t)}
+                                    title="Delete type"
+                                    px={2}
+                                  >
+                                    <Icon as={FiTrash2} />
+                                  </Button>
+                                </HStack>
                             </HStack>
                         ))}
                     </SimpleGrid>
