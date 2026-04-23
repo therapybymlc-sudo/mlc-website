@@ -12,8 +12,9 @@ import {
   FiBriefcase, FiPlus, FiTrash2, FiMapPin
 } from "react-icons/fi";
 import { apiUpload } from "../../api.js";
+import NextLink from "next/link";
 import LinkButton from "../../components/LinkButton";
-import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 const MotionBox = motion(Box);
 const STORAGE_KEY = "mlc_therapist_apply_v2";
@@ -241,16 +242,31 @@ export default function TherapistApplyClient() {
                  <Heading size="lg" fontFamily="'Playfair Display', serif">Secure Vetting Environment</Heading>
                  <Text color="gray.600">Please sign up or sign in to start your rigorous clinical application. Your progress will be saved automatically.</Text>
                  <HStack spacing={4}>
-                    <SignUpButton mode="modal">
-                      <Button bg="teal.800" color="white" h={14} px={10} borderRadius="full" _hover={{ bg: "teal.900" }}>
-                        Sign up to apply
-                      </Button>
-                    </SignUpButton>
-                    <SignInButton mode="modal">
-                      <Button variant="outline" borderColor="teal.800" color="teal.800" h={14} px={10} borderRadius="full" _hover={{ bg: "teal.50" }}>
-                        Sign in
-                      </Button>
-                    </SignInButton>
+                    <Button
+                      as={NextLink}
+                      href="/signup/therapist"
+                      bg="teal.800"
+                      color="white"
+                      h={14}
+                      px={10}
+                      borderRadius="full"
+                      _hover={{ bg: "teal.900" }}
+                    >
+                      Sign up to apply
+                    </Button>
+                    <Button
+                      as={NextLink}
+                      href="/login/therapist"
+                      variant="outline"
+                      borderColor="teal.800"
+                      color="teal.800"
+                      h={14}
+                      px={10}
+                      borderRadius="full"
+                      _hover={{ bg: "teal.50" }}
+                    >
+                      Sign in
+                    </Button>
                  </HStack>
               </VStack>
            </Box>

@@ -50,15 +50,22 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
+        const token = await getToken(
+          tokenTemplate ? { template: tokenTemplate } : undefined
+        );
+        // If token is not ready yet, skip this cycle and wait for the next effect tick.
+        if (!token) return;
+
+        const authConfig = { headers: { Authorization: `Bearer ${token}` } };
         const fetchTasks = [];
         if (isTherapist) {
-          fetchTasks.push(api.get("therapists/me/").catch(() => null));
+          fetchTasks.push(api.get("therapists/me/", authConfig).catch(() => null));
         } else {
           fetchTasks.push(Promise.resolve(null));
         }
         
         // Always try client me as fallback or if client
-        fetchTasks.push(api.get("clients/me/").catch(() => null));
+        fetchTasks.push(api.get("clients/me/", authConfig).catch(() => null));
 
         const [tRes, cRes] = await Promise.all(fetchTasks);
         
@@ -74,7 +81,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       mounted = false;
     };
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, getToken, tokenTemplate, isTherapist]);
 
   useEffect(() => {
     let isMounted = true;

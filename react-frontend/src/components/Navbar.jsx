@@ -321,7 +321,7 @@ export default function Navbar() {
                   >
                     <MenuItem
                       as={NextLink}
-                      href="/therapist-apply"
+                      href="/signup/therapist"
                       borderRadius="lg"
                       fontSize="sm"
                       fontWeight="600"
@@ -405,7 +405,7 @@ export default function Navbar() {
                 </Button>
                 <Button
                   as={NextLink}
-                  href="/therapist-apply"
+                  href="/signup/therapist"
                   bg="#C9A960"
                   color="#2E2E2E"
                   py={6}

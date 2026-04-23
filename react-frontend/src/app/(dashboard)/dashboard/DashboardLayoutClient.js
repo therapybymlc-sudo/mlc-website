@@ -15,7 +15,9 @@ import {
   Text,
   Spinner,
   Center,
-  Button
+  Button,
+  Heading,
+  VStack
 } from '@chakra-ui/react'
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons'
 import { 
@@ -41,10 +43,12 @@ import { useState, useEffect, useMemo } from 'react';
 import SidebarContent from './SidebarContent';
 import NotificationCenter from '../../../components/NotificationCenter';
 import WelcomeOnboarding from '../../../components/WelcomeOnboarding';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { therapistProfile } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -55,12 +59,23 @@ export default function DashboardLayout({ children }) {
 
   const { isAdmin, isTherapist } = useMemo(() => {
     if (!user) return { isAdmin: false, isTherapist: false };
-    const roles = user.publicMetadata?.roles || [];
+    const metaRoles = user.publicMetadata?.roles || user.unsafeMetadata?.roles;
+    const roles = Array.isArray(metaRoles)
+      ? metaRoles
+      : [
+          user.publicMetadata?.role || user.unsafeMetadata?.role
+        ].filter(Boolean);
     return {
       isAdmin: roles.includes('admin'),
       isTherapist: roles.includes('therapist') || roles.includes('admin')
     };
   }, [user]);
+
+  const isTherapistPendingVerification =
+    !!isTherapist &&
+    !isAdmin &&
+    therapistProfile &&
+    therapistProfile.is_verified === false;
 
   const links = useMemo(() => {
     const therapistLinks = [
@@ -105,8 +120,16 @@ export default function DashboardLayout({ children }) {
       ];
     }
 
+    if (isTherapistPendingVerification) {
+      return [
+        { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
+        { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
+        { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
+      ];
+    }
+
     return isTherapist ? therapistLinks : clientLinks;
-  }, [isTherapist, isAdmin]);
+  }, [isTherapist, isAdmin, isTherapistPendingVerification]);
 
   if (!mounted || !isLoaded) {
     return (
@@ -192,7 +215,43 @@ export default function DashboardLayout({ children }) {
 
         {/* Dash Page Content */}
         <Box p={{ base: 4, md: 8, lg: 10 }} key={pathname}>
-          {children}
+          {isTherapistPendingVerification ? (
+            <Center minH="calc(100vh - 180px)">
+              <Box
+                bg="white"
+                border="1px solid"
+                borderColor="orange.100"
+                borderRadius="2xl"
+                p={{ base: 6, md: 10 }}
+                maxW="760px"
+                w="full"
+                boxShadow="sm"
+              >
+                <VStack align="start" spacing={4}>
+                  <Heading size="md" color="#2E2E2E">
+                    Your therapist profile is under verification
+                  </Heading>
+                  <Text color="gray.600">
+                    Thank you for joining MLC. Our clinical team is reviewing your profile and credentials.
+                    Verification typically takes <b>2-3 business days</b>.
+                  </Text>
+                  <Text color="gray.600">
+                    While this review is in progress, dashboard tools remain locked. We will notify you as soon as your profile is approved.
+                  </Text>
+                  <HStack pt={2}>
+                    <Button onClick={() => window.location.reload()} colorScheme="teal" borderRadius="full" size="sm">
+                      Refresh Status
+                    </Button>
+                    <Button onClick={() => signOut()} variant="outline" borderRadius="full" size="sm">
+                      Sign Out
+                    </Button>
+                  </HStack>
+                </VStack>
+              </Box>
+            </Center>
+          ) : (
+            children
+          )}
         </Box>
       </Box>
 

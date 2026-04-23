@@ -28,6 +28,7 @@ export default function ClientSignUpPage() {
                 }
               }
             }}
+            unsafeMetadata={{ role: "client", roles: ["client"] }}
             fallbackRedirectUrl="/dashboard?role=client"
           />
         </VStack>

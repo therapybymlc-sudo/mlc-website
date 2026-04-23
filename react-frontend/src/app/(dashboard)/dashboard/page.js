@@ -2,35 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Center, Spinner, Box, Heading, Text, Button, VStack, useToast } from "@chakra-ui/react";
-import { useUser } from "@clerk/nextjs";
+import { Center, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
+import { useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
-import { apiPost } from "../../../api.js";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();
+  const { getToken } = useClerkAuth();
+  const { roles = [], isTherapist, isClient, isAdmin } = useAuth();
   const router = useRouter();
-  const [onboarding, setOnboarding] = useState(false);
+  const [resolvingRole, setResolvingRole] = useState(false);
   const toast = useToast();
   const searchParams = useSearchParams();
-  const autoRole = searchParams.get("role");
-
-  // Robust role detection matching AuthContext
-  const roles = (() => {
-    const metaRoles = user?.publicMetadata?.roles;
-    if (Array.isArray(metaRoles)) return metaRoles;
-    if (user?.publicMetadata?.role) return [user.publicMetadata.role];
-    
-    // Fallback to unsafe metadata if public is empty (sometimes happens during sync)
-    const unsafeRoles = user?.unsafeMetadata?.roles;
-    if (Array.isArray(unsafeRoles)) return unsafeRoles;
-    if (user?.unsafeMetadata?.role) return [user.unsafeMetadata.role];
-
-    return [];
-  })();
+  const autoRole = String(searchParams.get("role") || "").toLowerCase();
 
   const hasExplicitRole = roles.length > 0;
-  const isTherapist = roles.includes("therapist") || roles.includes("admin");
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -40,7 +27,7 @@ export default function DashboardPage() {
     }
 
     if (hasExplicitRole) {
-      if (isTherapist) {
+      if (isTherapist || isAdmin) {
         router.replace("/dashboard/therapist");
       } else {
         router.replace("/dashboard/client");
@@ -48,23 +35,45 @@ export default function DashboardPage() {
       return;
     }
 
-    // Auto-onboard if role is in URL (e.g. from signup redirect)
-    if (autoRole && !onboarding) {
-      handleSelectRole(autoRole);
+    // No manual role picker: infer role from redirect hint or last signup intent.
+    if (resolvingRole) return;
+    const hintedRole = autoRole || (typeof window !== "undefined" ? localStorage.getItem("mlc_signup_role") : "");
+    if (hintedRole === "therapist" || hintedRole === "client") {
+      handleResolveRole(hintedRole);
+      return;
     }
-  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, router, autoRole, onboarding]);
 
-  const handleSelectRole = async (role) => {
-    setOnboarding(true);
+    // If role metadata is missing and we cannot infer intent, go to role-based login.
+    router.replace("/login");
+  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, resolvingRole]);
+
+  const handleResolveRole = async (role) => {
+    setResolvingRole(true);
     try {
-      await apiPost("/onboard/", { role });
-      // In Next.js with Clerk, we might need a small delay for metadata sync
-      // or we can just redirect and the next page will check again
-      toast({ status: "success", title: `Welcome as a ${role}!` });
-      
-      // Force a refresh of the user object to get new metadata
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Authentication token unavailable.");
+      }
+      const apiBase = (
+        (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+        "http://localhost:8000/api"
+      ).replace(/\/+$/, "");
+
+      const res = await fetch(`${apiBase}/onboard/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload?.detail || "Unable to set role.");
+      }
+      localStorage.setItem("mlc_signup_role", role);
       await user.reload();
-      
+
       if (role === 'therapist') {
         router.replace("/dashboard/therapist");
       } else {
@@ -72,67 +81,19 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error(e);
-      toast({ status: "error", title: "Couldn't set role." });
-      setOnboarding(false);
+      toast({ status: "error", title: "Could not finalize account setup.", description: e?.message || "" });
+      router.replace("/login");
+    } finally {
+      setResolvingRole(false);
     }
   };
 
-  if (!isLoaded || onboarding || (isSignedIn && hasExplicitRole)) {
-    return (
-      <Center h="100vh">
-        <VStack spacing={4}>
-          <Spinner size="xl" color="mlc.green" thickness="4px" />
-          <Text color="gray.500" fontWeight="500">Entering the portal...</Text>
-        </VStack>
-      </Center>
-    );
-  }
-
-  // If signed in but no role (onboarding)
   return (
-    <Center py={24} h="100vh" bg="#F6F6F4">
-      <Box 
-        bg="white" 
-        p={10} 
-        borderRadius="3xl" 
-        boxShadow="2xl" 
-        maxW="md" 
-        textAlign="center"
-        border="1px solid"
-        borderColor="gray.100"
-      >
-        <Heading size="lg" mb={4} color="mlc.greenDark" fontFamily="'Playfair Display', serif">
-          Select your Path
-        </Heading>
-        <Text color="gray.600" mb={8} fontSize="md">
-          How would you like to use the MLC portal?
-        </Text>
-        <VStack spacing={4}>
-          <Button 
-            w="100%" 
-            size="lg" 
-            bg="#56756C" 
-            color="white" 
-            borderRadius="full"
-            _hover={{ bg: "#C9A960" }}
-            onClick={() => handleSelectRole("client")}
-          >
-            I am a Client
-          </Button>
-          <Button 
-            w="100%" 
-            size="lg" 
-            variant="outline" 
-            borderColor="#56756C" 
-            color="#56756C" 
-            borderRadius="full"
-            _hover={{ bg: "gray.50" }}
-            onClick={() => handleSelectRole("therapist")}
-          >
-            I am a Practitioner
-          </Button>
-        </VStack>
-      </Box>
+    <Center h="100vh">
+      <VStack spacing={4}>
+        <Spinner size="xl" color="mlc.green" thickness="4px" />
+        <Text color="gray.500" fontWeight="500">Entering the portal...</Text>
+      </VStack>
     </Center>
   );
 }
