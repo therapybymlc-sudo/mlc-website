@@ -27,6 +27,24 @@ export default function DashboardPage() {
       return;
     }
 
+    // If user explicitly came from role-specific login, honor that intent first.
+    // This avoids forcing therapist logins into client dashboard when stale metadata exists.
+    const hintedRole = autoRole;
+    if (hintedRole === "therapist" || hintedRole === "client") {
+      const hasHintedRole =
+        hintedRole === "therapist" ? (isTherapist || isAdmin) : isClient;
+
+      if (hasHintedRole) {
+        router.replace(hintedRole === "therapist" ? "/dashboard/therapist" : "/dashboard/client");
+        return;
+      }
+
+      if (resolvingRole) return;
+      if (attemptedRoleRef.current === hintedRole) return;
+      handleResolveRole(hintedRole);
+      return;
+    }
+
     if (hasExplicitRole) {
       if (isTherapist || isAdmin) {
         router.replace("/dashboard/therapist");
@@ -37,14 +55,6 @@ export default function DashboardPage() {
     }
 
     // No manual role picker: infer role from explicit redirect hint only.
-    if (resolvingRole) return;
-    const hintedRole = autoRole;
-    if (hintedRole === "therapist" || hintedRole === "client") {
-      if (attemptedRoleRef.current === hintedRole) return;
-      handleResolveRole(hintedRole);
-      return;
-    }
-
     // If role metadata is missing and we cannot infer intent, go to role-based login.
     router.replace("/login");
   }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, resolvingRole]);
@@ -91,11 +101,9 @@ export default function DashboardPage() {
         title: "Could not finalize account setup.",
         description: e?.message || "Please sign in again.",
       });
-      if (role === "therapist") {
-        router.replace("/login/therapist");
-      } else {
-        router.replace("/login/client");
-      }
+      // Avoid redirecting to role-specific sign-in when already signed in,
+      // which can trigger repeated fallback redirects and loops.
+      router.replace("/login");
     } finally {
       setResolvingRole(false);
     }
