@@ -27,13 +27,14 @@ const CLERK_JWT_TEMPLATE =
 async function resolveClerkTokenFallback() {
   if (typeof window === "undefined" || !window.Clerk?.session?.getToken) return null;
   try {
-    // Prefer explicit JWT template used by backend validation.
+    // Prefer default Clerk session token for backend JWKS verification.
+    const sessionToken = await window.Clerk.session.getToken();
+    if (sessionToken) return sessionToken;
     if (CLERK_JWT_TEMPLATE) {
       const templated = await window.Clerk.session.getToken({ template: CLERK_JWT_TEMPLATE });
       if (templated) return templated;
     }
-    // Fallback token as last resort to keep auth bootstrap resilient.
-    return await window.Clerk.session.getToken();
+    return null;
   } catch (e) {
     console.warn("Clerk fallback token retrieval failed", e);
     return null;

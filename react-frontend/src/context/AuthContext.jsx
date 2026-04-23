@@ -39,6 +39,18 @@ export const AuthProvider = ({ children }) => {
   const [therapistProfile, setTherapistProfile] = useState(null);
   const [clientProfile, setClientProfile] = useState(null);
 
+  const getApiToken = async () => {
+    // Prefer the default Clerk session token first because backend JWKS
+    // verification is wired to standard Clerk session JWTs.
+    let token = await getToken();
+    if (token) return token;
+    if (tokenTemplate) {
+      token = await getToken({ template: tokenTemplate });
+      if (token) return token;
+    }
+    return null;
+  };
+
   useEffect(() => {
     let mounted = true;
     const loadProfiles = async () => {
@@ -50,9 +62,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
-        const token = await getToken(
-          tokenTemplate ? { template: tokenTemplate } : undefined
-        );
+        const token = await getApiToken();
         // If token is not ready yet, skip this cycle and wait for the next effect tick.
         if (!token) return;
 
@@ -95,9 +105,7 @@ export const AuthProvider = ({ children }) => {
           }
           return;
         }
-        const token = await getToken(
-          tokenTemplate ? { template: tokenTemplate } : undefined
-        );
+        const token = await getApiToken();
         if (isMounted && typeof window !== 'undefined') {
           if (token) {
             localStorage.setItem("access_token", token);
@@ -123,9 +131,7 @@ export const AuthProvider = ({ children }) => {
       setTokenGetter(null);
       return;
     }
-    setTokenGetter(() =>
-      getToken(tokenTemplate ? { template: tokenTemplate } : undefined)
-    );
+    setTokenGetter(() => getApiToken());
   }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
 
   const login = () => {

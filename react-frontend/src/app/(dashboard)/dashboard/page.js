@@ -68,14 +68,13 @@ export default function DashboardPage() {
     try {
       const tokenTemplate =
         (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) || undefined;
-      let token = await getToken(tokenTemplate ? { template: tokenTemplate } : undefined);
-      if (!token) {
-        token = await getToken();
-      }
+      let token = await getToken();
+      if (!token && tokenTemplate) token = await getToken({ template: tokenTemplate });
       if (!token && typeof window !== "undefined" && window.Clerk?.session?.getToken) {
-        token = tokenTemplate
-          ? await window.Clerk.session.getToken({ template: tokenTemplate })
-          : await window.Clerk.session.getToken();
+        token = await window.Clerk.session.getToken();
+        if (!token && tokenTemplate) {
+          token = await window.Clerk.session.getToken({ template: tokenTemplate });
+        }
       }
       if (!token) {
         throw new Error("Authentication token unavailable.");

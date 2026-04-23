@@ -3,6 +3,7 @@ from jwt import PyJWKClient
 from django.conf import settings
 from rest_framework import authentication, exceptions
 from django.contrib.auth import get_user_model
+from urllib.parse import urlparse
 
 
 class ClerkAuthentication(authentication.BaseAuthentication):
@@ -17,11 +18,23 @@ class ClerkAuthentication(authentication.BaseAuthentication):
 
         token = auth_header.split(" ", 1)[1].strip()
 
-        if not settings.CLERK_JWKS_URL:
-            raise exceptions.AuthenticationFailed("CLERK_JWKS_URL is not configured")
-
         try:
-            jwks_client = PyJWKClient(settings.CLERK_JWKS_URL)
+            unverified_payload = jwt.decode(
+                token,
+                options={"verify_signature": False, "verify_exp": False, "verify_aud": False},
+            )
+            token_issuer = (unverified_payload.get("iss") or "").strip()
+
+            jwks_url = (settings.CLERK_JWKS_URL or "").strip()
+            if not jwks_url and token_issuer:
+                parsed_issuer = urlparse(token_issuer)
+                if parsed_issuer.scheme and parsed_issuer.netloc:
+                    jwks_url = f"{parsed_issuer.scheme}://{parsed_issuer.netloc}/.well-known/jwks.json"
+
+            if not jwks_url:
+                raise exceptions.AuthenticationFailed("Unable to resolve Clerk JWKS URL.")
+
+            jwks_client = PyJWKClient(jwks_url)
             signing_key = jwks_client.get_signing_key_from_jwt(token)
 
             decode_kwargs = {
@@ -29,11 +42,11 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 "algorithms": ["RS256"],
                 "options": {"verify_aud": False, "verify_exp": True},
             }
-            if settings.CLERK_ISSUER:
-                decode_kwargs["issuer"] = settings.CLERK_ISSUER
+            expected_issuer = (settings.CLERK_ISSUER or token_issuer).strip()
+            if expected_issuer:
+                decode_kwargs["issuer"] = expected_issuer
 
             payload = jwt.decode(token, **decode_kwargs)
-            print(f"DEBUG: Clerk Payload: {payload}")
 
             email = (
                 payload.get("email") 
@@ -93,9 +106,9 @@ class ClerkAuthentication(authentication.BaseAuthentication):
 
             return (user, payload)
 
-        except jwt.ExpiredSignatureError:
-            # Graceful fallback: treat as AnonymousUser for public endpoints
-            return None
-        except Exception:
-            # Graceful fallback for invalid/malformed tokens
-            return None
+        except jwt.ExpiredSignatureError as exc:
+            raise exceptions.AuthenticationFailed("Token expired.") from exc
+        except exceptions.AuthenticationFailed:
+            raise
+        except Exception as exc:
+            raise exceptions.AuthenticationFailed("Invalid Clerk token.") from exc
