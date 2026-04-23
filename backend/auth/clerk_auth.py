@@ -150,7 +150,7 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                     ordered_issuers,
                     algorithms_to_try,
                 )
-                raise exceptions.AuthenticationFailed(f"Invalid Clerk token: {last_decode_error}")
+                raise exceptions.AuthenticationFailed(f"Invalid Clerk token ({type(last_decode_error).__name__}): {last_decode_error}")
 
             email = (
                 payload.get("email") 
