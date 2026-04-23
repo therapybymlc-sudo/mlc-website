@@ -73,14 +73,30 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             issuers_to_try = []
             if configured_issuer:
                 issuers_to_try.append(configured_issuer)
-            if token_issuer and token_issuer.rstrip("/") != configured_issuer.rstrip("/"):
+                normalized = configured_issuer.rstrip("/")
+                if normalized and normalized != configured_issuer:
+                    issuers_to_try.append(normalized)
+            if token_issuer:
                 issuers_to_try.append(token_issuer)
+                normalized = token_issuer.rstrip("/")
+                if normalized and normalized != token_issuer:
+                    issuers_to_try.append(normalized)
             if not issuers_to_try:
                 issuers_to_try.append(None)
 
+            # Preserve order and dedupe.
+            seen_issuers = set()
+            ordered_issuers = []
+            for issuer in issuers_to_try:
+                key = issuer if issuer is not None else "__none__"
+                if key in seen_issuers:
+                    continue
+                seen_issuers.add(key)
+                ordered_issuers.append(issuer)
+
             payload = None
             last_decode_error = None
-            for issuer in issuers_to_try:
+            for issuer in ordered_issuers:
                 try:
                     decode_kwargs = {
                         "key": signing_key.key,
