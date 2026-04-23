@@ -614,8 +614,24 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
                 serializer.is_valid(raise_exception=True)
                 existing_profile = serializer.save(user=request.user)
                 
-                # 2. Delete the temporary "Ghost" profile
-                # We do this after successful merger
+                # 2. Migrate all related clinical data from Ghost to Real profile
+                from .models import Appointment, ClientGoal, ClientJournal, MoodCheckin, SafetyPlan
+                
+                # Migrate Appointments, Goals, Journals, Checkins
+                Appointment.objects.filter(client=instance).update(client=existing_profile)
+                ClientGoal.objects.filter(client=instance).update(client=existing_profile)
+                ClientJournal.objects.filter(client=instance).update(client=existing_profile)
+                MoodCheckin.objects.filter(client=instance).update(client=existing_profile)
+                
+                # Migrate Safety Plan (OneToOne)
+                ghost_sp = getattr(instance, 'safety_plan', None)
+                if ghost_sp and not hasattr(existing_profile, 'safety_plan'):
+                    ghost_sp.client = existing_profile
+                    ghost_sp.save()
+                
+                print(f"DEBUG: Migrated clinical data from {instance.id} to {existing_profile.id}")
+
+                # 3. Delete the temporary "Ghost" profile
                 if not TherapeuticRelationship.objects.filter(client=instance).exists():
                     if not instance.name or instance.name.startswith("user_"):
                         instance.delete()
