@@ -174,14 +174,16 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 for e in getattr(settings, "ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in").split(",")
                 if e.strip()
             ]
-            is_master_admin = email and email.lower() in admin_emails
+            # Must be bool: `email and ...` is None when email is missing (e.g. some
+            # OAuth JWTs), and is_staff does not accept NULL on auth_user.
+            is_master_admin = bool(email) and email.lower() in admin_emails
 
             User = get_user_model()
             user, created = User.objects.get_or_create(
                 username=username,
                 defaults={
                     "email": email or f"{username}@example.invalid",
-                    "is_staff": is_master_admin
+                    "is_staff": is_master_admin,
                 },
             )
             
