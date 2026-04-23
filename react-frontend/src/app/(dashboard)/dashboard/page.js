@@ -21,6 +21,8 @@ export default function DashboardPage() {
     typeof window !== "undefined" ? String(localStorage.getItem("mlc_login_intent") || "").toLowerCase() : "";
 
   const hasExplicitRole = roles.length > 0;
+  const isLikelyJwt = (token) =>
+    typeof token === "string" && token.split(".").length === 3;
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -69,14 +71,14 @@ export default function DashboardPage() {
       const tokenTemplate =
         (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) || undefined;
       let token = await getToken();
-      if (!token && tokenTemplate) token = await getToken({ template: tokenTemplate });
+      if (!isLikelyJwt(token) && tokenTemplate) token = await getToken({ template: tokenTemplate });
       if (!token && typeof window !== "undefined" && window.Clerk?.session?.getToken) {
         token = await window.Clerk.session.getToken();
-        if (!token && tokenTemplate) {
+        if (!isLikelyJwt(token) && tokenTemplate) {
           token = await window.Clerk.session.getToken({ template: tokenTemplate });
         }
       }
-      if (!token) {
+      if (!isLikelyJwt(token)) {
         throw new Error("Authentication token unavailable.");
       }
       const apiBase = (

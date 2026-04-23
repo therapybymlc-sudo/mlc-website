@@ -24,15 +24,18 @@ const CLERK_JWT_TEMPLATE =
   (typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_CLERK_JWT_TEMPLATE : null) ||
   null;
 
+const isLikelyJwt = (token) =>
+  typeof token === "string" && token.split(".").length === 3;
+
 async function resolveClerkTokenFallback() {
   if (typeof window === "undefined" || !window.Clerk?.session?.getToken) return null;
   try {
     // Prefer default Clerk session token for backend JWKS verification.
     const sessionToken = await window.Clerk.session.getToken();
-    if (sessionToken) return sessionToken;
+    if (isLikelyJwt(sessionToken)) return sessionToken;
     if (CLERK_JWT_TEMPLATE) {
       const templated = await window.Clerk.session.getToken({ template: CLERK_JWT_TEMPLATE });
-      if (templated) return templated;
+      if (isLikelyJwt(templated)) return templated;
     }
     return null;
   } catch (e) {

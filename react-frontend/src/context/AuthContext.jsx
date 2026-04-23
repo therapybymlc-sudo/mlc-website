@@ -38,15 +38,17 @@ export const AuthProvider = ({ children }) => {
     !isTherapist && !isAdmin;
   const [therapistProfile, setTherapistProfile] = useState(null);
   const [clientProfile, setClientProfile] = useState(null);
+  const isLikelyJwt = (token) =>
+    typeof token === "string" && token.split(".").length === 3;
 
   const getApiToken = async () => {
     // Prefer the default Clerk session token first because backend JWKS
     // verification is wired to standard Clerk session JWTs.
     let token = await getToken();
-    if (token) return token;
+    if (isLikelyJwt(token)) return token;
     if (tokenTemplate) {
       token = await getToken({ template: tokenTemplate });
-      if (token) return token;
+      if (isLikelyJwt(token)) return token;
     }
     return null;
   };
