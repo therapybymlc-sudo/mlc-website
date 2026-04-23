@@ -21,9 +21,6 @@ const fetchWithFormData = async (path, method, payload) => {
   if (typeof window !== "undefined" && window.Clerk?.session?.getToken) {
     token = await window.Clerk.session.getToken();
   }
-  if (!token) {
-    token = localStorage.getItem("access_token");
-  }
   const res = await fetch(`${base}/${path.replace(/^\/+/, "")}`, {
     method,
     headers: token ? { Authorization: `Bearer ${token}` } : {},

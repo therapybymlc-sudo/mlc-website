@@ -32,8 +32,7 @@ export default function NotificationCenter({ isAuthenticated, authLoading }) {
   const toast = useToast();
 
   const fetchNotifications = async () => {
-    if (!isAuthenticated) return;
-    if (typeof window !== "undefined" && !localStorage.getItem("access_token")) return;
+    if (!isAuthenticated || authLoading) return;
     try {
       setLoading(true);
       const res = await apiGet("notifications/?is_read=false");

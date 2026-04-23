@@ -1225,7 +1225,6 @@ export default function TherapistDashboard() {
   }, [location.search]);
 
   const exitPreview = () => {
-    localStorage.removeItem("mlc_role_preview");
     navigate("/dashboard/client");
   };
 

@@ -64,10 +64,6 @@ api.interceptors.request.use(async (config) => {
 
   if (resolvedToken) {
     config.headers.Authorization = `Bearer ${resolvedToken}`;
-    // Sync to localStorage for legacy components that might expect it
-    if (typeof window !== "undefined") {
-      localStorage.setItem("access_token", resolvedToken);
-    }
   }
 
   return config;
@@ -101,11 +97,7 @@ api.interceptors.response.use(
         }
 
         if (freshToken) {
-          // Update the original request header and retry it
           originalRequest.headers.Authorization = `Bearer ${freshToken}`;
-          if (typeof window !== "undefined") {
-            localStorage.setItem("access_token", freshToken);
-          }
           return api(originalRequest);
         }
       } catch (retryError) {
@@ -115,9 +107,6 @@ api.interceptors.response.use(
 
     if (isAuthError) {
       console.warn("Persistent auth failure. Clearing stale session.");
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("access_token");
-      }
       delete api.defaults.headers.Authorization;
     }
     

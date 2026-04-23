@@ -18,8 +18,6 @@ export default function DashboardPage() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const autoRole = String(searchParams.get("role") || "").toLowerCase();
-  const persistedIntent =
-    typeof window !== "undefined" ? String(localStorage.getItem("mlc_login_intent") || "").toLowerCase() : "";
 
   const hasExplicitRole = roles.length > 0;
   const isLikelyJwt = (token) =>
@@ -32,15 +30,13 @@ export default function DashboardPage() {
       return;
     }
 
-    // If user explicitly came from role-specific login, honor that intent first.
-    // This avoids forcing therapist logins into client dashboard when stale metadata exists.
-    const hintedRole = autoRole || persistedIntent;
+    // Honor ?role= from redirect URL (configure Account Portal / sign-in redirect to include it).
+    const hintedRole = autoRole;
     if (hintedRole === "therapist" || hintedRole === "client") {
       const hasHintedRole =
         hintedRole === "therapist" ? (isTherapist || isAdmin) : isClient;
 
       if (hasHintedRole) {
-        if (typeof window !== "undefined") localStorage.removeItem("mlc_login_intent");
         router.replace(hintedRole === "therapist" ? "/dashboard/therapist" : "/dashboard/client");
         return;
       }
@@ -63,7 +59,7 @@ export default function DashboardPage() {
     // No manual role picker: infer role from explicit redirect hint only.
     // If role metadata is missing and we cannot infer intent, go to role-based login.
     router.replace("/login");
-  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, persistedIntent, resolvingRole]);
+  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, resolvingRole]);
 
   const handleResolveRole = async (role) => {
     setResolvingRole(true);
@@ -82,15 +78,12 @@ export default function DashboardPage() {
       if (!isLikelyJwt(token)) {
         throw new Error("Authentication token unavailable.");
       }
-      const payload = await apiPost("onboard/", { role });
-      localStorage.setItem("mlc_signup_role", role);
+      await apiPost("onboard/", { role });
       await user.reload();
 
-      if (role === 'therapist') {
-        if (typeof window !== "undefined") localStorage.removeItem("mlc_login_intent");
+      if (role === "therapist") {
         router.replace("/dashboard/therapist");
       } else {
-        if (typeof window !== "undefined") localStorage.removeItem("mlc_login_intent");
         router.replace("/dashboard/client");
       }
     } catch (e) {

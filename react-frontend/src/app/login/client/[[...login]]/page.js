@@ -31,6 +31,7 @@ export default function ClientSignInPage() {
                 }
               }
             }}
+            forceRedirectUrl="/dashboard?role=client"
             fallbackRedirectUrl="/dashboard?role=client"
           />
         </VStack>

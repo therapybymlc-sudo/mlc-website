@@ -1,9 +1,10 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs";
-import api, { setTokenGetter } from "../api.js";
+import { apiGet, setTokenGetter } from "../api.js";
 
 const AuthContext = createContext(null);
 
@@ -11,13 +12,21 @@ export const AuthProvider = ({ children }) => {
   const { isLoaded, isSignedIn, getToken } = useClerkAuth();
   const { user } = useUser();
   const clerk = useClerk();
-  const tokenTemplate = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) || 
-                       (typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_CLERK_JWT_TEMPLATE : null);
+  const pathname = usePathname() || "";
+  const searchParams = useSearchParams();
+  const tokenTemplate =
+    (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_CLERK_JWT_TEMPLATE : null) ||
+    (typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env.VITE_CLERK_JWT_TEMPLATE
+      : null);
+
+  const urlRole = (searchParams?.get("role") || "").toLowerCase();
+  const onTherapistRoute = pathname.startsWith("/dashboard/therapist");
 
   const roles = useMemo(() => {
     const metaRoles = user?.publicMetadata?.roles || user?.unsafeMetadata?.roles;
     if (Array.isArray(metaRoles)) return metaRoles;
-    
+
     const singleRole = user?.publicMetadata?.role || user?.unsafeMetadata?.role;
     if (singleRole) return [singleRole];
 
@@ -28,22 +37,19 @@ export const AuthProvider = ({ children }) => {
   const isTherapist = roles.includes("therapist");
   const isClient = roles.includes("client");
   const isNewUser = roles.length === 0;
-  
+
   const isPremium = isAdmin || roles.includes("premium");
-  const previewRole = typeof window !== 'undefined' ? localStorage.getItem("mlc_role_preview") : null;
-  const signupRole = typeof window !== 'undefined' ? localStorage.getItem("mlc_signup_role") : null;
+
+  const wantsTherapistOnly = urlRole === "therapist" || onTherapistRoute;
+
   const isTherapistPreview =
-    previewRole === "therapist" &&
-    signupRole === "therapist" &&
-    !isTherapist && !isAdmin;
+    !isTherapist && !isAdmin && onTherapistRoute && roles.length === 0;
+
   const [therapistProfile, setTherapistProfile] = useState(null);
   const [clientProfile, setClientProfile] = useState(null);
-  const isLikelyJwt = (token) =>
-    typeof token === "string" && token.split(".").length === 3;
+  const isLikelyJwt = (token) => typeof token === "string" && token.split(".").length === 3;
 
   const getApiToken = async () => {
-    // Prefer the default Clerk session token first because backend JWKS
-    // verification is wired to standard Clerk session JWTs.
     let token = await getToken();
     if (isLikelyJwt(token)) return token;
     if (tokenTemplate) {
@@ -71,22 +77,16 @@ export const AuthProvider = ({ children }) => {
           fetchTasks.push(Promise.resolve(null));
         }
 
-        // Only fetch client profile when appropriate.
-        const loginIntent =
-          typeof window !== "undefined" ? String(localStorage.getItem("mlc_login_intent") || "") : "";
-        const wantsTherapistOnly =
-          signupRole === "therapist" ||
-          loginIntent === "therapist" ||
-          isTherapistPreview;
-        
-        if (isClient || (!isTherapist && !isAdmin && !wantsTherapistOnly)) {
+        const skipClientProfile = isTherapist || isAdmin || wantsTherapistOnly || isTherapistPreview;
+
+        if (isClient || (!isTherapist && !isAdmin && !skipClientProfile)) {
           fetchTasks.push(apiGet("clients/me/").catch(() => null));
         } else {
           fetchTasks.push(Promise.resolve(null));
         }
 
         const [tData, cData] = await Promise.all(fetchTasks);
-        
+
         if (mounted) {
           if (tData) setTherapistProfile(tData);
           if (cData) setClientProfile(cData);
@@ -107,12 +107,9 @@ export const AuthProvider = ({ children }) => {
     isTherapist,
     isClient,
     isAdmin,
-    signupRole,
+    wantsTherapistOnly,
     isTherapistPreview,
   ]);
-
-  // Token synchronization is now handled dynamically by the api.js request interceptor
-  // which uses the setTokenGetter established below.
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -124,25 +121,18 @@ export const AuthProvider = ({ children }) => {
   }, [getToken, isLoaded, isSignedIn, tokenTemplate]);
 
   const login = () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     clerk.redirectToSignIn({
       redirectUrl: `${window.location.origin}/dashboard`,
     });
   };
 
   const logout = () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     clerk.signOut({
       redirectUrl: window.location.origin,
     });
   };
-
-  const [token, setToken] = useState(null);
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setToken(localStorage.getItem("access_token"));
-    }
-  }, []);
 
   return (
     <AuthContext.Provider
@@ -152,7 +142,6 @@ export const AuthProvider = ({ children }) => {
         loading: !isLoaded,
         login,
         logout,
-        token,
         roles,
         isAdmin,
         isTherapist,
@@ -164,7 +153,7 @@ export const AuthProvider = ({ children }) => {
         isVerifiedTherapist: !!therapistProfile?.is_verified,
         isTherapistPremium: !!therapistProfile?.is_premium,
         isTherapistPreview,
-        previewRole,
+        previewRole: null,
         clerk,
       }}
     >

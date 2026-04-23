@@ -16,8 +16,6 @@ export default function DashboardRouter() {
     setOnboarding(true);
     try {
       await apiPost("/onboard/", { role });
-      localStorage.setItem("mlc_signup_role", role);
-      localStorage.removeItem("mlc_role_preview");
       if (user && user.reload) {
         await user.reload();
       }

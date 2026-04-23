@@ -1,14 +1,8 @@
 import { Box, Heading, Text, VStack, Tag } from "@chakra-ui/react";
 import { Helmet } from "react-helmet-async";
 import { SignUp } from "@clerk/clerk-react";
-import { useEffect } from "react";
 
 export default function TherapistSignupPreview() {
-  useEffect(() => {
-    localStorage.setItem("mlc_signup_role", "therapist");
-    localStorage.removeItem("mlc_role_preview");
-  }, []);
-
   return (
     <Box textAlign="center" py={20}>
       <Helmet>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import {
   Box,
   Button,
@@ -221,16 +222,17 @@ function buildWalkthroughSlides(links) {
 export default function WelcomeOnboarding({ links = [] }) {
   const router = useRouter();
   const currentPath = usePathname();
+  const { user, isLoaded: userLoaded } = useUser();
   const slides = useMemo(() => buildWalkthroughSlides(links), [links]);
   const [slideIdx, setSlideIdx] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   
   const isDesktop = useBreakpointValue({ base: false, lg: true });
+  const hasSeenOnboarding = user?.unsafeMetadata?.mlc_onboarding_visited === true;
 
   useEffect(() => {
-    const hasSeenOnboarding = localStorage.getItem('mlc_onboarding_visited');
     let timer = null;
-    if (!hasSeenOnboarding) {
+    if (userLoaded && user && !hasSeenOnboarding) {
       timer = setTimeout(() => {
         setSlideIdx(0);
         setIsOpen(true);
@@ -246,11 +248,21 @@ export default function WelcomeOnboarding({ links = [] }) {
       if (timer) clearTimeout(timer);
       window.removeEventListener('mlc-start-tour', handleStart);
     };
-  }, []);
+  }, [userLoaded, user, hasSeenOnboarding]);
 
-  const close = () => {
+  const close = async () => {
     setIsOpen(false);
-    localStorage.setItem('mlc_onboarding_visited', 'true');
+    if (!user) return;
+    try {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          mlc_onboarding_visited: true,
+        },
+      });
+    } catch (e) {
+      console.warn('Could not persist onboarding completion', e);
+    }
   };
 
   const goPrev = () => setSlideIdx((i) => Math.max(0, i - 1));
