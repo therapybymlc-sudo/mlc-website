@@ -91,6 +91,29 @@ export default function ProfileClient() {
     }
   };
 
+  const handleRepair = async () => {
+    setIsSaving(true);
+    try {
+      const { apiPost } = await import("../../../../../api.js");
+      await apiPost("clients/repair-account/");
+      toast({
+        title: "Account Repaired",
+        description: "Your profiles have been merged and your data should now be visible. Refreshing...",
+        status: "success",
+        duration: 5000,
+      });
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      toast({
+        title: "Repair Failed",
+        description: error.response?.data?.detail || "Something went wrong during the repair process.",
+        status: "error",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (!isMounted || authLoading) {
     return (
       <Center h="60vh">
@@ -168,9 +191,21 @@ export default function ProfileClient() {
                 <Icon as={FiAlertCircle} color="#56756D" />
                 <Text fontWeight="bold" color="#56756D">Clinical Records</Text>
              </HStack>
-             <Text fontSize="xs" color="gray.600" lineHeight="tall">
+             <Text fontSize="xs" color="gray.600" lineHeight="tall" mb={4}>
                 Updating your email will automatically attempt to link your account to any existing therapeutic records matching that email address.
              </Text>
+             <Button 
+                size="sm" 
+                variant="outline" 
+                colorScheme="teal" 
+                w="full" 
+                borderRadius="full"
+                onClick={handleRepair}
+                isLoading={isSaving}
+                loadingText="Repairing..."
+             >
+                Repair & Merge Records
+             </Button>
           </Box>
         </VStack>
 

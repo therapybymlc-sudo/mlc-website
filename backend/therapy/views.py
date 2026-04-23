@@ -682,6 +682,66 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         return Response({"detail": "Client successfully linked to your caseload.", "client_id": client.id})
 
 
+    @action(detail=False, methods=["post"], url_path="repair-account")
+    def repair_account(self, request):
+        from django.db import transaction
+        client = _resolve_client_from_request(request)
+        if not client:
+            return Response({"detail": "No profile to repair."}, status=status.HTTP_404_NOT_FOUND)
+        
+        email = client.email
+        if not email:
+            return Response({"detail": "Profile has no email to search by."}, status=status.HTTP_400_BAD_REQUEST)
+
+        other_profiles = ClientProfile.objects.filter(email__iexact=email).exclude(id=client.id)
+        if not other_profiles.exists():
+            return Response({"detail": "No other profiles found with this email. Your account is already unique."}, status=status.HTTP_200_OK)
+
+        print(f"DEBUG: REPAIRING ACCOUNT - Consolidating {other_profiles.count()} profiles for {email}")
+        try:
+            with transaction.atomic():
+                all_candidates = list(other_profiles) + [client]
+                
+                def get_score(p):
+                    from .models import Appointment, TherapeuticRelationship
+                    return Appointment.objects.filter(client=p).count() + TherapeuticRelationship.objects.filter(client=p).count() * 5
+                
+                survivor = max(all_candidates, key=get_score)
+                
+                # Move user link
+                for p in all_candidates:
+                    if p.id != survivor.id and p.user == request.user:
+                        p.user = None
+                        p.save(update_fields=["user"])
+                
+                survivor.user = request.user
+                survivor.save()
+
+                # Migrate all data
+                from .models import Appointment, ClientGoal, ClientJournal, ClientCheckin, SafetyPlan, TherapeuticRelationship
+                for p in all_candidates:
+                    if p.id == survivor.id: continue
+                    
+                    Appointment.objects.filter(client=p).update(client=survivor)
+                    ClientGoal.objects.filter(client=p).update(client=survivor)
+                    ClientJournal.objects.filter(client=p).update(client=survivor)
+                    ClientCheckin.objects.filter(client=p).update(client=survivor)
+                    
+                    existing_rels = TherapeuticRelationship.objects.filter(client=survivor).values_list('therapist_id', flat=True)
+                    TherapeuticRelationship.objects.filter(client=p).exclude(therapist_id__in=existing_rels).update(client=survivor)
+                    
+                    if hasattr(p, 'safety_plan') and not hasattr(survivor, 'safety_plan'):
+                        sp = p.safety_plan
+                        sp.client = survivor
+                        sp.save()
+                    
+                    if p.id != survivor.id:
+                        p.delete()
+                
+                return Response({"detail": "Account successfully repaired and consolidated.", "survivor_id": survivor.id})
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AppointmentSerializer
     permission_classes = [IsAuthenticated, IsTherapistOwnerOfAppointment]
