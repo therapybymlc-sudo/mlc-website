@@ -64,40 +64,32 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
-        const token = await getApiToken();
-        // If token is not ready yet, skip this cycle and wait for the next effect tick.
-        if (!token) return;
-
-        const authConfig = { headers: { Authorization: `Bearer ${token}` } };
         const fetchTasks = [];
         if (isTherapist) {
-          fetchTasks.push(api.get("therapists/me/", authConfig).catch(() => null));
+          fetchTasks.push(apiGet("therapists/me/").catch(() => null));
         } else {
           fetchTasks.push(Promise.resolve(null));
         }
 
-        // Only fetch client profile when appropriate. Therapist onboarding often has
-        // no Clerk roles yet — still skip clients/me if intent/signup says therapist.
+        // Only fetch client profile when appropriate.
         const loginIntent =
           typeof window !== "undefined" ? String(localStorage.getItem("mlc_login_intent") || "") : "";
         const wantsTherapistOnly =
           signupRole === "therapist" ||
           loginIntent === "therapist" ||
           isTherapistPreview;
-        if (
-          isClient ||
-          (!isTherapist && !isAdmin && !wantsTherapistOnly)
-        ) {
-          fetchTasks.push(api.get("clients/me/", authConfig).catch(() => null));
+        
+        if (isClient || (!isTherapist && !isAdmin && !wantsTherapistOnly)) {
+          fetchTasks.push(apiGet("clients/me/").catch(() => null));
         } else {
           fetchTasks.push(Promise.resolve(null));
         }
 
-        const [tRes, cRes] = await Promise.all(fetchTasks);
+        const [tData, cData] = await Promise.all(fetchTasks);
         
         if (mounted) {
-          if (tRes) setTherapistProfile(tRes.data);
-          if (cRes) setClientProfile(cRes.data);
+          if (tData) setTherapistProfile(tData);
+          if (cData) setClientProfile(cData);
         }
       } catch (err) {
         console.warn("Profile load failed", err);

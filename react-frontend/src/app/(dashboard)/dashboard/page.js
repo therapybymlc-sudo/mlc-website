@@ -6,6 +6,7 @@ import { Center, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
 import { useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
+import { apiPost } from "../../../api.js";
 
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -81,23 +82,7 @@ export default function DashboardPage() {
       if (!isLikelyJwt(token)) {
         throw new Error("Authentication token unavailable.");
       }
-      const apiBase = (
-        (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_BASE : null) ||
-        "http://localhost:8000/api"
-      ).replace(/\/+$/, "");
-
-      const res = await fetch(`${apiBase}/onboard/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ role }),
-      });
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.detail || "Unable to set role.");
-      }
+      const payload = await apiPost("onboard/", { role });
       localStorage.setItem("mlc_signup_role", role);
       await user.reload();
 
