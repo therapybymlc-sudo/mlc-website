@@ -26,8 +26,8 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiUser, FiMail, FiPhone, FiSave, FiAlertCircle, FiCamera } from "react-icons/fi";
-import { useAuth } from "../../../../context/AuthContext";
-import { apiPatch } from "../../../../api.js";
+import { useAuth } from "../../../../../context/AuthContext";
+import { apiPatch } from "../../../../../api.js";
 
 export default function ProfileClient() {
   const { clientProfile, loading: authLoading } = useAuth();
