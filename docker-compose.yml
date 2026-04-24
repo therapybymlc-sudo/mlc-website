@@ -43,59 +43,6 @@ services:
     restart: on-failure
 
   # ------------------------
-  # Next.js Frontend
-  # ------------------------
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    command: npm run dev
-    volumes:
-    - ./frontend:/usr/src/app
-    - /usr/src/app/node_modules
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-      - NEXTAUTH_URL=http://localhost:3000
-    depends_on:
-      backend:
-        condition: service_started
-      keycloak:
-        condition: service_started
-    restart: on-failure
-
-  # ------------------------
-  # Keycloak Authentication
-  # ------------------------
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    platform: linux/amd64
-    container_name: keycloak
-    command: ["start-dev"]
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_DB: postgres
-      KC_DB_URL_HOST: postgres
-      KC_DB_URL_DATABASE: my_db
-      KC_DB_USERNAME: my_user
-      KC_DB_PASSWORD: my_password
-      KC_PROXY: edge
-      KC_HTTP_ENABLED: "true"
-      KC_HTTPS_PORT: "0"
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_SPI_LOGIN_PROTOCOL_OPENID_CONNECT_LEGACY_LOGOUT_REDIRECT_URI: "true"
-    ports:
-      - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: always
-
-
-  # ------------------------
   # MinIO (File Storage)
   # ------------------------
   minio:
