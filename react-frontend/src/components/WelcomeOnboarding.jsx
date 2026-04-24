@@ -281,7 +281,7 @@ function buildWalkthroughSlides(links, role = 'client') {
       'We are building a secure space where your personal life stays personal.',
     ],
     sections: [
-      { title: 'Benefits', items: ['End-to-end secure messaging', 'Privacy protection (no personal numbers)', 'Professional boundary management'] },
+      { title: 'Benefits', items: ['Secure Clinical Messaging', 'Privacy protection (no personal numbers)', 'Professional boundary management'] },
     ],
     tips: ['You can disable or enable chat for specific clients in their profile settings.'],
     href: '/dashboard/therapist/messages',

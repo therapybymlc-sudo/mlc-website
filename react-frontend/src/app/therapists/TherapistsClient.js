@@ -26,7 +26,7 @@ const ECOSYSTEM_FEATURES = [
     desc: "Host therapy sessions directly inside MLC with a stable, privacy-first environment designed specifically for clinical conversations."
   },
   {
-    title: "In-House Encrypted Chat",
+    title: "Secure Clinical Chat",
     icon: FiMessageSquare,
     desc: "Coordinate with clients safely without exposing your personal number, while keeping all communication linked to care workflows."
   },

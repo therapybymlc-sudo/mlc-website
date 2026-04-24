@@ -1932,7 +1932,7 @@ export default function AdminDashboard() {
                     <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={4}>TEST PROTOCOL</Text>
                     <VStack align="start" spacing={3}>
                        <Text fontSize="sm" color="gray.600">• Verify that the MLC-branded control bar appears.</Text>
-                       <Text fontSize="sm" color="gray.600">• Confirm the "End-to-End Encrypted" badge is visible.</Text>
+                       <Text fontSize="sm" color="gray.600">• Confirm the "Secure Clinical Messaging" badge is visible.</Text>
                        <Text fontSize="sm" color="gray.600">• Test "End Session" redirects back to the dashboard.</Text>
                     </VStack>
                  </Box>

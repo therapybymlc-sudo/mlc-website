@@ -29,11 +29,11 @@ const MotionBox = motion(Box);
 const fallbackHome = {
   hero: {
     title: "MLC Therapy",
-    tagline: "A space to feel, to heal, to become.",
+    tagline: "The Therapy Ecosystem for clients and clinicians.",
     paragraph_one:
       "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.",
     paragraph_two:
-      "At MLC Therapy, we offer thoughtful online therapy across India in spaces designed to help you feel heard, supported, and respected.",
+      "At MLC Therapy, you enter a connected therapy ecosystem where matching, sessions, resources, and care continuity live in one secure experience.",
     primary_label: "Find My Therapist",
     primary_link: "/therapists/discovery",
     secondary_label: "I'm a Therapist",
@@ -42,9 +42,9 @@ const fallbackHome = {
     logo_url: "/logo_tra.png",
   },
   portal: {
-    title: "Your MLC Portal",
+    title: "Your MLC Therapy Ecosystem",
     body:
-      "A gentle, private space for clients — and a structured workspace for therapists. Choose your path below to get started.",
+      "One ecosystem. Two dedicated workspaces. Clients receive guided, secure care while therapists run their practice with clarity, structure, and support.",
     client_title: "Client Workspace",
     client_body:
       "A dedicated environment for your healing journey. Track your goals, access shared resources, and collaborate securely with your therapist.",
@@ -165,7 +165,7 @@ export default function HomeClient() {
             lineHeight="1.1"
             mb={6}
           >
-            Find the therapist meant for <Text as="span" color="mlc.green">your journey</Text>
+            Enter the <Text as="span" color="mlc.green">therapy ecosystem</Text> built for your journey
           </Heading>
           
           <Text
@@ -238,7 +238,7 @@ export default function HomeClient() {
                 How to find your space here
               </Heading>
               <Text fontSize="lg" color="gray.600" maxW="2xl">
-                We've simplified the journey to ensure you find a therapist who truly aligns with your needs, values, and life situation.
+                We have designed a connected therapy ecosystem to help you find aligned care quickly and continue that care with confidence.
               </Text>
             </VStack>
 
@@ -247,17 +247,17 @@ export default function HomeClient() {
                 {
                   step: "01",
                   title: "Discovery Quiz",
-                  desc: "Take our 10-minute discovery quiz to share your preferences, concerns, and what you’re looking for in a therapeutic relationship.",
+                  desc: "Take our 10-minute discovery quiz so the ecosystem can understand your goals, preferences, and current challenges.",
                 },
                 {
                   step: "02",
                   title: "Personalized Match",
-                  desc: "Receive a curated selection of therapists who specialize in your areas of concern and meet your specific preferences.",
+                  desc: "Receive curated therapist recommendations based on clinical fit, preferences, and therapeutic compatibility.",
                 },
                 {
                   step: "03",
                   title: "Book & Begin",
-                  desc: "Review detailed therapist profiles and book your first session directly through our secure platform.",
+                  desc: "Book your first session and continue with in-platform tools, secure workflows, and continuity across every step of care.",
                 },
               ].map((item, idx) => (
                 <VStack key={idx} align="flex-start" spacing={6} p={8} bg="#FDFBFA" borderRadius="2xl" border="1px solid" borderColor="gray.100" _hover={{ shadow: 'lg', transform: 'translateY(-4px)' }} transition="all 0.3s">
@@ -301,7 +301,7 @@ export default function HomeClient() {
               lineHeight="1.3"
               fontWeight="500"
             >
-              Where Healing Meets Compassion
+              A Therapy Ecosystem Where Healing Meets Precision
             </Heading>
             <Text
               color="#2E2E2E"
@@ -309,10 +309,9 @@ export default function HomeClient() {
               lineHeight="1.8"
               fontSize="lg"
             >
-              At MLC Therapy, we believe therapy works best when it combines
-              empathy with thoughtful psychological care. Our goal is simple: to
-              create spaces where you feel comfortable exploring what you're
-              going through while working toward meaningful personal change.
+              At MLC Therapy, we combine empathy, clinical rigor, and thoughtful technology to create a true therapy ecosystem.
+              From your first match to ongoing sessions, resources, and progress tracking, every part of your care journey is designed to feel
+              safer, more coordinated, and more human.
             </Text>
             <Button
               mt={6}

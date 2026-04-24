@@ -101,7 +101,7 @@ export default function PremiumClient() {
 
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="100%">
             {[
-              { label: "Cloud Journal", value: "End-to-End Encryption", icon: FiCloud },
+              { label: "Cloud Journal", value: "Secure Cloud Storage", icon: FiCloud },
               { label: "Clinical Rituals", value: "Morning + Evening Flows", icon: FiActivity },
               { label: "Wellness Library", value: "Gated Audio + Rituals", icon: FiBook },
             ].map((feature) => (

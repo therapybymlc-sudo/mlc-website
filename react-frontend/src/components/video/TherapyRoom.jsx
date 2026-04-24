@@ -79,7 +79,7 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
               </Box>
               <VStack spacing={1}>
                 <Heading size="md" color="white" fontFamily="'Playfair Display', serif">Initializing Secure Sanctuary...</Heading>
-                <Text color="whiteAlpha.600" fontSize="sm">E2E Encryption Protocol Active</Text>
+                <Text color="whiteAlpha.600" fontSize="sm">Secure Clinical Protocol Active</Text>
               </VStack>
            </VStack>
         </Center>
