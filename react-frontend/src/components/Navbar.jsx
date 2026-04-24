@@ -206,8 +206,15 @@ export default function Navbar() {
                   <MenuDivider />
                   
                   {(() => {
-                    const roles = user?.publicMetadata?.roles || [];
-                    const dashboardBase = roles.includes("therapist") || roles.includes("admin") ? "/dashboard/therapist" : "/dashboard/client";
+                    const metadataRoles = user?.publicMetadata?.roles || [];
+                    const roleList = Array.isArray(metadataRoles)
+                      ? metadataRoles
+                      : [user?.publicMetadata?.role].filter(Boolean);
+                    const therapistContext =
+                      roleList.includes("therapist") ||
+                      roleList.includes("admin") ||
+                      pathname.startsWith("/dashboard/therapist");
+                    const dashboardBase = therapistContext ? "/dashboard/therapist" : "/dashboard/client";
                     
                     return (
                       <>
@@ -249,7 +256,7 @@ export default function Navbar() {
                   >
                     Resources & Tools
                   </MenuItem>
-                  {(roles.includes("therapist") || roles.includes("admin")) && (
+                  {(roleList.includes("therapist") || roleList.includes("admin")) && (
                     <MenuItem
                       as={NextLink}
                       href="/dashboard/therapist/subscription"
