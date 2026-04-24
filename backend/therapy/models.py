@@ -972,6 +972,30 @@ class RazorpayPayment(models.Model):
     def __str__(self) -> str:
         return f"RazorpayPayment({self.status}) for BookingRequest {self.booking_request_id}"
 
+
+class TherapistSubscriptionCharge(models.Model):
+    therapist = models.ForeignKey(
+        TherapistProfile,
+        on_delete=models.CASCADE,
+        related_name="subscription_charges",
+    )
+    razorpay_subscription_id = models.CharField(max_length=64, blank=True, default="")
+    razorpay_payment_id = models.CharField(max_length=64, blank=True, default="")
+    amount = models.PositiveIntegerField(help_text="Amount in smallest currency unit.")
+    currency = models.CharField(max_length=10, default="INR")
+    status = models.CharField(max_length=20, default="captured")
+    captured_at = models.DateTimeField(null=True, blank=True)
+    raw = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["therapist", "captured_at"]),
+            models.Index(fields=["razorpay_subscription_id", "captured_at"]),
+            models.Index(fields=["status", "captured_at"]),
+        ]
+
 # ===========================
 # 🔹 Appointment & Session Models
 # ===========================
@@ -2038,3 +2062,52 @@ class SupervisionReflection(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class ClientFormAssignment(models.Model):
+    class FormType(models.TextChoices):
+        CONSENT = "consent", "Consent Form"
+        ASSESSMENT = "assessment", "Assessment Form"
+
+    class Status(models.TextChoices):
+        ASSIGNED = "assigned", "Assigned"
+        STARTED = "started", "Started"
+        SUBMITTED = "submitted", "Submitted"
+        REVIEWED = "reviewed", "Reviewed"
+
+    therapeutic_relationship = models.ForeignKey(
+        TherapeuticRelationship,
+        on_delete=models.CASCADE,
+        related_name="form_assignments",
+    )
+    assigned_by = models.ForeignKey(
+        TherapistProfile,
+        on_delete=models.CASCADE,
+        related_name="form_assignments_made",
+    )
+    assigned_to = models.ForeignKey(
+        ClientProfile,
+        on_delete=models.CASCADE,
+        related_name="form_assignments",
+    )
+    form_type = models.CharField(max_length=20, choices=FormType.choices)
+    title = models.CharField(max_length=255)
+    instructions = models.TextField(blank=True, default="")
+    form_schema = models.JSONField(default=dict, blank=True)
+    response_data = models.JSONField(default=dict, blank=True)
+    therapist_note = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ASSIGNED)
+    due_date = models.DateField(null=True, blank=True)
+    assigned_at = models.DateTimeField(default=timezone.now)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-assigned_at"]
+        indexes = [
+            models.Index(fields=["assigned_by", "form_type", "status"]),
+            models.Index(fields=["assigned_to", "form_type", "status"]),
+            models.Index(fields=["therapeutic_relationship", "status"]),
+        ]

@@ -42,6 +42,7 @@ from therapy.models import (
     SupervisionReport,
     SupervisionActionItem,
     SupervisionReflection,
+    ClientFormAssignment,
 )
 
 from .utils import _resolve_therapist_from_request, client_preferred_display_name
@@ -1116,4 +1117,15 @@ class SupervisionReflectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SupervisionReflection
+        fields = "__all__"
+
+
+class ClientFormAssignmentSerializer(serializers.ModelSerializer):
+    assigned_by_name = serializers.ReadOnlyField(source="assigned_by.name")
+    assigned_to_name = serializers.ReadOnlyField(source="assigned_to.name")
+    form_type_label = serializers.CharField(source="get_form_type_display", read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = ClientFormAssignment
         fields = "__all__"

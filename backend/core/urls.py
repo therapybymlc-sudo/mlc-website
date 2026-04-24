@@ -61,6 +61,7 @@ from therapy.views import (
     SupervisionNoteViewSet,
     SupervisionActionItemViewSet,
     SupervisionReflectionViewSet,
+    ClientFormAssignmentViewSet,
     RazorpayCreateOrderView,
     RazorpayVerifyPaymentView,
     RazorpayWebhookView,
@@ -68,6 +69,7 @@ from therapy.views import (
     RazorpayVerifyTherapistSubscriptionView,
     TherapistSubscriptionStatusView,
     TherapistCancelSubscriptionView,
+    AdminReportsOverviewView,
 )
 
 # ----------------------------
@@ -117,6 +119,7 @@ router.register(r"supervisory-relationships", SupervisoryRelationshipViewSet, ba
 router.register(r"supervision-notes", SupervisionNoteViewSet, basename="supervision-notes")
 router.register(r"supervision-action-items", SupervisionActionItemViewSet, basename="supervision-action-items")
 router.register(r"supervision-reflections", SupervisionReflectionViewSet, basename="supervision-reflections")
+router.register(r"client-form-assignments", ClientFormAssignmentViewSet, basename="client-form-assignments")
 
 # ----------------------------
 # Small utility/test endpoints
@@ -210,6 +213,7 @@ urlpatterns = [
     path("api/therapists/match/", TherapistMatchView.as_view(), name="therapists-match"),
     path("api/clients/terminate_relationship/", terminate_relationship, name="terminate-relationship"),
     path("api/therapists/verify/<int:pk>/", VerifyTherapistView.as_view(), name="verify-therapist"),
+    path("api/admin/reports/overview/", AdminReportsOverviewView.as_view(), name="admin-reports-overview"),
 
     # REST API
     path("api/", include(router.urls)),

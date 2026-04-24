@@ -83,8 +83,10 @@ export default function ClientsClient() {
   const [clientNotes, setClientNotes] = useState([]);
   const [clientFiles, setClientFiles] = useState([]);
   const [clientAppointments, setClientAppointments] = useState([]);
+  const [clientFormAssignments, setClientFormAssignments] = useState([]);
   const [noteTemplates, setNoteTemplates] = useState([]);
   const [fetchingDetails, setFetchingDetails] = useState(false);
+  const [assigningFormType, setAssigningFormType] = useState("");
   const toast = useToast();
 
   const fetchClients = async () => {
@@ -102,12 +104,13 @@ export default function ClientsClient() {
   const fetchFullClientDetails = async (clientId) => {
     try {
       setFetchingDetails(true);
-      const [c, n, f, a, t] = await Promise.all([
+      const [c, n, f, a, t, formAssignments] = await Promise.all([
         apiGet(`clients/${clientId}/`),
         apiGet(`notes/?client=${clientId}`),
         apiGet(`files/?client=${clientId}`),
         apiGet(`appointments/?client=${clientId}`),
         apiGet("note-templates/"),
+        apiGet(`client-form-assignments/?client=${clientId}`).catch(() => []),
       ]);
       setSelectedClient(c);
       setEditClient(c);
@@ -115,6 +118,7 @@ export default function ClientsClient() {
       setClientFiles(Array.isArray(f) ? f : f.results || []);
       setClientAppointments(Array.isArray(a) ? a : a.results || []);
       setNoteTemplates(Array.isArray(t) ? t : t.results || []);
+      setClientFormAssignments(Array.isArray(formAssignments) ? formAssignments : formAssignments.results || []);
     } catch (e) {
       toast({ title: "Error loading client file", status: "error" });
     } finally {
@@ -262,6 +266,7 @@ export default function ClientsClient() {
             <NavButton icon={FiClipboard} label="Session Notes" active={activeSection === "notes"} count={clientNotes.length} onClick={() => setActiveSection("notes")} />
             <NavButton icon={FiPaperclip} label="Record Vault" active={activeSection === "files"} count={clientFiles.length} onClick={() => setActiveSection("files")} />
             <NavButton icon={FiCalendar} label="Appointments" active={activeSection === "appointments"} count={clientAppointments.length} onClick={() => setActiveSection("appointments")} />
+            <NavButton icon={FiFileText} label="Assigned Forms" active={activeSection === "forms"} count={clientFormAssignments.length} onClick={() => setActiveSection("forms")} />
             <NavButton icon={FiCreditCard} label="Billing & Invoices" active={activeSection === "billing"} onClick={() => setActiveSection("billing")} />
           </VStack>
         </GridItem>
@@ -273,10 +278,36 @@ export default function ClientsClient() {
            {activeSection === "notes" && renderNotesSection()}
            {activeSection === "files" && renderFilesSection()}
            {activeSection === "appointments" && renderAppointmentsSection()}
+           {activeSection === "forms" && renderFormsSection()}
            {activeSection === "billing" && renderBillingSection()}
         </GridItem>
       </Grid>
     );
+  };
+
+  const assignClientForm = async (formType) => {
+    if (!selectedClient?.id) return;
+    try {
+      setAssigningFormType(formType);
+      await apiPost("client-form-assignments/", {
+        assigned_to: selectedClient.id,
+        form_type: formType,
+        title: formType === "consent" ? "Client Consent Form" : "Client Assessment Form",
+        instructions:
+          formType === "consent"
+            ? "Please review and confirm consent statements before your next session."
+            : "Please complete this assessment to support our clinical planning.",
+      });
+      toast({
+        title: formType === "consent" ? "Consent form assigned" : "Assessment form assigned",
+        status: "success",
+      });
+      await fetchFullClientDetails(selectedClient.id);
+    } catch (e) {
+      toast({ title: "Could not assign form", status: "error" });
+    } finally {
+      setAssigningFormType("");
+    }
   };
 
   const renderDetailsSection = () => (
@@ -457,6 +488,84 @@ export default function ClientsClient() {
     </VStack>
   );
 
+  const renderFormsSection = () => (
+    <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
+      <HStack justify="space-between" mb={3} wrap="wrap" gap={3}>
+        <Heading size="md">Assigned Client Forms</Heading>
+        <HStack>
+          <Button
+            size="sm"
+            colorScheme="teal"
+            variant="outline"
+            borderRadius="full"
+            onClick={() => assignClientForm("consent")}
+            isLoading={assigningFormType === "consent"}
+          >
+            Assign Consent Form
+          </Button>
+          <Button
+            size="sm"
+            colorScheme="teal"
+            borderRadius="full"
+            onClick={() => assignClientForm("assessment")}
+            isLoading={assigningFormType === "assessment"}
+          >
+            Assign Assessment Form
+          </Button>
+        </HStack>
+      </HStack>
+
+      {clientFormAssignments.length === 0 ? (
+        <Text color="gray.500">No forms assigned yet.</Text>
+      ) : (
+        <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" overflow="hidden">
+          <Table variant="simple" size="sm">
+            <Thead>
+              <Tr>
+                <Th>Form</Th>
+                <Th>Status</Th>
+                <Th>Assigned</Th>
+                <Th>Due</Th>
+                <Th>Submitted</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {clientFormAssignments.map((form) => (
+                <Tr key={form.id}>
+                  <Td>
+                    <VStack align="start" spacing={0}>
+                      <Text fontWeight="700">{form.title}</Text>
+                      <Text fontSize="xs" color="gray.500">{form.form_type_label || form.form_type}</Text>
+                    </VStack>
+                  </Td>
+                  <Td>
+                    <Badge
+                      borderRadius="full"
+                      colorScheme={
+                        form.status === "reviewed"
+                          ? "green"
+                          : form.status === "submitted"
+                            ? "blue"
+                            : form.status === "started"
+                              ? "orange"
+                              : "gray"
+                      }
+                    >
+                      {form.status_label || form.status}
+                    </Badge>
+                  </Td>
+                  <Td>{form.assigned_at ? new Date(form.assigned_at).toLocaleDateString() : "—"}</Td>
+                  <Td>{form.due_date || "—"}</Td>
+                  <Td>{form.submitted_at ? new Date(form.submitted_at).toLocaleDateString() : "—"}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+      )}
+    </VStack>
+  );
+
   const renderIntakeSection = () => (
     <VStack align="stretch" spacing={6} animation="fadeIn 0.5s">
        <DetailCard title="Initial Screening Results (DASS-21)">
@@ -524,9 +633,10 @@ export default function ClientsClient() {
 
   const renderBillingSection = () => (
     <VStack align="stretch" spacing={6} animation="fadeIn 0.5s">
-       <DetailCard title="Invoicing & Payments">
+       <DetailCard title="Financial Configuration" isEditing={isEditing}>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-             <DataField label="Concession Type" value={editClient.concession_type} isEditing={isEditing} onChange={(v) => setEditClient({...editClient, concession_type: v})} />
+             <DataField label="Hourly Rate (INR)" value={editClient.hourly_rate} isEditing={isEditing} onChange={(v) => setEditClient({...editClient, hourly_rate: v})} />
+             <DataField label="Concession Type" value={editClient.concession_type} isEditing={isEditing} type="select" options={["None", "Student", "Healthcare Card", "Sliding Scale"]} onChange={(v) => setEditClient({...editClient, concession_type: v})} />
              <DataField label="Invoice Email" value={editClient.invoice_email_to} isEditing={isEditing} onChange={(v) => setEditClient({...editClient, invoice_email_to: v})} />
           </SimpleGrid>
           <Box mt={4}>
@@ -534,6 +644,43 @@ export default function ClientsClient() {
              {isEditing ? <Textarea value={editClient.invoice_to} onChange={(e) => setEditClient({...editClient, invoice_to: e.target.value})} borderRadius="xl" /> : <Text fontSize="sm" color="gray.600">{editClient.invoice_to || "No custom label."}</Text>}
           </Box>
        </DetailCard>
+
+       <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+          <Heading size="xs" textTransform="uppercase" color="gray.400" mb={6} letterSpacing="wider">Session Invoices</Heading>
+          {clientAppointments.length === 0 ? (
+            <Text color="gray.500" fontSize="sm">No billed sessions yet.</Text>
+          ) : (
+            <VStack align="stretch" spacing={3}>
+              {clientAppointments.slice(0, 10).map(appt => (
+                <Flex key={appt.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.50" align="center" justify="space-between" _hover={{ bg: 'gray.50' }}>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="bold" fontSize="sm">{new Date(appt.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                    <Text fontSize="2xs" color="gray.500">MLC-INV-{appt.id.substring(0, 8)}</Text>
+                  </VStack>
+                  <HStack spacing={4}>
+                    <Badge colorScheme={appt.status === 'completed' ? 'green' : 'orange'} variant="subtle" borderRadius="full">
+                      {appt.status === 'completed' ? 'PAID' : 'PENDING'}
+                    </Badge>
+                    <Button 
+                      size="xs" 
+                      variant="outline" 
+                      colorScheme="teal" 
+                      borderRadius="full"
+                      as={Link}
+                      href={`/dashboard/client/invoice/${appt.id}`}
+                      isExternal
+                    >
+                      View
+                    </Button>
+                  </HStack>
+                </Flex>
+              ))}
+            </VStack>
+          )}
+          <Text mt={6} fontSize="2xs" color="gray.400" fontStyle="italic">
+            Note: All invoices include clinical liability disclaimers and MLC professional branding.
+          </Text>
+       </Box>
     </VStack>
   );
 

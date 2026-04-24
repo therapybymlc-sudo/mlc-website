@@ -21,6 +21,12 @@ import {
   Wrap,
   Flex,
   Icon,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -38,6 +44,7 @@ import {
   Layers,
   HelpCircle,
   Video,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { apiGet, apiPost, apiPut, apiDelete } from "../api.js";
@@ -698,6 +705,69 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
     </HStack>
   );
 
+const MetricCard = ({ label, value }) => (
+  <Box p={4} borderRadius="xl" border="1px solid" borderColor="gray.100" bg="white">
+    <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+      {label}
+    </Text>
+    <Heading size="md" color="mlc.greenDark" mt={2}>
+      {value ?? 0}
+    </Heading>
+  </Box>
+);
+
+const downloadCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [
+    headers.join(","),
+    ...rows.map((row) =>
+      headers
+        .map((h) => {
+          const val = row[h] ?? "";
+          const str = String(val).replace(/"/g, '""');
+          return `"${str}"`;
+        })
+        .join(",")
+    ),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const MiniBarChart = ({ title, data = [], valueKey, unit = "" }) => {
+  const max = Math.max(...data.map((d) => Number(d?.[valueKey] || 0)), 1);
+  return (
+    <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
+      <Heading size="sm" mb={4}>{title}</Heading>
+      <VStack align="stretch" spacing={3}>
+        {data.length === 0 ? (
+          <Text fontSize="sm" color="gray.500">No trend data available.</Text>
+        ) : data.map((d) => {
+          const value = Number(d?.[valueKey] || 0);
+          const pct = Math.max(4, Math.round((value / max) * 100));
+          return (
+            <Box key={`${title}-${d.month}`}>
+              <HStack justify="space-between" mb={1}>
+                <Text fontSize="xs" color="gray.500">{d.month}</Text>
+                <Text fontSize="xs" fontWeight="700">{value.toLocaleString()}{unit}</Text>
+              </HStack>
+              <Box h="8px" bg="gray.100" borderRadius="full" overflow="hidden">
+                <Box h="100%" w={`${pct}%`} bg="teal.400" borderRadius="full" />
+              </Box>
+            </Box>
+          );
+        })}
+      </VStack>
+    </Box>
+  );
+};
+
   const Sidebar = ({ activeTab, setActiveTab }) => (
     <VStack 
       w="280px" 
@@ -731,6 +801,11 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
       <VStack align="stretch" spacing={1}>
         <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>VERIFICATION</Text>
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Users} label="Vetting Portal" id="vetting" />
+      </VStack>
+
+      <VStack align="stretch" spacing={1}>
+        <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>REPORTING</Text>
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={BarChart3} label="Business Reports" id="reports" />
       </VStack>
 
       <VStack align="stretch" spacing={1}>
@@ -817,6 +892,12 @@ export default function AdminDashboard() {
 
   const [contactMessages, setContactMessages] = useState([]);
   const [quickBookings, setQuickBookings] = useState([]);
+  const [reportPeriod, setReportPeriod] = useState("monthly");
+  const [reportYear, setReportYear] = useState(new Date().getFullYear());
+  const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
+  const [reportQuarter, setReportQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportData, setReportData] = useState(null);
 
   const fetchContactMessages = async () => {
     try {
@@ -830,6 +911,28 @@ export default function AdminDashboard() {
       const data = await apiGet("quick-bookings/");
       setQuickBookings(Array.isArray(data) ? data : (data.results || []));
     } catch (err) { console.error(err); }
+  };
+
+  const fetchAdminReports = async () => {
+    try {
+      setReportsLoading(true);
+      const query = new URLSearchParams({
+        period: reportPeriod,
+        year: String(reportYear),
+        month: String(reportMonth),
+        quarter: String(reportQuarter),
+      });
+      const data = await apiGet(`admin/reports/overview?${query.toString()}`);
+      setReportData(data);
+    } catch (err) {
+      toast({
+        status: "error",
+        title: "Could not load reports",
+        description: err?.response?.data?.detail || "Please try again.",
+      });
+    } finally {
+      setReportsLoading(false);
+    }
   };
 
   const fetchMembers = async () => {
@@ -1085,6 +1188,12 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isAdmin]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+    if (activeTab !== "reports") return;
+    fetchAdminReports();
+  }, [isAuthenticated, isAdmin, activeTab, reportPeriod, reportYear, reportMonth, reportQuarter]);
+
   if (!isMounted) return null;
 
   if (loading) {
@@ -1135,6 +1244,185 @@ export default function AdminDashboard() {
              <Button variant="ghost" size="sm" onClick={() => (window.location.href = "/")}>Back to Home</Button>
           </HStack>
         </HStack>
+
+        {activeTab === "reports" && (
+          <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
+            <HStack justify="space-between" mb={6} flexWrap="wrap" gap={4}>
+              <Heading size="md" color="mlc.greenDark">Performance & Revenue Reports</Heading>
+              <HStack>
+                <Select size="sm" value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)} w="140px">
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="yearly">Yearly</option>
+                </Select>
+                <Input
+                  size="sm"
+                  type="number"
+                  value={reportYear}
+                  onChange={(e) => setReportYear(Number(e.target.value || new Date().getFullYear()))}
+                  w="110px"
+                />
+                {reportPeriod === "monthly" && (
+                  <Select size="sm" value={reportMonth} onChange={(e) => setReportMonth(Number(e.target.value))} w="120px">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    ))}
+                  </Select>
+                )}
+                {reportPeriod === "quarterly" && (
+                  <Select size="sm" value={reportQuarter} onChange={(e) => setReportQuarter(Number(e.target.value))} w="120px">
+                    <option value={1}>Q1</option>
+                    <option value={2}>Q2</option>
+                    <option value={3}>Q3</option>
+                    <option value={4}>Q4</option>
+                  </Select>
+                )}
+                <Button size="sm" colorScheme="teal" onClick={fetchAdminReports} isLoading={reportsLoading}>
+                  Refresh
+                </Button>
+              </HStack>
+            </HStack>
+
+            {reportsLoading && <Text color="gray.500">Loading report data...</Text>}
+
+            {!reportsLoading && reportData && (
+              <VStack align="stretch" spacing={8}>
+                <Box p={4} borderRadius="xl" bg="gray.50">
+                  <Text fontSize="sm" color="gray.600">
+                    Report Window: <b>{reportData?.period?.label}</b> ({new Date(reportData?.period?.start).toLocaleDateString()} - {new Date(reportData?.period?.end).toLocaleDateString()})
+                  </Text>
+                </Box>
+
+                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                  <MetricCard label="Incoming Registrations" value={reportData?.kpis?.incoming_registrations} />
+                  <MetricCard label="New Clients" value={reportData?.kpis?.new_clients} />
+                  <MetricCard label="Therapists Onboarded" value={reportData?.kpis?.therapists_onboarded} />
+                  <MetricCard label="Therapists Verified" value={reportData?.kpis?.therapists_verified} />
+                  <MetricCard label="Sessions Completed" value={reportData?.kpis?.sessions_taken} />
+                  <MetricCard label="Session Revenue" value={`₹${Number(reportData?.kpis?.session_revenue || 0).toLocaleString()}`} />
+                  <MetricCard
+                    label={`Subscriber Revenue (${reportData?.kpis?.subscription_revenue_source || "estimated"})`}
+                    value={`₹${Number(reportData?.kpis?.subscription_revenue || 0).toLocaleString()}`}
+                  />
+                  <MetricCard label="Total Revenue (est.)" value={`₹${Number(reportData?.kpis?.total_revenue_estimated || 0).toLocaleString()}`} />
+                </SimpleGrid>
+
+                <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                  <MiniBarChart
+                    title="Sessions Trend"
+                    data={reportData?.series?.sessions_monthly || []}
+                    valueKey="sessions"
+                  />
+                  <MiniBarChart
+                    title="Session Revenue Trend"
+                    data={reportData?.series?.session_revenue_monthly || []}
+                    valueKey="revenue"
+                    unit=" ₹"
+                  />
+                </SimpleGrid>
+
+                <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                  <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
+                    <HStack justify="space-between" mb={4}>
+                      <Heading size="sm">Therapist Revenue</Heading>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={() => downloadCsv("therapist_revenue.csv", reportData?.therapist_performance?.revenue_by_therapist || [])}
+                      >
+                        Export CSV
+                      </Button>
+                    </HStack>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Therapist</Th>
+                          <Th isNumeric>Sessions</Th>
+                          <Th isNumeric>Revenue</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {(reportData?.therapist_performance?.revenue_by_therapist || []).slice(0, 10).map((row) => (
+                          <Tr key={row.therapist_id}>
+                            <Td>{row.therapist_name}</Td>
+                            <Td isNumeric>{row.sessions}</Td>
+                            <Td isNumeric>₹{Number(row.amount || 0).toLocaleString()}</Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </Box>
+
+                  <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
+                    <HStack justify="space-between" mb={4}>
+                      <Heading size="sm">Therapist Client Funnel</Heading>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        onClick={() => downloadCsv("therapist_client_funnel.csv", reportData?.therapist_performance?.client_funnel || [])}
+                      >
+                        Export CSV
+                      </Button>
+                    </HStack>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Therapist</Th>
+                          <Th isNumeric>New Clients</Th>
+                          <Th isNumeric>Active Clients</Th>
+                          <Th isNumeric>Retention %</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {(reportData?.therapist_performance?.client_funnel || []).slice(0, 10).map((row) => (
+                          <Tr key={row.therapist_id}>
+                            <Td>{row.therapist_name}</Td>
+                            <Td isNumeric>{row.new_clients}</Td>
+                            <Td isNumeric>{row.active_clients}</Td>
+                            <Td isNumeric>{row.retention_pct ?? "—"}</Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </Box>
+                </SimpleGrid>
+
+                <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
+                  <HStack justify="space-between" mb={4}>
+                    <Heading size="sm">Supervision Funnel</Heading>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onClick={() => downloadCsv("supervision_funnel.csv", reportData?.supervision_performance?.supervisor_funnel || [])}
+                    >
+                      Export CSV
+                    </Button>
+                  </HStack>
+                  <Table size="sm">
+                    <Thead>
+                      <Tr>
+                        <Th>Supervisor</Th>
+                        <Th isNumeric>New Supervisees</Th>
+                        <Th isNumeric>Active Supervisees</Th>
+                        <Th isNumeric>Retention %</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {(reportData?.supervision_performance?.supervisor_funnel || []).slice(0, 12).map((row) => (
+                        <Tr key={row.supervisor_id}>
+                          <Td>{row.supervisor_name}</Td>
+                          <Td isNumeric>{row.new_supervisees}</Td>
+                          <Td isNumeric>{row.active_supervisees}</Td>
+                          <Td isNumeric>{row.retention_pct ?? "—"}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </Box>
+              </VStack>
+            )}
+          </Box>
+        )}
 
         {activeTab === "vetting" && (
            <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
