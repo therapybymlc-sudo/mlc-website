@@ -23,6 +23,7 @@ import {
 import { FiEdit3, FiDownload, FiBookOpen } from "react-icons/fi";
 import { useAuth } from "../../../../../context/AuthContext";
 import { apiGet, apiPost } from "../../../../../api.js";
+import api from "../../../../../api.js";
 
 function downloadTextFile(filename, text) {
   const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
@@ -56,6 +57,17 @@ export default function SuperviseeClient() {
   const years = Number(therapistProfile?.years_experience || 0);
 
   const todayLabel = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const isNotFound = (err) => err?.response?.status === 404;
+
+  const optionalListGet = async (path) => {
+    try {
+      const res = await api.get(path.endsWith("/") ? path : `${path}/`);
+      return Array.isArray(res.data) ? res.data : res.data?.results || [];
+    } catch (err) {
+      if (isNotFound(err)) return [];
+      throw err;
+    }
+  };
 
   const handleExport = () => {
     const content = (note || "").trim();
@@ -80,8 +92,8 @@ export default function SuperviseeClient() {
       try {
         const [sessionData, actionData, reflectionData] = await Promise.all([
           apiGet("supervisory-relationships/my-supervisee-sessions/"),
-          apiGet("supervision-action-items/").catch(() => []),
-          apiGet("supervision-reflections/").catch(() => []),
+          optionalListGet("supervision-action-items"),
+          optionalListGet("supervision-reflections"),
         ]);
         const data = sessionData;
         setSessions(Array.isArray(data) ? data : []);
@@ -119,10 +131,18 @@ export default function SuperviseeClient() {
         takeaways: "",
         confidence_score: 5,
       }));
-      const reflectionData = await apiGet("supervision-reflections/").catch(() => []);
+      const reflectionData = await optionalListGet("supervision-reflections");
       setReflections(Array.isArray(reflectionData) ? reflectionData : []);
       toast({ status: "success", title: "Reflection submitted" });
     } catch (err) {
+      if (isNotFound(err)) {
+        toast({
+          status: "info",
+          title: "Reflections module coming soon",
+          description: "Your account can use this once the latest supervision APIs are deployed.",
+        });
+        return;
+      }
       toast({ status: "error", title: "Could not submit reflection" });
     } finally {
       setSavingReflection(false);

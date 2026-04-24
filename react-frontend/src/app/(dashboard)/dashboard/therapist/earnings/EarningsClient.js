@@ -14,11 +14,6 @@ import {
   Flex,
   Badge,
   Container,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
   Select,
   Table,
   Thead,
@@ -281,10 +276,12 @@ function StatCard({ label, value, help, icon, color, isIncrease }) {
           <Heading size="lg" color="#2E2E2E">{value}</Heading>
         </VStack>
         <Divider />
-        <StatHelpText m={0}>
-          {isIncrease !== undefined && <StatArrow type={isIncrease ? "increase" : "decrease"} />}
-          {help}
-        </StatHelpText>
+        <HStack spacing={2} color="gray.500" fontSize="sm">
+          {isIncrease !== undefined && (
+            <Text color={isIncrease ? "green.500" : "red.500"}>{isIncrease ? "▲" : "▼"}</Text>
+          )}
+          <Text>{help}</Text>
+        </HStack>
       </VStack>
     </Box>
   );

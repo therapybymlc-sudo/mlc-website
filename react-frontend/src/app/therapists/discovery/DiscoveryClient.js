@@ -220,6 +220,8 @@ export default function DiscoveryClient() {
   const [currentSection, setCurrentSection] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState(null);
+  const [fallbackTherapists, setFallbackTherapists] = useState([]);
+  const [loadingFallbackTherapists, setLoadingFallbackTherapists] = useState(false);
   const [finalInterpretations, setFinalInterpretations] = useState(null);
   const toast = useToast();
   const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
@@ -335,6 +337,37 @@ export default function DiscoveryClient() {
       setQuizData(prev => ({ ...prev, email: clerkUser.primaryEmailAddress.emailAddress }));
     }
   }, [clerkUser]);
+
+  useEffect(() => {
+    if (view !== "results") return;
+    const hasPrimaryMatches = (results?.matches?.length || 0) > 0;
+    const hasSecondaryMatches = (results?.others?.length || 0) > 0;
+    if (hasPrimaryMatches || hasSecondaryMatches) return;
+
+    let cancelled = false;
+    const fetchFallbackTherapists = async () => {
+      try {
+        setLoadingFallbackTherapists(true);
+        const res = await apiGet("therapists/public/");
+        const allPublic = Array.isArray(res) ? res : res?.results || [];
+        if (!cancelled) {
+          setFallbackTherapists(allPublic);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setFallbackTherapists([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingFallbackTherapists(false);
+        }
+      }
+    };
+    fetchFallbackTherapists();
+    return () => {
+      cancelled = true;
+    };
+  }, [view, results]);
 
   const handleStartOver = () => {
     localStorage.removeItem("mlc_discovery_draft");
@@ -873,6 +906,11 @@ export default function DiscoveryClient() {
     const a = finalInterpretations?.anxiety || "Normal";
     const s = finalInterpretations?.stress || "Normal";
 
+    const matchedTherapists = results?.matches || [];
+    const otherMatchedTherapists = results?.others || [];
+    const hasAnyMatchResults = matchedTherapists.length > 0 || otherMatchedTherapists.length > 0;
+    const therapistsToRender = hasAnyMatchResults ? (matchedTherapists.length > 0 ? matchedTherapists : otherMatchedTherapists) : fallbackTherapists;
+
     return (
       <Container maxW="6xl" py={{ base: 10, md: 20 }} px={{ base: 4, md: 6 }}>
         <VStack spacing={{ base: 8, md: 12 }} align="stretch">
@@ -902,15 +940,40 @@ export default function DiscoveryClient() {
 
           <VStack align="start" spacing={6}>
             <Heading size={{ base: "md", md: "lg" }} color="teal.900">Your Recommended Specialists</Heading>
+            {!hasAnyMatchResults && (
+              <Box p={{ base: 5, md: 6 }} bg="teal.50" borderRadius="2xl" border="1px solid" borderColor="teal.100" w="full">
+                <VStack align="start" spacing={2}>
+                  <Text fontWeight="800" color="teal.800" fontSize={{ base: "sm", md: "md" }}>
+                    No immediate matches found from this screening.
+                  </Text>
+                  <Text color="teal.700" fontSize={{ base: "sm", md: "md" }}>
+                    But we have other incredible professionals you can explore right away.
+                  </Text>
+                </VStack>
+              </Box>
+            )}
+            {loadingFallbackTherapists && !hasAnyMatchResults ? (
+              <Center py={{ base: 10, md: 14 }} w="full">
+                <VStack spacing={3}>
+                  <Spinner color="teal.500" />
+                  <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>
+                    Finding verified public clinicians for you...
+                  </Text>
+                </VStack>
+              </Center>
+            ) : (
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={{ base: 6, md: 10 }} w="full">
-              {(results?.matches?.length > 0 ? results.matches : (results?.others || [])).map(t => (
+              {therapistsToRender.map(t => (
                 <TherapistCard key={t.id} therapist={t} />
               ))}
             </SimpleGrid>
-            {(!results || ((!results.matches || results.matches.length === 0) && (!results.others || results.others.length === 0))) && (
+            )}
+            {(!results || therapistsToRender.length === 0) && !loadingFallbackTherapists && (
               <VStack py={{ base: 10, md: 20 }} bg="gray.50" borderRadius="3xl" w="full" textAlign="center">
                 <Icon as={FiStar} w={10} h={10} color="gray.300" />
-                <Text color="gray.500" fontSize={{ base: "sm", md: "md" }} px={4}>No immediate matches found for these specific criteria. Our intake team will review your application manually and contact you within 24 hours.</Text>
+                <Text color="gray.500" fontSize={{ base: "sm", md: "md" }} px={4}>
+                  We could not find immediate matches yet. Our intake team will still review your profile and connect you with the right support shortly.
+                </Text>
               </VStack>
             )}
           </VStack>

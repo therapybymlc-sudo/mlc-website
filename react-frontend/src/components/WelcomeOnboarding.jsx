@@ -232,19 +232,25 @@ function getSlideContent(link) {
   };
 }
 
-function buildWalkthroughSlides(links) {
+function buildWalkthroughSlides(links, role = 'client') {
   const cleanedLinks = Array.isArray(links) ? links.filter((l) => l && !l.type && l.href) : [];
+  const isTherapist = role === 'therapist';
 
   const intro = {
     key: 'intro',
     title: 'Welcome to MLC',
-    subtitle: 'Your secure care portal',
+    subtitle: isTherapist ? 'Your clinical command center' : 'Your secure care portal',
     body: [
-      'This dashboard is your private space to manage your therapy, track your progress, and access helpful tools.',
+      isTherapist 
+        ? 'This environment is designed to streamline your practice and protect your boundaries.'
+        : 'This dashboard is your private space to manage your therapy, track your progress, and access helpful tools.',
       'This quick 2-minute tour will show you where everything is located.'
     ],
     sections: [
-      { title: 'Our Goal', items: ['Simple to use', 'Safe and secure', 'Designed for your healing'] },
+      { title: 'Our Goal', items: isTherapist 
+          ? ['Clinical efficiency', 'Boundary protection', 'Professional growth']
+          : ['Simple to use', 'Safe and secure', 'Designed for your healing'] 
+      },
     ],
     tips: ['You can restart this tour anytime from the top menu.'],
     href: null,
@@ -266,21 +272,7 @@ function buildWalkthroughSlides(links) {
     icon: null,
   };
 
-  const outro = {
-    key: 'outro',
-    title: 'Ready to Begin',
-    subtitle: 'Everything is ready for you',
-    body: [
-      'You are all set. You now have everything you need to manage your sessions, goals, and reflections.',
-      'We are honored to support you on your journey.'
-    ],
-    sections: [{ title: 'First Steps', items: ['Check your next session time', 'Write your first journal entry', 'Explore your care tools'] }],
-    tips: [],
-    href: null,
-    icon: null,
-  };
-
-  const secureChat = {
+  const secureChat = isTherapist ? {
     key: 'secure-chat',
     title: 'Secure Communications',
     subtitle: 'Protect your privacy (Coming Soon)',
@@ -294,9 +286,23 @@ function buildWalkthroughSlides(links) {
     tips: ['You can disable or enable chat for specific clients in their profile settings.'],
     href: '/dashboard/therapist/messages',
     icon: null,
+  } : {
+    key: 'secure-chat-client',
+    title: 'Safe Communication',
+    subtitle: 'Connecting with care (Coming Soon)',
+    body: [
+      'Your privacy is our priority. Soon, you will be able to message your therapist directly within this secure portal.',
+      'No need to exchange personal numbers—just a safe, professional space to stay connected between sessions.',
+    ],
+    sections: [
+      { title: 'Why it matters', items: ['Direct line to your therapist', 'All conversations are encrypted', 'Keep your personal contact private'] },
+    ],
+    tips: ['Your therapist will respond during their designated clinical hours.'],
+    href: null,
+    icon: null,
   };
 
-  const holisticEcosystem = {
+  const holisticEcosystem = isTherapist ? {
     key: 'holistic-ecosystem',
     title: 'The MLC Ecosystem',
     subtitle: 'Your wellbeing matters',
@@ -311,6 +317,42 @@ function buildWalkthroughSlides(links) {
     tips: ['Work-life balance is at the heart of our design.'],
     href: null,
     icon: null,
+  } : {
+    key: 'holistic-ecosystem-client',
+    title: 'Your Care Sanctuary',
+    subtitle: 'A complete healing journey',
+    body: [
+      'MLC provides a seamless experience for your entire healing process. From your first screening to your final session, everything is held in one safe place.',
+      'We handle the logistics—scheduling, resources, and secure video—so you can focus entirely on your growth and wellbeing.',
+    ],
+    sections: [
+      { title: 'One Home', items: ['Easy scheduling & intake', 'High-quality video sessions', 'Accessible care tools'] },
+      { title: 'Your Privacy', items: ['Secure clinical records', 'Safe messaging portal', 'Confidential safety plans'] },
+    ],
+    tips: ['Every tool here is chosen to support your unique journey.'],
+    href: null,
+    icon: null,
+  };
+
+  const outro = {
+    key: 'outro',
+    title: 'Ready to Begin',
+    subtitle: 'Everything is ready for you',
+    body: [
+      isTherapist 
+        ? 'Your workspace is active. We are honored to support your clinical practice.'
+        : 'You are all set. You now have everything you need to manage your sessions, goals, and reflections.',
+      isTherapist ? 'Let’s start building your impact.' : 'We are honored to support you on your journey.'
+    ],
+    sections: [{ 
+      title: 'First Steps', 
+      items: isTherapist 
+        ? ['Set your availability', 'Explore your caseload', 'Check your wellbeing dashboard']
+        : ['Check your next session time', 'Write your first journal entry', 'Explore your care tools'] 
+    }],
+    tips: [],
+    href: null,
+    icon: null,
   };
 
   const pageSlides = cleanedLinks.map((l) => getSlideContent(l));
@@ -321,7 +363,11 @@ export default function WelcomeOnboarding({ links = [] }) {
   const router = useRouter();
   const currentPath = usePathname();
   const { user, isLoaded: userLoaded } = useUser();
-  const slides = useMemo(() => buildWalkthroughSlides(links), [links]);
+  
+  const role = user?.unsafeMetadata?.mlc_role_preview || 
+               (currentPath.includes('/therapist') ? 'therapist' : 'client');
+
+  const slides = useMemo(() => buildWalkthroughSlides(links, role), [links, role]);
   const [slideIdx, setSlideIdx] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   
