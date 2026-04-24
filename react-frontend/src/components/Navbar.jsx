@@ -42,7 +42,7 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
-  { label: "Find a Therapist", href: "/therapists/discovery" },
+  { label: "Find a Therapist", href: "/therapists/directory" },
   { label: "For Therapists", href: "/therapists" },
   { label: "Meet the Team", href: "/meettheteam" },
   { label: "Book Now", href: "/book" },
@@ -122,7 +122,7 @@ export default function Navbar() {
           mx={4}
         >
           {navLinks.map((link) => {
-            const isDiscovery = link.href === "/therapists/discovery";
+            const isDiscovery = link.href === "/therapists/directory";
             const isActive = pathname === link.href;
             return (
               <ChakraLink

@@ -213,20 +213,20 @@ export default function GoalsClient() {
       <Collapse in={showAddForm}>
         <Box bg="white" p={8} borderRadius="3xl" shadow="md" mb={10} border="1px solid" borderColor="teal.50">
           <VStack spacing={6} align="stretch">
-            <HStack spacing={4}>
+            <Stack direction={{ base: "column", md: "row" }} spacing={4}>
               <Input 
                 placeholder="What is your intention?" 
                 variant="filled"
                 bg="gray.50"
                 borderRadius="xl"
-                h="60px"
-                fontSize="lg"
+                h={{ base: "50px", md: "60px" }}
+                fontSize={{ base: "md", md: "lg" }}
                 fontWeight="600"
                 value={newGoalTitle}
                 onChange={(e) => setNewGoalTitle(e.target.value)}
               />
               <Menu>
-                <MenuButton as={Button} rightIcon={<FiChevronDown />} h="60px" borderRadius="xl" px={6} bg="gray.50" minW="180px">
+                <MenuButton as={Button} rightIcon={<FiChevronDown />} h={{ base: "50px", md: "60px" }} borderRadius="xl" px={6} bg="gray.50" minW={{ base: "full", md: "180px" }}>
                   {CATEGORIES.find(c => c.id === activeCategory)?.label}
                 </MenuButton>
                 <MenuList borderRadius="xl" shadow="xl" border="none">
@@ -237,7 +237,7 @@ export default function GoalsClient() {
                   ))}
                 </MenuList>
               </Menu>
-            </HStack>
+            </Stack>
             
             <Box>
               <Text fontSize="sm" fontWeight="700" color="gray.500" mb={2}>Context / Details</Text>

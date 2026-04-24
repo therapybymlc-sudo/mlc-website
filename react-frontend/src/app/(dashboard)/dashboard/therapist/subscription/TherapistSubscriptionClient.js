@@ -6,9 +6,9 @@ import {
   Box,
   Button,
   Divider,
-  SimpleGrid,
   Heading,
   HStack,
+  SimpleGrid,
   Text,
   VStack,
   useToast,
@@ -172,92 +172,120 @@ export default function TherapistSubscriptionClient() {
       : 'gray';
 
   return (
-    <Box maxW="1100px" mx="auto">
-      <VStack align="start" spacing={2} mb={8}>
-        <Heading size="lg" color="#2E2E2E">
-          Therapist Subscription Center
-        </Heading>
-        <Text color="gray.500">
-          Choose your plan first, then manage subscription status and billing controls.
-        </Text>
-      </VStack>
+    <Box maxW="1160px" mx="auto" px={{ base: 1, sm: 0 }}>
+      <VStack align="stretch" spacing={{ base: 8, md: 10 }}>
+        <VStack align="start" spacing={2}>
+          <Heading size="lg" color="#1a202c" fontWeight="700" letterSpacing="-0.02em">
+            Subscription
+          </Heading>
+          <Text color="gray.600" fontSize="md" maxW="2xl">
+            Prices and plan comparison first—then review billing status and controls below.
+          </Text>
+        </VStack>
 
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} alignItems="start">
-        <Box p={{ base: 5, md: 6 }} border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white" shadow="sm">
-          <VStack align="start" spacing={4}>
-            <HStack justify="space-between" w="full" align="start">
-              <VStack align="start" spacing={0}>
-                <Heading size="md" color="#2E2E2E">
-                  Pricing & Plans
-                </Heading>
-                <Text color="gray.500" fontSize="sm">
-                  Activate access to profile visibility, matching, and premium workflows.
-                </Text>
-              </VStack>
-              <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
-                Start Here
-              </Badge>
-            </HStack>
-
-            <TherapistSubscriptionGateway
-              mode="inline"
-              title="Choose your MLC plan"
-              contextLabel="Select a monthly or annual plan to unlock your therapist operating system."
-              onSelectPlan={startSubscription}
-              loadingPlan={loadingPlan}
-            />
-          </VStack>
+        <Box
+          borderRadius="3xl"
+          border="1px solid"
+          borderColor="gray.200"
+          bg="white"
+          px={{ base: 4, md: 8, lg: 10 }}
+          py={{ base: 8, md: 10 }}
+          boxShadow="0 4px 40px -16px rgba(15, 23, 42, 0.12)"
+        >
+          <TherapistSubscriptionGateway
+            variant="embedded"
+            mode="inline"
+            subscription={subscription}
+            onSelectPlan={startSubscription}
+            loadingPlan={loadingPlan}
+          />
         </Box>
 
-        <Box p={{ base: 5, md: 6 }} border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white" shadow="sm">
-          <VStack align="start" spacing={4}>
-            <Heading size="md" color="#2E2E2E">
-              Subscription Status
-            </Heading>
-            <HStack spacing={3} flexWrap="wrap">
-              <Badge colorScheme={statusColor} px={2.5} py={1} borderRadius="full" textTransform="capitalize">
-                {subscription?.subscription_status || 'inactive'}
-              </Badge>
-              <Badge colorScheme="purple" px={2.5} py={1} borderRadius="full" textTransform="capitalize">
-                Plan: {subscription?.basic_plan || 'none'}
-              </Badge>
-              <Badge colorScheme={subscription?.is_basic_subscribed ? 'green' : 'gray'} px={2.5} py={1} borderRadius="full">
-                Access: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
-              </Badge>
-            </HStack>
-
-            <Divider />
-
+        <Box
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor="gray.200"
+          bg="gray.50"
+          p={{ base: 5, md: 6 }}
+        >
+          <HStack justify="space-between" align="start" flexWrap="wrap" gap={4} mb={4}>
             <VStack align="start" spacing={1}>
-              <Text fontSize="sm" color="gray.600">
-                Subscription ID: {subscription?.razorpay_subscription_id || 'Not yet created'}
+              <Text fontSize="xs" fontWeight="700" color="gray.500" letterSpacing="0.1em" textTransform="uppercase">
+                Account status
               </Text>
-              {subscription?.current_end ? (
-                <Text fontSize="sm" color="gray.600">
-                  Current cycle ends on: {new Date(subscription.current_end).toLocaleString()}
-                </Text>
-              ) : null}
+              <Heading size="sm" color="#1a202c">
+                Billing & access
+              </Heading>
             </VStack>
-
-            <HStack spacing={3} pt={1}>
-              <Button size="sm" variant="outline" onClick={() => loadStatus(true)} isLoading={isRefreshing}>
-                Refresh Status
+            <HStack spacing={2} flexWrap="wrap" w={{ base: 'full', md: 'auto' }}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => loadStatus(true)}
+                isLoading={isRefreshing}
+                borderRadius="lg"
+                minH="44px"
+                w={{ base: 'full', sm: 'auto' }}
+              >
+                Refresh status
               </Button>
               <Button
                 size="sm"
-                colorScheme="red"
                 variant="ghost"
+                colorScheme="red"
                 onClick={cancelSubscription}
                 isLoading={isCancelling}
                 isDisabled={!subscription?.razorpay_subscription_id}
+                borderRadius="lg"
+                minH="44px"
+                w={{ base: 'full', sm: 'auto' }}
+                whiteSpace="normal"
               >
                 Cancel at cycle end
               </Button>
             </HStack>
-          </VStack>
+          </HStack>
+
+          <HStack spacing={2} flexWrap="wrap" mb={4}>
+            <Badge colorScheme={statusColor} px={2.5} py={1} borderRadius="full" textTransform="capitalize">
+              {subscription?.subscription_status || 'inactive'}
+            </Badge>
+            <Badge colorScheme="purple" px={2.5} py={1} borderRadius="full" textTransform="capitalize">
+              Plan: {subscription?.basic_plan || 'none'}
+            </Badge>
+            <Badge colorScheme={subscription?.is_basic_subscribed ? 'green' : 'gray'} px={2.5} py={1} borderRadius="full">
+              Access: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
+            </Badge>
+          </HStack>
+
+          <Divider borderColor="gray.200" mb={4} />
+
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+            <Box bg="white" borderRadius="lg" border="1px solid" borderColor="gray.200" p={3}>
+              <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="0.08em" mb={1}>
+                Subscription ID
+              </Text>
+              <Text
+                fontFamily="mono"
+                fontSize={{ base: '11px', sm: 'xs' }}
+                color="gray.700"
+                wordBreak="break-all"
+                lineHeight="1.4"
+              >
+                {subscription?.razorpay_subscription_id || '—'}
+              </Text>
+            </Box>
+            <Box bg="white" borderRadius="lg" border="1px solid" borderColor="gray.200" p={3}>
+              <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="0.08em" mb={1}>
+                Current cycle
+              </Text>
+              <Text fontSize="sm" color="gray.700" lineHeight="1.4">
+                {subscription?.current_end ? new Date(subscription.current_end).toLocaleString() : 'Not available yet'}
+              </Text>
+            </Box>
+          </SimpleGrid>
         </Box>
-      </SimpleGrid>
+      </VStack>
     </Box>
   );
 }
-

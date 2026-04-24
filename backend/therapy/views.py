@@ -1131,6 +1131,11 @@ def _razorpay_webhook_secret():
     return getattr(settings, "RAZORPAY_WEBHOOK_SECRET", None) or os.getenv("RAZORPAY_WEBHOOK_SECRET")
 
 
+def _is_razorpay_test_mode() -> bool:
+    key_id = _razorpay_key_id() or ""
+    return str(key_id).startswith("rzp_test_")
+
+
 def _razorpay_request(method: str, path: str, payload=None):
     """
     Minimal Razorpay REST client using stdlib only.
@@ -1567,7 +1572,12 @@ class RazorpayVerifyTherapistSubscriptionView(APIView):
         # Optional live fetch to confirm current status
         sub_details = _razorpay_request("GET", f"/v1/subscriptions/{sub_id}", payload=None)
         sub_status = str(sub_details.get("status") or "").lower()
+        test_mode = _is_razorpay_test_mode()
         is_active = sub_status in {"active", "authenticated"}
+        # In Razorpay test mode, subscriptions may remain created/pending immediately after
+        # successful signature verification. Allow temporary access to unblock local/UAT gating.
+        if test_mode and sub_status in {"created", "pending"}:
+            is_active = True
 
         therapist.razorpay_subscription_id = sub_id
         therapist.subscription_status = "active" if is_active else "pending"
@@ -1592,6 +1602,8 @@ class RazorpayVerifyTherapistSubscriptionView(APIView):
                 "subscription_status": therapist.subscription_status,
                 "is_basic_subscribed": therapist.is_basic_subscribed,
                 "basic_plan": therapist.basic_plan,
+                "razorpay_test_mode": test_mode,
+                "razorpay_subscription_status": sub_status,
             }
         )
 
@@ -1619,7 +1631,11 @@ class TherapistSubscriptionStatusView(APIView):
                     except Exception:
                         current_end = None
 
+                test_mode = _is_razorpay_test_mode()
                 if razorpay_status in {"active", "authenticated"}:
+                    therapist.subscription_status = "active"
+                    therapist.is_basic_subscribed = True
+                elif test_mode and razorpay_status in {"created", "pending"}:
                     therapist.subscription_status = "active"
                     therapist.is_basic_subscribed = True
                 elif razorpay_status in {"cancelled", "halted"}:

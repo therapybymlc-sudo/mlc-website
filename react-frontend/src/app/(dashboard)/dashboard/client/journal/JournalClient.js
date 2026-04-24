@@ -165,7 +165,7 @@ export default function JournalClient() {
                 <Heading size="xl" color="#2E2E2E" fontWeight="900">{config.label}</Heading>
             </VStack>
             
-            <Center position="relative" w="280px" h="280px">
+            <Center position="relative" w={{ base: "200px", md: "280px" }} h={{ base: "200px", md: "280px" }}>
                 {/* Secondary Ripple/Echo */}
                 <MotionBox
                     animate={{ 
@@ -173,9 +173,9 @@ export default function JournalClient() {
                         opacity: [0.3, 0.1, 0.3]
                     }}
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    w={{ base: "140px", md: "180px" }}
+                    h={{ base: "140px", md: "180px" }}
                     position="absolute"
-                    w="180px"
-                    h="180px"
                     borderRadius="full"
                     border="2px solid"
                     borderColor={config.color}
@@ -188,8 +188,8 @@ export default function JournalClient() {
                         borderRadius: ["50%", "40% 60% 50% 50% / 50% 50% 60% 40%", "50%"]
                     }}
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    w="180px"
-                    h="180px"
+                    w={{ base: "140px", md: "180px" }}
+                    h={{ base: "140px", md: "180px" }}
                     bg={config.color}
                     boxShadow={`0 0 70px ${config.glow}`}
                     zIndex={1}
@@ -340,12 +340,12 @@ export default function JournalClient() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     bg="white" 
-                    p={{ base: 6, md: 10 }} 
-                    borderRadius="4xl" 
+                    p={{ base: 5, md: 10 }} 
+                    borderRadius={{ base: "3xl", md: "4xl" }} 
                     shadow="xl" 
                     border="1px solid" 
                     borderColor="gray.50"
-                    minH="700px"
+                    minH={{ base: "auto", md: "700px" }}
                     display="flex"
                     flexDirection="column"
                     justifyContent="center"

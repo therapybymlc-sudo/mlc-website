@@ -1,204 +1,354 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import NextLink from 'next/link';
 import {
   Box,
   Badge,
   Button,
+  Divider,
   Flex,
   Heading,
   HStack,
   Icon,
+  List,
+  ListIcon,
+  ListItem,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalOverlay,
-  Progress,
   SimpleGrid,
   Text,
   VStack,
 } from '@chakra-ui/react';
-import { FiTrendingUp, FiUsers, FiFileText, FiClock, FiShield, FiArrowRight } from 'react-icons/fi';
+import { CheckCircleIcon } from '@chakra-ui/icons';
+import { FiArrowRight } from 'react-icons/fi';
 
-const SLIDES = [
-  {
-    title: 'Get matched with new clients',
-    subtitle: 'Become visible on the MLC platform and grow your practice pipeline.',
-    icon: FiUsers,
-    bullets: ['Appear in therapist discovery', 'Receive structured booking requests', 'Build long-term caseload consistency'],
-  },
-  {
-    title: 'Go paperless with your practice',
-    subtitle: 'Manage sessions, notes, resources, and follow-ups in one clinical workspace.',
-    icon: FiFileText,
-    bullets: ['Clinical schedule + recurring sessions', 'Goals, journals, and care tools', 'Everything synced in one dashboard'],
-  },
-  {
-    title: 'Cut admin work to near zero',
-    subtitle: 'Let MLC handle repetitive workflows so you focus on therapeutic impact.',
-    icon: FiClock,
-    bullets: ['Streamlined appointment workflows', 'Automated client-facing flow', 'Faster daily operations'],
-  },
+const MONTHLY_INR = 99;
+const ANNUAL_INR = 999;
+const MONTHLY_IF_PAID_MONTHLY_YEAR = MONTHLY_INR * 12;
+
+const PLAN_FEATURES = [
+  'Appear in therapist discovery & client matching',
+  'Structured booking requests & clinical calendar',
+  'In-platform secure video sessions',
+  'Encrypted messaging & Care Space workflows',
+  'Goals, journals, resources & supervision tools',
+  'Billing, invoicing & payment link automation',
 ];
+
+function PlanCard({
+  planKey,
+  name,
+  billingLabel,
+  priceMain,
+  priceUnit,
+  compareAt,
+  compareLabel,
+  subline,
+  isRecommended,
+  badgeLabel,
+  onSelectPlan,
+  loadingPlan,
+  monthlyUrl,
+  annualUrl,
+  isCurrent,
+  emphasized,
+}) {
+  const bg = isRecommended ? 'linear-gradient(180deg, #FFFCF5 0%, #FFFFFF 40%)' : 'white';
+
+  return (
+    <Box
+      position="relative"
+      borderRadius="2xl"
+      borderWidth={isRecommended ? '2px' : '1px'}
+      borderColor={isRecommended ? 'transparent' : 'gray.200'}
+      bg={bg}
+      boxShadow={emphasized ? '0 20px 50px -24px rgba(46, 74, 68, 0.35)' : '0 4px 24px -12px rgba(15, 23, 42, 0.12)'}
+      overflow="hidden"
+      transition="box-shadow 0.2s ease, transform 0.2s ease"
+      _hover={{ boxShadow: '0 24px 56px -20px rgba(46, 74, 68, 0.28)' }}
+      pl={isRecommended ? '3px' : 0}
+    >
+      {isRecommended ? (
+        <Box position="absolute" left={0} top={0} bottom={0} w="4px" bgGradient="linear(to-b, #C9A960, #56756D)" />
+      ) : null}
+      <Box p={{ base: 6, md: 8 }}>
+        <VStack align="center" spacing={1} mb={5} minH="52px" justify="center">
+          {badgeLabel ? (
+            <Badge
+              colorScheme={
+                badgeLabel === 'Recommended' ? 'green' : badgeLabel === 'Current plan' ? 'teal' : 'gray'
+              }
+              borderRadius="full"
+              px={3}
+              py={1}
+              fontSize="xs"
+              fontWeight="600"
+              textTransform="none"
+              letterSpacing="0.02em"
+            >
+              {badgeLabel}
+            </Badge>
+          ) : (
+            <Box h="24px" />
+          )}
+          <Text fontSize="xs" fontWeight="600" color="gray.500" letterSpacing="0.12em" textTransform="uppercase">
+            {name}
+          </Text>
+          <Text fontSize="sm" color="gray.600">
+            {billingLabel}
+          </Text>
+        </VStack>
+
+        <VStack spacing={1} mb={1} align="center">
+          <HStack align="baseline" spacing={1}>
+            <Text fontSize={{ base: '4xl', md: '5xl' }} fontWeight="700" color="#1a202c" letterSpacing="-0.03em" lineHeight="1">
+              INR {priceMain}
+            </Text>
+            <Text fontSize="lg" color="gray.500" fontWeight="500">
+              {priceUnit}
+            </Text>
+          </HStack>
+          {compareAt != null ? (
+            <HStack spacing={2} fontSize="sm">
+              <Text as="span" color="gray.400" textDecoration="line-through">
+                INR {compareAt}
+              </Text>
+              <Text as="span" color="green.600" fontWeight="600">
+                {compareLabel}
+              </Text>
+            </HStack>
+          ) : null}
+          {subline ? (
+            <Text fontSize="sm" color="gray.500" textAlign="center" pt={1}>
+              {subline}
+            </Text>
+          ) : null}
+        </VStack>
+
+        <Button
+          as={onSelectPlan ? 'button' : NextLink}
+          href={onSelectPlan ? undefined : planKey === 'monthly' ? monthlyUrl : annualUrl}
+          mt={6}
+          w="full"
+          minH={{ base: '48px', md: '52px' }}
+          size="lg"
+          borderRadius="xl"
+          fontWeight="600"
+          whiteSpace="normal"
+          textAlign="center"
+          isDisabled={isCurrent}
+          variant={isRecommended ? 'solid' : 'outline'}
+          bg={isRecommended ? '#56756D' : undefined}
+          color={isRecommended ? 'white' : '#56756D'}
+          borderColor="#56756D"
+          _hover={
+            isRecommended
+              ? { bg: '#3E5B54' }
+              : { bg: 'rgba(86, 117, 109, 0.06)' }
+          }
+          rightIcon={isCurrent ? undefined : <Icon as={FiArrowRight} />}
+          onClick={onSelectPlan && !isCurrent ? () => onSelectPlan(planKey) : undefined}
+          isLoading={loadingPlan === planKey}
+          loadingText="Starting…"
+        >
+          {isCurrent ? 'Current plan' : planKey === 'monthly' ? 'Start monthly' : 'Start annual'}
+        </Button>
+
+        <Divider my={8} borderColor="gray.100" />
+
+        <Text fontSize="xs" fontWeight="700" color="gray.500" letterSpacing="0.08em" textTransform="uppercase" mb={4}>
+          Everything included
+        </Text>
+        <List spacing={3}>
+          {PLAN_FEATURES.map((line) => (
+            <ListItem key={line} display="flex" alignItems="flex-start" fontSize="sm" color="gray.700" lineHeight="1.45">
+              <ListIcon as={CheckCircleIcon} color="#56756D" mt={0.5} flexShrink={0} />
+              {line}
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </Box>
+  );
+}
 
 export default function TherapistSubscriptionGateway({
   isOpen = false,
   onClose,
   title = 'Unlock MLC Therapist Platform',
-  contextLabel = 'This action requires an active therapist subscription.',
-  mode = 'modal', // modal | inline
+  contextLabel = 'Compare plans and activate your therapist operating system.',
+  mode = 'modal',
+  variant = 'default',
   onSelectPlan,
   loadingPlan = '',
+  subscription = null,
 }) {
-  const [slideIndex, setSlideIndex] = useState(0);
-  const slide = SLIDES[slideIndex];
+  const [billingFocus, setBillingFocus] = useState('annual');
 
-  const monthlyUrl = process.env.NEXT_PUBLIC_THERAPIST_BASIC_MONTHLY_URL || '/dashboard/therapist/subscription?plan=basic_monthly';
-  const annualUrl = process.env.NEXT_PUBLIC_THERAPIST_BASIC_ANNUAL_URL || '/dashboard/therapist/subscription?plan=basic_annual';
+  const monthlyUrl =
+    process.env.NEXT_PUBLIC_THERAPIST_BASIC_MONTHLY_URL || '/dashboard/therapist/subscription?plan=basic_monthly';
+  const annualUrl =
+    process.env.NEXT_PUBLIC_THERAPIST_BASIC_ANNUAL_URL || '/dashboard/therapist/subscription?plan=basic_annual';
   const premiumUrl = process.env.NEXT_PUBLIC_THERAPIST_PREMIUM_URL || '/dashboard/therapist/premium';
 
-  const Body = useMemo(
-    () => (
-      <VStack align="stretch" spacing={6}>
-        <Box bg="linear-gradient(135deg, #56756D 0%, #2E4A44 100%)" borderRadius="2xl" p={6} color="white">
-          <HStack justify="space-between" align="start" mb={4}>
-            <VStack align="start" spacing={1}>
-              <Badge bg="whiteAlpha.300" color="white" borderRadius="full" px={3} py={1}>
-                Basic Plan Gate
-              </Badge>
-              <Heading size="md">{title}</Heading>
-              <Text fontSize="sm" opacity={0.9}>
-                {contextLabel}
-              </Text>
-            </VStack>
-            <Icon as={slide.icon} boxSize={7} />
-          </HStack>
+  const planNorm = (subscription?.basic_plan || '').toLowerCase();
+  const statusNorm = (subscription?.subscription_status || '').toLowerCase();
+  const isActiveish =
+    subscription?.is_basic_subscribed &&
+    (statusNorm === 'active' || statusNorm === 'pending' || statusNorm === 'created');
+  const isCurrentMonthly = isActiveish && planNorm === 'monthly';
+  const isCurrentAnnual = isActiveish && planNorm === 'annual';
 
-          <VStack align="start" spacing={2}>
-            <Heading size="sm">{slide.title}</Heading>
-            <Text fontSize="sm" opacity={0.9}>
-              {slide.subtitle}
-            </Text>
-            {slide.bullets.map((b) => (
-              <HStack key={b} spacing={2} align="start">
-                <Text mt="-1px">•</Text>
-                <Text fontSize="sm">{b}</Text>
-              </HStack>
-            ))}
-          </VStack>
+  const showHeader = variant !== 'embedded';
 
-          <HStack mt={4} spacing={3}>
-            <Button
-              size="sm"
-              variant="outline"
-              borderColor="whiteAlpha.500"
-              color="white"
-              _hover={{ bg: 'whiteAlpha.200' }}
-              onClick={() => setSlideIndex((s) => Math.max(0, s - 1))}
-              isDisabled={slideIndex === 0}
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              bg="white"
-              color="#2E4A44"
-              _hover={{ bg: 'gray.100' }}
-              onClick={() => setSlideIndex((s) => Math.min(SLIDES.length - 1, s + 1))}
-              isDisabled={slideIndex === SLIDES.length - 1}
-            >
-              Next
-            </Button>
-          </HStack>
-          <Progress value={((slideIndex + 1) / SLIDES.length) * 100} size="xs" mt={3} borderRadius="full" bg="whiteAlpha.300" />
-        </Box>
-
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-          <Box border="1px solid" borderColor="gray.100" borderRadius="2xl" p={5} bg="white">
-            <HStack mb={2}>
-              <Icon as={FiShield} color="#56756D" />
-              <Text fontWeight="700">Basic Monthly</Text>
-            </HStack>
-            <Heading size="md" color="#2E2E2E">
-              INR 99<span style={{ fontSize: '0.8rem', color: '#6B7280' }}>/month</span>
-            </Heading>
-            <Text mt={2} fontSize="sm" color="gray.600">
-              Get listed publicly, get matched with clients, and use core MLC therapist dashboard tools.
-            </Text>
-            <Button
-              as={onSelectPlan ? 'button' : NextLink}
-              href={onSelectPlan ? undefined : monthlyUrl}
-              mt={4}
-              w="full"
-              bg="#56756D"
-              color="white"
-              borderRadius="full"
-              rightIcon={<FiArrowRight />}
-              _hover={{ bg: '#3E5B54' }}
-              onClick={onSelectPlan ? () => onSelectPlan('monthly') : undefined}
-              isLoading={loadingPlan === 'monthly'}
-              loadingText="Starting..."
-            >
-              Start Monthly Plan
-            </Button>
-          </Box>
-
-          <Box border="2px solid" borderColor="#C9A960" borderRadius="2xl" p={5} bg="#FFFDF7">
-            <HStack mb={2}>
-              <Icon as={FiTrendingUp} color="#C9A960" />
-              <Text fontWeight="700">Basic Annual</Text>
-              <Badge colorScheme="green">Best Value</Badge>
-            </HStack>
-            <Heading size="md" color="#2E2E2E">
-              INR 999<span style={{ fontSize: '0.8rem', color: '#6B7280' }}>/year</span>
-            </Heading>
-            <Text mt={2} fontSize="sm" color="gray.600">
-              Everything in Basic, at a lower annual cost to ramp up your practice faster.
-            </Text>
-            <Button
-              as={onSelectPlan ? 'button' : NextLink}
-              href={onSelectPlan ? undefined : annualUrl}
-              mt={4}
-              w="full"
-              bg="#C9A960"
-              color="#2E2E2E"
-              borderRadius="full"
-              rightIcon={<FiArrowRight />}
-              _hover={{ bg: '#B89343' }}
-              onClick={onSelectPlan ? () => onSelectPlan('annual') : undefined}
-              isLoading={loadingPlan === 'annual'}
-              loadingText="Starting..."
-            >
-              Start Annual Plan
-            </Button>
-          </Box>
-        </SimpleGrid>
-
-        <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
-          <Text fontSize="xs" color="gray.500">
-            Want advanced automation and premium clinical growth tools?
+  const ComparisonBody = (
+    <VStack align="stretch" spacing={{ base: 8, md: 10 }}>
+      {showHeader ? (
+        <VStack spacing={2} align={{ base: 'center', md: 'start' }} textAlign={{ base: 'center', md: 'left' }}>
+          <Text fontSize="xs" fontWeight="700" letterSpacing="0.14em" color="#56756D" textTransform="uppercase">
+            MLC therapist access
           </Text>
-          <Button as={NextLink} href={premiumUrl} variant="ghost" colorScheme="purple" size="sm">
-            Explore Premium Gateway
+          <Heading size="lg" color="#1a202c" fontWeight="700" letterSpacing="-0.02em">
+            {title}
+          </Heading>
+          <Text color="gray.600" fontSize="md" maxW="640px">
+            {contextLabel}
+          </Text>
+        </VStack>
+      ) : null}
+
+      <Flex justify="center" w="full">
+        <HStack
+          role="group"
+          spacing={{ base: 2, md: 0 }}
+          p={1}
+          bg="gray.100"
+          borderRadius={{ base: 'xl', md: 'full' }}
+          border="1px solid"
+          borderColor="gray.200"
+          w={{ base: 'full', md: 'auto' }}
+          flexDir={{ base: 'column', md: 'row' }}
+        >
+          <Button
+            size="sm"
+            borderRadius="full"
+            px={{ base: 4, md: 6 }}
+            w={{ base: 'full', md: 'auto' }}
+            minH="44px"
+            variant={billingFocus === 'monthly' ? 'solid' : 'ghost'}
+            bg={billingFocus === 'monthly' ? 'white' : 'transparent'}
+            color={billingFocus === 'monthly' ? '#1a202c' : 'gray.600'}
+            boxShadow={billingFocus === 'monthly' ? 'sm' : 'none'}
+            fontWeight="600"
+            onClick={() => setBillingFocus('monthly')}
+          >
+            Pay monthly
           </Button>
-        </Flex>
-      </VStack>
-    ),
-    [contextLabel, monthlyUrl, annualUrl, premiumUrl, slide, slideIndex, title]
+          <Button
+            size="sm"
+            borderRadius="full"
+            px={{ base: 4, md: 6 }}
+            w={{ base: 'full', md: 'auto' }}
+            minH="44px"
+            variant={billingFocus === 'annual' ? 'solid' : 'ghost'}
+            bg={billingFocus === 'annual' ? 'white' : 'transparent'}
+            color={billingFocus === 'annual' ? '#1a202c' : 'gray.600'}
+            boxShadow={billingFocus === 'annual' ? 'sm' : 'none'}
+            fontWeight="600"
+            onClick={() => setBillingFocus('annual')}
+          >
+            Pay annually
+          </Button>
+        </HStack>
+      </Flex>
+
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 6, lg: 8 }} alignItems="stretch">
+        <PlanCard
+          planKey="monthly"
+          name="Basic Monthly"
+          billingLabel="Flexible · cancel anytime"
+          priceMain={MONTHLY_INR}
+          priceUnit="/ month"
+          compareAt={null}
+          compareLabel={null}
+          subline="Full platform access, billed each month."
+          isRecommended={false}
+          badgeLabel={isCurrentMonthly ? 'Current plan' : billingFocus === 'monthly' ? 'Popular for trying MLC' : null}
+          onSelectPlan={onSelectPlan}
+          loadingPlan={loadingPlan}
+          monthlyUrl={monthlyUrl}
+          annualUrl={annualUrl}
+          isCurrent={isCurrentMonthly}
+          emphasized={billingFocus === 'monthly'}
+        />
+        <PlanCard
+          planKey="annual"
+          name="Basic Annual"
+          billingLabel="Best value · one payment per year"
+          priceMain={ANNUAL_INR}
+          priceUnit="/ year"
+          compareAt={MONTHLY_IF_PAID_MONTHLY_YEAR}
+          compareLabel={`Save INR ${MONTHLY_IF_PAID_MONTHLY_YEAR - ANNUAL_INR}`}
+          subline={`Equivalent to ~INR ${Math.round(ANNUAL_INR / 12)} / month when billed annually.`}
+          isRecommended
+          badgeLabel={isCurrentAnnual ? 'Current plan' : 'Recommended'}
+          onSelectPlan={onSelectPlan}
+          loadingPlan={loadingPlan}
+          monthlyUrl={monthlyUrl}
+          annualUrl={annualUrl}
+          isCurrent={isCurrentAnnual}
+          emphasized={billingFocus === 'annual'}
+        />
+      </SimpleGrid>
+
+      <Flex
+        justify="space-between"
+        align="center"
+        wrap="wrap"
+        gap={4}
+        pt={2}
+        borderTop="1px solid"
+        borderColor="gray.100"
+      >
+        <Text fontSize="sm" color="gray.500" maxW="lg">
+          Need advanced automation, premium growth tools, or enterprise rollout? Explore the Premium gateway.
+        </Text>
+        <Button as={NextLink} href={premiumUrl} variant="outline" colorScheme="purple" size="sm" borderRadius="lg">
+          Explore Premium Gateway
+        </Button>
+      </Flex>
+    </VStack>
   );
 
   if (mode === 'inline') {
-    return <Box>{Body}</Box>;
+    return <Box>{ComparisonBody}</Box>;
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered scrollBehavior="inside">
-      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
-      <ModalContent borderRadius={{ base: "none", md: "3xl" }} overflow="hidden" m={{ base: 0, md: 4 }} maxH={{ base: "100vh", md: "90vh" }}>
-        <ModalCloseButton zIndex={2} top="15px" right="15px" bg="whiteAlpha.300" _hover={{ bg: "whiteAlpha.400" }} borderRadius="full" />
-        <ModalBody p={{ base: 4, md: 8 }} overflowY="auto">{Body}</ModalBody>
+      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
+      <ModalContent
+        borderRadius={{ base: 'none', md: '3xl' }}
+        overflow="hidden"
+        m={{ base: 0, md: 4 }}
+        maxH={{ base: '100vh', md: '92vh' }}
+        boxShadow="0 25px 80px -20px rgba(0,0,0,0.35)"
+      >
+        <ModalCloseButton
+          zIndex={2}
+          top="14px"
+          right="14px"
+          borderRadius="full"
+          bg="gray.100"
+          _hover={{ bg: 'gray.200' }}
+        />
+        <ModalBody p={{ base: 5, md: 10 }} overflowY="auto">
+          {ComparisonBody}
+        </ModalBody>
       </ModalContent>
     </Modal>
   );
