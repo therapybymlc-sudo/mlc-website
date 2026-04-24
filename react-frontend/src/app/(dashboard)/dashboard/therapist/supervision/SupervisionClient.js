@@ -8,16 +8,27 @@ import {
   useDisclosure, Textarea, IconButton
 } from "@chakra-ui/react";
 import { FiUsers, FiFileText, FiUploadCloud, FiBook, FiCheckCircle, FiClock, FiPlus, FiCalendar } from "react-icons/fi";
-import { apiGet, apiPatch } from "../../../../../api.js";
+import { apiGet, apiPost } from "../../../../../api.js";
 import NextLink from "next/link";
 
 export default function SupervisionClient() {
   const [isMounted, setIsMounted] = useState(false);
   const [relationships, setRelationships] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [actionItems, setActionItems] = useState([]);
+  const [timeline, setTimeline] = useState([]);
+  const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSupervisee, setSelectedSupervisee] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [noteContent, setNoteContent] = useState("");
+  const [noteAgenda, setNoteAgenda] = useState("");
+  const [noteFormulation, setNoteFormulation] = useState("");
+  const [noteNextSteps, setNoteNextSteps] = useState("");
+  const [newActionItem, setNewActionItem] = useState({ title: "", owner: "supervisee", due_date: "" });
+  const [savingNote, setSavingNote] = useState(false);
+  const [savingActionItem, setSavingActionItem] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -27,12 +38,136 @@ export default function SupervisionClient() {
 
   const fetchSupervisionData = async () => {
     try {
-      const data = await apiGet("supervisory-relationships/");
-      setRelationships(data || []);
+      const [relData, sessionData, noteData, actionData, reminderData] = await Promise.all([
+        apiGet("supervisory-relationships/"),
+        apiGet("supervisory-relationships/my-supervisor-sessions/").catch(() => []),
+        apiGet("supervision-notes/").catch(() => []),
+        apiGet("supervision-action-items/").catch(() => []),
+        apiGet("supervision-action-items/my-reminders/").catch(() => []),
+      ]);
+      setRelationships(Array.isArray(relData) ? relData : []);
+      setSessions(Array.isArray(sessionData) ? sessionData : []);
+      setNotes(Array.isArray(noteData) ? noteData : []);
+      setActionItems(Array.isArray(actionData) ? actionData : []);
+      setReminders(Array.isArray(reminderData) ? reminderData : []);
+
+      if (!selectedSupervisee && Array.isArray(relData) && relData.length > 0) {
+        setSelectedSupervisee(relData[0]);
+      }
     } catch (err) {
       toast({ title: "Sync Error", description: "Failed to load supervision caseload.", status: "error" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const superviseeCards = React.useMemo(() => {
+    const byRelationship = new Map();
+    relationships.forEach((rel) => {
+      byRelationship.set(rel.id, {
+        id: rel.id,
+        supervisee_name: rel.supervisee_name,
+        supervisee_title: rel.supervisee_title || "Practitioner",
+        status: rel.status,
+        supervisee_bio: "",
+        supervisee_email: "",
+      });
+    });
+
+    sessions.forEach((session) => {
+      if (!byRelationship.has(session.relationship_id)) {
+        byRelationship.set(session.relationship_id, {
+          id: session.relationship_id,
+          supervisee_name: session.supervisee_name,
+          supervisee_title: session.supervisee_title || "Practitioner",
+          status: "active",
+          supervisee_bio: session.supervisee_bio || "",
+          supervisee_email: session.supervisee_email || "",
+        });
+      } else {
+        const existing = byRelationship.get(session.relationship_id);
+        byRelationship.set(session.relationship_id, {
+          ...existing,
+          supervisee_bio: existing.supervisee_bio || session.supervisee_bio || "",
+          supervisee_email: existing.supervisee_email || session.supervisee_email || "",
+          supervisee_title: existing.supervisee_title || session.supervisee_title || "Practitioner",
+        });
+      }
+    });
+
+    return Array.from(byRelationship.values());
+  }, [relationships, sessions]);
+
+  const selectedSessions = React.useMemo(() => {
+    if (!selectedSupervisee) return sessions;
+    return sessions.filter((s) => s.relationship_id === selectedSupervisee.id);
+  }, [sessions, selectedSupervisee]);
+
+  const selectedNotes = React.useMemo(() => {
+    if (!selectedSupervisee) return [];
+    return notes.filter((n) => n.relationship === selectedSupervisee.id);
+  }, [notes, selectedSupervisee]);
+
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      if (!selectedSupervisee?.id) {
+        setTimeline([]);
+        return;
+      }
+      const data = await apiGet(`supervisory-relationships/${selectedSupervisee.id}/timeline/`).catch(() => []);
+      setTimeline(Array.isArray(data) ? data : []);
+    };
+    fetchTimeline();
+  }, [selectedSupervisee?.id]);
+
+  const handleCreateNote = async () => {
+    if (!selectedSupervisee || !noteContent.trim()) return;
+    setSavingNote(true);
+    try {
+      const latestSession = selectedSessions[0];
+      const payload = {
+        relationship: selectedSupervisee.id,
+        content: noteContent.trim(),
+        agenda: noteAgenda,
+        case_formulation: noteFormulation,
+        next_steps: noteNextSteps,
+      };
+      if (latestSession?.appointment_id) {
+        payload.appointment = latestSession.appointment_id;
+      }
+
+      await apiPost("supervision-notes/", payload);
+      setNoteContent("");
+      setNoteAgenda("");
+      setNoteFormulation("");
+      setNoteNextSteps("");
+      onClose();
+      toast({ title: "Note saved", description: "Supervision note added successfully.", status: "success" });
+      await fetchSupervisionData();
+    } catch (err) {
+      toast({ title: "Save failed", description: "Could not save supervision note.", status: "error" });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const handleCreateActionItem = async () => {
+    if (!selectedSupervisee?.id || !newActionItem.title.trim()) return;
+    setSavingActionItem(true);
+    try {
+      await apiPost("supervision-action-items/", {
+        relationship: selectedSupervisee.id,
+        title: newActionItem.title.trim(),
+        owner: newActionItem.owner,
+        due_date: newActionItem.due_date || null,
+      });
+      setNewActionItem({ title: "", owner: "supervisee", due_date: "" });
+      await fetchSupervisionData();
+      toast({ status: "success", title: "Action item added" });
+    } catch (err) {
+      toast({ status: "error", title: "Could not add action item" });
+    } finally {
+      setSavingActionItem(false);
     }
   };
 
@@ -74,10 +209,10 @@ export default function SupervisionClient() {
           <VStack align="stretch" spacing={4} gridColumn={{ lg: "span 1" }}>
             <HStack justify="space-between">
               <Heading size="sm" color="gray.700">Practitioners</Heading>
-              <Button size="xs" variant="ghost" colorScheme="teal" leftIcon={<FiPlus />}>Add</Button>
+              <Badge colorScheme="teal" borderRadius="full" px={3}>{superviseeCards.length}</Badge>
             </HStack>
             
-            {relationships.length > 0 ? relationships.map((rel) => (
+            {superviseeCards.length > 0 ? superviseeCards.map((rel) => (
               <Box 
                 key={rel.id} 
                 p={4} 
@@ -126,28 +261,178 @@ export default function SupervisionClient() {
                   <Divider mb={8} />
 
                   <VStack align="stretch" spacing={6}>
-                    <Heading size="xs" color="gray.400" textTransform="uppercase" letterSpacing="widest">Private Mentorship Records</Heading>
-                    
-                    {/* Dynamic Table for Notes */}
+                    <Heading size="xs" color="gray.400" textTransform="uppercase" letterSpacing="widest">
+                      Supervisee Profile
+                    </Heading>
+                    <Text fontSize="sm" color="gray.700" fontWeight="600">
+                      {selectedSupervisee.supervisee_title || "Practitioner"}
+                    </Text>
+                    {selectedSupervisee.supervisee_email && (
+                      <Text fontSize="sm" color="gray.600">{selectedSupervisee.supervisee_email}</Text>
+                    )}
+                    {selectedSupervisee.supervisee_bio && (
+                      <Text fontSize="sm" color="gray.600">
+                        {selectedSupervisee.supervisee_bio}
+                      </Text>
+                    )}
+                  </VStack>
+                </Box>
+
+                <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                  <HStack justify="space-between" mb={5}>
+                    <Heading size="sm" color="mlc.greenDark">Action Items</Heading>
+                    <Badge colorScheme="purple" borderRadius="full" px={3}>
+                      {actionItems.filter((a) => a.relationship === selectedSupervisee.id).length}
+                    </Badge>
+                  </HStack>
+                  <VStack align="stretch" spacing={3}>
+                    <Textarea
+                      minH="70px"
+                      placeholder="Add a concrete next step..."
+                      value={newActionItem.title}
+                      onChange={(e) => setNewActionItem((prev) => ({ ...prev, title: e.target.value }))}
+                    />
+                    <HStack>
+                      <Button
+                        size="sm"
+                        variant={newActionItem.owner === "supervisee" ? "solid" : "outline"}
+                        colorScheme="teal"
+                        borderRadius="full"
+                        onClick={() => setNewActionItem((prev) => ({ ...prev, owner: "supervisee" }))}
+                      >
+                        Assign to Supervisee
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={newActionItem.owner === "supervisor" ? "solid" : "outline"}
+                        colorScheme="teal"
+                        borderRadius="full"
+                        onClick={() => setNewActionItem((prev) => ({ ...prev, owner: "supervisor" }))}
+                      >
+                        Assign to Me
+                      </Button>
+                    </HStack>
+                    <input
+                      type="date"
+                      value={newActionItem.due_date}
+                      onChange={(e) => setNewActionItem((prev) => ({ ...prev, due_date: e.target.value }))}
+                      style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #E2E8F0" }}
+                    />
+                    <Button size="sm" colorScheme="teal" borderRadius="full" onClick={handleCreateActionItem} isLoading={savingActionItem}>
+                      Add Action Item
+                    </Button>
+                    <VStack align="stretch" spacing={2}>
+                      {actionItems
+                        .filter((a) => a.relationship === selectedSupervisee.id)
+                        .slice(0, 8)
+                        .map((a) => (
+                          <HStack key={a.id} justify="space-between" p={3} borderRadius="xl" bg="gray.50">
+                            <Text fontSize="sm" color="gray.700">{a.title}</Text>
+                            <Badge borderRadius="full" colorScheme={a.status === "done" ? "green" : "orange"}>{a.status}</Badge>
+                          </HStack>
+                        ))}
+                    </VStack>
+                  </VStack>
+                </Box>
+
+                <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                  <HStack justify="space-between" mb={5}>
+                    <Heading size="sm" color="mlc.greenDark">Relationship Timeline</Heading>
+                    <Badge colorScheme="teal" borderRadius="full" px={3}>{timeline.length}</Badge>
+                  </HStack>
+                  {timeline.length === 0 ? (
+                    <Text fontSize="sm" color="gray.500">No timeline events yet.</Text>
+                  ) : (
+                    <VStack align="stretch" spacing={3}>
+                      {timeline.slice(0, 12).map((item) => (
+                        <Box key={`${item.type}-${item.id}`} p={3} borderRadius="xl" bg="gray.50" border="1px solid" borderColor="gray.100">
+                          <Text fontSize="xs" color="gray.500">
+                            {new Date(item.created_at).toLocaleString()} · {item.type.replace("_", " ")}
+                          </Text>
+                          <Text fontSize="sm" fontWeight="700" color="gray.700">{item.title}</Text>
+                          <Text fontSize="sm" color="gray.600">{item.summary}</Text>
+                        </Box>
+                      ))}
+                    </VStack>
+                  )}
+                </Box>
+
+                <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                  <HStack justify="space-between" mb={5}>
+                    <Heading size="sm" color="mlc.greenDark">Supervision Sessions</Heading>
+                    <Badge colorScheme="teal" borderRadius="full" px={3}>{selectedSessions.length} Sessions</Badge>
+                  </HStack>
+
+                  {selectedSessions.length === 0 ? (
+                    <Text fontSize="sm" color="gray.500">No supervision sessions mapped yet for this supervisee.</Text>
+                  ) : (
                     <Box overflowX="auto">
                       <Table variant="simple" size="sm">
                         <Thead>
                           <Tr>
-                            <Th>Date</Th>
-                            <Th>Session Focus</Th>
-                            <Th textAlign="right">Actions</Th>
+                            <Th>Supervisee</Th>
+                            <Th>Session</Th>
+                            <Th>Status</Th>
+                            <Th>Payment</Th>
+                            <Th>Session Link</Th>
                           </Tr>
                         </Thead>
                         <Tbody>
-                          <Tr>
-                            <Td color="gray.500" py={4}>No notes recorded yet.</Td>
-                            <Td></Td>
-                            <Td></Td>
-                          </Tr>
+                          {selectedSessions.map((s) => (
+                            <Tr key={`${s.relationship_id}-${s.note_id}`}>
+                              <Td>
+                                <Button variant="link" color="teal.700" onClick={() => setSelectedSupervisee({ ...selectedSupervisee, id: s.relationship_id })}>
+                                  {s.supervisee_name}
+                                </Button>
+                              </Td>
+                              <Td>{s.start_time ? new Date(s.start_time).toLocaleString() : "Not scheduled"}</Td>
+                              <Td>
+                                <Badge colorScheme={s.status === "completed" ? "green" : s.status === "cancelled" ? "red" : "orange"} borderRadius="full">
+                                  {s.status_label || s.status}
+                                </Badge>
+                              </Td>
+                              <Td>
+                                <Badge colorScheme={s.payment_status === "paid" ? "green" : "yellow"} borderRadius="full">
+                                  {s.payment_status === "paid" ? "Paid" : "Pending"}
+                                </Badge>
+                              </Td>
+                              <Td>
+                                {s.meeting_link ? (
+                                  <Button as="a" href={s.meeting_link} target="_blank" rel="noopener noreferrer" size="xs" colorScheme="teal" variant="outline" borderRadius="full">
+                                    Join
+                                  </Button>
+                                ) : (
+                                  <Text fontSize="xs" color="gray.500">Not assigned</Text>
+                                )}
+                              </Td>
+                            </Tr>
+                          ))}
                         </Tbody>
                       </Table>
                     </Box>
-                  </VStack>
+                  )}
+                </Box>
+
+                <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+                  <HStack justify="space-between" mb={5}>
+                    <Heading size="sm" color="mlc.greenDark">Supervision Notes</Heading>
+                    <Badge colorScheme="purple" borderRadius="full" px={3}>{selectedNotes.length} Notes</Badge>
+                  </HStack>
+                    
+                  {selectedNotes.length === 0 ? (
+                    <Text fontSize="sm" color="gray.500">No notes recorded yet.</Text>
+                  ) : (
+                    <VStack align="stretch" spacing={3}>
+                      {selectedNotes.slice(0, 8).map((n) => (
+                        <Box key={n.id} p={4} borderRadius="xl" bg="gray.50" border="1px solid" borderColor="gray.100">
+                          <Text fontSize="xs" color="gray.500" mb={1}>{new Date(n.created_at).toLocaleString()}</Text>
+                          <Text fontSize="sm" color="gray.700">
+                            {String(n.content || "").length > 220 ? `${String(n.content).slice(0, 220)}...` : n.content}
+                          </Text>
+                        </Box>
+                      ))}
+                    </VStack>
+                  )}
                 </Box>
 
                 {/* 🛡️ Secure Shared Vault Preview */}
@@ -201,14 +486,51 @@ export default function SupervisionClient() {
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
               />
+              <Textarea
+                placeholder="Session agenda"
+                value={noteAgenda}
+                onChange={(e) => setNoteAgenda(e.target.value)}
+              />
+              <Textarea
+                placeholder="Case formulation"
+                value={noteFormulation}
+                onChange={(e) => setNoteFormulation(e.target.value)}
+              />
+              <Textarea
+                placeholder="Next steps and homework"
+                value={noteNextSteps}
+                onChange={(e) => setNoteNextSteps(e.target.value)}
+              />
             </VStack>
           </ModalBody>
           <ModalFooter gap={3}>
             <Button variant="ghost" onClick={onClose} borderRadius="full">Discard</Button>
-            <Button bg="mlc.green" color="white" borderRadius="full" px={8} leftIcon={<FiCheckCircle />}>Seal Note</Button>
+            <Button
+              bg="mlc.green"
+              color="white"
+              borderRadius="full"
+              px={8}
+              leftIcon={<FiCheckCircle />}
+              onClick={handleCreateNote}
+              isLoading={savingNote}
+            >
+              Seal Note
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {reminders.length > 0 && (
+        <Box mt={8} p={5} borderRadius="2xl" border="1px solid" borderColor="orange.200" bg="orange.50">
+          <Heading size="xs" color="orange.800" mb={2}>Upcoming Supervision Reminders</Heading>
+          <VStack align="stretch" spacing={2}>
+            {reminders.slice(0, 5).map((r) => (
+              <Text key={r.id} fontSize="sm" color="orange.800">
+                • {r.title} {r.due_date ? `(due ${r.due_date})` : ""}
+              </Text>
+            ))}
+          </VStack>
+        </Box>
+      )}
     </Box>
   );
 }

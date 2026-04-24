@@ -11,41 +11,113 @@ import {
   useToast,
   Avatar,
   Icon,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
   Divider,
   Flex,
-  Center,
   Badge,
+  Container,
+  Circle,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiUsers, FiCalendar, FiClock, FiFileText, FiSettings, FiAward } from "react-icons/fi";
+import { 
+  FiUsers, 
+  FiCalendar, 
+  FiClock, 
+  FiFileText, 
+  FiSettings, 
+  FiAward, 
+  FiAlertCircle,
+  FiTrendingUp,
+  FiActivity,
+  FiStar,
+  FiPlus,
+  FiMessageSquare,
+  FiShield,
+  FiHeart,
+  FiCheckCircle
+} from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
 import NextLink from 'next/link';
 import { apiGet } from "../../../../api.js";
 import TherapistSubscriptionGateway from "../../../../components/TherapistSubscriptionGateway";
 import { useTherapistSubscriptionGate } from "../../../../hooks/useTherapistSubscriptionGate";
+import { motion } from "framer-motion";
+
+const MotionBox = motion(Box);
+
+const StatCard = ({ label, value, help, icon, color, href }) => (
+  <MotionBox
+    as={href ? NextLink : "div"}
+    href={href}
+    whileHover={{ y: -5, transition: { duration: 0.2 } }}
+    bg="rgba(255, 255, 255, 0.7)"
+    backdropFilter="blur(10px)"
+    p={6}
+    borderRadius="3xl"
+    border="1px solid"
+    borderColor="whiteAlpha.400"
+    shadow="sm"
+    position="relative"
+    overflow="hidden"
+    cursor={href ? "pointer" : "default"}
+    flex="1"
+  >
+    <Box position="absolute" top="-10px" right="-10px" opacity={0.05}>
+      <Icon as={icon} boxSize={32} color={color} />
+    </Box>
+    <VStack align="start" spacing={1}>
+      <HStack spacing={2} mb={2}>
+        <Icon as={icon} color={color} />
+        <Text fontSize="xs" fontWeight="800" color="gray.500" letterSpacing="widest" textTransform="uppercase">
+          {label}
+        </Text>
+      </HStack>
+      <Heading size="xl" color="#2E2E2E">{value}</Heading>
+      <Text fontSize="xs" color="gray.500" noOfLines={1}>{help}</Text>
+    </VStack>
+  </MotionBox>
+);
+
+const ActionItem = ({ icon, label, onClick, color, isComingSoon }) => (
+  <VStack 
+    p={4} 
+    borderRadius="2xl" 
+    bg="white" 
+    cursor={isComingSoon ? "default" : "pointer"}
+    transition="all 0.2s"
+    _hover={isComingSoon ? {} : { bg: 'rgba(86, 117, 109, 0.05)', transform: 'scale(1.02)', shadow: 'md' }}
+    shadow="xs"
+    onClick={isComingSoon ? null : onClick}
+    flex="1"
+    minW="100px"
+    position="relative"
+  >
+    {isComingSoon && <Badge position="absolute" top={1} right={1} fontSize="2xs" colorScheme="gray">SOON</Badge>}
+    <Box p={3} borderRadius="xl" bg={`${color}.50`}>
+      <Icon as={icon} boxSize={5} color={`${color}.500`} />
+    </Box>
+    <Text fontSize="xs" fontWeight="700" color="gray.700" mt={1} textAlign="center">{label}</Text>
+  </VStack>
+);
 
 export default function TherapistDashboardOverview() {
   const { user } = useUser();
   const toast = useToast();
   const [stats, setStats] = useState({ clients: 0, appointments: 0, requests: 0 });
   const [upcoming, setUpcoming] = useState([]);
-  const [relationships, setRelationships] = useState([]);
   const [profile, setProfile] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
   const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
 
+  const glassBg = "rgba(255, 255, 255, 0.4)";
+  const borderColor = "whiteAlpha.800";
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientData, apptData, profileData, relationData, bookingReqRes] = await Promise.all([
+        const [clientData, apptData, profileData, bookingReqRes] = await Promise.all([
           apiGet("clients/"),
           apiGet("appointments/"),
           apiGet("therapists/me/"),
-          apiGet("therapist-relationships/"),
           apiGet("therapist-booking-requests/").catch(() => []),
         ]);
         const brList = Array.isArray(bookingReqRes) ? bookingReqRes : (bookingReqRes?.results || []);
@@ -57,7 +129,6 @@ export default function TherapistDashboardOverview() {
         });
         setUpcoming(apptData || []);
         setProfile(profileData);
-        setRelationships(relationData || []);
       } catch (err) {
         console.warn("Dashboard sync failed", err);
       }
@@ -74,7 +145,7 @@ export default function TherapistDashboardOverview() {
         body: JSON.stringify({ supervision_status: "pending" }),
       });
       if (res.ok) {
-        toast({ title: "Application Sent!", description: "MLC is reviewing your clinical seniority 🌿", status: "success" });
+        toast({ title: "Application Sent!", description: "MLC is reviewing your credentials 🌿", status: "success" });
         setProfile(prev => ({ ...prev, supervision_status: "pending" }));
       }
     } catch (err) {
@@ -85,240 +156,244 @@ export default function TherapistDashboardOverview() {
   };
 
   return (
-    <Box>
-      <Flex direction={{ base: "column", sm: "row" }} align="center" justify="space-between" mb={10} gap={6}>
-        <HStack spacing={4} align={{ base: "center", sm: "center" }} direction={{ base: "column", sm: "row" }} textAlign={{ base: "center", sm: "left" }}>
-          <Avatar size="xl" name={user?.fullName} src={user?.imageUrl} border="4px solid white" shadow="lg" />
-          <VStack align={{ base: "center", sm: "start" }} spacing={0}>
-            <Heading as="h1" size="lg" color="#2E2E2E" noOfLines={1}>Welcome, {user?.firstName || 'Practitioner'}</Heading>
-            <Text color="gray.500">Your clinical space is ready.</Text>
-          </VStack>
-        </HStack>
-      </Flex>
+    <Box position="relative" pb={20}>
+      {/* 🏔️ Decorative Background Elements */}
+      <Box position="absolute" top="-100px" right="-100px" w="400px" h="400px" bg="rgba(86, 117, 109, 0.15)" filter="blur(100px)" borderRadius="full" zIndex={-1} />
+      <Box position="absolute" bottom="100px" left="-50px" w="300px" h="300px" bg="rgba(201, 169, 96, 0.1)" filter="blur(80px)" borderRadius="full" zIndex={-1} />
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
-        <Stat bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <StatLabel color="gray.500" fontWeight="700" fontSize="xs" letterSpacing="widest" whiteSpace="nowrap">ACTIVE CLIENTS</StatLabel>
-          <StatNumber fontSize="3xl" color="#56756D">{stats.clients}</StatNumber>
-          <StatHelpText noOfLines={1}>Clinician caseload</StatHelpText>
-        </Stat>
-
-        <Stat bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <StatLabel color="gray.500" fontWeight="700" fontSize="xs" letterSpacing="widest" whiteSpace="nowrap">TODAY'S SESSIONS</StatLabel>
-          <StatNumber fontSize="3xl" color="#C9A960">{stats.appointments}</StatNumber>
-          <StatHelpText noOfLines={1}>Next session soon</StatHelpText>
-        </Stat>
-
-        <Stat
-          as={NextLink}
-          href="/dashboard/therapist/booking-requests"
-          bg="white"
-          p={6}
-          borderRadius="3xl"
-          shadow="sm"
-          border="1px solid"
-          borderColor="gray.100"
-          cursor="pointer"
-          transition="shadow 0.2s"
-          _hover={{ shadow: "md", borderColor: "orange.200" }}
-        >
-          <StatLabel color="gray.500" fontWeight="700" fontSize="xs" letterSpacing="widest" whiteSpace="nowrap">NEW REQUESTS</StatLabel>
-          <StatNumber fontSize="3xl" color="orange.400">{stats.requests}</StatNumber>
-          <StatHelpText noOfLines={1}>Pending review — open to respond</StatHelpText>
-        </Stat>
-      </SimpleGrid>
-
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-        {/* Upcoming Sessions */}
-        <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <HStack justify="space-between" mb={6}>
-            <Heading size="md" color="#2E2E2E">Upcoming Sessions</Heading>
-            <Icon as={FiCalendar} color="#56756D" />
+      <Container maxW="container.xl" p={0}>
+        {/* 👋 Header Section */}
+        <Flex direction={{ base: "column", md: "row" }} align="center" justify="space-between" mb={8} gap={4}>
+          <HStack spacing={6}>
+            <Box position="relative">
+              <Avatar size="2xl" name={user?.fullName} src={user?.imageUrl} border="4px solid white" shadow="2xl" />
+              <Box position="absolute" bottom={1} right={1} bg="green.400" w={5} h={5} borderRadius="full" border="3px solid white" />
+            </Box>
+            <VStack align="start" spacing={0}>
+              <Badge variant="subtle" colorScheme="teal" borderRadius="full" px={3} mb={2} fontSize="2xs" fontWeight="800">
+                {profile?.is_premium ? "PREMIUM CLINICIAN" : "BASIC PORTAL"}
+              </Badge>
+              <Heading as="h1" size="xl" color="#2E2E2E" fontFamily="'Playfair Display', serif">
+                Hello, {user?.firstName || 'Practitioner'}
+              </Heading>
+              <Text color="gray.500" fontSize="md">Ready for today? {stats.appointments} sessions ahead.</Text>
+            </VStack>
           </HStack>
-          <VStack align="stretch" spacing={4}>
-            {upcoming.length > 0 ? upcoming.slice(0, 3).map((appt) => (
-                <HStack key={appt.id} justify="space-between" p={3} borderRadius="xl" _hover={{ bg: 'gray.50' }} wrap="nowrap">
-                    <HStack spacing={4} flex="1" overflow="hidden">
-                        <Box boxSize={10} bg="rgba(86, 117, 109, 0.1)" borderRadius="lg" display={{ base: "none", sm: "flex" }} alignItems="center" justify="center" flexShrink={0}>
-                            <Icon as={FiClock} color="#56756D" />
-                        </Box>
-                        <VStack align="start" spacing={0} overflow="hidden" flex="1">
-                            <Text fontWeight="700" noOfLines={1} color="#2E2E2E">{appt.client_name}</Text>
-                            <Text fontSize="xs" color="gray.500" whiteSpace="nowrap">{new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                        </VStack>
-                    </HStack>
-                    <HStack spacing={2} wrap="nowrap">
-                        <Button 
-                            as={NextLink} 
-                            href={`/conference/MLC_${appt.id}`}
-                            size="xs" 
-                            bg="#56756D" 
-                            color="white" 
-                            borderRadius="full" 
-                            px={4} 
-                            whiteSpace="nowrap"
-                            _hover={{ bg: '#455c56' }}
-                        >
-                            Join Session
-                        </Button>
-                        {relationships.find(r => r.client === appt.client) && (
-                            <Button 
-                                as={NextLink} 
-                                href={`/conference/MLC_Session_${relationships.find(r => r.client === appt.client).id}`}
-                                size="xs" 
-                                variant="outline" 
-                                colorScheme="teal" 
-                                borderRadius="full" 
-                                px={4} 
-                                whiteSpace="nowrap"
-                            >
-                                Lounge
-                            </Button>
-                        )}
-                        <Button size="xs" variant="ghost" colorScheme="teal" borderRadius="full" px={4} whiteSpace="nowrap">Note</Button>
-                    </HStack>
-                </HStack>
-            )) : (
-                <Text color="gray.500" fontSize="sm">No sessions scheduled for today.</Text>
-            )}
-          </VStack>
-          <Button mt={6} w="100%" borderRadius="full" colorScheme="teal" variant="outline" as={NextLink} href="/dashboard/therapist/schedule">
-            View Full Schedule
-          </Button>
-        </Box>
-
-        {/* Quick Actions */}
-        <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <Heading size="md" color="#2E2E2E" mb={6}>Clinical Actions</Heading>
-          <SimpleGrid columns={2} spacing={4}>
-            <VStack 
-                p={4} 
-                borderRadius="2xl" 
-                bg="#F9FAFB" 
-                cursor="pointer" 
-                _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
-                transition="all 0.2s"
-                onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/clients"))}
-            >
-                <Icon as={FiUsers} boxSize={6} color="#56756D" />
-                <Text fontSize="sm" fontWeight="600">Add Client</Text>
-            </VStack>
-            <VStack 
-                p={4} 
-                borderRadius="2xl" 
-                bg="#F9FAFB" 
-                cursor="pointer" 
-                _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
-                onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/care"))}
-            >
-                <Icon as={FiFileText} boxSize={6} color="#C9A960" />
-                <Text fontSize="sm" fontWeight="600">Session Note</Text>
-            </VStack>
-            <VStack 
-                p={4} 
-                borderRadius="2xl" 
-                bg="#F9FAFB" 
-                cursor="pointer" 
-                _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
-                onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/schedule"))}
-            >
-                <Icon as={FiCalendar} boxSize={6} color="#56756D" />
-                <Text fontSize="sm" fontWeight="600">Availability</Text>
-            </VStack>
-             <VStack 
-                p={4} 
-                borderRadius="2xl" 
-                bg="#F9FAFB" 
-                cursor="pointer" 
-                _hover={{ bg: 'rgba(86, 117, 109, 0.05)' }}
-            >
-                <Icon as={FiSettings} boxSize={6} color="gray.400" />
-                <Text fontSize="sm" fontWeight="600">Settings</Text>
-            </VStack>
-          </SimpleGrid>
-        </Box>
-      </SimpleGrid>
-      <Divider my={10} />
-
-      {/* 🏛️ Supervision Advancement Card */}
-      <Box 
-        bg="white" 
-        p={{ base: 6, md: 10 }} 
-        borderRadius="3xl" 
-        shadow="xl" 
-        border="2px solid" 
-        borderColor={profile?.supervision_status === 'approved' ? "mlc.gold" : "gray.50"}
-        position="relative"
-        overflow="hidden"
-      >
-        {profile?.supervision_status === 'approved' && (
-          <Box position="absolute" top="0" right="0" bg="mlc.gold" color="white" px={6} py={1} borderBottomLeftRadius="xl" fontSize="2xs" fontWeight="bold">CERTIFIED SUPERVISOR</Box>
-        )}
-        
-        <Flex direction={{ base: "column", lg: "row" }} gap={8} align={{ base: "stretch", lg: "center" }}>
-          <Box flex="1">
-            <HStack spacing={4} mb={4}>
-              <Icon as={FiAward} boxSize={{ base: 6, md: 8 }} color="mlc.gold" />
-              <VStack align="start" spacing={0}>
-                <Heading size={{ base: "sm", md: "md" }} color="mlc.greenDark">Clinical Supervision Program</Heading>
-                <Text fontSize="xs" color="gray.500">Mentoring the next generation of clinical excellence.</Text>
-              </VStack>
-            </HStack>
-            <Text color="gray.600" fontSize={{ base: "sm", md: "md" }} lineHeight="relaxed">
-              {profile?.years_experience < 5 
-                ? `Continue your clinical journey with MLC. Once you reach 5 years of experience, you'll be eligible to apply for supervisory status.`
-                : profile?.supervision_status === 'pending'
-                ? `Your application for Clinical Supervision is under review by the MLC Clinical Board. We will notify you once your credentials are confirmed.`
-                : profile?.supervision_status === 'approved'
-                ? `You are an active MLC Clinical Supervisor. You can now list separate availability for supervisees and manage mentorship sessions here.`
-                : `You are eligible to apply for Clinical Supervision status. This unlocks specialized tools and a dedicated supervisor profile tab.`
-              }
-            </Text>
-          </Box>
           
-          <VStack align={{ base: "stretch", lg: "end" }} spacing={4} minW={{ lg: "240px" }}>
-            {profile?.years_experience < 5 ? (
-              <Badge variant="subtle" colorScheme="gray" p={{ base: 3, md: 4 }} borderRadius="2xl" textAlign="center" whiteSpace="normal">
-                Requires {5 - profile?.years_experience} more years experience
-              </Badge>
-            ) : profile?.supervision_status === 'none' ? (
-              <Button 
-                size="lg" bg="mlc.green" color="white" borderRadius="full" px={10} h={{ base: 14, md: 16 }}
-                isLoading={isApplying}
-                _hover={{ bg: 'mlc.greenDark' }}
-                onClick={handleApplySupervision}
+          <HStack spacing={3}>
+             <Button 
+                as={NextLink} 
+                href="/dashboard/therapist/schedule" 
+                leftIcon={<FiCalendar />} 
+                bg="white" 
+                borderRadius="full" 
+                shadow="sm" 
+                _hover={{ shadow: 'md', transform: 'translateY(-2px)' }}
               >
-                Apply for Supervisor Role
+                Schedule
               </Button>
-            ) : profile?.supervision_status === 'pending' ? (
-              <Badge variant="solid" colorScheme="orange" p={{ base: 3, md: 4 }} borderRadius="2xl" textAlign="center">
-                Credentialing in Progress
-              </Badge>
-            ) : (
-              <Button variant="outline" borderColor="mlc.gold" color="mlc.gold" borderRadius="full" px={10} h={14} as={NextLink} href="/dashboard/therapist/supervision">
-                Enter Supervision Suite
+             <Button 
+                bg="#56756D" 
+                color="white" 
+                borderRadius="full" 
+                px={8} 
+                shadow="lg"
+                _hover={{ bg: '#455c56', transform: 'translateY(-2px)', shadow: 'xl' }}
+                as={NextLink}
+                href="/conference/lobby"
+              >
+                Join Session
               </Button>
-            )}
-          </VStack>
+          </HStack>
         </Flex>
-      </Box>
-      {!hasBasicAccess && (
-        <Box mt={8} p={4} borderRadius="xl" border="1px solid" borderColor="orange.200" bg="orange.50">
-          <Text fontSize="sm" color="orange.800" fontWeight="600">
-            You can explore features, but activation is required to use core therapist tools.
-          </Text>
-          <Button as={NextLink} href="/dashboard/therapist/subscription" mt={3} size="sm" colorScheme="orange" borderRadius="full">
-            Activate Basic Plan
-          </Button>
-        </Box>
-      )}
 
-      <TherapistSubscriptionGateway
-        isOpen={gateModal.isOpen}
-        onClose={gateModal.onClose}
-        contextLabel="Activate Basic to add clients, schedule sessions, and unlock full therapist workflow."
+        {/* ⚠️ Verification Alert */}
+        {profile?.is_verified === false && (
+          <Box mb={8} p={6} borderRadius="3xl" bg="orange.50" border="1px solid" borderColor="orange.200" shadow="sm">
+            <Flex direction={{ base: "column", md: "row" }} gap={4} justify="space-between" align="center">
+              <HStack align="flex-start" spacing={4}>
+                <Icon as={FiAlertCircle} boxSize={6} color="orange.500" mt={1} />
+                <VStack align="start" spacing={0}>
+                  <Heading size="sm" color="orange.800">Application Pending</Heading>
+                  <Text color="orange.800" fontSize="sm">Submit your therapist application to finalize your professional profile.</Text>
+                </VStack>
+              </HStack>
+              <Button as={NextLink} href="/therapist-apply" colorScheme="orange" borderRadius="full" px={8}>Submit Application</Button>
+            </Flex>
+          </Box>
+        )}
+
+        {/* 📊 Quick Stats */}
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
+          <StatCard label="Caseload" value={stats.clients} help="Active treatment journeys" icon={FiUsers} color="#56756D" href="/dashboard/therapist/clients" />
+          <StatCard label="Agenda" value={stats.appointments} help="Sessions booked today" icon={FiCalendar} color="#C9A960" href="/dashboard/therapist/schedule" />
+          <StatCard label="New Requests" value={stats.requests} help="Awaiting your response" icon={FiActivity} color="orange.400" href="/dashboard/therapist/booking-requests" />
+        </SimpleGrid>
+
+        <SimpleGrid columns={{ base: 1, lg: 5 }} spacing={8}>
+          {/* 📅 Ecosystem Agenda (Col 1-3) */}
+          <Box gridColumn={{ lg: "span 3" }}>
+            <VStack align="stretch" spacing={6}>
+              {/* Agenda Box */}
+              <Box bg={glassBg} backdropFilter="blur(10px)" p={8} borderRadius="3xl" border="1px solid" borderColor={borderColor} shadow="sm">
+                <HStack justify="space-between" mb={6}>
+                  <VStack align="start" spacing={0}>
+                    <Heading size="md" color="#2E2E2E">In-built Care Flow</Heading>
+                    <Text fontSize="xs" color="gray.500">Screening, sessions, and notes—all in one place.</Text>
+                  </VStack>
+                  <Icon as={FiCalendar} color="#56756D" boxSize={5} />
+                </HStack>
+                <VStack align="stretch" spacing={3}>
+                  {upcoming.length > 0 ? upcoming.slice(0, 3).map((appt) => (
+                    <Flex key={appt.id} align="center" p={4} bg="white" borderRadius="2xl" shadow="xs" transition="0.2s" _hover={{ shadow: 'md', border: '1px solid', borderColor: 'mlc.greenHighlight' }}>
+                      <VStack align="start" flex="1" spacing={0}>
+                        <Text fontWeight="700" color="#2E2E2E">{appt.client_name}</Text>
+                        <HStack spacing={2} color="gray.500" fontSize="xs">
+                           <Icon as={FiClock} />
+                           <Text>{new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                           <Divider orientation="vertical" h="10px" />
+                           <Text color="teal.600" fontWeight="600">Video Portal</Text>
+                        </HStack>
+                      </VStack>
+                      <Button as={NextLink} href={`/conference/MLC_${appt.id}`} size="sm" bg="#56756D" color="white" borderRadius="full" px={6}>Enter Session</Button>
+                    </Flex>
+                  )) : (
+                    <Box py={10} textAlign="center" borderRadius="2xl" border="2px dashed" borderColor="gray.100">
+                      <Text color="gray.500">Your clinical agenda is clear for today.</Text>
+                    </Box>
+                  )}
+                </VStack>
+              </Box>
+
+              {/* 🛡️ Secure Chat & Privacy Highlight */}
+              <Box 
+                bgGradient="linear(to-br, #56756D, #2D3D39)" 
+                p={8} 
+                borderRadius="3xl" 
+                color="white" 
+                shadow="xl" 
+                position="relative" 
+                overflow="hidden"
+              >
+                <Box position="absolute" top="-20px" right="-20px" opacity={0.1}>
+                  <Icon as={FiShield} boxSize={40} />
+                </Box>
+                <VStack align="start" spacing={4}>
+                  <HStack spacing={2}>
+                    <Icon as={FiMessageSquare} color="mlc.gold" />
+                    <Badge colorScheme="yellow" fontSize="2xs" borderRadius="full">COMING SOON</Badge>
+                  </HStack>
+                  <Heading size="md" fontFamily="'Playfair Display', serif">Secure & Private Communications</Heading>
+                  <Text fontSize="sm" color="whiteAlpha.800" maxW="450px">
+                    We are building a secure space where you can chat with clients without ever exchanging personal phone numbers. Protect your boundaries and your personal life.
+                  </Text>
+                  <HStack spacing={4}>
+                    <Button bg="whiteAlpha.200" color="white" borderRadius="full" px={6} isDisabled>
+                      Opening Soon
+                    </Button>
+                    <Text fontSize="xs" color="whiteAlpha.600">Part of the complete ethical follow-through.</Text>
+                  </HStack>
+                </VStack>
+              </Box>
+
+              {/* 🌿 Wellbeing & Balance Highlight */}
+              <Box bg="white" p={8} borderRadius="3xl" border="1px solid" borderColor="teal.50" shadow="sm">
+                <HStack spacing={4} mb={4}>
+                  <Circle size="40px" bg="teal.50">
+                    <Icon as={FiHeart} color="teal.500" />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Heading size="sm" color="#2E2E2E">Practitioner Wellbeing</Heading>
+                    <Text fontSize="xs" color="gray.500">Because your health is the foundation of your care.</Text>
+                  </VStack>
+                </HStack>
+                <Text fontSize="sm" color="gray.600" mb={6} lineHeight="relaxed">
+                  The MLC ecosystem doesn’t just help you track your clients; it helps you track and care for your own wellbeing too. Work-life balance just got a lot easier with tools designed to prevent burnout and ensure you stay at your best.
+                </Text>
+                <SimpleGrid columns={2} spacing={4}>
+                  <HStack spacing={2}><Icon as={FiCheckCircle} color="teal.500" fontSize="xs" /><Text fontSize="xs" fontWeight="600">Burnout Tracking</Text></HStack>
+                  <HStack spacing={2}><Icon as={FiCheckCircle} color="teal.500" fontSize="xs" /><Text fontSize="xs" fontWeight="600">Balance Metrics</Text></HStack>
+                </SimpleGrid>
+              </Box>
+            </VStack>
+          </Box>
+
+          {/* 🛠️ Side Panel (Col 4-5) */}
+          <Box gridColumn={{ lg: "span 2" }}>
+            <VStack align="stretch" spacing={8}>
+              {/* Clinical Ecosystem Toolbox */}
+              <Box bg={glassBg} backdropFilter="blur(10px)" p={8} borderRadius="3xl" border="1px solid" borderColor={borderColor} shadow="sm">
+                <Heading size="sm" color="#2E2E2E" mb={6}>Clinical Ecosystem</Heading>
+                <SimpleGrid columns={2} spacing={3}>
+                  <ActionItem icon={FiPlus} label="New Screening" color="teal" onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/clients"))} />
+                  <ActionItem icon={FiFileText} label="Session Note" color="orange" onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/care"))} />
+                  <ActionItem icon={FiCalendar} label="Scheduling" color="teal" onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/schedule"))} />
+                  <ActionItem icon={FiTrendingUp} label="Billing Trends" color="gold" isComingSoon />
+                </SimpleGrid>
+                <Text mt={6} fontSize="xs" color="gray.500" fontStyle="italic">
+                  From screening to billing—never leave the platform.
+                </Text>
+              </Box>
+
+              {/* 🏛️ Career Growth / Supervision */}
+              <Box 
+                bgGradient="linear(to-br, white, teal.50)" 
+                p={8} 
+                borderRadius="3xl" 
+                shadow="md" 
+                border="1px solid" 
+                borderColor={profile?.supervision_status === 'approved' ? "mlc.gold" : "gray.100"}
+                position="relative"
+              >
+                {profile?.supervision_status === 'approved' && (
+                   <Badge position="absolute" top={4} right={4} colorScheme="yellow">SUPERVISOR</Badge>
+                )}
+                <HStack spacing={4} mb={4}>
+                  <Icon as={FiAward} boxSize={8} color="mlc.gold" />
+                  <Heading size="xs" color="mlc.greenDark" textTransform="uppercase" letterSpacing="0.1em">Supervision Suite</Heading>
+                </HStack>
+                <Text fontSize="xs" color="gray.600" mb={6} lineHeight="relaxed">
+                  Help grow the clinical community. Access specialized tools for mentorship and supervisee tracking.
+                </Text>
+                <Button 
+                  size="sm" 
+                  w="full" 
+                  borderRadius="full" 
+                  bg={profile?.supervision_status === 'approved' ? "transparent" : "mlc.green"}
+                  color={profile?.supervision_status === 'approved' ? "mlc.gold" : "white"}
+                  variant={profile?.supervision_status === 'approved' ? "outline" : "solid"}
+                  borderColor="mlc.gold"
+                  as={NextLink} 
+                  href="/dashboard/therapist/supervision"
+                  _hover={{ transform: 'translateY(-2px)' }}
+                >
+                  {profile?.supervision_status === 'approved' ? "Enter Supervision" : "Apply for Status"}
+                </Button>
+              </Box>
+
+              {/* 🚀 Pro Upgrade Upsell */}
+              <Box p={6} bg="gray.900" borderRadius="3xl" shadow="xl" color="white">
+                <HStack spacing={3} mb={4}>
+                  <Icon as={FiStar} color="mlc.gold" />
+                  <Text fontSize="xs" fontWeight="900" letterSpacing="0.1em">THE THERAPIST OS</Text>
+                </HStack>
+                <Text fontSize="xs" color="whiteAlpha.800" mb={4}>
+                  Unlock the full power of the ecosystem: Note Templates, Advanced Billing, and more.
+                </Text>
+                <Button size="xs" w="full" colorScheme="yellow" borderRadius="full" as={NextLink} href="/dashboard/therapist/subscription">
+                  Upgrade to Pro
+                </Button>
+              </Box>
+            </VStack>
+          </Box>
+        </SimpleGrid>
+      </Container>
+      
+      <TherapistSubscriptionGateway 
+        isOpen={gateModal.isOpen} 
+        onClose={gateModal.onClose} 
+        contextLabel="Unlock the full clinical ecosystem for your practice."
       />
-
     </Box>
   );
 }

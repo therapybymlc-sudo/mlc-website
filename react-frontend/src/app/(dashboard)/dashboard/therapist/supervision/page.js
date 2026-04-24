@@ -1,5 +1,4 @@
-import { Suspense } from 'react';
-import SupervisionClient from './SupervisionClient';
+import SupervisionGateClient from './SupervisionGateClient';
 
 export const metadata = {
   title: 'Supervision Suite | Professional Stewardship | MLC',
@@ -7,9 +6,5 @@ export const metadata = {
 };
 
 export default function SupervisionPage() {
-  return (
-    <Suspense fallback={null}>
-      <SupervisionClient />
-    </Suspense>
-  );
+  return <SupervisionGateClient />;
 }

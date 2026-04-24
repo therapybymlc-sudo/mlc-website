@@ -40,6 +40,8 @@ from therapy.models import (
     SupervisoryRelationship,
     SupervisionNote,
     SupervisionReport,
+    SupervisionActionItem,
+    SupervisionReflection,
 )
 
 from .utils import _resolve_therapist_from_request, client_preferred_display_name
@@ -1076,9 +1078,16 @@ class SupervisoryRelationshipSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class SupervisionNoteSerializer(serializers.ModelSerializer):
+    reminder_due = serializers.SerializerMethodField()
+
     class Meta:
         model = SupervisionNote
         fields = "__all__"
+
+    def get_reminder_due(self, obj):
+        if not obj.reminder_at:
+            return False
+        return obj.reminder_at <= timezone.now()
 
 class SupervisionReportSerializer(serializers.ModelSerializer):
     supervisee_name = serializers.ReadOnlyField(source="relationship.supervisee.name")
@@ -1090,3 +1099,21 @@ class SupervisionReportSerializer(serializers.ModelSerializer):
 
     def get_month_display(self, obj):
         return obj.month.strftime("%B %Y")
+
+
+class SupervisionActionItemSerializer(serializers.ModelSerializer):
+    relationship_supervisee_name = serializers.ReadOnlyField(source="relationship.supervisee.name")
+    relationship_supervisor_name = serializers.ReadOnlyField(source="relationship.supervisor.name")
+
+    class Meta:
+        model = SupervisionActionItem
+        fields = "__all__"
+
+
+class SupervisionReflectionSerializer(serializers.ModelSerializer):
+    relationship_supervisee_name = serializers.ReadOnlyField(source="relationship.supervisee.name")
+    relationship_supervisor_name = serializers.ReadOnlyField(source="relationship.supervisor.name")
+
+    class Meta:
+        model = SupervisionReflection
+        fields = "__all__"

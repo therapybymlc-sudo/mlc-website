@@ -1950,7 +1950,15 @@ class SupervisionNote(models.Model):
     relationship = models.ForeignKey(SupervisoryRelationship, on_delete=models.CASCADE, related_name="notes")
     appointment = models.OneToOneField("Appointment", on_delete=models.SET_NULL, null=True, blank=True)
     content = models.TextField()
+    agenda = models.TextField(blank=True, default="")
+    case_formulation = models.TextField(blank=True, default="")
+    risk_flags = models.JSONField(default=list, blank=True)
+    action_items_summary = models.TextField(blank=True, default="")
+    next_steps = models.TextField(blank=True, default="")
+    homework = models.TextField(blank=True, default="")
     attachments = models.JSONField(default=list, blank=True) # JSON list of file URLs
+    shared_with_supervisee = models.BooleanField(default=False)
+    reminder_at = models.DateTimeField(null=True, blank=True)
     is_private = models.BooleanField(default=True, help_text="Always True - only visible to supervisor")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1984,3 +1992,49 @@ class SupervisionReport(models.Model):
 
     def __str__(self):
         return f"Supervision Report - {self.relationship.supervisee.name} - {self.month.strftime('%B %Y')}"
+
+
+class SupervisionActionItem(models.Model):
+    class Owner(models.TextChoices):
+        SUPERVISOR = "supervisor", "Supervisor"
+        SUPERVISEE = "supervisee", "Supervisee"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        IN_PROGRESS = "in_progress", "In Progress"
+        DONE = "done", "Done"
+
+    relationship = models.ForeignKey(SupervisoryRelationship, on_delete=models.CASCADE, related_name="action_items")
+    note = models.ForeignKey(SupervisionNote, on_delete=models.SET_NULL, null=True, blank=True, related_name="action_items")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default="")
+    owner = models.CharField(max_length=20, choices=Owner.choices, default=Owner.SUPERVISEE)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    due_date = models.DateField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_by_supervisor = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["status", "due_date", "-created_at"]
+
+
+class SupervisionReflection(models.Model):
+    class ReflectionType(models.TextChoices):
+        PRE_SESSION = "pre_session", "Pre-session"
+        POST_SESSION = "post_session", "Post-session"
+
+    relationship = models.ForeignKey(SupervisoryRelationship, on_delete=models.CASCADE, related_name="reflections")
+    appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, null=True, blank=True, related_name="supervision_reflections")
+    reflection_type = models.CharField(max_length=20, choices=ReflectionType.choices)
+    goals = models.TextField(blank=True, default="")
+    discussion_points = models.TextField(blank=True, default="")
+    takeaways = models.TextField(blank=True, default="")
+    confidence_score = models.PositiveSmallIntegerField(default=5)
+    submitted_by_supervisee = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]

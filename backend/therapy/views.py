@@ -63,6 +63,8 @@ from therapy.models import (
     SupervisoryRelationship,
     SupervisionNote,
     SupervisionReport,
+    SupervisionActionItem,
+    SupervisionReflection,
     RazorpayPayment,
 )
 from therapy.utils import (
@@ -117,6 +119,8 @@ from therapy.serializers import (
     SupervisoryRelationshipSerializer,
     SupervisionNoteSerializer,
     SupervisionReportSerializer,
+    SupervisionActionItemSerializer,
+    SupervisionReflectionSerializer,
 )
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,
@@ -3309,6 +3313,86 @@ class SupervisoryRelationshipViewSet(viewsets.ModelViewSet):
             Q(supervisor=therapist) | Q(supervisee=therapist)
         )
 
+    @action(detail=False, methods=["get"], url_path="my-supervisee-sessions")
+    def my_supervisee_sessions(self, request):
+        therapist = _resolve_therapist_from_request(request)
+        if not therapist:
+            return Response([])
+
+        notes = (
+            SupervisionNote.objects.filter(
+                relationship__supervisee=therapist,
+                appointment__isnull=False,
+            )
+            .select_related("relationship__supervisor", "appointment")
+            .order_by("-appointment__start_time", "-created_at")
+        )
+
+        sessions = []
+        for note in notes:
+            appointment = note.appointment
+            payment_status = "paid" if appointment.booking_request_id else "pending"
+            sessions.append(
+                {
+                    "note_id": note.id,
+                    "relationship_id": note.relationship_id,
+                    "supervisor_name": note.relationship.supervisor.name,
+                    "supervisor_id": note.relationship.supervisor_id,
+                    "start_time": appointment.start_time,
+                    "end_time": appointment.end_time,
+                    "status": appointment.status,
+                    "status_label": appointment.get_status_display(),
+                    "payment_status": payment_status,
+                    "meeting_link": appointment.meeting_link,
+                }
+            )
+
+        return Response(sessions)
+
+    @action(detail=False, methods=["get"], url_path="my-supervisor-sessions")
+    def my_supervisor_sessions(self, request):
+        therapist = _resolve_therapist_from_request(request)
+        if not therapist:
+            return Response([])
+
+        notes = (
+            SupervisionNote.objects.filter(
+                relationship__supervisor=therapist,
+                relationship__status=SupervisoryRelationship.Status.ACTIVE,
+                appointment__isnull=False,
+            )
+            .select_related("relationship__supervisee", "appointment")
+            .order_by("-appointment__start_time", "-created_at")
+        )
+
+        sessions = []
+        for note in notes:
+            appointment = note.appointment
+            supervisee = note.relationship.supervisee
+            payment_status = "paid" if appointment.booking_request_id else "pending"
+            sessions.append(
+                {
+                    "note_id": note.id,
+                    "relationship_id": note.relationship_id,
+                    "appointment_id": appointment.id,
+                    "supervisee_id": supervisee.id,
+                    "supervisee_name": supervisee.name,
+                    "supervisee_title": getattr(supervisee, "title", "") or "Practitioner",
+                    "supervisee_email": supervisee.email,
+                    "supervisee_years_experience": supervisee.years_experience,
+                    "supervisee_bio": supervisee.bio,
+                    "supervisee_modalities": supervisee.modalities,
+                    "start_time": appointment.start_time,
+                    "end_time": appointment.end_time,
+                    "status": appointment.status,
+                    "status_label": appointment.get_status_display(),
+                    "payment_status": payment_status,
+                    "meeting_link": appointment.meeting_link,
+                }
+            )
+
+        return Response(sessions)
+
     @action(detail=True, methods=['post'], url_path='generate-report')
     def generate_report(self, request, pk=None):
         relationship = self.get_object()
@@ -3382,6 +3466,49 @@ class SupervisoryRelationshipViewSet(viewsets.ModelViewSet):
         reports = relationship.reports.all()
         return Response(SupervisionReportSerializer(reports, many=True).data)
 
+    @action(detail=True, methods=["get"], url_path="timeline")
+    def timeline(self, request, pk=None):
+        relationship = self.get_object()
+        notes = relationship.notes.all().order_by("-created_at")[:50]
+        actions = relationship.action_items.all().order_by("-created_at")[:100]
+        reflections = relationship.reflections.all().order_by("-created_at")[:100]
+
+        timeline_items = []
+        for n in notes:
+            timeline_items.append(
+                {
+                    "type": "note",
+                    "id": n.id,
+                    "created_at": n.created_at,
+                    "title": "Supervision note added",
+                    "summary": (n.content or "")[:180],
+                }
+            )
+        for a in actions:
+            timeline_items.append(
+                {
+                    "type": "action_item",
+                    "id": a.id,
+                    "created_at": a.created_at,
+                    "title": a.title,
+                    "summary": f"{a.owner} · {a.status}",
+                    "due_date": a.due_date,
+                }
+            )
+        for r in reflections:
+            timeline_items.append(
+                {
+                    "type": "reflection",
+                    "id": r.id,
+                    "created_at": r.created_at,
+                    "title": f"{r.get_reflection_type_display()} reflection",
+                    "summary": (r.takeaways or r.goals or "")[:180],
+                }
+            )
+
+        timeline_items.sort(key=lambda x: x.get("created_at") or timezone.now(), reverse=True)
+        return Response(timeline_items)
+
 class SupervisionNoteViewSet(viewsets.ModelViewSet):
     serializer_class = SupervisionNoteSerializer
     permission_classes = [IsAuthenticated]
@@ -3393,3 +3520,60 @@ class SupervisionNoteViewSet(viewsets.ModelViewSet):
             
         # Notes are private to the SUPERVISOR of the relationship
         return SupervisionNote.objects.filter(relationship__supervisor=therapist)
+
+
+class SupervisionActionItemViewSet(viewsets.ModelViewSet):
+    serializer_class = SupervisionActionItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        if not therapist:
+            return SupervisionActionItem.objects.none()
+
+        return SupervisionActionItem.objects.filter(
+            Q(relationship__supervisor=therapist) | Q(relationship__supervisee=therapist)
+        ).select_related("relationship")
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        relationship = serializer.validated_data.get("relationship")
+        if not relationship or therapist not in (relationship.supervisor, relationship.supervisee):
+            raise exceptions.PermissionDenied("You do not have access to this supervisory relationship.")
+
+        serializer.save(
+            created_by_supervisor=(therapist == relationship.supervisor)
+        )
+
+    @action(detail=False, methods=["get"], url_path="my-reminders")
+    def my_reminders(self, request):
+        therapist = _resolve_therapist_from_request(request)
+        if not therapist:
+            return Response([])
+        today = timezone.now().date()
+        items = self.get_queryset().filter(status__in=["open", "in_progress"]).order_by("due_date", "-created_at")
+        data = SupervisionActionItemSerializer(items, many=True).data
+        for row in data:
+            due_date = row.get("due_date")
+            row["is_overdue"] = bool(due_date and due_date < str(today))
+        return Response(data)
+
+
+class SupervisionReflectionViewSet(viewsets.ModelViewSet):
+    serializer_class = SupervisionReflectionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request)
+        if not therapist:
+            return SupervisionReflection.objects.none()
+        return SupervisionReflection.objects.filter(
+            Q(relationship__supervisor=therapist) | Q(relationship__supervisee=therapist)
+        ).select_related("relationship", "appointment")
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        relationship = serializer.validated_data.get("relationship")
+        if not relationship or therapist not in (relationship.supervisor, relationship.supervisee):
+            raise exceptions.PermissionDenied("You do not have access to this supervisory relationship.")
+        serializer.save(submitted_by_supervisee=(therapist == relationship.supervisee))

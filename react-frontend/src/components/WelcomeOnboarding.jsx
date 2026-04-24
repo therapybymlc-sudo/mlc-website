@@ -159,11 +159,76 @@ function getSlideContent(link) {
     };
   }
 
+  // Therapist pages
+  if (href === '/dashboard/therapist') {
+    return {
+      ...base,
+      title: 'Clinical Command Center',
+      subtitle: 'Your professional home base',
+      body: [
+        'Welcome to your MLC workspace. This environment is built to streamline your practice, so you can focus on what matters: your clients.',
+        'From here, you can monitor your caseload, manage upcoming sessions, and track your clinical growth.'
+      ],
+      sections: [
+        { title: 'Core View', items: ['Real-time appointment tracking', 'Pending client requests', 'Daily clinical agenda'] },
+        { title: 'Growth Path', items: ['Subscription status tracking', 'Supervision eligibility alerts', 'Performance metrics'] },
+      ],
+      tips: [
+        'Use the "Quick Actions" to start a note or update availability in seconds.',
+      ],
+    };
+  }
+
+  if (href === '/dashboard/therapist/clients') {
+    return {
+      ...base,
+      title: 'Client Management',
+      subtitle: 'Caseload at a glance',
+      body: [
+        'A secure, organized list of everyone in your care. Access profiles, history, and active treatment plans instantly.',
+      ],
+      sections: [
+        { title: 'Tools', items: ['Detailed client profiles', 'Session history tracking', 'Direct lounge access links'] },
+      ],
+    };
+  }
+
+  if (href === '/dashboard/therapist/schedule' || href === '/dashboard/therapist/availability') {
+    return {
+      ...base,
+      title: 'Smart Scheduling',
+      subtitle: 'Control your time',
+      body: [
+        'Set your business hours, manage buffers, and let clients book into approved slots seamlessly.',
+      ],
+      sections: [
+        { title: 'Optimization', items: ['Recurring availability', 'Session buffers', 'One-click calendar sync'] },
+      ],
+    };
+  }
+
+  if (href === '/dashboard/therapist/supervision') {
+    return {
+      ...base,
+      title: 'Supervision Suite',
+      subtitle: 'Advance your clinical career',
+      body: [
+        'A dedicated space for senior practitioners to mentor others and manage professional supervision workflows.',
+      ],
+      sections: [
+        { title: 'Supervisor Tools', items: ['Supervisee matchmaking', 'Clinical seniority tracking', 'Mentorship session logs'] },
+      ],
+      tips: [
+        'Apply for Supervisor status once you reach 5 years of experience!',
+      ],
+    };
+  }
+
   // Fallback
   return {
     ...base,
-    subtitle: 'Dashboard Feature',
-    body: ['Explore this area to manage your care journey.'],
+    subtitle: 'Professional Tool',
+    body: ['Explore this area to optimize your clinical workflow.'],
   };
 }
 
@@ -215,8 +280,41 @@ function buildWalkthroughSlides(links) {
     icon: null,
   };
 
+  const secureChat = {
+    key: 'secure-chat',
+    title: 'Secure Communications',
+    subtitle: 'Protect your privacy (Coming Soon)',
+    body: [
+      'Future-proof your practice: Soon, you will be able to communicate with your clients directly through the MLC portal. No personal phone numbers, just professional boundaries.',
+      'We are building a secure space where your personal life stays personal.',
+    ],
+    sections: [
+      { title: 'Benefits', items: ['End-to-end secure messaging', 'Privacy protection (no personal numbers)', 'Professional boundary management'] },
+    ],
+    tips: ['You can disable or enable chat for specific clients in their profile settings.'],
+    href: '/dashboard/therapist/messages',
+    icon: null,
+  };
+
+  const holisticEcosystem = {
+    key: 'holistic-ecosystem',
+    title: 'The MLC Ecosystem',
+    subtitle: 'Your wellbeing matters',
+    body: [
+      'MLC is more than a dashboard; it is a complete clinical ecosystem. From the first screening to final billing and ethical follow-through, everything stays here.',
+      'But we don’t just care for your clients—we care for you. Our built-in wellbeing tracking helps you maintain a healthy work-life balance, preventing burnout before it begins.',
+    ],
+    sections: [
+      { title: 'Full Cycle', items: ['Screening & Scheduling', 'In-built Video Sessions', 'Billing & Clinical Notes'] },
+      { title: 'For You', items: ['Wellbeing Tracking', 'Burnout Prevention Tools', 'Ethical Follow-through'] },
+    ],
+    tips: ['Work-life balance is at the heart of our design.'],
+    href: null,
+    icon: null,
+  };
+
   const pageSlides = cleanedLinks.map((l) => getSlideContent(l));
-  return [intro, navigation, ...pageSlides, outro];
+  return [intro, navigation, ...pageSlides, secureChat, holisticEcosystem, outro];
 }
 
 export default function WelcomeOnboarding({ links = [] }) {

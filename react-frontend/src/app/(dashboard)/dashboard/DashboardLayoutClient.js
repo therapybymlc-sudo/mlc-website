@@ -34,7 +34,9 @@ import {
   FiTarget,
   FiAward,
   FiClipboard,
-  FiInbox
+  FiInbox,
+  FiMessageSquare,
+  FiHelpCircle
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
@@ -77,6 +79,9 @@ export default function DashboardLayout({ children }) {
     therapistProfile &&
     therapistProfile.is_verified === false;
 
+  const therapistYearsExperience = Number(therapistProfile?.years_experience || 0);
+  const hasSupervisorEligibility = isAdmin || therapistYearsExperience >= 5;
+
   const links = useMemo(() => {
     const therapistLinks = [
       { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
@@ -89,8 +94,12 @@ export default function DashboardLayout({ children }) {
       { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
       { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
       { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
-      { label: 'Supervision Hub', icon: FiAward, href: '/dashboard/therapist/supervision' },
+      hasSupervisorEligibility
+        ? { label: 'Supervision Hub', icon: FiAward, href: '/dashboard/therapist/supervision' }
+        : { label: 'Supervisee Suite', icon: FiAward, href: '/dashboard/therapist/supervisee' },
+      { label: 'Messages', icon: FiMessageSquare, href: '/dashboard/therapist/messages' },
       { label: 'The Therapist OS', icon: FiTarget, href: '/dashboard/therapist/premium' },
+      { label: 'Need Help?', icon: FiHelpCircle, href: '/dashboard/therapist/support' },
     ];
 
     const clientLinks = [
@@ -103,6 +112,7 @@ export default function DashboardLayout({ children }) {
       { label: 'The Lux Studio', icon: FiTarget, href: '/dashboard/client/premium' },
       { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
       { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
+      { label: 'Need Help?', icon: FiHelpCircle, href: '/dashboard/client/support' },
     ];
 
     if (isAdmin) {
@@ -129,7 +139,7 @@ export default function DashboardLayout({ children }) {
     }
 
     return isTherapist ? therapistLinks : clientLinks;
-  }, [isTherapist, isAdmin, isTherapistPendingVerification]);
+  }, [isTherapist, isAdmin, isTherapistPendingVerification, hasSupervisorEligibility]);
 
   if (!mounted || !isLoaded) {
     return (

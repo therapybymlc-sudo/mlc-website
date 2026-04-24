@@ -59,6 +59,8 @@ from therapy.views import (
     TherapeuticRelationshipViewSet,
     SupervisoryRelationshipViewSet,
     SupervisionNoteViewSet,
+    SupervisionActionItemViewSet,
+    SupervisionReflectionViewSet,
     RazorpayCreateOrderView,
     RazorpayVerifyPaymentView,
     RazorpayWebhookView,
@@ -113,6 +115,8 @@ router.register(r"safety-plans", SafetyPlanViewSet, basename="safety-plans")
 router.register(r"therapist-relationships", TherapeuticRelationshipViewSet, basename="therapist-relationships")
 router.register(r"supervisory-relationships", SupervisoryRelationshipViewSet, basename="supervisory-relationships")
 router.register(r"supervision-notes", SupervisionNoteViewSet, basename="supervision-notes")
+router.register(r"supervision-action-items", SupervisionActionItemViewSet, basename="supervision-action-items")
+router.register(r"supervision-reflections", SupervisionReflectionViewSet, basename="supervision-reflections")
 
 # ----------------------------
 # Small utility/test endpoints
