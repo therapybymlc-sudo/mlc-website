@@ -17,7 +17,6 @@ import LinkButton from "../../components/LinkButton";
 import { useUser } from "@clerk/nextjs";
 
 const MotionBox = motion(Box);
-const STORAGE_KEY = "mlc_therapist_apply_v2";
 
 const COUNTRIES = ["India", "United Kingdom", "United States", "Canada", "Australia", "Singapore", "United Arab Emirates", "Other"];
 const PROFICIENCIES = ["Native", "Fluent", "Conversational", "Basic"];
@@ -43,7 +42,6 @@ export default function TherapistApplyClient() {
   const toast = useToast();
   const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
 
   // Files (not saved in localStorage)
   const [files, setFiles] = useState({
@@ -66,23 +64,6 @@ export default function TherapistApplyClient() {
     referral_source: "", whatsapp_community: "No", email_updates: "No"
   });
 
-  // Hydration & Resume Progress
-  useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-       try {
-          const data = JSON.parse(saved);
-          if (data.form) setForm(curr => ({ ...curr, ...data.form }));
-          if (data.languages) setLanguages(data.languages);
-          if (data.supervisions) setSupervisions(data.supervisions);
-          if (data.trainings) setTrainings(data.trainings);
-          if (data.selectedPopulations) setSelectedPopulations(data.selectedPopulations);
-          if (data.activeStep) setActiveStep(data.activeStep);
-       } catch (e) { console.error("Failed to load draft"); }
-    }
-  }, []);
-
   // Sync with user if available
   useEffect(() => {
     if (user && !form.first_name) {
@@ -94,14 +75,6 @@ export default function TherapistApplyClient() {
       }));
     }
   }, [user]);
-
-  // Save Progress on change
-  useEffect(() => {
-     if (isMounted) {
-        const data = { form, languages, supervisions, trainings, selectedPopulations, activeStep };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-     }
-  }, [form, languages, supervisions, trainings, selectedPopulations, activeStep, isMounted]);
 
   const handleFileChange = (key) => (e) => {
     setFiles(prev => ({ ...prev, [key]: e.target.files?.[0] || null }));
@@ -185,7 +158,6 @@ export default function TherapistApplyClient() {
       payload.append("has_licenses", "Yes"); 
 
       await apiUpload("therapist-applications/", payload);
-      localStorage.removeItem(STORAGE_KEY);
       toast({ title: "Application Submitted", status: "success" });
       setActiveStep(STEPS.length); 
     } catch (err) {
@@ -195,9 +167,6 @@ export default function TherapistApplyClient() {
     }
   };
 
-  // Hydration safe render
-  if (!isMounted) return <Box minH="100vh" bg="#FDFBFA" />;
-
   const isAuthReady = isLoaded;
   if (!isAuthReady) return <Box minH="100vh" bg="#FDFBFA" />;
 
@@ -206,7 +175,7 @@ export default function TherapistApplyClient() {
       <Container maxW="4xl" py={40} textAlign="center">
          <VStack spacing={8}>
             <Circle size="100px" bg="teal.50" color="teal.500"><Icon as={FiCheck} w={10} h={10} /></Circle>
-            <Heading fontFamily="'Playfair Display', serif" size="2xl">Application Verified.</Heading>
+            <Heading fontFamily="'Playfair Display', serif" size="2xl">Application Submitted.</Heading>
             <Text fontSize="xl" color="gray.600">Our clinical team is now reviewing your credentials. We'll be in touch soon.</Text>
             <LinkButton href="/therapists" variant="ghost">Return to Ecosystem</LinkButton>
          </VStack>
