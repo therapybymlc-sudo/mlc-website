@@ -761,31 +761,34 @@ export default function ProfileClient() {
           </TabPanel>
 
           {/* 8. Internal Matching */}
-          <TabPanel>
+          <TabPanel px={{ base: 2, md: 10 }}>
             <VStack align="stretch" spacing={8}>
-               <Box bg="red.50" p={10} borderRadius="3xl" border="1px dashed" borderColor="red.200">
-                  <HStack color="red.600" mb={6}><Icon as={FiAlertCircle} boxSize={6} /><Heading size="md">Clinical Governance & Ethics</Heading></HStack>
+               <Box bg="red.50" p={{ base: 6, md: 10 }} borderRadius={{ base: "2xl", md: "3rem" }} border="1px dashed" borderColor="red.200">
+                  <Stack direction={{ base: "column", sm: "row" }} color="red.600" mb={6} align={{ base: "start", sm: "center" }} spacing={4}>
+                    <Icon as={FiAlertCircle} boxSize={6} />
+                    <Heading size={{ base: "sm", md: "md" }}>Clinical Governance & Ethics</Heading>
+                  </Stack>
                   
-                  <Text fontSize="sm" color="red.700" mb={8} fontWeight="500">
+                  <Text fontSize={{ base: "xs", md: "sm" }} color="red.700" mb={8} fontWeight="500" lineHeight="tall">
                      These details are periodically reviewed for maintaining ethical and standardised practices. False or incomplete information may be flagged and lead to therapist removal from the platform.
                   </Text>
 
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} mb={8}>
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }} mb={8}>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="bold">Collaborating Psychiatrist</FormLabel>
-                        <Input bg="white" value={profile.risk_protocols?.psychiatrist} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, psychiatrist: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.psychiatrist} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, psychiatrist: e.target.value}})} />
                      </FormControl>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="bold">Primary Emergency Hospital</FormLabel>
-                        <Input bg="white" value={profile.risk_protocols?.hospital} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, hospital: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.hospital} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, hospital: e.target.value}})} />
                      </FormControl>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="bold">Hospital Location</FormLabel>
-                        <Input bg="white" value={profile.risk_protocols?.location} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, location: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.location} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, location: e.target.value}})} />
                      </FormControl>
                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="bold">Emergency Contact</FormLabel>
-                        <Input bg="white" value={profile.risk_protocols?.contact} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, contact: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.contact} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, contact: e.target.value}})} />
                      </FormControl>
                   </SimpleGrid>
 
@@ -793,11 +796,13 @@ export default function ProfileClient() {
                      <FormLabel fontWeight="700">Internal Matching Notes</FormLabel>
                      <Textarea bg="white" placeholder="Best fit cases, specific exclusion patterns, etc." value={profile.best_fit_notes} onChange={(e) => setProfile({...profile, best_fit_notes: e.target.value})} borderRadius="xl" />
                   </FormControl>
-                  <Divider my={10} />
+                  <Divider my={{ base: 6, md: 10 }} />
                   <Flex justify="center">
-                    <Button leftIcon={<FiSave />} size="lg" bg="#56756D" color="white" borderRadius="full" px={16} onClick={() => handleSave()} isLoading={loading} shadow="2xl">Finalize & Sync Profile</Button>
+                    <Button leftIcon={<FiSave />} size="lg" bg="#56756D" color="white" borderRadius="full" px={{ base: 10, md: 16 }} onClick={() => handleSave()} isLoading={loading} shadow="2xl" w={{ base: "full", md: "auto" }}>Finalize & Sync Profile</Button>
                   </Flex>
                </Box>
+            </VStack>
+          </TabPanel>
             </VStack>
           </TabPanel>
         </TabPanels>

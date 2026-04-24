@@ -184,7 +184,7 @@ export default function TherapistAvailabilityWrapper() {
                                         aria-label="Apply to all" 
                                         onClick={() => applyToAll(day.key)}
                                     />
-                                    <Text fontSize="2xs" color="gray.400" fontWeight="600" display={{ base: "none", lg: "block" }}>
+                                    <Text fontSize="2xs" color="teal.600" fontWeight="700" display={{ base: "block", lg: "block" }} opacity={0.8}>
                                         Duplicate today's schedule to your entire week
                                     </Text>
                                 </HStack>
