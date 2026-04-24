@@ -44,8 +44,12 @@ export default function RootLayout({ children }) {
         }
       }}
     >
-      <html lang="en" className={`${inter.variable} ${playfair.variable} ${forum.variable}`}>
-        <body>
+      <html
+        lang="en"
+        className={`${inter.variable} ${playfair.variable} ${forum.variable}`}
+        suppressHydrationWarning
+      >
+        <body suppressHydrationWarning>
           <Providers>
             <ClientWrapper>
               {children}
