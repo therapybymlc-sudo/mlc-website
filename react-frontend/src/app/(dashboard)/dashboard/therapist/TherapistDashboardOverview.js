@@ -208,14 +208,16 @@ export default function TherapistDashboardOverview() {
         </Flex>
 
         {/* ⚠️ Verification Alert */}
-        {profile?.is_verified === false && (
+        {(profile?.is_verified === false || !profile) && (
           <Box mb={8} p={6} borderRadius="3xl" bg="orange.50" border="1px solid" borderColor="orange.200" shadow="sm">
             <Flex direction={{ base: "column", md: "row" }} gap={4} justify="space-between" align="center">
               <HStack align="flex-start" spacing={4}>
                 <Icon as={FiAlertCircle} boxSize={6} color="orange.500" mt={1} />
                 <VStack align="start" spacing={0}>
                   <Heading size="sm" color="orange.800">Application Pending</Heading>
-                  <Text color="orange.800" fontSize="sm">Submit your therapist application to finalize your professional profile.</Text>
+                  <Text color="orange.800" fontSize="sm">
+                    Submit your therapist application to finalize verification and unlock your full professional profile.
+                  </Text>
                 </VStack>
               </HStack>
               <Button as={NextLink} href="/therapist-apply" colorScheme="orange" borderRadius="full" px={8}>Submit Application</Button>
