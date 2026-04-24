@@ -224,40 +224,79 @@ export default function EarningsClient() {
             <Heading size="sm" color="#2E2E2E">Recent Settlements</Heading>
             <Button variant="link" size="sm" color="teal.500">View All</Button>
           </HStack>
-          <Table variant="simple" size="sm">
-            <Thead>
-              <Tr>
-                <Th color="gray.400" fontSize="2xs" letterSpacing="widest">DATE</Th>
-                <Th color="gray.400" fontSize="2xs" letterSpacing="widest">CLIENT</Th>
-                <Th color="gray.400" fontSize="2xs" letterSpacing="widest">AMOUNT</Th>
-                <Th color="gray.400" fontSize="2xs" letterSpacing="widest">STATUS</Th>
-                <Th color="gray.400" fontSize="2xs" letterSpacing="widest" textAlign="right">ACTION</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {recentTransactions.map((tx) => (
-                <Tr key={tx.id} _hover={{ bg: "gray.50" }} transition="0.2s">
-                  <Td fontSize="sm" fontWeight="600">{new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Td>
-                  <Td fontSize="sm">{tx.client}</Td>
-                  <Td fontSize="sm" fontWeight="700">INR {tx.amount}</Td>
-                  <Td>
-                    <Badge 
-                      colorScheme={tx.status === 'Settled' ? 'green' : 'orange'} 
-                      variant="subtle" 
-                      borderRadius="full" 
-                      px={3}
-                      fontSize="2xs"
-                    >
-                      {tx.status}
-                    </Badge>
-                  </Td>
-                  <Td textAlign="right">
-                    <Button size="xs" variant="ghost" leftIcon={<FiFileText />}>Invoice</Button>
-                  </Td>
+          {/* Desktop Table */}
+          <Box display={{ base: "none", md: "block" }}>
+            <Table variant="simple" size="sm">
+              <Thead>
+                <Tr>
+                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">DATE</Th>
+                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">CLIENT</Th>
+                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">AMOUNT</Th>
+                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">STATUS</Th>
+                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest" textAlign="right">ACTION</Th>
                 </Tr>
-              ))}
-            </Tbody>
-          </Table>
+              </Thead>
+              <Tbody>
+                {recentTransactions.map((tx) => (
+                  <Tr key={tx.id} _hover={{ bg: "gray.50" }} transition="0.2s">
+                    <Td fontSize="sm" fontWeight="600">{new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Td>
+                    <Td fontSize="sm">{tx.client}</Td>
+                    <Td fontSize="sm" fontWeight="700">INR {tx.amount}</Td>
+                    <Td>
+                      <Badge 
+                        colorScheme={tx.status === 'Settled' ? 'green' : 'orange'} 
+                        variant="subtle" 
+                        borderRadius="full" 
+                        px={3}
+                        fontSize="2xs"
+                      >
+                        {tx.status}
+                      </Badge>
+                    </Td>
+                    <Td textAlign="right">
+                      <Button size="xs" variant="ghost" leftIcon={<FiFileText />}>Invoice</Button>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </Box>
+
+          {/* Mobile Card List */}
+          <VStack display={{ base: "flex", md: "none" }} spacing={4} align="stretch">
+            {recentTransactions.map((tx) => (
+              <Box 
+                key={tx.id} 
+                p={4} 
+                borderRadius="2xl" 
+                border="1px solid" 
+                borderColor="gray.100" 
+                bg="white"
+              >
+                <Flex justify="space-between" align="center" mb={3}>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="xs" color="gray.400" fontWeight="bold">
+                      {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Text>
+                    <Text fontWeight="bold" fontSize="sm">{tx.client}</Text>
+                  </VStack>
+                  <Badge 
+                    colorScheme={tx.status === 'Settled' ? 'green' : 'orange'} 
+                    variant="subtle" 
+                    borderRadius="full" 
+                    px={2}
+                    fontSize="2xs"
+                  >
+                    {tx.status.toUpperCase()}
+                  </Badge>
+                </Flex>
+                <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="gray.50">
+                  <Text fontSize="sm" fontWeight="800" color="teal.700">INR {tx.amount}</Text>
+                  <Button size="xs" variant="link" colorScheme="teal" leftIcon={<FiFileText />}>Invoice</Button>
+                </HStack>
+              </Box>
+            ))}
+          </VStack>
         </Box>
       </Container>
     </Box>

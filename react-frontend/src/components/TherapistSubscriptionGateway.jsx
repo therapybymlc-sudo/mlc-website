@@ -194,11 +194,11 @@ export default function TherapistSubscriptionGateway({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered scrollBehavior="inside">
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
-      <ModalContent borderRadius="3xl" p={2}>
-        <ModalCloseButton />
-        <ModalBody p={6}>{Body}</ModalBody>
+      <ModalContent borderRadius={{ base: "none", md: "3xl" }} overflow="hidden" m={{ base: 0, md: 4 }} maxH={{ base: "100vh", md: "90vh" }}>
+        <ModalCloseButton zIndex={2} />
+        <ModalBody p={{ base: 4, md: 8 }} overflowY="auto">{Body}</ModalBody>
       </ModalContent>
     </Modal>
   );

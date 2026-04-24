@@ -250,7 +250,7 @@ export default function NotesClient() {
                 <MenuItem icon={<FiPlusCircle />} fontWeight="bold" color="teal.600" onClick={() => { setEditingTemplate(null); setForm({ name: "", description: "", fields: [{ label: "Primary Assessment", field_type: "section", order: 0 }] }); setViewMode("builder"); }}>
                   Architect New Model
                 </MenuItem>
-                <MenuDivider />
+                <Box h="1px" bg="gray.100" my={2} />
                 <Text px={4} py={2} fontSize="10px" fontWeight="bold" color="gray.400" letterSpacing="widest">HOSPITAL STANDARDS</Text>
                 {templates.slice(0, 5).map(t => (
                   <MenuItem key={t.id} icon={<FiCopy />} onClick={() => { setEditingTemplate(null); setForm({...t, name: `Copy of ${t.name}`}); setViewMode("builder"); }}>
@@ -267,20 +267,32 @@ export default function NotesClient() {
         <Center py={20}><VStack><Spinner color="teal.500" /><Text>Syncing Clinical Library...</Text></VStack></Center>
       ) : (
         viewMode === "list" ? (
-          <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+          <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
             <VStack align="stretch" spacing={2} divider={<Divider />}>
               {templates.map(t => (
-                <Flex key={t.id} p={4} justify="space-between" align="center" _hover={{ bg: 'gray.50' }} transition="0.2s" borderRadius="2xl">
-                   <VStack align="start" spacing={0}>
-                      <Text fontWeight="bold" color="gray.800">{t.name}</Text>
+                <Stack 
+                  key={t.id} 
+                  p={4} 
+                  direction={{ base: "column", md: "row" }}
+                  justify="space-between" 
+                  align={{ base: "start", md: "center" }} 
+                  _hover={{ bg: 'gray.50' }} 
+                  transition="0.2s" 
+                  borderRadius="2xl"
+                  gap={4}
+                >
+                   <VStack align="start" spacing={0} maxW={{ base: "full", md: "60%" }}>
+                      <Text fontWeight="bold" color="gray.800" fontSize={{ base: "sm", md: "md" }}>{t.name}</Text>
                       <Text fontSize="xs" color="gray.400">{t.description || "Structured clinical form."}</Text>
                    </VStack>
-                   <HStack>
-                      <Badge bg="teal.50" color="teal.700" borderRadius="full" px={3} variant="subtle">{t.fields?.length || 0} DATA POINTS</Badge>
-                      <IconButton icon={<FiEdit2 />} size="sm" variant="ghost" onClick={() => { setEditingTemplate(t); setForm(t); setViewMode("builder"); }} />
-                      <IconButton icon={<FiTrash2 />} size="sm" variant="ghost" colorScheme="red" onClick={() => deleteTemplate(t.id)} />
+                   <HStack w={{ base: "full", md: "auto" }} justify={{ base: "space-between", md: "flex-end" }}>
+                      <Badge bg="teal.50" color="teal.700" borderRadius="full" px={3} variant="subtle" whiteSpace="nowrap">{t.fields?.length || 0} DATA POINTS</Badge>
+                      <HStack>
+                        <IconButton icon={<FiEdit2 />} aria-label="Edit" size="sm" variant="ghost" onClick={() => { setEditingTemplate(t); setForm(t); setViewMode("builder"); }} />
+                        <IconButton icon={<FiTrash2 />} aria-label="Delete" size="sm" variant="ghost" colorScheme="red" onClick={() => deleteTemplate(t.id)} />
+                      </HStack>
                    </HStack>
-                </Flex>
+                </Stack>
               ))}
               {templates.length === 0 && <Center py={10}><Text color="gray.400">Your clinical library is empty. Start architecting above.</Text></Center>}
             </VStack>
@@ -289,8 +301,4 @@ export default function NotesClient() {
       )}
     </Box>
   );
-}
-
-function MenuDivider() {
-  return <Box h="1px" bg="gray.100" my={2} />
 }

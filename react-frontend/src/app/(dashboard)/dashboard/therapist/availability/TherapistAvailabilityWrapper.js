@@ -175,14 +175,19 @@ export default function TherapistAvailabilityWrapper() {
                         <HStack justify="space-between">
                             <HStack>
                                 <Text fontWeight="800" color="#56756C" fontSize="sm">{day.label.toUpperCase()}</Text>
-                                <IconButton 
-                                    icon={<FiCopy />} 
-                                    size="xs" 
-                                    variant="ghost" 
-                                    colorScheme="teal" 
-                                    aria-label="Apply to all" 
-                                    onClick={() => applyToAll(day.key)}
-                                />
+                                <HStack spacing={2}>
+                                    <IconButton 
+                                        icon={<FiCopy />} 
+                                        size="xs" 
+                                        variant="ghost" 
+                                        colorScheme="teal" 
+                                        aria-label="Apply to all" 
+                                        onClick={() => applyToAll(day.key)}
+                                    />
+                                    <Text fontSize="2xs" color="gray.400" fontWeight="600" display={{ base: "none", lg: "block" }}>
+                                        Duplicate today's schedule to your entire week
+                                    </Text>
+                                </HStack>
                             </HStack>
                             <Divider flex={1} ml={4} display={{ base: "none", sm: "block" }} />
                         </HStack>

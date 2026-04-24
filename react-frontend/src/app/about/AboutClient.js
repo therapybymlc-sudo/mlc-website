@@ -188,14 +188,14 @@ export default function AboutClient() {
          />
          
          <Container maxW="4xl" position="relative" zIndex={1}>
-            <VStack spacing={10} textAlign="center" p={12} bg="white" borderRadius="3rem" shadow="2xl">
-              <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900">A Message from the Founder</Heading>
-              <Text fontSize="xl" color="gray.600" lineHeight="1.8" fontStyle="italic">
+            <VStack spacing={{ base: 6, md: 10 }} textAlign="center" p={{ base: 6, md: 12 }} bg="white" borderRadius={{ base: "2xl", md: "3rem" }} shadow="2xl">
+              <Heading size={{ base: "lg", md: "xl" }} fontFamily="'Playfair Display', serif" color="teal.900">A Message from the Founder</Heading>
+              <Text fontSize={{ base: "md", md: "xl" }} color="gray.600" lineHeight="1.8" fontStyle="italic">
                 “When I began my journey, I saw countless skilled therapists leave the field not because they lacked passion, but because they lacked support. MLC Therapy is a response to that; a community where therapists feel as held as the clients they serve. For you, it means therapy that is structured, ethical, and deeply human.”
               </Text>
               <VStack spacing={0}>
-                <Text fontWeight="900" fontSize="2xl" color="teal.800">Asma, B.A(Hons), M.Sc</Text>
-                <Text color="teal.600" fontWeight="600" letterSpacing="widest" fontSize="sm">FOUNDER & CLINICAL LEAD</Text>
+                <Text fontWeight="900" fontSize={{ base: "lg", md: "2xl" }} color="teal.800">Asma, B.A(Hons), M.Sc</Text>
+                <Text color="teal.600" fontWeight="600" letterSpacing="widest" fontSize="xs">FOUNDER & CLINICAL LEAD</Text>
               </VStack>
             </VStack>
          </Container>

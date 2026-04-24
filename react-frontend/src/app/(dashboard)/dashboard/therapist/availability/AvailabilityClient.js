@@ -6,6 +6,7 @@ import {
   Text,
   VStack,
   HStack,
+  Stack,
   Button,
   Spinner,
   Icon,
@@ -28,8 +29,8 @@ export default function AvailabilityClient() {
   return (
     <Box>
       {/* 📚 Clinical Stewardship & Pro-Tips */}
-      <Box bg="teal.50" p={8} borderRadius="3xl" border="1px solid" borderColor="teal.100" mb={10}>
-         <HStack spacing={6} align="start">
+      <Box bg="teal.50" p={{ base: 6, md: 8 }} borderRadius="3xl" border="1px solid" borderColor="teal.100" mb={10}>
+         <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 4, md: 6 }} align="start">
             <Icon as={FiShield} color="teal.500" boxSize={8} mt={1} />
             <VStack align="start" spacing={2}>
                <Heading size="md" color="teal.800">🌿 Clinical Stewardship Protocol</Heading>
@@ -37,12 +38,12 @@ export default function AvailabilityClient() {
                   To maintain consistent care, we recommend scheduling your recurring clients and supervisees as far in advance as possible. 
                   Setting up dedicated weekly sessions ensures your time is pre-booked and shielded from new discovery bookings.
                </Text>
-               <HStack spacing={4} mt={2}>
+               <HStack spacing={4} mt={2} wrap="wrap">
                   <Badge colorScheme="teal" variant="solid" borderRadius="full" px={3}>RECURRING SESSIONS</Badge>
                   <Badge colorScheme="orange" variant="solid" borderRadius="full" px={3}>EARLY BOOKING</Badge>
                </HStack>
             </VStack>
-         </HStack>
+         </Stack>
       </Box>
 
       <VStack align="start" spacing={1} mb={8}>

@@ -713,33 +713,68 @@ export default function ClientsClient() {
           {loading ? (
             <VStack py={20}><Spinner color="teal.500" size="xl" /><Text color="gray.500">Retrieving Caseload...</Text></VStack>
           ) : (
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th color="gray.400">PATIENT NAME</Th>
-                  <Th color="gray.400">CONTACT</Th>
-                  <Th color="gray.400">FILE #</Th>
-                  <Th color="gray.400">STATUS</Th>
-                  <Th textAlign="right" color="gray.400">ACTIONS</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
+            <>
+              {/* Desktop Table */}
+              <Box display={{ base: "none", md: "block" }}>
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th color="gray.400">PATIENT NAME</Th>
+                      <Th color="gray.400">CONTACT</Th>
+                      <Th color="gray.400">FILE #</Th>
+                      <Th color="gray.400">STATUS</Th>
+                      <Th textAlign="right" color="gray.400">ACTIONS</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {filteredClients.map((client) => (
+                      <Tr key={client.id} _hover={{ bg: "gray.50" }} transition="0.2s" cursor="pointer" onClick={() => { setSelectedClient(client); setViewMode("detail"); }}>
+                        <Td>
+                          <HStack>
+                             <Avatar size="sm" name={client.name} bg="teal.100" color="teal.600" />
+                             <Text fontWeight="bold">{client.name}</Text>
+                          </HStack>
+                        </Td>
+                        <Td><Text fontSize="sm">{client.email}</Text></Td>
+                        <Td><Text fontSize="xs" fontWeight="bold" color="gray.400">{client.client_file_number || "—"}</Text></Td>
+                        <Td><Badge colorScheme="green" variant="subtle" borderRadius="full" px={3}>ACTIVE</Badge></Td>
+                        <Td textAlign="right"><Button size="sm" variant="ghost" colorScheme="teal" borderRadius="full">Open File</Button></Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </Box>
+
+              {/* Mobile Card List */}
+              <VStack display={{ base: "flex", md: "none" }} spacing={4} align="stretch">
                 {filteredClients.map((client) => (
-                  <Tr key={client.id} _hover={{ bg: "gray.50" }} transition="0.2s" cursor="pointer" onClick={() => { setSelectedClient(client); setViewMode("detail"); }}>
-                    <Td>
+                  <Box 
+                    key={client.id} 
+                    p={4} 
+                    borderRadius="2xl" 
+                    border="1px solid" 
+                    borderColor="gray.100" 
+                    bg="white"
+                    onClick={() => { setSelectedClient(client); setViewMode("detail"); }}
+                  >
+                    <Flex justify="space-between" align="center" mb={3}>
                       <HStack>
-                         <Avatar size="sm" name={client.name} bg="teal.100" color="teal.600" />
-                         <Text fontWeight="bold">{client.name}</Text>
+                        <Avatar size="sm" name={client.name} bg="teal.100" color="teal.600" />
+                        <VStack align="start" spacing={0}>
+                          <Text fontWeight="bold" fontSize="sm">{client.name}</Text>
+                          <Text fontSize="xs" color="gray.500">{client.email}</Text>
+                        </VStack>
                       </HStack>
-                    </Td>
-                    <Td><Text fontSize="sm">{client.email}</Text></Td>
-                    <Td><Text fontSize="xs" fontWeight="bold" color="gray.400">{client.client_file_number || "—"}</Text></Td>
-                    <Td><Badge colorScheme="green" variant="subtle" borderRadius="full" px={3}>ACTIVE</Badge></Td>
-                    <Td textAlign="right"><Button size="sm" variant="ghost" colorScheme="teal" borderRadius="full">Open File</Button></Td>
-                </Tr>
+                      <Badge colorScheme="green" variant="subtle" borderRadius="full" px={2} fontSize="2xs">ACTIVE</Badge>
+                    </Flex>
+                    <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="gray.50">
+                      <Text fontSize="2xs" color="gray.400" fontWeight="bold">FILE: {client.client_file_number || "—"}</Text>
+                      <Button size="xs" variant="link" colorScheme="teal">Open Clinical File</Button>
+                    </HStack>
+                  </Box>
                 ))}
-              </Tbody>
-            </Table>
+              </VStack>
+            </>
           )}
         </Box>
       )}
