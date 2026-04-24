@@ -380,7 +380,7 @@ export default function WelcomeOnboarding({ links = [] }) {
             {isDesktop && (
               <Box flex="1" position="relative" bg="#A9CBB7">
                 <Image 
-                  src="/therapeutic_dashboard_journey_1776632244950.png" 
+                  src="/human_connection_therapy_1776424085531.png" 
                   alt="" 
                   w="full" 
                   h="full" 

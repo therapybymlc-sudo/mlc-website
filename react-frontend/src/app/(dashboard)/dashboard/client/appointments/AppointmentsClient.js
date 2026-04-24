@@ -20,7 +20,7 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiCalendar, FiClock, FiVideo } from "react-icons/fi";
+import { FiVideo } from "react-icons/fi";
 import { apiGet } from "../../../../../api.js";
 import NextLink from 'next/link';
 import { useAuth } from "../../../../../context/AuthContext";
@@ -33,27 +33,23 @@ export default function AppointmentsClient() {
   const [loading, setLoading] = useState(true);
 
   const getPaymentMeta = (appt) => {
-    const paid = appt.payment_status === "paid" || Boolean(appt.booking_request);
+    const paid = appt.payment_status === "paid";
     if (paid) {
       return {
         label: "Completed",
         colorScheme: "green",
         actionLabel: "View Invoice",
         actionHref: `/dashboard/client/invoice/${appt.id}`,
+        actionDisabled: false,
       };
     }
-
-    const ts = appt.start_time ? Math.floor(new Date(appt.start_time).getTime() / 1000) : null;
-    const checkoutHref =
-      appt.therapist && ts
-        ? `/book/checkout?therapist=${appt.therapist}&slot=dyn-${ts}`
-        : "/therapists/discovery";
 
     return {
       label: "Pending",
       colorScheme: "orange",
-      actionLabel: "Pay Now",
-      actionHref: checkoutHref,
+      actionLabel: "Awaiting Payment Link",
+      actionHref: "/dashboard/client/booking-requests",
+      actionDisabled: true,
     };
   };
 
@@ -117,7 +113,8 @@ export default function AppointmentsClient() {
             {loading ? (
                 <VStack py={20}><Spinner color="#56756D" /></VStack>
             ) : (
-                <Box overflowX="auto" w="full" minW="0">
+                <>
+                <Box display={{ base: "none", md: "block" }} overflowX="auto" w="full" minW="0">
                 <Table variant="simple" size={{ base: "sm", md: "md" }}>
                     <Thead>
                         <Tr>
@@ -168,6 +165,7 @@ export default function AppointmentsClient() {
                                           variant={paymentMeta.label === "Completed" ? "outline" : "solid"}
                                           colorScheme={paymentMeta.label === "Completed" ? "gray" : "orange"}
                                           borderRadius="full"
+                                          isDisabled={paymentMeta.actionDisabled}
                                       >
                                           {paymentMeta.actionLabel}
                                       </Button>
@@ -194,6 +192,71 @@ export default function AppointmentsClient() {
                     </Tbody>
                 </Table>
                 </Box>
+                <VStack display={{ base: "flex", md: "none" }} align="stretch" spacing={4}>
+                  {appointments.map((appt) => {
+                    const paymentMeta = getPaymentMeta(appt);
+                    return (
+                      <Box key={appt.id} border="1px solid" borderColor="gray.100" borderRadius="2xl" p={4}>
+                        <VStack align="stretch" spacing={3}>
+                          <HStack justify="space-between" align="start">
+                            <VStack align="start" spacing={0}>
+                              <Text fontWeight="700">
+                                {new Date(appt.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                              </Text>
+                              <Text fontSize="xs" color="gray.500">
+                                {new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </Text>
+                            </VStack>
+                            <Badge colorScheme={appt.status === "cancelled" ? "red" : "teal"} borderRadius="full" px={3} py={1} fontSize="10px">
+                              {(appt.status_label || appt.status || "Scheduled").toUpperCase()}
+                            </Badge>
+                          </HStack>
+                          <Text fontSize="sm" fontWeight="600" noOfLines={1}>{appt.therapist_name || "Assigned Therapist"}</Text>
+                          <HStack justify="space-between">
+                            <HStack spacing={2}>
+                              <Icon as={FiVideo} color="#56756D" />
+                              <Text fontSize="sm">Online</Text>
+                            </HStack>
+                            <Badge colorScheme={paymentMeta.colorScheme} borderRadius="full" px={3} py={1} fontSize="10px">
+                              {paymentMeta.label.toUpperCase()}
+                            </Badge>
+                          </HStack>
+                          <HStack spacing={2}>
+                            <Button
+                              as={NextLink}
+                              href={paymentMeta.actionHref}
+                              size="sm"
+                              flex={1}
+                              variant={paymentMeta.label === "Completed" ? "outline" : "solid"}
+                              colorScheme={paymentMeta.label === "Completed" ? "gray" : "orange"}
+                              borderRadius="full"
+                              isDisabled={paymentMeta.actionDisabled}
+                            >
+                              {paymentMeta.actionLabel}
+                            </Button>
+                            <Button
+                              as={NextLink}
+                              href={`/conference/MLC_${appt.id}`}
+                              size="sm"
+                              flex={1}
+                              variant="solid"
+                              bg="teal.800"
+                              color="white"
+                              borderRadius="full"
+                              _hover={{ bg: 'teal.900' }}
+                            >
+                              Join Room
+                            </Button>
+                          </HStack>
+                        </VStack>
+                      </Box>
+                    );
+                  })}
+                  {appointments.length === 0 && (
+                    <Box textAlign="center" py={10} color="gray.400">No appointments scheduled.</Box>
+                  )}
+                </VStack>
+                </>
             )}
         </Box>
     </Box>

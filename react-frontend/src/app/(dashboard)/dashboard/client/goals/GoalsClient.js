@@ -71,6 +71,14 @@ export default function GoalsClient() {
   // New Goal State
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const [newGoalDesc, setNewGoalDesc] = useState("");
+  const handleGoalDescriptionChange = (payload) => {
+    if (typeof payload === "string") {
+      setNewGoalDesc(payload);
+      return;
+    }
+    setNewGoalDesc(payload?.html || "");
+  };
+
   const [activeCategory, setActiveCategory] = useState("short_term");
   const [isAdding, setIsAdding] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -234,8 +242,8 @@ export default function GoalsClient() {
             <Box>
               <Text fontSize="sm" fontWeight="700" color="gray.500" mb={2}>Context / Details</Text>
               <RichTextEditor 
-                content={newGoalDesc} 
-                onChange={setNewGoalDesc} 
+                value={newGoalDesc}
+                onChange={handleGoalDescriptionChange}
                 placeholder="Dive deeper into why this matters..."
               />
             </Box>

@@ -15,6 +15,7 @@ import {
   Icon,
   Flex,
   Container,
+  Badge,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { useParams } from "next/navigation";

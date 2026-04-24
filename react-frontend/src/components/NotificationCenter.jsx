@@ -23,7 +23,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiBell, FiCheckCircle, FiInfo, FiZap, FiTarget } from "react-icons/fi";
-import { apiGet, apiPut } from "../api.js";
+import { apiGet, apiPost } from "../api.js";
 
 export default function NotificationCenter({ isAuthenticated, authLoading }) {
   const [notifications, setNotifications] = useState([]);
@@ -61,10 +61,8 @@ export default function NotificationCenter({ isAuthenticated, authLoading }) {
 
   const markAllAsRead = async () => {
     try {
-      // In a real app, we'd have a bulk endpoint. 
-      // For now, we'll just optimistic update and let the user click individual ones or implement a bulk logic.
       const unread = notifications.filter(n => !n.is_read);
-      await Promise.all(unread.map(n => apiPut(`notifications/${n.id}/`, { ...n, is_read: true })));
+      await Promise.all(unread.map(n => apiPost(`notifications/${n.id}/mark_read/`, {})));
       setNotifications([]);
     } catch (err) {
       toast({ title: "Failed to mark as read", status: "error" });
