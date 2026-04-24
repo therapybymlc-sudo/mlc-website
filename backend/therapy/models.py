@@ -973,6 +973,54 @@ class RazorpayPayment(models.Model):
         return f"RazorpayPayment({self.status}) for BookingRequest {self.booking_request_id}"
 
 
+# ===========================
+# 🔹 Support & Help Models
+# ===========================
+class SupportTicket(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        IN_PROGRESS = "in_progress", "In Progress"
+        RESOLVED = "resolved", "Resolved"
+        CLOSED = "closed", "Closed"
+
+    class Category(models.TextChoices):
+        GENERAL = "general", "General Inquiry"
+        TECHNICAL = "technical", "Technical Issue / Bug"
+        BILLING = "billing", "Billing & Subscription"
+        CLIENT_ACCESS = "client-access", "Client Access Issue"
+        RESOURCES = "resources", "Resources / Tools"
+        OTHER = "other", "Other"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="support_tickets",
+        null=True,
+        blank=True
+    )
+    # Store profile info as backup or for convenience
+    user_name = models.CharField(max_length=255, blank=True)
+    user_email = models.EmailField(blank=True)
+    user_role = models.CharField(max_length=50, blank=True) # "therapist" or "client"
+
+    subject = models.CharField(max_length=255)
+    category = models.CharField(max_length=50, choices=Category.choices, default=Category.GENERAL)
+    description = models.TextField()
+    
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    admin_notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Ticket {self.id}: {self.subject} ({self.status})"
+
+
 class TherapistSubscriptionCharge(models.Model):
     therapist = models.ForeignKey(
         TherapistProfile,
@@ -2111,3 +2159,88 @@ class ClientFormAssignment(models.Model):
             models.Index(fields=["assigned_to", "form_type", "status"]),
             models.Index(fields=["therapeutic_relationship", "status"]),
         ]
+
+
+class AdminReportEmailSchedule(models.Model):
+    """Admin-configured email delivery for a report (processed by a scheduled job)."""
+
+    class Frequency(models.TextChoices):
+        WEEKLY = "weekly", "Weekly"
+        MONTHLY = "monthly", "Monthly"
+
+    class PeriodPreset(models.TextChoices):
+        PREVIOUS_MONTH = "previous_month", "Previous calendar month"
+        PREVIOUS_QUARTER = "previous_quarter", "Previous calendar quarter"
+        PREVIOUS_YEAR = "previous_year", "Previous calendar year"
+
+    name = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+    report_key = models.CharField(max_length=64, db_index=True)
+    period_preset = models.CharField(
+        max_length=32,
+        choices=PeriodPreset.choices,
+        default=PeriodPreset.PREVIOUS_MONTH,
+    )
+    frequency = models.CharField(
+        max_length=16,
+        choices=Frequency.choices,
+        default=Frequency.MONTHLY,
+    )
+    weekday = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="0=Monday … 6=Sunday (weekly schedules only).",
+    )
+    day_of_month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="1–28 recommended (monthly schedules).",
+    )
+    recipient_emails = models.JSONField(
+        default=list,
+        help_text="List of recipient email strings.",
+    )
+    created_by_email = models.CharField(max_length=254, blank=True)
+    last_sent_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.name or f"Schedule {self.report_key} ({self.get_frequency_display()})"
+
+
+class AdminReportSnapshot(models.Model):
+    """Point-in-time saved report JSON + optional PDF artifact."""
+
+    title = models.CharField(max_length=255, blank=True)
+    report_key = models.CharField(max_length=64, db_index=True)
+    period_type = models.CharField(max_length=16)
+    year = models.PositiveSmallIntegerField()
+    month = models.PositiveSmallIntegerField(null=True, blank=True)
+    quarter = models.PositiveSmallIntegerField(null=True, blank=True)
+    period_label = models.CharField(max_length=128, blank=True)
+    period_start = models.DateTimeField()
+    period_end = models.DateTimeField()
+    payload = models.JSONField()
+    pdf = models.FileField(upload_to="admin_report_snapshots/", blank=True, null=True)
+    pdf_generated_at = models.DateTimeField(null=True, blank=True)
+    pdf_error = models.TextField(blank=True)
+    created_by_email = models.CharField(max_length=254, blank=True)
+    source_schedule = models.ForeignKey(
+        AdminReportEmailSchedule,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="snapshots",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return self.title or f"{self.report_key} {self.period_label}"

@@ -42,9 +42,16 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
-  { label: "Find a Therapist", href: "/therapists/directory" },
+  { label: "Find a Therapist", href: "/therapists/discovery" },
   { label: "For Therapists", href: "/therapists" },
-  { label: "Meet the Team", href: "/meettheteam" },
+  { 
+    label: "Meet the Team", 
+    href: "/meettheteam",
+    subLinks: [
+      { label: "Our Therapists", href: "/therapists/directory" },
+      { label: "Our Supervisors", href: "/therapists/supervisors/directory" },
+    ]
+  },
   { label: "Book Now", href: "/book" },
   { label: "Contact Us", href: "/contactus" },
 ];
@@ -122,8 +129,69 @@ export default function Navbar() {
           mx={4}
         >
           {navLinks.map((link) => {
-            const isDiscovery = link.href === "/therapists/directory";
+            const isDiscovery = link.href === "/therapists/discovery";
             const isActive = pathname === link.href;
+            
+            if (link.subLinks) {
+              return (
+                <Menu key={link.label} isLazy trigger="hover" openDelay={0} closeDelay={100}>
+                  <Box position="relative" display="inline-block">
+                    <HStack spacing={1}>
+                      <ChakraLink
+                        as={NextLink}
+                        href={link.href}
+                        fontWeight="500"
+                        fontFamily="'Inter', var(--font-inter), sans-serif"
+                        fontSize="15px"
+                        letterSpacing="0.2px"
+                        color={isActive ? "#C9A960" : "#212121"}
+                        _hover={{ color: "#C9A960", textDecoration: "none" }}
+                        transition="all 0.2s ease"
+                        whiteSpace="nowrap"
+                      >
+                        {link.label}
+                      </ChakraLink>
+                      <MenuButton
+                        as={IconButton}
+                        icon={<ChevronDownIcon />}
+                        size="xs"
+                        variant="ghost"
+                        color="gray.400"
+                        _hover={{ color: "#C9A960", bg: "transparent" }}
+                        _active={{ bg: "transparent" }}
+                        aria-label="Options"
+                        minW="auto"
+                      />
+                    </HStack>
+                    <MenuList
+                      boxShadow="0 10px 30px rgba(0,0,0,0.1)"
+                      border="1px solid"
+                      borderColor="gray.50"
+                      borderRadius="xl"
+                      p={2}
+                      minW="180px"
+                      zIndex={1001}
+                    >
+                      {link.subLinks.map((sub) => (
+                        <MenuItem
+                          key={sub.label}
+                          as={NextLink}
+                          href={sub.href}
+                          borderRadius="lg"
+                          fontSize="sm"
+                          fontWeight="600"
+                          py={2.5}
+                          _hover={{ bg: "gray.50", color: "#C9A960" }}
+                        >
+                          {sub.label}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Box>
+                </Menu>
+              );
+            }
+
             return (
               <ChakraLink
                 as={NextLink}
@@ -379,21 +447,43 @@ export default function Navbar() {
             boxShadow="xl"
           >
             {navLinks.map((link) => (
-              <ChakraLink
-                as={NextLink}
-                key={link.label}
-                href={link.href}
-                fontWeight="medium"
-                fontFamily="'Inter', var(--font-inter), sans-serif"
-                color="white"
-                py={3.5}
-                px={4}
-                borderRadius="lg"
-                _hover={{ bg: "rgba(255,255,255,0.1)", color: "#C9A960" }}
-                onClick={onClose}
-              >
-                {link.label}
-              </ChakraLink>
+              <Box key={link.label}>
+                <ChakraLink
+                  as={NextLink}
+                  href={link.href}
+                  fontWeight="medium"
+                  fontFamily="'Inter', var(--font-inter), sans-serif"
+                  color="white"
+                  py={3.5}
+                  px={4}
+                  display="block"
+                  borderRadius="lg"
+                  _hover={{ bg: "rgba(255,255,255,0.1)", color: "#C9A960" }}
+                  onClick={onClose}
+                >
+                  {link.label}
+                </ChakraLink>
+                {link.subLinks && (
+                  <VStack align="stretch" spacing={0} pl={6} mb={2}>
+                    {link.subLinks.map((sub) => (
+                      <ChakraLink
+                        as={NextLink}
+                        key={sub.label}
+                        href={sub.href}
+                        color="whiteAlpha.800"
+                        fontSize="sm"
+                        py={2}
+                        px={4}
+                        borderRadius="md"
+                        _hover={{ bg: "rgba(255,255,255,0.05)", color: "white" }}
+                        onClick={onClose}
+                      >
+                        {sub.label}
+                      </ChakraLink>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
             ))}
             
             {!isSignedIn && (

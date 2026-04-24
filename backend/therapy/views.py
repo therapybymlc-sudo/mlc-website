@@ -8,8 +8,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
 from django.db import transaction, models, IntegrityError
 from django.core.exceptions import ValidationError
-from django.db.models import Q, Count, Sum, F, Value
-from django.db.models.functions import Coalesce, TruncMonth
+from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime, date, time, timedelta
@@ -76,6 +75,12 @@ from therapy.utils import (
     generate_dass_summary,
 )
 from therapy.services.appointments import cancel_appointment
+from therapy.services.admin_reports import (
+    REPORT_CATALOG,
+    build_full_overview_payload,
+    build_report,
+    get_period_bounds,
+)
 from therapy.serializers import (
     TherapistProfileSerializer,
     TherapistApplicationSerializer,
@@ -125,7 +130,54 @@ from therapy.serializers import (
     SupervisionActionItemSerializer,
     SupervisionReflectionSerializer,
     ClientFormAssignmentSerializer,
+    SupportTicketSerializer,
 )
+
+# ... existing code ...
+
+class SupportTicketViewSet(viewsets.ModelViewSet):
+    serializer_class = SupportTicketSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        roles = _extract_roles_from_auth(self.request)
+        if "admin" in roles:
+            return SupportTicket.objects.all()
+        return SupportTicket.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        user_role = "client"
+        user_name = "Unknown"
+        user_email = user.email
+
+        # Try to resolve profile for extra info
+        therapist = _resolve_therapist_from_request(self.request)
+        if therapist:
+            user_role = "therapist"
+            user_name = therapist.name
+        else:
+            client = _resolve_client_from_request(self.request)
+            if client:
+                user_role = "client"
+                user_name = client.name
+        
+        serializer.save(
+            user=user,
+            user_role=user_role,
+            user_name=user_name,
+            user_email=user_email
+        )
+
+    @action(detail=True, methods=["post"])
+    def resolve(self, request, pk=None):
+        _require_admin(request)
+        ticket = self.get_object()
+        ticket.status = SupportTicket.Status.RESOLVED
+        ticket.resolved_at = timezone.now()
+        ticket.admin_notes = request.data.get("admin_notes", ticket.admin_notes)
+        ticket.save()
+        return Response(SupportTicketSerializer(ticket).data)
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,
     IsClientOwnerOfBookingRequest,
@@ -3716,7 +3768,33 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(assignment).data)
 
 
+class AdminReportsCatalogView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        _require_admin(request)
+        return Response({"reports": REPORT_CATALOG})
+
+
+class AdminReportDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, report_key):
+        _require_admin(request)
+        period = str(request.query_params.get("period") or "monthly").lower()
+        year = int(request.query_params.get("year") or timezone.now().year)
+        month = int(request.query_params.get("month") or timezone.now().month)
+        quarter = int(request.query_params.get("quarter") or ((timezone.now().month - 1) // 3 + 1))
+        start, end, months_in_period, label, period_type = get_period_bounds(period, year, month, quarter)
+        payload = build_report(report_key, start, end, months_in_period, period_type, label)
+        if payload is None:
+            return Response({"detail": "Unknown report type."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(payload)
+
+
 class AdminReportsOverviewView(APIView):
+    """Legacy single-call aggregate (same shape as before). Prefer /admin/reports/<key>/ for focused loads."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -3727,261 +3805,5 @@ class AdminReportsOverviewView(APIView):
         month = int(request.query_params.get("month") or timezone.now().month)
         quarter = int(request.query_params.get("quarter") or ((timezone.now().month - 1) // 3 + 1))
 
-        start, end, months_in_period, label = self._get_period_bounds(period, year, month, quarter)
-        now = timezone.now()
-
-        incoming_registrations = TherapistApplication.objects.filter(created_at__gte=start, created_at__lt=end).count()
-        new_clients = ClientProfile.objects.filter(created_at__gte=start, created_at__lt=end).count()
-        therapists_onboarded = TherapistProfile.objects.filter(created_at__gte=start, created_at__lt=end).count()
-        therapists_verified = TherapistProfile.objects.filter(
-            is_verified=True,
-            created_at__gte=start,
-            created_at__lt=end,
-        ).count()
-
-        sessions_taken_qs = Appointment.objects.filter(
-            status=Appointment.Status.COMPLETED,
-            start_time__gte=start,
-            start_time__lt=end,
-        )
-        sessions_taken = sessions_taken_qs.count()
-
-        session_revenue_raw = RazorpayPayment.objects.filter(
-            status=RazorpayPayment.Status.PAID,
-            created_at__gte=start,
-            created_at__lt=end,
-        ).aggregate(total=Coalesce(Sum("amount"), Value(0)))["total"] or 0
-        session_revenue = float(Decimal(session_revenue_raw) / Decimal("100.0"))
-
-        monthly_price = Decimal(str(getattr(settings, "RAZORPAY_BASIC_MONTHLY_PRICE", os.getenv("RAZORPAY_BASIC_MONTHLY_PRICE", "0"))))
-        annual_price = Decimal(str(getattr(settings, "RAZORPAY_BASIC_ANNUAL_PRICE", os.getenv("RAZORPAY_BASIC_ANNUAL_PRICE", "0"))))
-
-        active_monthly_subscribers = TherapistProfile.objects.filter(
-            is_basic_subscribed=True,
-            basic_plan="monthly",
-            subscription_status="active",
-        ).count()
-        active_annual_subscribers = TherapistProfile.objects.filter(
-            is_basic_subscribed=True,
-            basic_plan="annual",
-            subscription_status="active",
-        ).count()
-
-        subscription_revenue_estimated = (
-            (monthly_price * Decimal(active_monthly_subscribers) * Decimal(months_in_period))
-            + ((annual_price / Decimal("12")) * Decimal(active_annual_subscribers) * Decimal(months_in_period))
-        )
-
-        subscription_charges_qs = TherapistSubscriptionCharge.objects.filter(
-            captured_at__gte=start,
-            captured_at__lt=end,
-            status__in=["captured", "paid", "active"],
-        )
-        subscription_revenue_recorded_raw = subscription_charges_qs.aggregate(
-            total=Coalesce(Sum("amount"), Value(0))
-        )["total"] or 0
-        subscription_revenue_recorded = float(Decimal(subscription_revenue_recorded_raw) / Decimal("100.0"))
-        has_recorded_subscription_revenue = subscription_charges_qs.exists()
-        subscription_revenue_final = (
-            subscription_revenue_recorded
-            if has_recorded_subscription_revenue
-            else float(subscription_revenue_estimated)
-        )
-
-        revenue_by_therapist = (
-            RazorpayPayment.objects.filter(
-                status=RazorpayPayment.Status.PAID,
-                created_at__gte=start,
-                created_at__lt=end,
-                booking_request__therapist__isnull=False,
-            )
-            .values(
-                "booking_request__therapist",
-                "booking_request__therapist__name",
-            )
-            .annotate(
-                total_amount=Coalesce(Sum("amount"), Value(0)),
-                sessions=Count("id"),
-            )
-            .order_by("-total_amount")
-        )
-        revenue_by_therapist = [
-            {
-                "therapist_id": row["booking_request__therapist"],
-                "therapist_name": row["booking_request__therapist__name"] or "Unknown therapist",
-                "sessions": row["sessions"],
-                "amount": float(Decimal(row["total_amount"] or 0) / Decimal("100.0")),
-            }
-            for row in revenue_by_therapist
-        ]
-
-        sessions_per_therapist = (
-            sessions_taken_qs.values("therapist", "therapist__name")
-            .annotate(sessions=Count("id"))
-            .order_by("-sessions")
-        )
-        sessions_per_therapist = [
-            {
-                "therapist_id": row["therapist"],
-                "therapist_name": row["therapist__name"] or "Unknown therapist",
-                "sessions": row["sessions"],
-            }
-            for row in sessions_per_therapist
-        ]
-
-        new_clients_by_therapist = (
-            TherapeuticRelationship.objects.filter(started_at__gte=start, started_at__lt=end)
-            .values("therapist", "therapist__name")
-            .annotate(new_clients=Count("client", distinct=True))
-        )
-        active_clients_by_therapist = (
-            TherapeuticRelationship.objects.filter(status=TherapeuticRelationship.Status.ACTIVE)
-            .values("therapist", "therapist__name")
-            .annotate(active_clients=Count("client", distinct=True))
-        )
-        active_clients_map = {row["therapist"]: row["active_clients"] for row in active_clients_by_therapist}
-        therapist_client_funnel = []
-        for row in new_clients_by_therapist:
-            therapist_id = row["therapist"]
-            new_clients_count = row["new_clients"] or 0
-            active_clients_count = active_clients_map.get(therapist_id, 0)
-            retention_pct = round((active_clients_count / new_clients_count) * 100, 2) if new_clients_count else None
-            therapist_client_funnel.append(
-                {
-                    "therapist_id": therapist_id,
-                    "therapist_name": row["therapist__name"] or "Unknown therapist",
-                    "new_clients": new_clients_count,
-                    "active_clients": active_clients_count,
-                    "retention_pct": retention_pct,
-                }
-            )
-
-        new_supervisees_by_supervisor = (
-            SupervisoryRelationship.objects.filter(created_at__gte=start, created_at__lt=end)
-            .values("supervisor", "supervisor__name")
-            .annotate(new_supervisees=Count("supervisee", distinct=True))
-        )
-        active_supervisees_by_supervisor = (
-            SupervisoryRelationship.objects.filter(status=SupervisoryRelationship.Status.ACTIVE)
-            .values("supervisor", "supervisor__name")
-            .annotate(active_supervisees=Count("supervisee", distinct=True))
-        )
-        active_supervisees_map = {row["supervisor"]: row["active_supervisees"] for row in active_supervisees_by_supervisor}
-        supervisor_funnel = []
-        for row in new_supervisees_by_supervisor:
-            supervisor_id = row["supervisor"]
-            new_supervisees_count = row["new_supervisees"] or 0
-            active_supervisees_count = active_supervisees_map.get(supervisor_id, 0)
-            retention_pct = round((active_supervisees_count / new_supervisees_count) * 100, 2) if new_supervisees_count else None
-            supervisor_funnel.append(
-                {
-                    "supervisor_id": supervisor_id,
-                    "supervisor_name": row["supervisor__name"] or "Unknown supervisor",
-                    "new_supervisees": new_supervisees_count,
-                    "active_supervisees": active_supervisees_count,
-                    "retention_pct": retention_pct,
-                }
-            )
-
-        sessions_monthly_series = (
-            Appointment.objects.filter(
-                status=Appointment.Status.COMPLETED,
-                start_time__gte=start,
-                start_time__lt=end,
-            )
-            .annotate(bucket=TruncMonth("start_time"))
-            .values("bucket")
-            .annotate(sessions=Count("id"))
-            .order_by("bucket")
-        )
-        sessions_monthly_series = [
-            {"month": row["bucket"].strftime("%Y-%m"), "sessions": row["sessions"]}
-            for row in sessions_monthly_series
-            if row["bucket"]
-        ]
-
-        session_revenue_monthly_series = (
-            RazorpayPayment.objects.filter(
-                status=RazorpayPayment.Status.PAID,
-                created_at__gte=start,
-                created_at__lt=end,
-            )
-            .annotate(bucket=TruncMonth("created_at"))
-            .values("bucket")
-            .annotate(total=Coalesce(Sum("amount"), Value(0)))
-            .order_by("bucket")
-        )
-        session_revenue_monthly_series = [
-            {"month": row["bucket"].strftime("%Y-%m"), "revenue": float(Decimal(row["total"] or 0) / Decimal("100.0"))}
-            for row in session_revenue_monthly_series
-            if row["bucket"]
-        ]
-
-        response = {
-            "period": {
-                "period_type": period,
-                "label": label,
-                "start": start.isoformat(),
-                "end": end.isoformat(),
-                "months_in_period": months_in_period,
-                "generated_at": now.isoformat(),
-            },
-            "kpis": {
-                "incoming_registrations": incoming_registrations,
-                "new_clients": new_clients,
-                "therapists_onboarded": therapists_onboarded,
-                "therapists_verified": therapists_verified,
-                "sessions_taken": sessions_taken,
-                "session_revenue": round(session_revenue, 2),
-                "subscription_revenue_estimated": round(float(subscription_revenue_estimated), 2),
-                "subscription_revenue_recorded": round(subscription_revenue_recorded, 2),
-                "subscription_revenue": round(subscription_revenue_final, 2),
-                "subscription_revenue_source": "recorded" if has_recorded_subscription_revenue else "estimated",
-                "total_revenue_estimated": round(session_revenue + subscription_revenue_final, 2),
-                "active_monthly_subscribers": active_monthly_subscribers,
-                "active_annual_subscribers": active_annual_subscribers,
-            },
-            "subscription_breakdown": {
-                "monthly_price": float(monthly_price),
-                "annual_price": float(annual_price),
-                "monthly_subscribers": active_monthly_subscribers,
-                "annual_subscribers": active_annual_subscribers,
-            },
-            "therapist_performance": {
-                "revenue_by_therapist": revenue_by_therapist,
-                "sessions_per_therapist": sessions_per_therapist,
-                "client_funnel": therapist_client_funnel,
-            },
-            "supervision_performance": {
-                "supervisor_funnel": supervisor_funnel,
-            },
-            "series": {
-                "sessions_monthly": sessions_monthly_series,
-                "session_revenue_monthly": session_revenue_monthly_series,
-            },
-        }
-        return Response(response)
-
-    def _get_period_bounds(self, period, year, month, quarter):
-        tz = timezone.get_current_timezone()
-        if period == "yearly":
-            start = timezone.make_aware(datetime(year, 1, 1, 0, 0, 0), tz)
-            end = timezone.make_aware(datetime(year + 1, 1, 1, 0, 0, 0), tz)
-            return start, end, 12, f"{year}"
-        if period == "quarterly":
-            q = min(max(quarter, 1), 4)
-            start_month = (q - 1) * 3 + 1
-            start = timezone.make_aware(datetime(year, start_month, 1, 0, 0, 0), tz)
-            if start_month + 3 > 12:
-                end = timezone.make_aware(datetime(year + 1, 1, 1, 0, 0, 0), tz)
-            else:
-                end = timezone.make_aware(datetime(year, start_month + 3, 1, 0, 0, 0), tz)
-            return start, end, 3, f"Q{q} {year}"
-
-        m = min(max(month, 1), 12)
-        start = timezone.make_aware(datetime(year, m, 1, 0, 0, 0), tz)
-        if m == 12:
-            end = timezone.make_aware(datetime(year + 1, 1, 1, 0, 0, 0), tz)
-        else:
-            end = timezone.make_aware(datetime(year, m + 1, 1, 0, 0, 0), tz)
-        return start, end, 1, f"{year}-{m:02d}"
+        start, end, months_in_period, label, period_type = get_period_bounds(period, year, month, quarter)
+        return Response(build_full_overview_payload(start, end, months_in_period, period_type, label))

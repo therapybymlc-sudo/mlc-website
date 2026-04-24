@@ -34,8 +34,8 @@ const fallbackHome = {
       "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.",
     paragraph_two:
       "At MLC Therapy, you enter a connected therapy ecosystem where matching, sessions, resources, and care continuity live in one secure experience.",
-    primary_label: "Find Your Therapist",
-    primary_link: "/therapists/directory",
+    primary_label: "Find My Therapist",
+    primary_link: "/therapists/discovery",
     secondary_label: "I'm a Therapist",
     secondary_link: "/therapists",
     background_image: "/hero-bg.jpg",
@@ -195,7 +195,7 @@ export default function HomeClient() {
           <VStack spacing={6} mt={12} align="center">
             <Button
               as={NextLink}
-              href="/therapists/directory"
+              href="/therapists/discovery"
               size="lg"
               bg="#56756D"
               color="white"
@@ -207,7 +207,7 @@ export default function HomeClient() {
               px={14}
               py={8}
             >
-              Find Your Therapist
+              Take the Matching Quiz
             </Button>
             <HStack spacing={4}>
               <Text fontSize="xs" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>

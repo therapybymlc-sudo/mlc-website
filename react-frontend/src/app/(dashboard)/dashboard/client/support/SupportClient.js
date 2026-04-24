@@ -29,6 +29,7 @@ import {
   FiHelpCircle,
   FiLifeBuoy
 } from "react-icons/fi";
+import { apiPost } from "../../../../../api.js";
 
 export default function ClientSupportClient() {
   const toast = useToast();
@@ -43,7 +44,7 @@ export default function ClientSupportClient() {
     e.preventDefault();
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); 
+      await apiPost("support-tickets/", formData);
       
       toast({
         title: "Message Sent",

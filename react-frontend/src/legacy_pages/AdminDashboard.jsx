@@ -27,6 +27,9 @@ import {
   Tr,
   Th,
   Td,
+  Tabs,
+  TabList,
+  Tab,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -47,7 +50,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { apiGet, apiPost, apiPut, apiDelete } from "../api.js";
+import { apiGet, apiGetBlob, apiPost, apiPut, apiPatch, apiDelete } from "../api.js";
 import { 
   HomeEditor, 
   AboutEditor, 
@@ -768,6 +771,75 @@ const MiniBarChart = ({ title, data = [], valueKey, unit = "" }) => {
   );
 };
 
+const ReportSectionCard = ({ title, description, children, headerRight }) => (
+  <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4} bg="white">
+    <HStack justify="space-between" align="flex-start" mb={description ? 2 : 4} flexWrap="wrap" gap={2}>
+      <Heading size="sm">{title}</Heading>
+      {headerRight}
+    </HStack>
+    {description ? (
+      <Text fontSize="sm" color="gray.600" mb={4}>
+        {description}
+      </Text>
+    ) : null}
+    {children}
+  </Box>
+);
+
+const CountGrid = ({ data = {} }) => (
+  <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3}>
+    {Object.entries(data).map(([k, v]) => (
+      <MetricCard
+        key={k}
+        label={k.replace(/_/g, " ")}
+        value={typeof v === "number" ? v : String(v)}
+      />
+    ))}
+  </SimpleGrid>
+);
+
+const downloadJson = (filename, obj) => {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const formatDelta = (v) => {
+  if (v == null || Number.isNaN(Number(v))) return "—";
+  const n = Number(v);
+  if (n > 0) return `+${n.toLocaleString()}`;
+  return n.toLocaleString();
+};
+
+const FALLBACK_ADMIN_REPORT_CATALOG = [
+  { key: "executive", title: "Executive summary", description: "Headline KPIs vs prior period." },
+  { key: "growth", title: "Growth & pipeline", description: "Applications, signups, relationships." },
+  { key: "revenue", title: "Revenue & subscriptions", description: "Checkout, subscribers, trends." },
+  { key: "operations", title: "Clinical operations", description: "Appointments and booking funnel." },
+  { key: "therapist_practice", title: "Therapist practice", description: "Per-therapist scorecard." },
+  { key: "supervision", title: "Supervision network", description: "Supervisors and documentation." },
+  { key: "platform", title: "Platform & support", description: "Tickets and inbound leads." },
+];
+
+const growthSectionBody = (sec) => {
+  if (sec.counts) return <CountGrid data={sec.counts} />;
+  const skip = new Set(["title", "description", "counts", "rows"]);
+  const pairs = Object.entries(sec).filter(
+    ([k, v]) => !skip.has(k) && v != null && typeof v !== "object"
+  );
+  return (
+    <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3}>
+      {pairs.map(([k, v]) => (
+        <MetricCard key={k} label={k.replace(/_/g, " ")} value={v} />
+      ))}
+    </SimpleGrid>
+  );
+};
+
   const Sidebar = ({ activeTab, setActiveTab }) => (
     <VStack 
       w="280px" 
@@ -796,6 +868,7 @@ const MiniBarChart = ({ title, data = [], valueKey, unit = "" }) => {
         <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>LEADS & INQUIRIES</Text>
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Mail} label="Contact Inquiries" id="messages" />
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={FileCheck} label="Booking Leads" id="bookings" />
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={HelpCircle} label="Support Tickets" id="support_tickets" />
       </VStack>
 
       <VStack align="stretch" spacing={1}>
@@ -860,8 +933,10 @@ export default function AdminDashboard() {
     setIsMounted(true);
   }, []);
 
-  const [activeTab, setActiveTab] = useState("vetting");
-  const { isAuthenticated, isAdmin, login, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState("overview");
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [localLoading, setLocalLoading] = useState(true);
+  const { isAuthenticated, isAdmin, login, loading: authLoading } = useAuth();
   const toast = useToast();
 
   const [members, setMembers] = useState([]);
@@ -897,7 +972,21 @@ export default function AdminDashboard() {
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
   const [reportQuarter, setReportQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1);
   const [reportsLoading, setReportsLoading] = useState(false);
-  const [reportData, setReportData] = useState(null);
+  const [reportCatalog, setReportCatalog] = useState([]);
+  const [activeReportKey, setActiveReportKey] = useState("executive");
+  const [reportByKey, setReportByKey] = useState({});
+  const [reportWorkspaceTab, setReportWorkspaceTab] = useState("live");
+  const [reportSnapshots, setReportSnapshots] = useState([]);
+  const [reportSchedules, setReportSchedules] = useState([]);
+  const [snapshotTitle, setSnapshotTitle] = useState("");
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+  const [schedName, setSchedName] = useState("");
+  const [schedReportKey, setSchedReportKey] = useState("executive");
+  const [schedPreset, setSchedPreset] = useState("previous_month");
+  const [schedFreq, setSchedFreq] = useState("monthly");
+  const [schedWeekday, setSchedWeekday] = useState(0);
+  const [schedDayOfMonth, setSchedDayOfMonth] = useState(1);
+  const [schedRecipients, setSchedRecipients] = useState("");
 
   const fetchContactMessages = async () => {
     try {
@@ -913,25 +1002,183 @@ export default function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
-  const fetchAdminReports = async () => {
+  const reportQueryString = () =>
+    new URLSearchParams({
+      period: reportPeriod,
+      year: String(reportYear),
+      month: String(reportMonth),
+      quarter: String(reportQuarter),
+    }).toString();
+
+  const fetchReportCatalog = async () => {
+    try {
+      const data = await apiGet("admin/reports/catalog/");
+      const list = Array.isArray(data?.reports) ? data.reports : [];
+      setReportCatalog(list);
+      if (list.length && !list.some((r) => r.key === activeReportKey)) {
+        setActiveReportKey(list[0].key);
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        status: "warning",
+        title: "Report catalog unavailable",
+        description: "Using default report tabs.",
+      });
+    }
+  };
+
+  const fetchAdminReport = async (key) => {
+    const reportKey = key || activeReportKey;
     try {
       setReportsLoading(true);
-      const query = new URLSearchParams({
-        period: reportPeriod,
-        year: String(reportYear),
-        month: String(reportMonth),
-        quarter: String(reportQuarter),
-      });
-      const data = await apiGet(`admin/reports/overview?${query.toString()}`);
-      setReportData(data);
+      const data = await apiGet(`admin/reports/${reportKey}/?${reportQueryString()}`);
+      setReportByKey((prev) => ({ ...prev, [reportKey]: data }));
     } catch (err) {
       toast({
         status: "error",
-        title: "Could not load reports",
+        title: "Could not load report",
         description: err?.response?.data?.detail || "Please try again.",
       });
     } finally {
       setReportsLoading(false);
+    }
+  };
+
+  const fetchReportSnapshots = async () => {
+    try {
+      const data = await apiGet("admin/report-snapshots/");
+      setReportSnapshots(Array.isArray(data) ? data : data.results ?? []);
+    } catch (err) {
+      console.error(err);
+      toast({ status: "error", title: "Could not load snapshots" });
+    }
+  };
+
+  const fetchReportSchedules = async () => {
+    try {
+      const data = await apiGet("admin/report-email-schedules/");
+      setReportSchedules(Array.isArray(data) ? data : data.results ?? []);
+    } catch (err) {
+      console.error(err);
+      toast({ status: "error", title: "Could not load schedules" });
+    }
+  };
+
+  const saveCurrentReportSnapshot = async () => {
+    try {
+      setSavingSnapshot(true);
+      await apiPost("admin/report-snapshots/", {
+        report_key: activeReportKey,
+        period: reportPeriod,
+        year: reportYear,
+        month: reportMonth,
+        quarter: reportQuarter,
+        title:
+          snapshotTitle.trim() ||
+          `${activeReportKey} ${reportByKey[activeReportKey]?.period?.label || ""}`,
+      });
+      toast({
+        status: "success",
+        title: "Snapshot saved",
+        description: "Stored with PDF when generation succeeds.",
+      });
+      setSnapshotTitle("");
+      if (reportWorkspaceTab === "snapshots") fetchReportSnapshots();
+    } catch (err) {
+      toast({
+        status: "error",
+        title: "Snapshot failed",
+        description: err?.response?.data?.detail || "Try again.",
+      });
+    } finally {
+      setSavingSnapshot(false);
+    }
+  };
+
+  const downloadSnapshotPdfFile = async (snap) => {
+    try {
+      const blob = await apiGetBlob(`admin/report-snapshots/${snap.id}/pdf/`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `mlc-snapshot-${snap.report_key}-${snap.period_label || snap.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ status: "error", title: "PDF download failed" });
+    }
+  };
+
+  const deleteSnapshot = async (id) => {
+    try {
+      await apiDelete(`admin/report-snapshots/${id}/`);
+      fetchReportSnapshots();
+      toast({ status: "success", title: "Snapshot deleted" });
+    } catch {
+      toast({ status: "error", title: "Delete failed" });
+    }
+  };
+
+  const createEmailSchedule = async () => {
+    const emails = schedRecipients.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
+    try {
+      await apiPost("admin/report-email-schedules/", {
+        name: schedName,
+        report_key: schedReportKey,
+        period_preset: schedPreset,
+        frequency: schedFreq,
+        weekday: schedFreq === "weekly" ? Number(schedWeekday) : null,
+        day_of_month: schedFreq === "monthly" ? Number(schedDayOfMonth) : null,
+        recipient_emails: emails,
+        is_active: true,
+      });
+      toast({ status: "success", title: "Schedule created" });
+      setSchedName("");
+      setSchedRecipients("");
+      fetchReportSchedules();
+    } catch (err) {
+      toast({
+        status: "error",
+        title: "Could not create schedule",
+        description:
+          typeof err?.response?.data === "object"
+            ? JSON.stringify(err.response.data)
+            : err?.response?.data?.detail || "",
+      });
+    }
+  };
+
+  const sendScheduleNow = async (id) => {
+    try {
+      await apiPost(`admin/report-email-schedules/${id}/send-now/`, {});
+      toast({ status: "success", title: "Report emailed" });
+      fetchReportSchedules();
+      fetchReportSnapshots();
+    } catch (err) {
+      toast({
+        status: "error",
+        title: "Send failed",
+        description: err?.response?.data?.detail || "",
+      });
+    }
+  };
+
+  const patchScheduleActive = async (row, active) => {
+    try {
+      await apiPatch(`admin/report-email-schedules/${row.id}/`, { is_active: active });
+      fetchReportSchedules();
+    } catch {
+      toast({ status: "error", title: "Update failed" });
+    }
+  };
+
+  const deleteSchedule = async (id) => {
+    try {
+      await apiDelete(`admin/report-email-schedules/${id}/`);
+      fetchReportSchedules();
+    } catch {
+      toast({ status: "error", title: "Delete failed" });
     }
   };
 
@@ -1188,19 +1435,65 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isAdmin]);
 
+  const fetchSupportTickets = async () => {
+    try {
+      const data = await apiGet("support-tickets/");
+      setSupportTickets(data);
+    } catch (err) {
+      console.error("Failed to fetch support tickets", err);
+    }
+  };
+
+  const resolveTicket = async (id, adminNotes) => {
+    try {
+      await apiPost(`support-tickets/${id}/resolve/`, { admin_notes: adminNotes });
+      toast({ status: "success", title: "Ticket Resolved" });
+      fetchSupportTickets();
+    } catch (err) {
+      toast({ status: "error", title: "Failed to resolve ticket" });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "messages") fetchContactMessages();
+    if (activeTab === "bookings") fetchQuickBookings();
+    if (activeTab === "support_tickets") fetchSupportTickets();
+  }, [activeTab]);
+
   useEffect(() => {
     if (!isAuthenticated || !isAdmin) return;
     if (activeTab !== "reports") return;
-    fetchAdminReports();
-  }, [isAuthenticated, isAdmin, activeTab, reportPeriod, reportYear, reportMonth, reportQuarter]);
+    fetchReportCatalog();
+  }, [isAuthenticated, isAdmin, activeTab]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+    if (activeTab !== "reports") return;
+    if (!activeReportKey) return;
+    fetchAdminReport(activeReportKey);
+  }, [isAuthenticated, isAdmin, activeTab, activeReportKey, reportPeriod, reportYear, reportMonth, reportQuarter]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+    if (activeTab !== "reports") return;
+    if (reportWorkspaceTab !== "snapshots") return;
+    fetchReportSnapshots();
+  }, [isAuthenticated, isAdmin, activeTab, reportWorkspaceTab]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+    if (activeTab !== "reports") return;
+    if (reportWorkspaceTab !== "schedules") return;
+    fetchReportSchedules();
+  }, [isAuthenticated, isAdmin, activeTab, reportWorkspaceTab]);
 
   if (!isMounted) return null;
 
-  if (loading) {
+  if (authLoading) {
     return (
-      <Box py={20} textAlign="center">
+      <Flex h="100vh" align="center" justify="center" bg="#F9FAFB">
         <Text>Loading…</Text>
-      </Box>
+      </Flex>
     );
   }
 
@@ -1245,184 +1538,892 @@ export default function AdminDashboard() {
           </HStack>
         </HStack>
 
-        {activeTab === "reports" && (
-          <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
-            <HStack justify="space-between" mb={6} flexWrap="wrap" gap={4}>
-              <Heading size="md" color="mlc.greenDark">Performance & Revenue Reports</Heading>
-              <HStack>
-                <Select size="sm" value={reportPeriod} onChange={(e) => setReportPeriod(e.target.value)} w="140px">
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="yearly">Yearly</option>
-                </Select>
-                <Input
-                  size="sm"
-                  type="number"
-                  value={reportYear}
-                  onChange={(e) => setReportYear(Number(e.target.value || new Date().getFullYear()))}
-                  w="110px"
-                />
-                {reportPeriod === "monthly" && (
-                  <Select size="sm" value={reportMonth} onChange={(e) => setReportMonth(Number(e.target.value))} w="120px">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <option key={i + 1} value={i + 1}>{i + 1}</option>
-                    ))}
-                  </Select>
-                )}
-                {reportPeriod === "quarterly" && (
-                  <Select size="sm" value={reportQuarter} onChange={(e) => setReportQuarter(Number(e.target.value))} w="120px">
-                    <option value={1}>Q1</option>
-                    <option value={2}>Q2</option>
-                    <option value={3}>Q3</option>
-                    <option value={4}>Q4</option>
-                  </Select>
-                )}
-                <Button size="sm" colorScheme="teal" onClick={fetchAdminReports} isLoading={reportsLoading}>
-                  Refresh
-                </Button>
-              </HStack>
-            </HStack>
+        {activeTab === "reports" && (() => {
+          const catalogTabs =
+            reportCatalog.length > 0 ? reportCatalog : FALLBACK_ADMIN_REPORT_CATALOG;
+          const tabIndex = Math.max(
+            0,
+            catalogTabs.findIndex((t) => t.key === activeReportKey)
+          );
+          const reportData = reportByKey[activeReportKey];
+          const activeMeta = catalogTabs.find((t) => t.key === activeReportKey);
 
-            {reportsLoading && <Text color="gray.500">Loading report data...</Text>}
+          return (
+            <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
+              <VStack align="stretch" spacing={6}>
+                <HStack spacing={2} flexWrap="wrap" pb={2} borderBottom="1px solid" borderColor="gray.100">
+                  <Button
+                    size="sm"
+                    variant={reportWorkspaceTab === "live" ? "solid" : "ghost"}
+                    colorScheme="teal"
+                    onClick={() => setReportWorkspaceTab("live")}
+                  >
+                    Live reports
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={reportWorkspaceTab === "snapshots" ? "solid" : "ghost"}
+                    colorScheme="teal"
+                    onClick={() => setReportWorkspaceTab("snapshots")}
+                  >
+                    Saved snapshots
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={reportWorkspaceTab === "schedules" ? "solid" : "ghost"}
+                    colorScheme="teal"
+                    onClick={() => setReportWorkspaceTab("schedules")}
+                  >
+                    Email schedules
+                  </Button>
+                </HStack>
 
-            {!reportsLoading && reportData && (
-              <VStack align="stretch" spacing={8}>
-                <Box p={4} borderRadius="xl" bg="gray.50">
-                  <Text fontSize="sm" color="gray.600">
-                    Report Window: <b>{reportData?.period?.label}</b> ({new Date(reportData?.period?.start).toLocaleDateString()} - {new Date(reportData?.period?.end).toLocaleDateString()})
-                  </Text>
-                </Box>
-
-                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
-                  <MetricCard label="Incoming Registrations" value={reportData?.kpis?.incoming_registrations} />
-                  <MetricCard label="New Clients" value={reportData?.kpis?.new_clients} />
-                  <MetricCard label="Therapists Onboarded" value={reportData?.kpis?.therapists_onboarded} />
-                  <MetricCard label="Therapists Verified" value={reportData?.kpis?.therapists_verified} />
-                  <MetricCard label="Sessions Completed" value={reportData?.kpis?.sessions_taken} />
-                  <MetricCard label="Session Revenue" value={`₹${Number(reportData?.kpis?.session_revenue || 0).toLocaleString()}`} />
-                  <MetricCard
-                    label={`Subscriber Revenue (${reportData?.kpis?.subscription_revenue_source || "estimated"})`}
-                    value={`₹${Number(reportData?.kpis?.subscription_revenue || 0).toLocaleString()}`}
-                  />
-                  <MetricCard label="Total Revenue (est.)" value={`₹${Number(reportData?.kpis?.total_revenue_estimated || 0).toLocaleString()}`} />
-                </SimpleGrid>
-
-                <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-                  <MiniBarChart
-                    title="Sessions Trend"
-                    data={reportData?.series?.sessions_monthly || []}
-                    valueKey="sessions"
-                  />
-                  <MiniBarChart
-                    title="Session Revenue Trend"
-                    data={reportData?.series?.session_revenue_monthly || []}
-                    valueKey="revenue"
-                    unit=" ₹"
-                  />
-                </SimpleGrid>
-
-                <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-                  <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
-                    <HStack justify="space-between" mb={4}>
-                      <Heading size="sm">Therapist Revenue</Heading>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => downloadCsv("therapist_revenue.csv", reportData?.therapist_performance?.revenue_by_therapist || [])}
-                      >
-                        Export CSV
-                      </Button>
-                    </HStack>
-                    <Table size="sm">
-                      <Thead>
-                        <Tr>
-                          <Th>Therapist</Th>
-                          <Th isNumeric>Sessions</Th>
-                          <Th isNumeric>Revenue</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {(reportData?.therapist_performance?.revenue_by_therapist || []).slice(0, 10).map((row) => (
-                          <Tr key={row.therapist_id}>
-                            <Td>{row.therapist_name}</Td>
-                            <Td isNumeric>{row.sessions}</Td>
-                            <Td isNumeric>₹{Number(row.amount || 0).toLocaleString()}</Td>
-                          </Tr>
-                        ))}
-                      </Tbody>
-                    </Table>
-                  </Box>
-
-                  <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
-                    <HStack justify="space-between" mb={4}>
-                      <Heading size="sm">Therapist Client Funnel</Heading>
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => downloadCsv("therapist_client_funnel.csv", reportData?.therapist_performance?.client_funnel || [])}
-                      >
-                        Export CSV
-                      </Button>
-                    </HStack>
-                    <Table size="sm">
-                      <Thead>
-                        <Tr>
-                          <Th>Therapist</Th>
-                          <Th isNumeric>New Clients</Th>
-                          <Th isNumeric>Active Clients</Th>
-                          <Th isNumeric>Retention %</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {(reportData?.therapist_performance?.client_funnel || []).slice(0, 10).map((row) => (
-                          <Tr key={row.therapist_id}>
-                            <Td>{row.therapist_name}</Td>
-                            <Td isNumeric>{row.new_clients}</Td>
-                            <Td isNumeric>{row.active_clients}</Td>
-                            <Td isNumeric>{row.retention_pct ?? "—"}</Td>
-                          </Tr>
-                        ))}
-                      </Tbody>
-                    </Table>
-                  </Box>
-                </SimpleGrid>
-
-                <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
-                  <HStack justify="space-between" mb={4}>
-                    <Heading size="sm">Supervision Funnel</Heading>
-                    <Button
-                      size="xs"
-                      variant="outline"
-                      onClick={() => downloadCsv("supervision_funnel.csv", reportData?.supervision_performance?.supervisor_funnel || [])}
+                {reportWorkspaceTab === "live" && (
+                <>
+                <HStack justify="space-between" flexWrap="wrap" gap={4} align="flex-start">
+                  <VStack align="flex-start" spacing={1}>
+                    <Heading size="md" color="mlc.greenDark">
+                      Business intelligence
+                    </Heading>
+                    <Text fontSize="sm" color="gray.600" maxW="lg">
+                      Each tab is a separate report with its own metrics and exports. Choose a period once; refresh pulls the latest data for the active report.
+                    </Text>
+                  </VStack>
+                  <HStack flexWrap="wrap">
+                    <Select
+                      size="sm"
+                      value={reportPeriod}
+                      onChange={(e) => setReportPeriod(e.target.value)}
+                      w="140px"
                     >
-                      Export CSV
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="yearly">Yearly</option>
+                    </Select>
+                    <Input
+                      size="sm"
+                      type="number"
+                      value={reportYear}
+                      onChange={(e) =>
+                        setReportYear(Number(e.target.value || new Date().getFullYear()))
+                      }
+                      w="110px"
+                    />
+                    {reportPeriod === "monthly" && (
+                      <Select
+                        size="sm"
+                        value={reportMonth}
+                        onChange={(e) => setReportMonth(Number(e.target.value))}
+                        w="120px"
+                      >
+                        {Array.from({ length: 12 }).map((_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {i + 1}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                    {reportPeriod === "quarterly" && (
+                      <Select
+                        size="sm"
+                        value={reportQuarter}
+                        onChange={(e) => setReportQuarter(Number(e.target.value))}
+                        w="120px"
+                      >
+                        <option value={1}>Q1</option>
+                        <option value={2}>Q2</option>
+                        <option value={3}>Q3</option>
+                        <option value={4}>Q4</option>
+                      </Select>
+                    )}
+                    <Button
+                      size="sm"
+                      colorScheme="teal"
+                      onClick={() => fetchAdminReport(activeReportKey)}
+                      isLoading={reportsLoading}
+                    >
+                      Refresh
                     </Button>
+                    {reportData && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          downloadJson(
+                            `mlc-report-${activeReportKey}-${reportData?.period?.label || "export"}.json`,
+                            reportData
+                          )
+                        }
+                      >
+                        Export JSON
+                      </Button>
+                    )}
                   </HStack>
-                  <Table size="sm">
-                    <Thead>
-                      <Tr>
-                        <Th>Supervisor</Th>
-                        <Th isNumeric>New Supervisees</Th>
-                        <Th isNumeric>Active Supervisees</Th>
-                        <Th isNumeric>Retention %</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {(reportData?.supervision_performance?.supervisor_funnel || []).slice(0, 12).map((row) => (
-                        <Tr key={row.supervisor_id}>
-                          <Td>{row.supervisor_name}</Td>
-                          <Td isNumeric>{row.new_supervisees}</Td>
-                          <Td isNumeric>{row.active_supervisees}</Td>
-                          <Td isNumeric>{row.retention_pct ?? "—"}</Td>
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </Table>
-                </Box>
+                </HStack>
+
+                <HStack flexWrap="wrap" spacing={3} align="center">
+                  <Input
+                    size="sm"
+                    placeholder="Snapshot title (optional)"
+                    value={snapshotTitle}
+                    onChange={(e) => setSnapshotTitle(e.target.value)}
+                    maxW="300px"
+                  />
+                  <Button
+                    size="sm"
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={saveCurrentReportSnapshot}
+                    isLoading={savingSnapshot}
+                    isDisabled={!reportData?.period}
+                  >
+                    Save snapshot (JSON + PDF)
+                  </Button>
+                </HStack>
+
+                <Tabs
+                  variant="soft-rounded"
+                  colorScheme="teal"
+                  index={tabIndex}
+                  onChange={(i) => setActiveReportKey(catalogTabs[i]?.key || "executive")}
+                >
+                  <TabList flexWrap="wrap" gap={1}>
+                    {catalogTabs.map((t) => (
+                      <Tab key={t.key} fontSize="sm" px={3} py={2}>
+                        {t.title}
+                      </Tab>
+                    ))}
+                  </TabList>
+                </Tabs>
+
+                {activeMeta?.description ? (
+                  <Text fontSize="sm" color="gray.600">
+                    {activeMeta.description}
+                  </Text>
+                ) : null}
+
+                {reportsLoading && <Text color="gray.500">Loading this report…</Text>}
+
+                {!reportsLoading && reportData?.period && (
+                  <Box p={4} borderRadius="xl" bg="gray.50">
+                    <Text fontSize="sm" color="gray.600">
+                      <b>{reportData.title || activeReportKey}</b> — window{" "}
+                      <b>{reportData.period.label}</b> (
+                      {new Date(reportData.period.start).toLocaleDateString()} –{" "}
+                      {new Date(reportData.period.end).toLocaleDateString()})
+                    </Text>
+                  </Box>
+                )}
+
+                {!reportsLoading && activeReportKey === "executive" && reportData?.kpis && (
+                  <VStack align="stretch" spacing={6}>
+                    <Text fontSize="sm" color="gray.600">
+                      Compared with prior period: <b>{reportData.prior_period_label || "—"}</b>
+                    </Text>
+                    <Heading size="sm">Current period</Heading>
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                      <MetricCard
+                        label="Incoming registrations"
+                        value={reportData.kpis.incoming_registrations}
+                      />
+                      <MetricCard label="New clients" value={reportData.kpis.new_clients} />
+                      <MetricCard
+                        label="Therapists onboarded"
+                        value={reportData.kpis.therapists_onboarded}
+                      />
+                      <MetricCard
+                        label="Therapists verified"
+                        value={reportData.kpis.therapists_verified}
+                      />
+                      <MetricCard
+                        label="Sessions completed"
+                        value={reportData.kpis.sessions_taken}
+                      />
+                      <MetricCard
+                        label="Session revenue"
+                        value={`₹${Number(reportData.kpis.session_revenue || 0).toLocaleString()}`}
+                      />
+                      <MetricCard
+                        label={`Subscriber revenue (${reportData.kpis.subscription_revenue_source})`}
+                        value={`₹${Number(reportData.kpis.subscription_revenue || 0).toLocaleString()}`}
+                      />
+                      <MetricCard
+                        label="Total revenue (est.)"
+                        value={`₹${Number(reportData.kpis.total_revenue_estimated || 0).toLocaleString()}`}
+                      />
+                    </SimpleGrid>
+                    {reportData.kpis_prior_period && (
+                      <>
+                        <Heading size="sm">Prior period</Heading>
+                        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                          <MetricCard
+                            label="Incoming registrations"
+                            value={reportData.kpis_prior_period.incoming_registrations}
+                          />
+                          <MetricCard
+                            label="New clients"
+                            value={reportData.kpis_prior_period.new_clients}
+                          />
+                          <MetricCard
+                            label="Sessions completed"
+                            value={reportData.kpis_prior_period.sessions_taken}
+                          />
+                          <MetricCard
+                            label="Total revenue (est.)"
+                            value={`₹${Number(
+                              reportData.kpis_prior_period.total_revenue_estimated || 0
+                            ).toLocaleString()}`}
+                          />
+                        </SimpleGrid>
+                      </>
+                    )}
+                    {reportData.kpis_delta && (
+                      <>
+                        <Heading size="sm">Change (current − prior)</Heading>
+                        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+                          {Object.entries(reportData.kpis_delta).map(([k, v]) => (
+                            <Box
+                              key={k}
+                              p={4}
+                              borderRadius="xl"
+                              border="1px solid"
+                              borderColor="gray.100"
+                              bg="white"
+                            >
+                              <Text fontSize="xs" color="gray.500" textTransform="uppercase">
+                                {k.replace(/_/g, " ")}
+                              </Text>
+                              <Text
+                                fontWeight="700"
+                                color={
+                                  Number(v) > 0 ? "green.600" : Number(v) < 0 ? "red.500" : "gray.700"
+                                }
+                                mt={2}
+                              >
+                                {formatDelta(v)}
+                              </Text>
+                            </Box>
+                          ))}
+                        </SimpleGrid>
+                      </>
+                    )}
+                  </VStack>
+                )}
+
+                {!reportsLoading && activeReportKey === "growth" && reportData?.sections && (
+                  <VStack align="stretch" spacing={6}>
+                    {Object.entries(reportData.sections).map(([sid, sec]) => (
+                      <ReportSectionCard key={sid} title={sec.title} description={sec.description}>
+                        {growthSectionBody(sec)}
+                      </ReportSectionCard>
+                    ))}
+                  </VStack>
+                )}
+
+                {!reportsLoading && activeReportKey === "revenue" && reportData?.sections && (
+                  <VStack align="stretch" spacing={6}>
+                    <ReportSectionCard
+                      title={reportData.sections.headline?.title}
+                      description="List prices apply to active subscriber counts; settlement uses captured charges when available."
+                    >
+                      <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3}>
+                        <MetricCard
+                          label="Session revenue"
+                          value={`₹${Number(
+                            reportData.sections.headline?.kpis?.session_revenue || 0
+                          ).toLocaleString()}`}
+                        />
+                        <MetricCard
+                          label="Subscription revenue"
+                          value={`₹${Number(
+                            reportData.sections.headline?.kpis?.subscription_revenue || 0
+                          ).toLocaleString()}`}
+                        />
+                        <MetricCard
+                          label="Combined (est.)"
+                          value={`₹${Number(
+                            reportData.sections.headline?.kpis?.combined_estimated || 0
+                          ).toLocaleString()}`}
+                        />
+                        <MetricCard
+                          label="Monthly subscribers"
+                          value={reportData.sections.headline?.kpis?.active_monthly_subscribers}
+                        />
+                        <MetricCard
+                          label="Annual subscribers"
+                          value={reportData.sections.headline?.kpis?.active_annual_subscribers}
+                        />
+                      </SimpleGrid>
+                    </ReportSectionCard>
+                    <ReportSectionCard
+                      title={reportData.sections.session_payments?.title}
+                      description={reportData.sections.session_payments?.description}
+                    >
+                      <CountGrid data={reportData.sections.session_payments?.status_counts || {}} />
+                      <HStack mt={4} spacing={6} flexWrap="wrap">
+                        <Text fontSize="sm">
+                          Paid: <b>{reportData.sections.session_payments?.paid_count ?? 0}</b>
+                        </Text>
+                        <Text fontSize="sm">
+                          Failed: <b>{reportData.sections.session_payments?.failed_count ?? 0}</b>
+                        </Text>
+                        <Text fontSize="sm">
+                          Avg paid checkout:{" "}
+                          <b>
+                            ₹
+                            {Number(
+                              reportData.sections.session_payments?.avg_paid_checkout_inr || 0
+                            ).toLocaleString()}
+                          </b>
+                        </Text>
+                      </HStack>
+                    </ReportSectionCard>
+                    <ReportSectionCard
+                      title={reportData.sections.subscription_settlement?.title}
+                      description={reportData.sections.subscription_settlement?.description}
+                      headerRight={
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() =>
+                            downloadCsv(
+                              "subscription_by_therapist.csv",
+                              reportData.sections.subscription_settlement?.by_therapist || []
+                            )
+                          }
+                        >
+                          Export CSV
+                        </Button>
+                      }
+                    >
+                      <Table size="sm">
+                        <Thead>
+                          <Tr>
+                            <Th>Therapist</Th>
+                            <Th isNumeric>Charges</Th>
+                            <Th isNumeric>Amount</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {(
+                            reportData.sections.subscription_settlement?.by_therapist || []
+                          ).map((row) => (
+                            <Tr key={row.therapist_id}>
+                              <Td>{row.therapist_name}</Td>
+                              <Td isNumeric>{row.charge_count}</Td>
+                              <Td isNumeric>₹{Number(row.amount || 0).toLocaleString()}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </ReportSectionCard>
+                    <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
+                      <MiniBarChart
+                        title="Sessions completed"
+                        data={reportData.sections.trends?.sessions_completed || []}
+                        valueKey="sessions"
+                      />
+                      <MiniBarChart
+                        title="Session revenue"
+                        data={reportData.sections.trends?.session_revenue || []}
+                        valueKey="revenue"
+                        unit=" ₹"
+                      />
+                      <MiniBarChart
+                        title="Subscription revenue"
+                        data={reportData.sections.trends?.subscription_revenue || []}
+                        valueKey="revenue"
+                        unit=" ₹"
+                      />
+                    </SimpleGrid>
+                  </VStack>
+                )}
+
+                {!reportsLoading && activeReportKey === "operations" && reportData?.sections && (
+                  <VStack align="stretch" spacing={6}>
+                    {Object.entries(reportData.sections).map(([sid, sec]) => (
+                      <ReportSectionCard key={sid} title={sec.title} description={sec.description}>
+                        {sec.by_status && <CountGrid data={sec.by_status} />}
+                        <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3} mt={sec.by_status ? 4 : 0}>
+                          {Object.entries(sec)
+                            .filter(
+                              ([k, v]) =>
+                                !["title", "description", "by_status"].includes(k) &&
+                                typeof v === "number"
+                            )
+                            .map(([k, v]) => (
+                              <MetricCard key={k} label={k.replace(/_/g, " ")} value={v} />
+                            ))}
+                        </SimpleGrid>
+                      </ReportSectionCard>
+                    ))}
+                  </VStack>
+                )}
+
+                {!reportsLoading &&
+                  activeReportKey === "therapist_practice" &&
+                  reportData?.sections && (
+                    <VStack align="stretch" spacing={6}>
+                      <ReportSectionCard
+                        title={reportData.sections.scorecard?.title}
+                        description={reportData.sections.scorecard?.description}
+                        headerRight={
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() =>
+                              downloadCsv(
+                                "therapist_scorecard.csv",
+                                reportData.sections.scorecard?.rows || []
+                              )
+                            }
+                          >
+                            Export CSV
+                          </Button>
+                        }
+                      >
+                        <Table size="sm">
+                          <Thead>
+                            <Tr>
+                              <Th>Therapist</Th>
+                              <Th isNumeric>Sessions</Th>
+                              <Th isNumeric>Revenue</Th>
+                              <Th isNumeric>New clients</Th>
+                              <Th isNumeric>Active</Th>
+                              <Th isNumeric>Retention %</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {(reportData.sections.scorecard?.rows || []).map((row) => (
+                              <Tr key={row.therapist_id}>
+                                <Td>{row.therapist_name}</Td>
+                                <Td isNumeric>{row.sessions_completed}</Td>
+                                <Td isNumeric>
+                                  ₹{Number(row.session_revenue_inr || 0).toLocaleString()}
+                                </Td>
+                                <Td isNumeric>{row.new_clients}</Td>
+                                <Td isNumeric>{row.active_clients}</Td>
+                                <Td isNumeric>{row.retention_pct ?? "—"}</Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </ReportSectionCard>
+                      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                        <ReportSectionCard
+                          title={reportData.sections.session_revenue_detail?.title}
+                          headerRight={
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              onClick={() =>
+                                downloadCsv(
+                                  "session_revenue_by_therapist.csv",
+                                  reportData.sections.session_revenue_detail?.rows || []
+                                )
+                              }
+                            >
+                              Export CSV
+                            </Button>
+                          }
+                        >
+                          <Table size="sm">
+                            <Thead>
+                              <Tr>
+                                <Th>Therapist</Th>
+                                <Th isNumeric>Checkouts</Th>
+                                <Th isNumeric>Revenue</Th>
+                              </Tr>
+                            </Thead>
+                            <Tbody>
+                              {(
+                                reportData.sections.session_revenue_detail?.rows || []
+                              ).map((row) => (
+                                <Tr key={row.therapist_id}>
+                                  <Td>{row.therapist_name}</Td>
+                                  <Td isNumeric>{row.paid_checkouts}</Td>
+                                  <Td isNumeric>
+                                    ₹{Number(row.session_revenue_inr || 0).toLocaleString()}
+                                  </Td>
+                                </Tr>
+                              ))}
+                            </Tbody>
+                          </Table>
+                        </ReportSectionCard>
+                        <ReportSectionCard
+                          title={reportData.sections.client_funnel?.title}
+                          headerRight={
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              onClick={() =>
+                                downloadCsv(
+                                  "client_funnel.csv",
+                                  reportData.sections.client_funnel?.rows || []
+                                )
+                              }
+                            >
+                              Export CSV
+                            </Button>
+                          }
+                        >
+                          <Table size="sm">
+                            <Thead>
+                              <Tr>
+                                <Th>Therapist</Th>
+                                <Th isNumeric>New</Th>
+                                <Th isNumeric>Active</Th>
+                                <Th isNumeric>%</Th>
+                              </Tr>
+                            </Thead>
+                            <Tbody>
+                              {(reportData.sections.client_funnel?.rows || []).map((row) => (
+                                <Tr key={row.therapist_id}>
+                                  <Td>{row.therapist_name}</Td>
+                                  <Td isNumeric>{row.new_clients}</Td>
+                                  <Td isNumeric>{row.active_clients}</Td>
+                                  <Td isNumeric>{row.retention_pct ?? "—"}</Td>
+                                </Tr>
+                              ))}
+                            </Tbody>
+                          </Table>
+                        </ReportSectionCard>
+                      </SimpleGrid>
+                    </VStack>
+                  )}
+
+                {!reportsLoading && activeReportKey === "supervision" && reportData?.sections && (
+                  <VStack align="stretch" spacing={6}>
+                    <ReportSectionCard
+                      title={reportData.sections.supervisor_funnel?.title}
+                      description={reportData.sections.supervisor_funnel?.description}
+                      headerRight={
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() =>
+                            downloadCsv(
+                              "supervision_funnel.csv",
+                              reportData.sections.supervisor_funnel?.rows || []
+                            )
+                          }
+                        >
+                          Export CSV
+                        </Button>
+                      }
+                    >
+                      <Table size="sm">
+                        <Thead>
+                          <Tr>
+                            <Th>Supervisor</Th>
+                            <Th isNumeric>New</Th>
+                            <Th isNumeric>Active</Th>
+                            <Th isNumeric>Retention %</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {(reportData.sections.supervisor_funnel?.rows || []).map((row) => (
+                            <Tr key={row.supervisor_id}>
+                              <Td>{row.supervisor_name}</Td>
+                              <Td isNumeric>{row.new_supervisees}</Td>
+                              <Td isNumeric>{row.active_supervisees}</Td>
+                              <Td isNumeric>{row.retention_pct ?? "—"}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </ReportSectionCard>
+                    <ReportSectionCard
+                      title={reportData.sections.documentation?.title}
+                      description={reportData.sections.documentation?.description}
+                    >
+                      <MetricCard
+                        label="Notes created"
+                        value={reportData.sections.documentation?.notes_created}
+                      />
+                    </ReportSectionCard>
+                  </VStack>
+                )}
+
+                {!reportsLoading && activeReportKey === "platform" && reportData?.sections && (
+                  <VStack align="stretch" spacing={6}>
+                    <ReportSectionCard
+                      title={reportData.sections.support_tickets?.title}
+                      description={reportData.sections.support_tickets?.description}
+                    >
+                      <MetricCard
+                        label="Opened in period"
+                        value={reportData.sections.support_tickets?.opened}
+                      />
+                      <Heading size="xs" mt={4} mb={2}>
+                        By status
+                      </Heading>
+                      <CountGrid data={reportData.sections.support_tickets?.by_status || {}} />
+                      <Heading size="xs" mt={4} mb={2}>
+                        By category
+                      </Heading>
+                      <CountGrid data={reportData.sections.support_tickets?.by_category || {}} />
+                    </ReportSectionCard>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+                      <ReportSectionCard title={reportData.sections.contact_form?.title}>
+                        <MetricCard
+                          label="Messages"
+                          value={reportData.sections.contact_form?.messages_in_period}
+                        />
+                      </ReportSectionCard>
+                      <ReportSectionCard title={reportData.sections.quick_booking_leads?.title}>
+                        <MetricCard
+                          label="Created"
+                          value={reportData.sections.quick_booking_leads?.created_in_period}
+                        />
+                      </ReportSectionCard>
+                    </SimpleGrid>
+                  </VStack>
+                )}
+
+                {!reportsLoading && !reportData && (
+                  <Text color="gray.500" fontSize="sm">
+                    No data loaded yet for this report.
+                  </Text>
+                )}
+                </>
+                )}
+
+                {reportWorkspaceTab === "snapshots" && (
+                  <VStack align="stretch" spacing={4}>
+                    <Heading size="sm" color="mlc.greenDark">
+                      Saved report snapshots
+                    </Heading>
+                    <Text fontSize="sm" color="gray.600">
+                      Point-in-time copies with PDFs. Create new ones from <b>Live reports</b> using the current period and report tab.
+                    </Text>
+                    <Button size="sm" variant="outline" w="fit-content" onClick={fetchReportSnapshots}>
+                      Refresh list
+                    </Button>
+                    {reportSnapshots.length === 0 ? (
+                      <Text fontSize="sm" color="gray.500">
+                        No snapshots yet.
+                      </Text>
+                    ) : (
+                      <Table size="sm">
+                        <Thead>
+                          <Tr>
+                            <Th>Created</Th>
+                            <Th>Report</Th>
+                            <Th>Period</Th>
+                            <Th>PDF</Th>
+                            <Th />
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {reportSnapshots.map((s) => (
+                            <Tr key={s.id}>
+                              <Td>{new Date(s.created_at).toLocaleString()}</Td>
+                              <Td>{s.report_key}</Td>
+                              <Td>{s.period_label || "—"}</Td>
+                              <Td>
+                                {s.pdf_url ? (
+                                  <Button size="xs" variant="outline" onClick={() => downloadSnapshotPdfFile(s)}>
+                                    Download
+                                  </Button>
+                                ) : (
+                                  <Text fontSize="xs" color="gray.500">
+                                    {s.pdf_error || "—"}
+                                  </Text>
+                                )}
+                              </Td>
+                              <Td>
+                                <Button size="xs" colorScheme="red" variant="ghost" onClick={() => deleteSnapshot(s.id)}>
+                                  Delete
+                                </Button>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    )}
+                  </VStack>
+                )}
+
+                {reportWorkspaceTab === "schedules" && (
+                  <VStack align="stretch" spacing={6}>
+                    <Heading size="sm" color="mlc.greenDark">
+                      Scheduled email delivery
+                    </Heading>
+                    <Text fontSize="sm" color="gray.600">
+                      Runs when you execute{" "}
+                      <Text as="span" fontFamily="mono" fontSize="xs">
+                        python manage.py process_admin_report_schedules
+                      </Text>{" "}
+                      on a daily (or hourly) cron. Monthly schedules use <b>day of month</b>; weekly use <b>weekday</b> (0 = Monday). Each run sends the{" "}
+                      <b>previous complete calendar month / quarter / year</b> per preset. Set{" "}
+                      <Text as="span" fontFamily="mono" fontSize="xs">
+                        EMAIL_BACKEND
+                      </Text>{" "}
+                      and SMTP env vars for real delivery.
+                    </Text>
+
+                    <Box borderWidth="1px" borderRadius="xl" borderColor="gray.100" p={4}>
+                      <Heading size="xs" mb={3}>
+                        New schedule
+                      </Heading>
+                      <VStack align="stretch" spacing={3}>
+                        <HStack flexWrap="wrap">
+                          <Input
+                            size="sm"
+                            placeholder="Label (optional)"
+                            value={schedName}
+                            onChange={(e) => setSchedName(e.target.value)}
+                            maxW="240px"
+                          />
+                          <Select
+                            size="sm"
+                            value={schedReportKey}
+                            onChange={(e) => setSchedReportKey(e.target.value)}
+                            w="200px"
+                          >
+                            {FALLBACK_ADMIN_REPORT_CATALOG.map((r) => (
+                              <option key={r.key} value={r.key}>
+                                {r.title}
+                              </option>
+                            ))}
+                          </Select>
+                          <Select
+                            size="sm"
+                            value={schedPreset}
+                            onChange={(e) => setSchedPreset(e.target.value)}
+                            w="220px"
+                          >
+                            <option value="previous_month">Previous month</option>
+                            <option value="previous_quarter">Previous quarter</option>
+                            <option value="previous_year">Previous year</option>
+                          </Select>
+                        </HStack>
+                        <HStack flexWrap="wrap">
+                          <Select
+                            size="sm"
+                            value={schedFreq}
+                            onChange={(e) => setSchedFreq(e.target.value)}
+                            w="140px"
+                          >
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                          </Select>
+                          {schedFreq === "monthly" && (
+                            <HStack>
+                              <Text fontSize="sm">Day</Text>
+                              <Input
+                                size="sm"
+                                type="number"
+                                min={1}
+                                max={28}
+                                w="70px"
+                                value={schedDayOfMonth}
+                                onChange={(e) => setSchedDayOfMonth(Number(e.target.value || 1))}
+                              />
+                            </HStack>
+                          )}
+                          {schedFreq === "weekly" && (
+                            <Select
+                              size="sm"
+                              value={schedWeekday}
+                              onChange={(e) => setSchedWeekday(Number(e.target.value))}
+                              w="180px"
+                            >
+                              <option value={0}>Monday</option>
+                              <option value={1}>Tuesday</option>
+                              <option value={2}>Wednesday</option>
+                              <option value={3}>Thursday</option>
+                              <option value={4}>Friday</option>
+                              <option value={5}>Saturday</option>
+                              <option value={6}>Sunday</option>
+                            </Select>
+                          )}
+                        </HStack>
+                        <Textarea
+                          size="sm"
+                          placeholder="Recipient emails (comma or newline separated)"
+                          value={schedRecipients}
+                          onChange={(e) => setSchedRecipients(e.target.value)}
+                          minH="80px"
+                        />
+                        <Button size="sm" colorScheme="teal" w="fit-content" onClick={createEmailSchedule}>
+                          Create schedule
+                        </Button>
+                      </VStack>
+                    </Box>
+
+                    <Button size="sm" variant="outline" w="fit-content" onClick={fetchReportSchedules}>
+                      Refresh schedules
+                    </Button>
+                    {reportSchedules.length === 0 ? (
+                      <Text fontSize="sm" color="gray.500">
+                        No schedules yet.
+                      </Text>
+                    ) : (
+                      <Table size="sm">
+                        <Thead>
+                          <Tr>
+                            <Th>Active</Th>
+                            <Th>Report</Th>
+                            <Th>Preset</Th>
+                            <Th>Frequency</Th>
+                            <Th>Last sent</Th>
+                            <Th>Error</Th>
+                            <Th />
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {reportSchedules.map((sch) => (
+                            <Tr key={sch.id}>
+                              <Td>
+                                <Switch
+                                  size="sm"
+                                  isChecked={sch.is_active}
+                                  onChange={(e) => patchScheduleActive(sch, e.target.checked)}
+                                />
+                              </Td>
+                              <Td>{sch.report_key}</Td>
+                              <Td>{sch.period_preset}</Td>
+                              <Td>
+                                {sch.frequency}
+                                {sch.frequency === "monthly" && sch.day_of_month != null
+                                  ? ` (day ${sch.day_of_month})`
+                                  : ""}
+                                {sch.frequency === "weekly" && sch.weekday != null ? ` (wd ${sch.weekday})` : ""}
+                              </Td>
+                              <Td>
+                                {sch.last_sent_at ? new Date(sch.last_sent_at).toLocaleString() : "—"}
+                              </Td>
+                              <Td maxW="180px" fontSize="xs" color="red.500">
+                                {sch.last_error || "—"}
+                              </Td>
+                              <Td>
+                                <HStack spacing={1}>
+                                  <Button size="xs" onClick={() => sendScheduleNow(sch.id)}>
+                                    Send now
+                                  </Button>
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    colorScheme="red"
+                                    onClick={() => deleteSchedule(sch.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </HStack>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    )}
+                  </VStack>
+                )}
               </VStack>
-            )}
-          </Box>
-        )}
+            </Box>
+          );
+        })()}
 
         {activeTab === "vetting" && (
            <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
@@ -1752,6 +2753,80 @@ export default function AdminDashboard() {
                          </Box>
                       </HStack>
                       <Text fontSize="sm" fontStyle="italic">"{b.notes || 'No extra notes'}"</Text>
+                    </Box>
+                  ))}
+                </VStack>
+              )}
+           </Box>
+        )}
+
+        {activeTab === "support_tickets" && (
+           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
+              <Heading size="md" mb={6}>Support Tickets</Heading>
+              {supportTickets.length === 0 ? <Text color="gray.500">No support tickets raised yet.</Text> : (
+                <VStack align="stretch" spacing={6}>
+                  {supportTickets.map(ticket => (
+                    <Box 
+                      key={ticket.id} 
+                      p={6} 
+                      border="1px solid" 
+                      borderColor={ticket.status === 'resolved' ? 'green.100' : 'gray.100'} 
+                      borderRadius="2xl"
+                      bg={ticket.status === 'resolved' ? 'green.50' : 'white'}
+                    >
+                      <Flex justify="space-between" align="start" mb={4}>
+                        <VStack align="start" spacing={1}>
+                          <HStack>
+                            <Badge colorScheme={ticket.user_role === 'therapist' ? 'purple' : 'blue'}>
+                              {ticket.user_role?.toUpperCase()}
+                            </Badge>
+                            <Badge colorScheme={ticket.status === 'resolved' ? 'green' : 'orange'}>
+                              {ticket.status.toUpperCase()}
+                            </Badge>
+                          </HStack>
+                          <Heading size="sm">{ticket.subject}</Heading>
+                          <Text fontSize="xs" color="gray.500">
+                            From: {ticket.user_name} ({ticket.user_email}) • {new Date(ticket.created_at).toLocaleString()}
+                          </Text>
+                        </VStack>
+                        <Tag variant="subtle" colorScheme="gray">{ticket.category}</Tag>
+                      </Flex>
+                      
+                      <Box bg="gray.50" p={4} borderRadius="xl" mb={4}>
+                        <Text fontSize="sm" whiteSpace="pre-wrap">{ticket.description}</Text>
+                      </Box>
+
+                      {ticket.status !== 'resolved' ? (
+                        <VStack align="stretch" spacing={3}>
+                          <FormControl>
+                            <FormLabel fontSize="xs" fontWeight="bold">Admin Notes / Resolution</FormLabel>
+                            <Textarea 
+                              placeholder="How was this resolved?" 
+                              size="sm" 
+                              id={`resolve-notes-${ticket.id}`}
+                              borderRadius="md"
+                              bg="white"
+                            />
+                          </FormControl>
+                          <Button 
+                            size="sm" 
+                            colorScheme="green" 
+                            alignSelf="flex-end"
+                            onClick={() => {
+                              const notes = document.getElementById(`resolve-notes-${ticket.id}`)?.value;
+                              resolveTicket(ticket.id, notes);
+                            }}
+                          >
+                            Mark as Resolved
+                          </Button>
+                        </VStack>
+                      ) : (
+                        <Box borderTop="1px dashed" borderColor="green.200" pt={3}>
+                          <Text fontSize="xs" fontWeight="bold" color="green.600">RESOLUTION NOTES</Text>
+                          <Text fontSize="sm">{ticket.admin_notes || 'No notes provided.'}</Text>
+                          <Text fontSize="xs" color="gray.400" mt={1}>Resolved at: {new Date(ticket.resolved_at).toLocaleString()}</Text>
+                        </Box>
+                      )}
                     </Box>
                   ))}
                 </VStack>

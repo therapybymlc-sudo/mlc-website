@@ -10,6 +10,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from therapy.admin_report_views import (
+    AdminReportEmailScheduleViewSet,
+    AdminReportSnapshotViewSet,
+)
 from therapy.views import (
     TherapistProfileViewSet,
     ClientProfileViewSet,
@@ -70,6 +74,9 @@ from therapy.views import (
     TherapistSubscriptionStatusView,
     TherapistCancelSubscriptionView,
     AdminReportsOverviewView,
+    AdminReportsCatalogView,
+    AdminReportDetailView,
+    SupportTicketViewSet,
 )
 
 # ----------------------------
@@ -120,6 +127,13 @@ router.register(r"supervision-notes", SupervisionNoteViewSet, basename="supervis
 router.register(r"supervision-action-items", SupervisionActionItemViewSet, basename="supervision-action-items")
 router.register(r"supervision-reflections", SupervisionReflectionViewSet, basename="supervision-reflections")
 router.register(r"client-form-assignments", ClientFormAssignmentViewSet, basename="client-form-assignments")
+router.register(r"support-tickets", SupportTicketViewSet, basename="support-tickets")
+router.register(r"admin/report-snapshots", AdminReportSnapshotViewSet, basename="admin-report-snapshots")
+router.register(
+    r"admin/report-email-schedules",
+    AdminReportEmailScheduleViewSet,
+    basename="admin-report-email-schedules",
+)
 
 # ----------------------------
 # Small utility/test endpoints
@@ -213,7 +227,13 @@ urlpatterns = [
     path("api/therapists/match/", TherapistMatchView.as_view(), name="therapists-match"),
     path("api/clients/terminate_relationship/", terminate_relationship, name="terminate-relationship"),
     path("api/therapists/verify/<int:pk>/", VerifyTherapistView.as_view(), name="verify-therapist"),
+    path("api/admin/reports/catalog/", AdminReportsCatalogView.as_view(), name="admin-reports-catalog"),
     path("api/admin/reports/overview/", AdminReportsOverviewView.as_view(), name="admin-reports-overview"),
+    path(
+        "api/admin/reports/<slug:report_key>/",
+        AdminReportDetailView.as_view(),
+        name="admin-report-detail",
+    ),
 
     # REST API
     path("api/", include(router.urls)),

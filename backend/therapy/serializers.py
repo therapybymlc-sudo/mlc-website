@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from therapy.services.admin_reports import REPORT_BUILDERS
 from therapy.models import (
     TherapistProfile,
     ClientProfile,
@@ -43,7 +45,18 @@ from therapy.models import (
     SupervisionActionItem,
     SupervisionReflection,
     ClientFormAssignment,
+    SupportTicket,
+    AdminReportSnapshot,
+    AdminReportEmailSchedule,
 )
+
+# ... existing code ...
+
+class SupportTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicket
+        fields = "__all__"
+        read_only_fields = ["id", "user", "created_at", "updated_at", "resolved_at"]
 
 from .utils import _resolve_therapist_from_request, client_preferred_display_name
 from django.utils import timezone
@@ -1129,3 +1142,117 @@ class ClientFormAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientFormAssignment
         fields = "__all__"
+
+
+class AdminReportSnapshotSerializer(serializers.ModelSerializer):
+    pdf_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdminReportSnapshot
+        fields = (
+            "id",
+            "title",
+            "report_key",
+            "period_type",
+            "year",
+            "month",
+            "quarter",
+            "period_label",
+            "period_start",
+            "period_end",
+            "payload",
+            "pdf",
+            "pdf_url",
+            "pdf_generated_at",
+            "pdf_error",
+            "created_by_email",
+            "source_schedule",
+            "created_at",
+        )
+        read_only_fields = fields
+
+    def get_pdf_url(self, obj):
+        if not obj.pdf:
+            return None
+        request = self.context.get("request")
+        url = obj.pdf.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+
+class AdminReportSnapshotCreateSerializer(serializers.Serializer):
+    report_key = serializers.CharField(max_length=64)
+    period = serializers.ChoiceField(choices=["monthly", "quarterly", "yearly"])
+    year = serializers.IntegerField(min_value=2000, max_value=2100)
+    month = serializers.IntegerField(required=False, default=1, min_value=1, max_value=12)
+    quarter = serializers.IntegerField(required=False, default=1, min_value=1, max_value=4)
+    title = serializers.CharField(required=False, allow_blank=True, max_length=255)
+
+
+class AdminReportEmailScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminReportEmailSchedule
+        fields = (
+            "id",
+            "name",
+            "is_active",
+            "report_key",
+            "period_preset",
+            "frequency",
+            "weekday",
+            "day_of_month",
+            "recipient_emails",
+            "created_by_email",
+            "last_sent_at",
+            "last_error",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_by_email", "last_sent_at", "last_error", "created_at", "updated_at")
+
+    def validate_report_key(self, value):
+        key = (value or "").lower()
+        if key not in REPORT_BUILDERS:
+            raise serializers.ValidationError("Unknown report type.")
+        return key
+
+    def validate_recipient_emails(self, value):
+        if not value or not isinstance(value, list):
+            raise serializers.ValidationError("Provide a non-empty list of email strings.")
+        cleaned = []
+        for e in value:
+            if not isinstance(e, str) or "@" not in e:
+                raise serializers.ValidationError("Each recipient must be a valid email string.")
+            cleaned.append(e.strip())
+        if not cleaned:
+            raise serializers.ValidationError("At least one recipient is required.")
+        return cleaned
+
+    def validate(self, attrs):
+        freq = attrs.get("frequency")
+        if self.instance:
+            freq = freq or self.instance.frequency
+        if freq == AdminReportEmailSchedule.Frequency.MONTHLY:
+            dom = attrs.get("day_of_month")
+            if dom is None and self.instance:
+                dom = self.instance.day_of_month
+            if dom is None:
+                raise serializers.ValidationError(
+                    {"day_of_month": "Required for monthly schedules (e.g. 1 for the 1st)."}
+                )
+            if dom < 1 or dom > 28:
+                raise serializers.ValidationError(
+                    {"day_of_month": "Use day 1–28 to avoid short-month edge cases."}
+                )
+        if freq == AdminReportEmailSchedule.Frequency.WEEKLY:
+            wd = attrs.get("weekday")
+            if wd is None and self.instance:
+                wd = self.instance.weekday
+            if wd is None:
+                raise serializers.ValidationError(
+                    {"weekday": "Required for weekly schedules (0=Monday … 6=Sunday)."}
+                )
+            if wd < 0 or wd > 6:
+                raise serializers.ValidationError({"weekday": "Must be 0–6."})
+        return attrs

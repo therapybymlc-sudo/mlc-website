@@ -127,7 +127,8 @@ export default function Footer() {
               { label: "Our Story", href: "/about" },
               { label: "Therapeutic Services", href: "/services" },
               { label: "Meet the Team", href: "/meettheteam" },
-              { label: "Find a Therapist", href: "/therapists/discovery" },
+              { label: "Therapist Directory", href: "/therapists/directory" },
+              { label: "Find a Therapist (Quiz)", href: "/therapists/discovery" },
               { label: "Psychological Workshops", href: "/workshops" },
             ]} 
           />
@@ -137,6 +138,7 @@ export default function Footer() {
             links={[
               { label: "Join the Network", href: "/therapists" },
               { label: "Apply as Clinician", href: "/therapist-apply" },
+              { label: "Supervisor Directory", href: "/therapists/supervisors/directory" },
               { label: "Global Supervision", href: "/supervision" },
               { label: "Career Opportunities", href: "/careers" },
             ]} 

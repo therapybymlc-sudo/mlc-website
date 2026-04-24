@@ -486,6 +486,20 @@ export default function DiscoveryClient() {
                   <Text fontSize={{ base: "xs", md: "sm" }} fontWeight="600">I consent to this screening and understand it is for therapist matching, not emergency intervention.</Text>
                 </Checkbox>
               </Box>
+              <HStack spacing={2} pt={4}>
+                <Text fontSize="xs" color="gray.500">Already know who you're looking for?</Text>
+                <Button 
+                    as={NextLink} 
+                    href="/therapists/directory" 
+                    variant="link" 
+                    color="teal.600" 
+                    fontSize="xs" 
+                    fontWeight="700"
+                    textDecoration="underline"
+                >
+                    Browse Directory
+                </Button>
+              </HStack>
             </VStack>
           </VStack>
         );

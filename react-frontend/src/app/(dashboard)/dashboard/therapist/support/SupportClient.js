@@ -46,10 +46,7 @@ export default function SupportClient() {
     e.preventDefault();
     setLoading(true);
     try {
-      // Mocking the support ticket submission for now
-      // await apiPost("support/tickets/", formData);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+      await apiPost("support-tickets/", formData);
       
       toast({
         title: "Ticket Raised Successfully",

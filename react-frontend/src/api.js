@@ -138,6 +138,17 @@ export async function apiGet(path) {
   }
 }
 
+/** Authenticated binary download (e.g. PDF). */
+export async function apiGetBlob(path) {
+  try {
+    const res = await api.get(preparePath(path), { responseType: "blob" });
+    return res.data;
+  } catch (err) {
+    console.error(`API GET blob [${path}]:`, err.response?.status, err.response?.data || err.message);
+    throw err;
+  }
+}
+
 export async function apiPost(path, body) {
   try {
     const res = await api.post(preparePath(path), body);
