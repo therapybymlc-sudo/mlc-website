@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, Icon, Image, Badge, Stack, Circle, Flex, Divider, 
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { 
-  FiBriefcase, FiShield, FiHeart, FiActivity, FiVideo, FiClock, FiBookOpen, FiUsers, FiAward, 
-  FiAirplay, FiClipboard, FiSmile, FiZap, FiBarChart2, FiGlobe, FiChevronDown, FiWind, FiSun, FiNavigation, FiLink
+  FiActivity, FiVideo, FiBookOpen, FiUsers, FiAward,
+  FiClipboard, FiZap, FiBarChart2, FiGlobe, FiWind, FiSun, FiNavigation, FiMessageSquare
 } from "react-icons/fi";
 import NextLink from "next/link";
 import LinkButton from "../../components/LinkButton";
@@ -16,24 +16,29 @@ const MotionBox = motion(Box);
 
 const ECOSYSTEM_FEATURES = [
   {
-    title: "One-Stop Admin Solution",
+    title: "Clinical Admin Command Center",
     icon: FiClipboard,
-    desc: "From SOAP notes and intelligent scheduling to digital consent forms—everything you need to run your practice ethically and efficiently."
+    desc: "From SOAP notes and scheduling to consent workflows and smart documentation, your entire practice stack runs in one place."
   },
   {
-    title: "Integrated Video-Conferencing",
+    title: "In-House Secure Video Sessions",
     icon: FiVideo,
-    desc: "Our proprietary, private video tool is designed for therapy, ensuring a stable and secure space for every session."
+    desc: "Host therapy sessions directly inside MLC with a stable, privacy-first environment designed specifically for clinical conversations."
   },
   {
-    title: "Clinical Assessments",
+    title: "In-House Encrypted Chat",
+    icon: FiMessageSquare,
+    desc: "Coordinate with clients safely without exposing your personal number, while keeping all communication linked to care workflows."
+  },
+  {
+    title: "Billing & Invoicing Automation",
     icon: FiBarChart2,
-    desc: "Access our library of validated screening tools and assessments to help guide your clinical formulation and track progress over time."
+    desc: "Generate invoices, track payments, and cut repetitive admin work so you can reclaim hours each week for high-value clinical care."
   },
   {
-    title: "The Shared Journey",
+    title: "The Shared Therapeutic Journey",
     icon: FiGlobe,
-    desc: "Clients get their own dashboard where they can access shared resources, goals, and reflections, keeping their healing journey transparent and organized."
+    desc: "Clients get a connected care dashboard for goals, resources, and reflections, so continuity and collaboration stay strong between sessions."
   }
 ];
 
@@ -52,9 +57,9 @@ export default function TherapistsClient() {
       <Box 
         position="relative" 
         pt={{ base: 32, md: 48 }} 
-        pb={{ base: 20, md: 32 }} 
+        pb={{ base: 16, md: 28 }} 
         px={6} 
-        minH="95vh"
+        minH={{ base: "auto", md: "95vh" }}
         display="flex"
         alignItems="center"
       >
@@ -64,23 +69,26 @@ export default function TherapistsClient() {
         <Box position="absolute" inset={0} bg="rgba(255, 255, 255, 0.92)" zIndex={1} />
 
         <Container maxW="7xl" position="relative" zIndex={2}>
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={20} alignItems="center">
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 10, md: 16 }} alignItems="center">
             <VStack align="start" spacing={8}>
               <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE THERAPY ECOSYSTEM</Badge>
               <Heading as="h1" fontSize={{ base: "4xl", md: "5xl", lg: "7xl" }} fontFamily="'Playfair Display', serif" color="teal.900" lineHeight="1" fontWeight="600">
                 Holding Space <br /> for You.
               </Heading>
-              <Text fontSize="xl" color="teal.900" fontWeight="600" lineHeight="tall" maxW="xl">
-                A structured clinical home designed to support your growth, protect your well-being, and elevate your practice.
+              <Text fontSize={{ base: "lg", md: "xl" }} color="teal.900" fontWeight="600" lineHeight="tall" maxW="xl">
+                A complete therapy operating system designed to protect your boundaries, elevate your outcomes, and reduce admin fatigue.
               </Text>
-              <HStack spacing={4}>
+              <Stack direction={{ base: "column", sm: "row" }} spacing={4} w={{ base: "full", sm: "auto" }}>
+                <LinkButton href="/therapists/supervision-discovery" bg="mlc.gold" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "#b99647" }}>
+                  Find a Mentor
+                </LinkButton>
                 <LinkButton href="/therapist-apply" bg="teal.800" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "teal.900" }}>
                   Join the Collective
                 </LinkButton>
                 <LinkButton href="/login/therapist" variant="ghost" color="teal.800" fontWeight="900">
                   Therapist Sign In
                 </LinkButton>
-              </HStack>
+              </Stack>
             </VStack>
 
             <VStack align="center" spacing={0} position="relative">
@@ -123,6 +131,36 @@ export default function TherapistsClient() {
         </Container>
       </Box>
 
+      {/* Mentor discovery surfaced early */}
+      <Box py={{ base: 10, md: 14 }} px={6} bg="white">
+        <Container maxW="7xl">
+          <Flex
+            direction={{ base: "column", md: "row" }}
+            align={{ base: "start", md: "center" }}
+            justify="space-between"
+            gap={6}
+            p={{ base: 6, md: 8 }}
+            borderRadius="3xl"
+            bg="teal.50"
+            border="1px solid"
+            borderColor="teal.100"
+          >
+            <VStack align="start" spacing={2} maxW="3xl">
+              <Badge colorScheme="teal" borderRadius="full" px={3}>EARLY ACCESS</Badge>
+              <Heading size="md" color="teal.900" fontFamily="'Playfair Display', serif">
+                Find Your Supervisor or Clinical Mentor from Day One
+              </Heading>
+              <Text color="gray.700">
+                Get matched with senior, verified professionals who can support your growth through structured supervision, reflective practice, and real-world clinical guidance.
+              </Text>
+            </VStack>
+            <LinkButton href="/therapists/supervision-discovery" bg="teal.800" color="white" borderRadius="full" px={8} py={6} _hover={{ bg: "teal.900" }}>
+              Start Mentor Matching
+            </LinkButton>
+          </Flex>
+        </Container>
+      </Box>
+
       {/* 💠 THE CLINICAL DASHBOARD SUITE */}
       <Box py={24} px={6} bg="white">
         <Container maxW="7xl">
@@ -131,7 +169,7 @@ export default function TherapistsClient() {
                 <Heading color="teal.900" fontFamily="'Playfair Display', serif" fontSize="4xl">Your Complete Clinical Suite</Heading>
                 <Text color="gray.600" fontSize="lg">Align with best practices effortlessly with a dashboard that handles the complexity of therapy administration.</Text>
              </VStack>
-             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10} w="full">
+             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 6, md: 10 }} w="full">
                 {ECOSYSTEM_FEATURES.map((f, i) => (
                   <HStack key={i} align="start" p={10} bg="#FDFBFA" borderRadius="2rem" shadow="sm" border="1px solid" borderColor="teal.50" spacing={6} transition="all 0.3s" _hover={{ shadow: "xl" }}>
                     <Circle size="60px" bg="teal.50" color="teal.700"><Icon as={f.icon} w={6} h={6} /></Circle>
@@ -147,17 +185,17 @@ export default function TherapistsClient() {
       </Box>
 
       {/* 🧘 WELL-BEING: PRACTICING WHAT YOU PREACH */}
-      <Box bg="teal.900" py={32} color="white" position="relative" overflow="hidden">
+      <Box bg="teal.900" py={{ base: 20, md: 32 }} color="white" position="relative" overflow="hidden">
          <Box position="absolute" top="-10%" left="-10%" w="50%" h="50%" bg="teal.800" borderRadius="full" filter="blur(120px)" opacity="0.4" />
          <Container maxW="7xl">
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={20} alignItems="center">
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 10, md: 20 }} alignItems="center">
                <VStack align="start" spacing={10}>
                   <Badge bg="teal.700" color="teal.100" px={4} py={1} borderRadius="full">CLINICIAN CARE</Badge>
                   <Heading fontSize="5xl" fontFamily="'Playfair Display', serif" lineHeight="1.1">
                     Taking Care of You, So Burnout Stays at Bay.
                   </Heading>
-                  <Text fontSize="xl" opacity="0.9" lineHeight="1.8">
-                    MLC helps you practice what you preach by bringing therapist self-care to your fingertips. Our platform includes tools to monitor your own stress and burnout markers, helping you find balance in real-time.
+                  <Text fontSize={{ base: "md", md: "xl" }} opacity="0.9" lineHeight="1.8">
+                    MLC helps you practice what you preach by bringing therapist well-being directly into your workflow. Track burnout signals early and maintain a healthier pace of practice.
                   </Text>
                   
                   <VStack align="start" spacing={6} w="full">
@@ -178,7 +216,7 @@ export default function TherapistsClient() {
       </Box>
 
       {/* 📈 COMPREHENSIVE GROWTH & SUPERVISION */}
-      <Box py={32} px={6} bg="white">
+      <Box py={{ base: 20, md: 32 }} px={6} bg="white">
          <Container maxW="7xl">
             <VStack spacing={20}>
                <VStack spacing={6} textAlign="center" maxW="4xl">

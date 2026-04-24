@@ -203,6 +203,29 @@ export default function ProfileClient() {
     setKeywordInput("");
   };
 
+  const fileInputRef = useRef(null);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('profile_image', file);
+    
+    setLoading(true);
+    try {
+      // For therapists, the field might be named differently or need a specific endpoint
+      // Assuming apiPatch to therapists/me/ or similar
+      await apiPatch(`therapists/${profile.id}/`, formDataUpload);
+      toast({ title: "Photo updated", status: "success" });
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      toast({ title: "Upload failed", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleArray = (field, item) => {
     const current = profile[field] || [];
     const updated = current.includes(item) ? current.filter(i => i !== item) : [...current, item];
@@ -222,6 +245,13 @@ export default function ProfileClient() {
 
   return (
     <Box maxW="1200px" mx="auto" pb={20}>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        accept="image/*" 
+        onChange={handlePhotoUpload} 
+      />
       <VStack align="stretch" spacing={6} mb={10}>
         <Flex 
           direction={{ base: "column", md: "row" }}
@@ -292,8 +322,8 @@ export default function ProfileClient() {
                   </FormControl>
                </VStack>
                <VStack align="center" justify="center">
-                  <Avatar size="2xl" name={profile.name} src={profile.imageUrl} bg="#56756D" />
-                  <Button mt={4} leftIcon={<FiCamera />} variant="ghost" size="sm">Update Profile Picture</Button>
+                  <Avatar size="2xl" name={profile.name} src={profile.profile_image || profile.imageUrl} bg="#56756D" />
+                  <Button mt={4} leftIcon={<FiCamera />} variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} isLoading={loading}>Update Profile Picture</Button>
                </VStack>
             </SimpleGrid>
             <Divider my={10} />
@@ -797,12 +827,28 @@ export default function ProfileClient() {
                      <Textarea bg="white" placeholder="Best fit cases, specific exclusion patterns, etc." value={profile.best_fit_notes} onChange={(e) => setProfile({...profile, best_fit_notes: e.target.value})} borderRadius="xl" />
                   </FormControl>
                   <Divider my={{ base: 6, md: 10 }} />
-                  <Flex justify="center">
-                    <Button leftIcon={<FiSave />} size="lg" bg="#56756D" color="white" borderRadius="full" px={{ base: 10, md: 16 }} onClick={() => handleSave()} isLoading={loading} shadow="2xl" w={{ base: "full", md: "auto" }}>Finalize & Sync Profile</Button>
+                  <Flex justify="center" pt={6}>
+                    <Button 
+                      leftIcon={<FiSave />} 
+                      size="lg" 
+                      bg="#56756D" 
+                      color="white" 
+                      borderRadius="full" 
+                      px={{ base: 10, md: 16 }} 
+                      py={{ base: 7, md: 8 }}
+                      onClick={() => handleSave()} 
+                      isLoading={loading} 
+                      shadow="2xl" 
+                      w={{ base: "full", md: "auto" }}
+                      _hover={{ bg: '#455c56', transform: 'translateY(-2px)', shadow: 'xl' }}
+                      _active={{ transform: 'translateY(0)' }}
+                      transition="all 0.3s"
+                      fontSize={{ base: "md", md: "lg" }}
+                    >
+                      Finalize & Sync Profile
+                    </Button>
                   </Flex>
                </Box>
-            </VStack>
-          </TabPanel>
             </VStack>
           </TabPanel>
         </TabPanels>

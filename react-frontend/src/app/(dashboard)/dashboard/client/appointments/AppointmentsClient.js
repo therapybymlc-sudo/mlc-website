@@ -221,16 +221,18 @@ export default function AppointmentsClient() {
                               {paymentMeta.label.toUpperCase()}
                             </Badge>
                           </HStack>
-                          <HStack spacing={2}>
+                          <Stack direction={{ base: "column", sm: "row" }} spacing={3} pt={2}>
                             <Button
                               as={NextLink}
                               href={paymentMeta.actionHref}
                               size="sm"
-                              flex={1}
+                              w="full"
                               variant={paymentMeta.label === "Completed" ? "outline" : "solid"}
                               colorScheme={paymentMeta.label === "Completed" ? "gray" : "orange"}
                               borderRadius="full"
                               isDisabled={paymentMeta.actionDisabled}
+                              fontSize="xs"
+                              py={5}
                             >
                               {paymentMeta.actionLabel}
                             </Button>
@@ -238,16 +240,19 @@ export default function AppointmentsClient() {
                               as={NextLink}
                               href={`/conference/MLC_${appt.id}`}
                               size="sm"
-                              flex={1}
+                              w="full"
                               variant="solid"
                               bg="teal.800"
                               color="white"
                               borderRadius="full"
                               _hover={{ bg: 'teal.900' }}
+                              leftIcon={<Icon as={FiVideo} />}
+                              fontSize="xs"
+                              py={5}
                             >
                               Join Room
                             </Button>
-                          </HStack>
+                          </Stack>
                         </VStack>
                       </Box>
                     );

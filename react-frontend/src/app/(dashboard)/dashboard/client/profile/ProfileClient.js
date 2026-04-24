@@ -24,7 +24,7 @@ import {
   Spinner,
   Center,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiUser, FiMail, FiPhone, FiSave, FiAlertCircle, FiCamera } from "react-icons/fi";
 import { useAuth } from "../../../../../context/AuthContext";
 import { apiPatch } from "../../../../../api.js";
@@ -124,8 +124,43 @@ export default function ProfileClient() {
 
   const isGhost = formData.name.startsWith("user_") || formData.email.includes("@example.invalid");
 
+  const fileInputRef = useRef(null);
+  
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formDataUpload = new FormData();
+    formDataUpload.append('profile_image', file);
+    
+    setIsSaving(true);
+    try {
+      const { apiPatch: apiPatchMulti } = await import("../../../../../api.js");
+      await apiPatchMulti(`clients/${clientProfile.id}/`, formDataUpload);
+      toast({ title: "Photo updated", status: "success" });
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err) {
+      toast({ title: "Upload failed", status: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Box maxW="1000px" mx="auto">
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        accept="image/*" 
+        onChange={handlePhotoUpload} 
+      />
+      
       <VStack align="start" spacing={1} mb={10}>
         <HStack>
             <Icon as={FiUser} color="#56756D" boxSize={6} />
@@ -153,7 +188,7 @@ export default function ProfileClient() {
             <CardBody p={8} textAlign="center">
               <VStack spacing={6}>
                 <Box position="relative">
-                  <Avatar size="2xl" name={formData.name} border="4px solid white" shadow="xl" />
+                  <Avatar size="2xl" name={formData.name} border="4px solid white" shadow="xl" src={clientProfile?.profile_image} />
                   <IconButton
                     aria-label="Change photo"
                     icon={<FiCamera />}
@@ -165,6 +200,8 @@ export default function ProfileClient() {
                     bg="white"
                     shadow="md"
                     _hover={{ bg: 'gray.50' }}
+                    onClick={handlePhotoClick}
+                    isLoading={isSaving}
                   />
                 </Box>
                 <VStack spacing={1}>

@@ -5,6 +5,8 @@ import {
   Badge,
   Box,
   Button,
+  Divider,
+  SimpleGrid,
   Heading,
   HStack,
   Text,
@@ -171,64 +173,90 @@ export default function TherapistSubscriptionClient() {
 
   return (
     <Box maxW="1100px" mx="auto">
-      <VStack align="start" spacing={2} mb={6}>
+      <VStack align="start" spacing={2} mb={8}>
         <Heading size="lg" color="#2E2E2E">
           Therapist Subscription Center
         </Heading>
         <Text color="gray.500">
-          Pick a plan to unlock dashboard access, public visibility, and matching on MLC.
+          Choose your plan first, then manage subscription status and billing controls.
         </Text>
       </VStack>
 
-      <Box mb={6} p={5} border="1px solid" borderColor="gray.200" borderRadius="xl" bg="white">
-        <VStack align="start" spacing={3}>
-          <Heading size="sm" color="#2E2E2E">
-            Current Subscription
-          </Heading>
-          <HStack spacing={3} flexWrap="wrap">
-            <Badge colorScheme={statusColor} px={2.5} py={1} borderRadius="full" textTransform="capitalize">
-              {subscription?.subscription_status || 'inactive'}
-            </Badge>
-            <Badge colorScheme="purple" px={2.5} py={1} borderRadius="full" textTransform="capitalize">
-              Plan: {subscription?.basic_plan || 'none'}
-            </Badge>
-            <Badge colorScheme={subscription?.is_basic_subscribed ? 'green' : 'gray'} px={2.5} py={1} borderRadius="full">
-              Access: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
-            </Badge>
-          </HStack>
-          <Text fontSize="sm" color="gray.600">
-            Subscription ID: {subscription?.razorpay_subscription_id || 'Not yet created'}
-          </Text>
-          {subscription?.current_end ? (
-            <Text fontSize="sm" color="gray.600">
-              Current cycle ends on: {new Date(subscription.current_end).toLocaleString()}
-            </Text>
-          ) : null}
-          <HStack spacing={3}>
-            <Button size="sm" variant="outline" onClick={() => loadStatus(true)} isLoading={isRefreshing}>
-              Refresh Status
-            </Button>
-            <Button
-              size="sm"
-              colorScheme="red"
-              variant="ghost"
-              onClick={cancelSubscription}
-              isLoading={isCancelling}
-              isDisabled={!subscription?.razorpay_subscription_id}
-            >
-              Cancel at cycle end
-            </Button>
-          </HStack>
-        </VStack>
-      </Box>
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} alignItems="start">
+        <Box p={{ base: 5, md: 6 }} border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white" shadow="sm">
+          <VStack align="start" spacing={4}>
+            <HStack justify="space-between" w="full" align="start">
+              <VStack align="start" spacing={0}>
+                <Heading size="md" color="#2E2E2E">
+                  Pricing & Plans
+                </Heading>
+                <Text color="gray.500" fontSize="sm">
+                  Activate access to profile visibility, matching, and premium workflows.
+                </Text>
+              </VStack>
+              <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
+                Start Here
+              </Badge>
+            </HStack>
 
-      <TherapistSubscriptionGateway
-        mode="inline"
-        title="Grow faster with MLC"
-        contextLabel="Activate your basic subscription to unlock therapist dashboard workflows."
-        onSelectPlan={startSubscription}
-        loadingPlan={loadingPlan}
-      />
+            <TherapistSubscriptionGateway
+              mode="inline"
+              title="Choose your MLC plan"
+              contextLabel="Select a monthly or annual plan to unlock your therapist operating system."
+              onSelectPlan={startSubscription}
+              loadingPlan={loadingPlan}
+            />
+          </VStack>
+        </Box>
+
+        <Box p={{ base: 5, md: 6 }} border="1px solid" borderColor="gray.200" borderRadius="2xl" bg="white" shadow="sm">
+          <VStack align="start" spacing={4}>
+            <Heading size="md" color="#2E2E2E">
+              Subscription Status
+            </Heading>
+            <HStack spacing={3} flexWrap="wrap">
+              <Badge colorScheme={statusColor} px={2.5} py={1} borderRadius="full" textTransform="capitalize">
+                {subscription?.subscription_status || 'inactive'}
+              </Badge>
+              <Badge colorScheme="purple" px={2.5} py={1} borderRadius="full" textTransform="capitalize">
+                Plan: {subscription?.basic_plan || 'none'}
+              </Badge>
+              <Badge colorScheme={subscription?.is_basic_subscribed ? 'green' : 'gray'} px={2.5} py={1} borderRadius="full">
+                Access: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
+              </Badge>
+            </HStack>
+
+            <Divider />
+
+            <VStack align="start" spacing={1}>
+              <Text fontSize="sm" color="gray.600">
+                Subscription ID: {subscription?.razorpay_subscription_id || 'Not yet created'}
+              </Text>
+              {subscription?.current_end ? (
+                <Text fontSize="sm" color="gray.600">
+                  Current cycle ends on: {new Date(subscription.current_end).toLocaleString()}
+                </Text>
+              ) : null}
+            </VStack>
+
+            <HStack spacing={3} pt={1}>
+              <Button size="sm" variant="outline" onClick={() => loadStatus(true)} isLoading={isRefreshing}>
+                Refresh Status
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="red"
+                variant="ghost"
+                onClick={cancelSubscription}
+                isLoading={isCancelling}
+                isDisabled={!subscription?.razorpay_subscription_id}
+              >
+                Cancel at cycle end
+              </Button>
+            </HStack>
+          </VStack>
+        </Box>
+      </SimpleGrid>
     </Box>
   );
 }
