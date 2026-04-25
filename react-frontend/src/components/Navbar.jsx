@@ -42,9 +42,27 @@ const logoSrc = "/logo_tra.png";
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
-  { label: "Services", href: "/services" },
+  { 
+    label: "Services", 
+    href: "/services",
+    subLinks: [
+      { label: "Individual Therapy", href: "/individual-therapy" },
+      { label: "Relational Therapy", href: "/couples-therapy" },
+      { label: "Adolescent Therapy", href: "/adolescent-therapy" },
+      { label: "Clinical Supervision", href: "/supervision" },
+      { label: "Workshops & Circles", href: "/workshops" },
+    ]
+  },
   { label: "Find a Therapist", href: "/therapists/discovery" },
-  { label: "For Therapists", href: "/therapists" },
+  { 
+    label: "For Therapists", 
+    href: "/therapists",
+    subLinks: [
+      { label: "Therapist Community", href: "/dashboard/therapist/community" },
+      { label: "Clinical Supervision", href: "/supervision" },
+      { label: "Join the Collective", href: "/signup/therapist" },
+    ]
+  },
   { 
     label: "Meet the Team", 
     href: "/meettheteam",
@@ -56,6 +74,73 @@ const navLinks = [
   { label: "Book Now", href: "/book" },
   { label: "Contact Us", href: "/contactus" },
 ];
+
+const HoverMenu = ({ link, pathname, isActive }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  return (
+    <Menu isOpen={isOpen} isLazy gutter={0}>
+      <Box 
+        onMouseEnter={onOpen} 
+        onMouseLeave={onClose}
+        position="relative" 
+        display="inline-block"
+      >
+        <HStack spacing={1} cursor="pointer">
+          <ChakraLink
+            as={NextLink}
+            href={link.href}
+            fontWeight="500"
+            fontFamily="'Inter', var(--font-inter), sans-serif"
+            fontSize="15px"
+            letterSpacing="0.2px"
+            color={isActive ? "#C9A960" : "#212121"}
+            _hover={{ color: "#C9A960", textDecoration: "none" }}
+            transition="all 0.2s ease"
+            whiteSpace="nowrap"
+          >
+            {link.label}
+          </ChakraLink>
+          <MenuButton
+            as={Box}
+            p={1}
+            color="gray.400"
+            _hover={{ color: "#C9A960" }}
+          >
+            <ChevronDownIcon />
+          </MenuButton>
+        </HStack>
+        <MenuList
+          boxShadow="0 10px 30px rgba(0,0,0,0.1)"
+          border="1px solid"
+          borderColor="gray.50"
+          borderRadius="xl"
+          p={2}
+          minW="180px"
+          zIndex={1001}
+          onMouseEnter={onOpen}
+          onMouseLeave={onClose}
+        >
+          {link.subLinks.map((sub) => (
+            <MenuItem
+              key={sub.label}
+              as={NextLink}
+              href={sub.href}
+              borderRadius="lg"
+              fontSize="sm"
+              fontWeight="600"
+              py={2.5}
+              _hover={{ bg: "gray.50", color: "#C9A960" }}
+              onClick={onClose}
+            >
+              {sub.label}
+            </MenuItem>
+          ))}
+        </MenuList>
+      </Box>
+    </Menu>
+  );
+};
 
 export default function Navbar() {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -136,61 +221,7 @@ export default function Navbar() {
             
             if (link.subLinks) {
               return (
-                <Menu key={link.label} isLazy trigger="hover" openDelay={0} closeDelay={100}>
-                  <Box position="relative" display="inline-block">
-                    <HStack spacing={1}>
-                      <ChakraLink
-                        as={NextLink}
-                        href={link.href}
-                        fontWeight="500"
-                        fontFamily="'Inter', var(--font-inter), sans-serif"
-                        fontSize="15px"
-                        letterSpacing="0.2px"
-                        color={isActive ? "#C9A960" : "#212121"}
-                        _hover={{ color: "#C9A960", textDecoration: "none" }}
-                        transition="all 0.2s ease"
-                        whiteSpace="nowrap"
-                      >
-                        {link.label}
-                      </ChakraLink>
-                      <MenuButton
-                        as={IconButton}
-                        icon={<ChevronDownIcon />}
-                        size="xs"
-                        variant="ghost"
-                        color="gray.400"
-                        _hover={{ color: "#C9A960", bg: "transparent" }}
-                        _active={{ bg: "transparent" }}
-                        aria-label="Options"
-                        minW="auto"
-                      />
-                    </HStack>
-                    <MenuList
-                      boxShadow="0 10px 30px rgba(0,0,0,0.1)"
-                      border="1px solid"
-                      borderColor="gray.50"
-                      borderRadius="xl"
-                      p={2}
-                      minW="180px"
-                      zIndex={1001}
-                    >
-                      {link.subLinks.map((sub) => (
-                        <MenuItem
-                          key={sub.label}
-                          as={NextLink}
-                          href={sub.href}
-                          borderRadius="lg"
-                          fontSize="sm"
-                          fontWeight="600"
-                          py={2.5}
-                          _hover={{ bg: "gray.50", color: "#C9A960" }}
-                        >
-                          {sub.label}
-                        </MenuItem>
-                      ))}
-                    </MenuList>
-                  </Box>
-                </Menu>
+                <HoverMenu key={link.label} link={link} pathname={pathname} isActive={isActive} />
               );
             }
 

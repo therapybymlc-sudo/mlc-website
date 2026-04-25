@@ -56,8 +56,6 @@ from therapy.models import (
     TrainingProgramsContent,
     CareersContent,
     TherapistApplyContent,
-    TherapistScreening,
-    ContactMessage,
     QuickBooking,
     SafetyPlan,
     SupervisoryRelationship,
@@ -66,8 +64,17 @@ from therapy.models import (
     SupervisionActionItem,
     SupervisionReflection,
     ClientFormAssignment,
+    SupportTicket,
+    AdminReportSnapshot,
+    AdminReportEmailSchedule,
+    CommunityCategory,
+    CommunityThread,
+    CommunityComment,
     RazorpayPayment,
     TherapistSubscriptionCharge,
+    ContactMessage,
+    TherapistScreening,
+    Referral,
 )
 from therapy.utils import (
     calculate_dass_scores,
@@ -138,6 +145,12 @@ from therapy.serializers import (
     SupervisionReflectionSerializer,
     ClientFormAssignmentSerializer,
     SupportTicketSerializer,
+    AdminReportSnapshotSerializer,
+    AdminReportEmailScheduleSerializer,
+    CommunityCategorySerializer,
+    CommunityThreadSerializer,
+    CommunityCommentSerializer,
+    ReferralSerializer,
 )
 
 # ... existing code ...
@@ -638,6 +651,10 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             if is_supervisor is not None:
                 is_supervisor_bool = is_supervisor.lower() == "true"
                 queryset = queryset.filter(is_supervisor=is_supervisor_bool)
+                
+                # Enforce MLC Collective standard: 5+ years for public discovery
+                if is_supervisor_bool:
+                    queryset = queryset.filter(years_experience__gte=5)
                 
             supervision_status = self.request.query_params.get("supervision_status")
             if supervision_status:
@@ -2507,6 +2524,15 @@ class ResourceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        is_community_view = self.request.query_params.get("community") == "true"
+        
+        if is_community_view:
+            queryset = Resource.objects.filter(is_community=True, is_active=True)
+            category_slug = self.request.query_params.get("category_slug")
+            if category_slug:
+                queryset = queryset.filter(community_category__slug=category_slug)
+            return queryset.order_by("-created_at")
+
         if not therapist:
             return Resource.objects.none()
         return Resource.objects.filter(therapist=therapist).order_by("-created_at")
@@ -3986,3 +4012,73 @@ class RocketChatSessionView(APIView):
                 },
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+
+
+# ------------------------------------------------------------------------------
+# COMMUNITY VIEWSETS
+# ------------------------------------------------------------------------------
+
+class CommunityCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CommunityCategory.objects.all().order_by("order", "name")
+    serializer_class = CommunityCategorySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CommunityThreadViewSet(viewsets.ModelViewSet):
+    serializer_class = CommunityThreadSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = CommunityThread.objects.filter(is_approved=True)
+        category_slug = self.request.query_params.get("category_slug")
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+        return queryset.order_by("-is_pinned", "-created_at")
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        if not therapist:
+            raise exceptions.PermissionDenied("Only verified therapists can participate in the community.")
+        serializer.save(author=therapist)
+
+    @action(detail=True, methods=["POST"])
+    def increment_view(self, request, pk=None):
+        thread = self.get_object()
+        thread.views_count += 1
+        thread.save(update_fields=["views_count"])
+        return Response({"status": "view incremented"})
+
+
+class CommunityCommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommunityCommentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CommunityComment.objects.filter(is_approved=True)
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request)
+        if not therapist:
+            raise exceptions.PermissionDenied("Only verified therapists can participate in the community.")
+        serializer.save(author=therapist)
+
+
+class ReferralViewSet(viewsets.ModelViewSet):
+    serializer_class = ReferralSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return Referral.objects.none()
+        
+        # Therapists can see referrals they SENT or RECEIVED
+        return Referral.objects.filter(
+            Q(referring_therapist=therapist) | Q(receiving_therapist=therapist)
+        ).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            raise exceptions.PermissionDenied("Only verified therapists can send referrals.")
+        serializer.save(referring_therapist=therapist)

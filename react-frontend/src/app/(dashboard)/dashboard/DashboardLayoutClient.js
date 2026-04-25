@@ -37,7 +37,8 @@ import {
   FiInbox,
   FiMessageSquare,
   FiHelpCircle,
-  FiTrendingUp
+  FiTrendingUp,
+  FiShare2
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
@@ -81,6 +82,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
       { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
       { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
+      { label: 'Community Hub', icon: FiShare2, href: '/dashboard/therapist/community' },
       hasSupervisorEligibility
         ? { label: 'Supervision Hub', icon: FiAward, href: '/dashboard/therapist/supervision' }
         : { label: 'Supervisee Suite', icon: FiAward, href: '/dashboard/therapist/supervisee' },

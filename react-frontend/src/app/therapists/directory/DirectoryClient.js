@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   FiSearch, FiFilter, FiUser, FiGlobe, FiClock, FiDollarSign, 
   FiMapPin, FiCheckCircle, FiChevronDown, FiX, FiVideo, FiBriefcase,
-  FiHeart, FiStar, FiAward, FiArrowRight
+  FiHeart, FiStar, FiAward, FiArrowRight, FiActivity
 } from "react-icons/fi";
 import { apiGet } from "../../../api.js";
 import NextLink from "next/link";
@@ -427,7 +427,7 @@ export default function DirectoryClient() {
                 />
               </InputGroup>
 
-              <HStack spacing={3} overflowX="auto" pb={{ base: 2, xl: 0 }} sx={{ "&::-webkit-scrollbar": { display: "none" } }}>
+              <Wrap spacing={3} justify={{ base: "start", xl: "start" }}>
                 <FilterDropdown 
                     label="Expertise" 
                     icon={FiActivity}
@@ -463,7 +463,7 @@ export default function DirectoryClient() {
                     borderRadius="full" 
                     h="48px" 
                     bg="white" 
-                    minW="160px" 
+                    w={{ base: "full", md: "160px" }}
                     fontSize="sm" 
                     fontWeight="600"
                     icon={<FiChevronDown />}
@@ -475,7 +475,7 @@ export default function DirectoryClient() {
 
                 {/* More Filters Placeholder or Price Filter */}
                 <Menu closeOnSelect={false}>
-                    <MenuButton as={Button} variant="outline" borderRadius="full" h="48px" px={6} bg="white" leftIcon={<FiDollarSign />} rightIcon={<FiChevronDown />} fontSize="sm">
+                    <MenuButton as={Button} variant="outline" borderRadius="full" h="48px" px={6} bg="white" leftIcon={<FiDollarSign />} rightIcon={<FiChevronDown />} fontSize="sm" w={{ base: "full", md: "auto" }}>
                         Budget
                     </MenuButton>
                     <MenuList p={6} borderRadius="2xl" shadow="2xl" minW="300px">
@@ -502,7 +502,7 @@ export default function DirectoryClient() {
                         </VStack>
                     </MenuList>
                 </Menu>
-              </HStack>
+              </Wrap>
 
               {activeFilterCount > 0 && (
                   <Button variant="ghost" color="red.500" fontSize="xs" fontWeight="800" onClick={resetFilters} leftIcon={<FiX />}>

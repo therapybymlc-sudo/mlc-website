@@ -1,6 +1,8 @@
 import base64
 import json
 import logging
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import jwt
 from jwt import PyJWKClient
@@ -17,6 +19,57 @@ def _b64url_decode_json(segment: str) -> dict:
     if padding != 4:
         segment += "=" * padding
     return json.loads(base64.urlsafe_b64decode(segment.encode("ascii")))
+
+
+def _fetch_clerk_primary_email(clerk_user_id: str) -> str | None:
+    """
+    Resolve the user's real primary email via Clerk Backend API when JWT claims
+    don't include email fields.
+    """
+    if not clerk_user_id:
+        return None
+
+    secret_key = (getattr(settings, "CLERK_SECRET_KEY", "") or "").strip()
+    if not secret_key:
+        return None
+
+    api_base = (getattr(settings, "CLERK_API_BASE", "https://api.clerk.com") or "https://api.clerk.com").rstrip("/")
+    url = f"{api_base}/v1/users/{clerk_user_id}"
+    req = Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {secret_key}",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+
+    try:
+        with urlopen(req, timeout=8) as resp:
+            body = resp.read().decode("utf-8")
+        data = json.loads(body or "{}")
+    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+        logger.warning("Clerk email lookup failed for %s: %s", clerk_user_id, exc)
+        return None
+
+    primary_id = data.get("primary_email_address_id")
+    email_addresses = data.get("email_addresses") or []
+    if isinstance(email_addresses, list):
+        for item in email_addresses:
+            if not isinstance(item, dict):
+                continue
+            if primary_id and item.get("id") != primary_id:
+                continue
+            email_value = (item.get("email_address") or "").strip().lower()
+            if email_value:
+                return email_value
+        # Fallback to first valid email if primary id is missing.
+        for item in email_addresses:
+            if isinstance(item, dict):
+                email_value = (item.get("email_address") or "").strip().lower()
+                if email_value:
+                    return email_value
+    return None
 
 
 class ClerkAuthentication(authentication.BaseAuthentication):
@@ -158,15 +211,21 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 or payload.get("primary_email_address")
                 or payload.get("primaryEmailAddress")
             )
+            if isinstance(email, str):
+                email = email.strip().lower()
             username = (
                 payload.get("preferred_username")
                 or payload.get("username")
-                or email
                 or payload.get("sub")
             )
 
             if not username:
                 raise exceptions.AuthenticationFailed("Token missing subject")
+
+            # Permanent identity fix:
+            # If JWT lacks email, resolve primary email directly from Clerk API.
+            if not email:
+                email = _fetch_clerk_primary_email(payload.get("sub"))
 
             # Check if this email is in our ironclad admin list
             admin_emails = [
@@ -182,7 +241,8 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             user, created = User.objects.get_or_create(
                 username=username,
                 defaults={
-                    "email": email or f"{username}@example.invalid",
+                    # Keep empty until real email is known; avoid sticky fake identities.
+                    "email": email or "",
                     "is_staff": is_master_admin,
                 },
             )

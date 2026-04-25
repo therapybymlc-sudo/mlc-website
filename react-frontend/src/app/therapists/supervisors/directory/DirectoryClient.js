@@ -25,7 +25,7 @@ const MotionBox = motion(Box);
 // ===========================
 
 const SUPERVISOR_EXPERIENCE_LEVELS = [
-  { label: "All Experience", value: "all" },
+  { label: "Minimum 5+ Years", value: "all" },
   { label: "Experienced (5-10 yrs)", value: "experienced" },
   { label: "Master (10-20 yrs)", value: "master" },
   { label: "Senior Master (20+ yrs)", value: "senior" },
@@ -286,9 +286,11 @@ export default function DirectoryClient() {
           if (!selectedExpertise.some(e => sExp.includes(e))) return false;
       }
 
-      // Experience Level
+      // Experience Level - Enforce 5+ years for all supervisors
+      const exp = Number(s.years_experience || 0);
+      if (exp < 5) return false;
+
       if (selectedExpLevel !== "all") {
-          const exp = Number(s.years_experience || 0);
           if (selectedExpLevel === "experienced" && (exp < 5 || exp > 10)) return false;
           if (selectedExpLevel === "master" && (exp < 10 || exp > 20)) return false;
           if (selectedExpLevel === "senior" && exp < 20) return false;
@@ -386,7 +388,7 @@ export default function DirectoryClient() {
               />
             </InputGroup>
 
-            <HStack spacing={3} overflowX="auto" pb={{ base: 2, xl: 0 }} sx={{ "&::-webkit-scrollbar": { display: "none" } }}>
+            <Wrap spacing={3} justify={{ base: "start", xl: "start" }}>
                 <FilterDropdown 
                     label="Focus Area" 
                     icon={FiBook}
@@ -414,7 +416,7 @@ export default function DirectoryClient() {
                     borderRadius="full" 
                     h="48px" 
                     bg="white" 
-                    minW="180px" 
+                    w={{ base: "full", md: "180px" }}
                     fontSize="sm" 
                     fontWeight="600"
                     value={selectedExpLevel}
@@ -422,9 +424,9 @@ export default function DirectoryClient() {
                 >
                     {SUPERVISOR_EXPERIENCE_LEVELS.map(lvl => <option key={lvl.value} value={lvl.value}>{lvl.label}</option>)}
                 </Select>
-
+  
                 <Menu closeOnSelect={false}>
-                    <MenuButton as={Button} variant="outline" borderRadius="full" h="48px" px={6} bg="white" leftIcon={<FiDollarSign />} rightIcon={<FiChevronDown />} fontSize="sm">
+                    <MenuButton as={Button} variant="outline" borderRadius="full" h="48px" px={6} bg="white" leftIcon={<FiDollarSign />} rightIcon={<FiChevronDown />} fontSize="sm" w={{ base: "full", md: "auto" }}>
                         Rate
                     </MenuButton>
                     <MenuList p={6} borderRadius="2xl" shadow="2xl" minW="300px">
@@ -451,7 +453,7 @@ export default function DirectoryClient() {
                         </VStack>
                     </MenuList>
                 </Menu>
-            </HStack>
+            </Wrap>
 
             {activeFilterCount > 0 && (
                 <Button variant="ghost" color="red.500" fontSize="xs" fontWeight="800" onClick={resetFilters} leftIcon={<FiX />}>

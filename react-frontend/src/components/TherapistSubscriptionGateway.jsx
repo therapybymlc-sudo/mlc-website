@@ -28,15 +28,26 @@ import { FiArrowRight } from 'react-icons/fi';
 
 const MONTHLY_INR = 99;
 const ANNUAL_INR = 999;
+const PREMIUM_ANNUAL_INR = 1799;
 const MONTHLY_IF_PAID_MONTHLY_YEAR = MONTHLY_INR * 12;
 
-const PLAN_FEATURES = [
+const BASIC_PLAN_FEATURES = [
   'Appear in therapist discovery & client matching',
   'Structured booking requests & clinical calendar',
   'In-platform secure video sessions',
   'Encrypted messaging & Care Space workflows',
   'Goals, journals, resources & supervision tools',
   'Billing, invoicing & payment link automation',
+];
+
+const PREMIUM_EXTRA_FEATURES = [
+  'Everything in Basic, plus premium therapist growth suite',
+  'Advanced practice analytics with conversion insights',
+  'Priority listing boosts in therapist discovery surfaces',
+  'Premium automation workflows for follow-ups and retention',
+  'Priority support with faster issue turnaround',
+  'Early access to new therapist OS tools and launches',
+  'Expanded branding/profile customization for premium positioning',
 ];
 
 function PlanCard({
@@ -54,8 +65,11 @@ function PlanCard({
   loadingPlan,
   monthlyUrl,
   annualUrl,
+  premiumUrl,
   isCurrent,
   emphasized,
+  featureLines,
+  ctaLabel,
 }) {
   const bg = isRecommended ? 'linear-gradient(180deg, #FFFCF5 0%, #FFFFFF 40%)' : 'white';
 
@@ -131,7 +145,15 @@ function PlanCard({
 
         <Button
           as={onSelectPlan ? 'button' : NextLink}
-          href={onSelectPlan ? undefined : planKey === 'monthly' ? monthlyUrl : annualUrl}
+          href={
+            onSelectPlan
+              ? undefined
+              : planKey === 'monthly'
+              ? monthlyUrl
+              : planKey === 'annual'
+              ? annualUrl
+              : premiumUrl
+          }
           mt={6}
           w="full"
           minH={{ base: '48px', md: '52px' }}
@@ -151,11 +173,15 @@ function PlanCard({
               : { bg: 'rgba(86, 117, 109, 0.06)' }
           }
           rightIcon={isCurrent ? undefined : <Icon as={FiArrowRight} />}
-          onClick={onSelectPlan && !isCurrent ? () => onSelectPlan(planKey) : undefined}
+          onClick={
+            onSelectPlan && !isCurrent && (planKey === 'monthly' || planKey === 'annual')
+              ? () => onSelectPlan(planKey)
+              : undefined
+          }
           isLoading={loadingPlan === planKey}
           loadingText="Starting…"
         >
-          {isCurrent ? 'Current plan' : planKey === 'monthly' ? 'Start monthly' : 'Start annual'}
+          {isCurrent ? 'Current plan' : ctaLabel || 'Continue'}
         </Button>
 
         <Divider my={8} borderColor="gray.100" />
@@ -164,7 +190,7 @@ function PlanCard({
           Everything included
         </Text>
         <List spacing={3}>
-          {PLAN_FEATURES.map((line) => (
+          {(featureLines || BASIC_PLAN_FEATURES).map((line) => (
             <ListItem key={line} display="flex" alignItems="flex-start" fontSize="sm" color="gray.700" lineHeight="1.45">
               <ListIcon as={CheckCircleIcon} color="#56756D" mt={0.5} flexShrink={0} />
               {line}
@@ -266,7 +292,7 @@ export default function TherapistSubscriptionGateway({
         </HStack>
       </Flex>
 
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 6, lg: 8 }} alignItems="stretch">
+      <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={{ base: 6, lg: 8 }} alignItems="stretch">
         <PlanCard
           planKey="monthly"
           name="Basic Monthly"
@@ -282,8 +308,11 @@ export default function TherapistSubscriptionGateway({
           loadingPlan={loadingPlan}
           monthlyUrl={monthlyUrl}
           annualUrl={annualUrl}
+          premiumUrl={premiumUrl}
           isCurrent={isCurrentMonthly}
           emphasized={billingFocus === 'monthly'}
+          featureLines={BASIC_PLAN_FEATURES}
+          ctaLabel="Start monthly"
         />
         <PlanCard
           planKey="annual"
@@ -300,8 +329,32 @@ export default function TherapistSubscriptionGateway({
           loadingPlan={loadingPlan}
           monthlyUrl={monthlyUrl}
           annualUrl={annualUrl}
+          premiumUrl={premiumUrl}
           isCurrent={isCurrentAnnual}
           emphasized={billingFocus === 'annual'}
+          featureLines={BASIC_PLAN_FEATURES}
+          ctaLabel="Start annual"
+        />
+        <PlanCard
+          planKey="premium"
+          name="Premium Annual"
+          billingLabel="Advanced growth · one payment per year"
+          priceMain={PREMIUM_ANNUAL_INR}
+          priceUnit="/ year"
+          compareAt={null}
+          compareLabel={null}
+          subline={`Includes Basic access plus premium capabilities at ~INR ${Math.round(PREMIUM_ANNUAL_INR / 12)} / month.`}
+          isRecommended={false}
+          badgeLabel="Premium tier"
+          onSelectPlan={null}
+          loadingPlan={loadingPlan}
+          monthlyUrl={monthlyUrl}
+          annualUrl={annualUrl}
+          premiumUrl={premiumUrl}
+          isCurrent={false}
+          emphasized={false}
+          featureLines={PREMIUM_EXTRA_FEATURES}
+          ctaLabel="Unlock premium"
         />
       </SimpleGrid>
 
@@ -315,7 +368,7 @@ export default function TherapistSubscriptionGateway({
         borderColor="gray.100"
       >
         <Text fontSize="sm" color="gray.500" maxW="lg">
-          Need advanced automation, premium growth tools, or enterprise rollout? Explore the Premium gateway.
+          Premium tier unlocks advanced growth, priority support, and therapist OS capabilities for INR 1799/year.
         </Text>
         <Button as={NextLink} href={premiumUrl} variant="outline" colorScheme="purple" size="sm" borderRadius="lg">
           Explore Premium Gateway

@@ -1688,7 +1688,19 @@ class Resource(models.Model):
         default=True,
         help_text="If false, the resource is hidden from assignment lists.",
     )
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    is_community = models.BooleanField(
+        default=False, 
+        help_text="If true, this resource is shared with the entire Therapist Community."
+    )
+    community_category = models.ForeignKey(
+        "CommunityCategory", 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name="community_resources"
+    )
+    tags = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -2244,3 +2256,97 @@ class AdminReportSnapshot(models.Model):
 
     def __str__(self) -> str:
         return self.title or f"{self.report_key} {self.period_label}"
+
+
+# ==============================================================================
+# COMMUNITY LAYER MODELS
+# ==============================================================================
+
+class CommunityCategory(models.Model):
+    """Groups for community discussions (e.g., 'Clinical Cases', 'Self-Care')."""
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, blank=True, help_text="Icon name for UI display")
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Community Categories"
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class CommunityThread(models.Model):
+    """A discussion topic within a category."""
+    category = models.ForeignKey(CommunityCategory, on_delete=models.CASCADE, related_name="threads")
+    author = models.ForeignKey(TherapistProfile, on_delete=models.CASCADE, related_name="community_threads")
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    is_pinned = models.BooleanField(default=False)
+    is_locked = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=True)
+    views_count = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-is_pinned", "-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
+class CommunityComment(models.Model):
+    """Replies within a community thread."""
+    thread = models.ForeignKey(CommunityThread, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(TherapistProfile, on_delete=models.CASCADE, related_name="community_comments")
+    content = models.TextField()
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies"
+    )
+    is_approved = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Comment by {self.author.name} on {self.thread.title}"
+
+
+# ===========================
+# 🔹 Peer Referrals
+# ===========================
+class Referral(models.Model):
+    class ReferralStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+        COMPLETED = "completed", "Completed"
+
+    referring_therapist = models.ForeignKey(
+        TherapistProfile, on_delete=models.CASCADE, related_name="referrals_sent"
+    )
+    receiving_therapist = models.ForeignKey(
+        TherapistProfile, on_delete=models.CASCADE, related_name="referrals_received"
+    )
+    client_name = models.CharField(max_length=255)
+    client_email = models.EmailField(blank=True)
+    client_phone = models.CharField(max_length=20, blank=True)
+    reason = models.TextField(help_text="Clinical reason for referral.")
+    status = models.CharField(
+        max_length=20, choices=ReferralStatus.choices, default=ReferralStatus.PENDING
+    )
+    is_internal_client = models.BooleanField(default=False)
+    internal_client = models.ForeignKey(
+        ClientProfile, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Referral from {self.referring_therapist.name} to {self.receiving_therapist.name} for {self.client_name}"

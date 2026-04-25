@@ -129,12 +129,29 @@ export default function TherapistDashboardOverview() {
       const brList = Array.isArray(bookingReqRes) ? bookingReqRes : (bookingReqRes?.results || []);
       const pendingRequests = brList.filter((r) => r.status === "pending").length;
 
+      const allAppts = Array.isArray(apptData) ? apptData : (apptData?.results || []);
+      const now = new Date();
+      const today = now.toDateString();
+      
+      const todayAppts = allAppts.filter(a => {
+        if (!a.start_time) return false;
+        return new Date(a.start_time).toDateString() === today;
+      });
+
+      // For "sessions ahead" greeting, we might want only future ones today, 
+      // but for "Sessions booked today" stat card, all of today is better.
+      // We'll use todayAppts.length for both to be consistent with the current UI layout.
+
       setStats({
         clients: Array.isArray(clientData) ? clientData.length : (clientData?.results?.length || 0),
-        appointments: Array.isArray(apptData) ? apptData.length : (apptData?.results?.length || 0),
+        appointments: todayAppts.length,
         requests: pendingRequests,
       });
-      setUpcoming(Array.isArray(apptData) ? apptData : (apptData?.results || []));
+
+      // Sort today's appointments by time for the "In-built Care Flow"
+      const sortedToday = [...todayAppts].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+      setUpcoming(sortedToday);
+      
       setProfile(profileData);
       setProfileLoaded(true);
     };

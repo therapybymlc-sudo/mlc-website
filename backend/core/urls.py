@@ -78,6 +78,10 @@ from therapy.views import (
     AdminReportDetailView,
     RocketChatSessionView,
     SupportTicketViewSet,
+    CommunityCategoryViewSet,
+    CommunityThreadViewSet,
+    CommunityCommentViewSet,
+    ReferralViewSet,
 )
 
 # ----------------------------
@@ -135,6 +139,10 @@ router.register(
     AdminReportEmailScheduleViewSet,
     basename="admin-report-email-schedules",
 )
+router.register(r"community/categories", CommunityCategoryViewSet, basename="community-categories")
+router.register(r"community/threads", CommunityThreadViewSet, basename="community-threads")
+router.register(r"community/comments", CommunityCommentViewSet, basename="community-comments")
+router.register(r"referrals", ReferralViewSet, basename="referrals")
 
 # ----------------------------
 # Small utility/test endpoints

@@ -262,6 +262,11 @@ class IsTherapistOwnerOfResource(BasePermission):
         if _is_admin_user(request.user):
             return True
         therapist = get_current_therapist_profile(request.user)
+        
+        # Community resources are viewable by any verified therapist
+        if request.method in ("GET", "HEAD", "OPTIONS") and obj.is_community:
+            return True
+
         return bool(therapist and obj.therapist_id == therapist.id)
 
 

@@ -37,6 +37,7 @@ from therapy.models import (
     CareersContent,
     TherapistApplyContent,
     ContactMessage,
+    TherapistScreening,
     QuickBooking,
     SafetyPlan,
     SupervisoryRelationship,
@@ -48,6 +49,10 @@ from therapy.models import (
     SupportTicket,
     AdminReportSnapshot,
     AdminReportEmailSchedule,
+    CommunityCategory,
+    CommunityThread,
+    CommunityComment,
+    Referral,
 )
 
 # ... existing code ...
@@ -808,6 +813,9 @@ class ResourceSerializer(serializers.ModelSerializer):
             "url",
             "text_content",
             "is_active",
+            "is_community",
+            "community_category",
+            "tags",
             "created_at",
             "updated_at",
         ]
@@ -1256,3 +1264,66 @@ class AdminReportEmailScheduleSerializer(serializers.ModelSerializer):
             if wd < 0 or wd > 6:
                 raise serializers.ValidationError({"weekday": "Must be 0–6."})
         return attrs
+
+
+# ----------------------------
+# Community Layer Serializers
+# ----------------------------
+
+class CommunityCategorySerializer(serializers.ModelSerializer):
+    thread_count = serializers.IntegerField(source="threads.count", read_only=True)
+
+    class Meta:
+        model = CommunityCategory
+        fields = ["id", "name", "slug", "description", "icon", "order", "thread_count", "created_at"]
+
+
+class CommunityCommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source="author.name", read_only=True)
+    author_image = serializers.URLField(source="author.profile_image_url", read_only=True)
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CommunityComment
+        fields = [
+            "id", "thread", "author", "author_name", "author_image",
+            "content", "parent", "replies", "is_approved", "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "author", "is_approved", "created_at", "updated_at"]
+
+    def get_replies(self, obj):
+        if obj.replies.exists():
+            return CommunityCommentSerializer(obj.replies.all(), many=True).data
+        return []
+
+
+class CommunityThreadSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source="author.name", read_only=True)
+    author_image = serializers.URLField(source="author.profile_image_url", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    comment_count = serializers.IntegerField(source="comments.count", read_only=True)
+
+    class Meta:
+        model = CommunityThread
+        fields = [
+            "id", "category", "category_name", "author", "author_name", "author_image",
+            "title", "content", "is_pinned", "is_locked", "is_approved",
+            "views_count", "comment_count", "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "author", "views_count", "comment_count", "is_approved", "created_at", "updated_at"]
+
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referring_therapist_name = serializers.CharField(source="referring_therapist.name", read_only=True)
+    receiving_therapist_name = serializers.CharField(source="receiving_therapist.name", read_only=True)
+
+    class Meta:
+        model = Referral
+        fields = [
+            "id", "referring_therapist", "referring_therapist_name",
+            "receiving_therapist", "receiving_therapist_name",
+            "client_name", "client_email", "client_phone",
+            "reason", "status", "is_internal_client", "internal_client",
+            "created_at", "updated_at"
+        ]
+        read_only_fields = ["id", "referring_therapist", "status", "created_at", "updated_at"]
