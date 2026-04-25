@@ -11,10 +11,10 @@ const forum = Forum({ weight: '400', subsets: ['latin'], variable: '--font-forum
 
 export const metadata = {
   title: {
-    default: 'MLC Health | Ethical Therapy Across India',
+    default: 'MLC Health | India\'s First Integrated Therapy Ecosystem',
     template: '%s | MLC Health'
   },
-  description: 'MLC Health & Wellness Centre provides structured and ethical mental health care. Our organization is dedicated to high-quality psychological services across major cities in India.',
+  description: 'MLC Health and Wellness Centre is building India\'s first integrated therapy ecosystem. A unified platform for ethical therapy, clinical supervision, and professional growth across India.',
 }
 
 import CookieConsent from '../components/CookieConsent'

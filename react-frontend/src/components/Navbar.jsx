@@ -41,6 +41,7 @@ const logoSrc = "/logo_tra.png";
 
 const navLinks = [
   { label: "Home", href: "/" },
+  { label: "The Ecosystem", href: "/ecosystem" },
   { label: "About", href: "/about" },
   { 
     label: "Services", 
