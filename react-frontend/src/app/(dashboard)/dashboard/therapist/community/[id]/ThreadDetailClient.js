@@ -31,7 +31,7 @@ const CommentCard = ({ comment, onReply }) => (
           <Avatar size="sm" name={comment.author_name} src={comment.author_image} />
           <VStack align="start" spacing={0}>
             <Text fontSize="sm" fontWeight="700" color="teal.900">{comment.author_name}</Text>
-            <Text fontSize="xs" color="gray.400">{new Date(comment.created_at).toLocaleString()}</Text>
+            <Text fontSize="xs" color="gray.400">{mounted ? new Date(comment.created_at).toLocaleString() : ""}</Text>
           </VStack>
         </HStack>
         <IconButton size="xs" variant="ghost" icon={<FiMoreVertical />} aria-label="options" />
@@ -57,9 +57,11 @@ export default function ThreadDetailClient() {
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
+    setMounted(true);
     async function fetchThread() {
       try {
         setLoading(true);
@@ -142,7 +144,7 @@ export default function ThreadDetailClient() {
               </Badge>
               <HStack color="gray.400" fontSize="xs">
                 <Icon as={FiClock} />
-                <Text>{new Date(thread.created_at).toLocaleString()}</Text>
+                <Text>{mounted ? new Date(thread.created_at).toLocaleString() : ""}</Text>
               </HStack>
             </HStack>
 

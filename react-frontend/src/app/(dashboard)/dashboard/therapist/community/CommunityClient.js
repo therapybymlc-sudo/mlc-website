@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { 
   FiSearch, FiPlus, FiMessageSquare, FiTrendingUp, FiHash, FiClock,
-  FiUser, FiMoreVertical, FiShare2, FiHeart, FiBookmark, FiFilter,
+  FiUser, FiUsers, FiMoreVertical, FiShare2, FiHeart, FiBookmark, FiFilter,
   FiChevronRight, FiCheckCircle, FiShield
 } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
@@ -25,7 +25,7 @@ const MotionBox = motion(Box);
 // 🔹 Components
 // ===========================
 
-const DiscussionCard = ({ thread }) => (
+const DiscussionCard = ({ thread, mounted }) => (
   <NextLink href={`/dashboard/therapist/community/${thread.id}`} passHref>
     <MotionBox
       initial={{ opacity: 0, y: 10 }}
@@ -48,7 +48,7 @@ const DiscussionCard = ({ thread }) => (
             </Badge>
             {thread.is_pinned && <Icon as={FiHash} color="orange.400" />}
           </HStack>
-          <Text fontSize="xs" color="gray.400">{new Date(thread.created_at).toLocaleDateString()}</Text>
+          <Text fontSize="xs" color="gray.400">{mounted ? new Date(thread.created_at).toLocaleDateString() : ""}</Text>
         </HStack>
 
         <Heading size="md" color="teal.900" noOfLines={2}>{thread.title}</Heading>
@@ -111,8 +111,10 @@ export default function CommunityClient() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [newThread, setNewThread] = useState({ title: "", content: "", category: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     async function init() {
       try {
         setLoading(true);
@@ -285,7 +287,7 @@ export default function CommunityClient() {
                       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
                         <AnimatePresence>
                             {filteredThreads.map(thread => (
-                                <DiscussionCard key={thread.id} thread={thread} />
+                                <DiscussionCard key={thread.id} thread={thread} mounted={mounted} />
                             ))}
                         </AnimatePresence>
                       </SimpleGrid>
