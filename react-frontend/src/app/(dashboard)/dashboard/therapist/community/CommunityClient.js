@@ -26,8 +26,9 @@ const MotionBox = motion(Box);
 // ===========================
 
 const DiscussionCard = ({ thread, mounted }) => (
-  <NextLink href={`/dashboard/therapist/community/${thread.id}`} passHref>
     <MotionBox
+      as={NextLink}
+      href={`/dashboard/therapist/community/${thread.id}`}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       bg="white"
@@ -36,9 +37,9 @@ const DiscussionCard = ({ thread, mounted }) => (
       border="1px solid"
       borderColor="gray.100"
       shadow="sm"
-      _hover={{ shadow: "md", borderColor: "teal.100", transform: "translateY(-2px)" }}
+      _hover={{ shadow: "md", borderColor: "teal.100", transform: "translateY(-2px)", textDecoration: "none" }}
       transition="all 0.2s"
-      cursor="pointer"
+      display="block"
     >
       <VStack align="stretch" spacing={4}>
         <HStack justify="space-between">
@@ -75,7 +76,6 @@ const DiscussionCard = ({ thread, mounted }) => (
         </HStack>
       </VStack>
     </MotionBox>
-  </NextLink>
 );
 
 const CategoryPill = ({ category, isActive, onClick }) => (
