@@ -635,8 +635,17 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         roles = _extract_roles_from_auth(self.request)
         
         # 1. Admins see everything (with filtering support)
+        # 1. Admins see everything by default, but respect filtering if provided
         if "admin" in roles or self.request.user.is_staff:
             queryset = TherapistProfile.objects.all()
+            
+            is_supervisor = self.request.query_params.get("is_supervisor")
+            if is_supervisor is not None:
+                is_supervisor_bool = is_supervisor.lower() == "true"
+                queryset = queryset.filter(is_supervisor=is_supervisor_bool)
+                if is_supervisor_bool:
+                    queryset = queryset.filter(years_experience__gte=5)
+
             is_verified = self.request.query_params.get("is_verified")
             if is_verified is not None:
                 is_verified_bool = is_verified.lower() == "true"

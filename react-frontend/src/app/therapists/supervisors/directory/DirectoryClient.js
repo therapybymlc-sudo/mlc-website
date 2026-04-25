@@ -7,13 +7,14 @@ import {
   InputLeftElement, useToast, Spinner, Center, Divider,
   Menu, MenuButton, MenuList, MenuItem, Checkbox,
   RangeSlider, RangeSliderTrack, RangeSliderFilledTrack, RangeSliderThumb,
-  Wrap, Tag, TagLabel, TagCloseButton, Circle
+  Wrap, Tag, TagLabel, TagCloseButton, Circle,
+  Drawer, DrawerOverlay, DrawerContent, DrawerHeader, DrawerBody, DrawerCloseButton
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FiSearch, FiFilter, FiUser, FiGlobe, FiClock, FiDollarSign, 
   FiMapPin, FiCheckCircle, FiChevronDown, FiX, FiVideo, FiBriefcase,
-  FiHeart, FiStar, FiAward, FiArrowRight, FiShield, FiBook
+  FiHeart, FiStar, FiAward, FiArrowRight, FiShield, FiBook, FiActivity
 } from "react-icons/fi";
 import { apiGet } from "../../../../api.js";
 import NextLink from "next/link";
@@ -233,6 +234,7 @@ export default function DirectoryClient() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
   // Filters state
@@ -372,13 +374,13 @@ export default function DirectoryClient() {
         py={6}
       >
         <Container maxW="7xl">
-          <Flex direction={{ base: "column", xl: "row" }} gap={4} align={{ base: "stretch", xl: "center" }}>
-            <InputGroup size="lg" maxW={{ xl: "320px" }}>
+          <Flex direction={{ base: "column", lg: "row" }} gap={4} align={{ base: "stretch", lg: "center" }}>
+            <InputGroup size="lg" flex="1">
               <InputLeftElement pointerEvents="none">
                 <FiSearch color="gray.300" />
               </InputLeftElement>
               <Input 
-                placeholder="Search mentors..." 
+                placeholder="Search mentors by name, modality, or expertise..." 
                 bg="white" 
                 borderRadius="full" 
                 fontSize="sm"
@@ -388,47 +390,96 @@ export default function DirectoryClient() {
               />
             </InputGroup>
 
-            <Wrap spacing={3} justify={{ base: "start", xl: "start" }}>
-                <FilterDropdown 
-                    label="Focus Area" 
-                    icon={FiBook}
-                    options={EXPERTISE_AREAS} 
-                    selected={selectedExpertise} 
-                    onSelect={(v) => toggleFilter(v, selectedExpertise, setSelectedExpertise)} 
-                />
-                <FilterDropdown 
-                    label="Language" 
-                    icon={FiGlobe}
-                    options={WORLD_LANGUAGES} 
-                    selected={selectedLanguages} 
-                    onSelect={(v) => toggleFilter(v, selectedLanguages, setSelectedLanguages)} 
-                />
-                <FilterDropdown 
-                    label="Location" 
-                    icon={FiMapPin}
-                    options={MAJOR_CITIES} 
-                    selected={selectedCities} 
-                    onSelect={(v) => toggleFilter(v, selectedCities, setSelectedCities)} 
-                />
-                
-                <Select 
-                    variant="outline" 
+            <HStack spacing={3}>
+                <Button 
+                    display={{ base: "flex", xl: "none" }}
+                    leftIcon={<FiFilter />} 
+                    variant="solid" 
+                    bg="white"
+                    color="teal.800"
+                    border="1px solid"
+                    borderColor="teal.100"
                     borderRadius="full" 
-                    h="48px" 
-                    bg="white" 
-                    w={{ base: "full", md: "180px" }}
-                    fontSize="sm" 
-                    fontWeight="600"
-                    value={selectedExpLevel}
-                    onChange={(e) => setSelectedExpLevel(e.target.value)}
+                    h="48px"
+                    px={6}
+                    onClick={onOpen}
+                    _hover={{ bg: "teal.50" }}
                 >
-                    {SUPERVISOR_EXPERIENCE_LEVELS.map(lvl => <option key={lvl.value} value={lvl.value}>{lvl.label}</option>)}
-                </Select>
-  
-                <Menu closeOnSelect={false}>
-                    <MenuButton as={Button} variant="outline" borderRadius="full" h="48px" px={6} bg="white" leftIcon={<FiDollarSign />} rightIcon={<FiChevronDown />} fontSize="sm" w={{ base: "full", md: "auto" }}>
-                        Rate
-                    </MenuButton>
+                    Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+                </Button>
+
+                <HStack display={{ base: "none", xl: "flex" }} spacing={3}>
+                    <FilterDropdown 
+                        label="Focus Area" 
+                        icon={FiBook}
+                        options={EXPERTISE_AREAS} 
+                        selected={selectedExpertise} 
+                        onSelect={(v) => toggleFilter(v, selectedExpertise, setSelectedExpertise)} 
+                    />
+                    <FilterDropdown 
+                        label="Language" 
+                        icon={FiGlobe}
+                        options={WORLD_LANGUAGES} 
+                        selected={selectedLanguages} 
+                        onSelect={(v) => toggleFilter(v, selectedLanguages, setSelectedLanguages)} 
+                    />
+                    <FilterDropdown 
+                        label="Location" 
+                        icon={FiMapPin}
+                        options={MAJOR_CITIES} 
+                        selected={selectedCities} 
+                        onSelect={(v) => toggleFilter(v, selectedCities, setSelectedCities)} 
+                    />
+                    
+                    <Select 
+                        variant="outline" 
+                        borderRadius="full" 
+                        h="48px" 
+                        bg="white" 
+                        w="180px"
+                        fontSize="sm" 
+                        fontWeight="600"
+                        value={selectedExpLevel}
+                        onChange={(e) => setSelectedExpLevel(e.target.value)}
+                    >
+                        {SUPERVISOR_EXPERIENCE_LEVELS.map(lvl => <option key={lvl.value} value={lvl.value}>{lvl.label}</option>)}
+                    </Select>
+    
+                    <Menu closeOnSelect={false}>
+                        <MenuButton as={Button} variant="outline" borderRadius="full" h="48px" px={6} bg="white" leftIcon={<FiDollarSign />} rightIcon={<FiChevronDown />} fontSize="sm">
+                            Rate
+                        </MenuButton>
+                        <MenuList p={6} borderRadius="2xl" shadow="2xl" minW="300px">
+                            <VStack align="stretch" spacing={4}>
+                                <HStack justify="space-between">
+                                    <Text fontWeight="700" fontSize="sm">Supervision Rate</Text>
+                                    <Text fontSize="xs" fontWeight="800" color="teal.600">₹{costRange[0]} - ₹{costRange[1]}</Text>
+                                </HStack>
+                                <RangeSlider 
+                                    aria-label={['min', 'max']} 
+                                    defaultValue={[0, 10000]} 
+                                    min={0} 
+                                    max={15000} 
+                                    step={500}
+                                    colorScheme="teal"
+                                    onChangeEnd={(val) => setCostRange(val)}
+                                >
+                                    <RangeSliderTrack h={1}>
+                                        <RangeSliderFilledTrack />
+                                    </RangeSliderTrack>
+                                    <RangeSliderThumb index={0} boxSize={5} shadow="md" border="2px solid white" />
+                                    <RangeSliderThumb index={1} boxSize={5} shadow="md" border="2px solid white" />
+                                </RangeSlider>
+                            </VStack>
+                        </MenuList>
+                    </Menu>
+                </HStack>
+
+                {activeFilterCount > 0 && (
+                    <Button variant="ghost" color="gray.500" fontSize="xs" onClick={resetFilters}>Reset</Button>
+                )}
+            </HStack>
+          </Flex>
                     <MenuList p={6} borderRadius="2xl" shadow="2xl" minW="300px">
                         <VStack align="stretch" spacing={4}>
                             <HStack justify="space-between">
@@ -521,6 +572,99 @@ export default function DirectoryClient() {
               </SimpleGrid>
           </Box>
       </Container>
+
+      {/* 📱 MOBILE FILTER DRAWER */}
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md">
+        <DrawerOverlay backdropFilter="blur(10px)" />
+        <DrawerContent borderRadius="2xl 0 0 2xl" p={4}>
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px">
+            <VStack align="start" spacing={1}>
+                <Text fontSize="lg" fontWeight="800">Filters</Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="400">Refine the supervisor collective</Text>
+            </VStack>
+          </DrawerHeader>
+          <DrawerBody py={6}>
+            <VStack align="stretch" spacing={8}>
+              <FormControl>
+                <FormLabel fontWeight="800" fontSize="xs" letterSpacing="widest" textTransform="uppercase">Focus Area</FormLabel>
+                <SimpleGrid columns={1} spacing={2}>
+                    {EXPERTISE_AREAS.map(opt => (
+                        <Checkbox 
+                            key={opt} 
+                            isChecked={selectedExpertise.includes(opt)} 
+                            onChange={() => toggleFilter(opt, selectedExpertise, setSelectedExpertise)}
+                            colorScheme="teal"
+                        >
+                            <Text fontSize="sm">{opt}</Text>
+                        </Checkbox>
+                    ))}
+                </SimpleGrid>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel fontWeight="800" fontSize="xs" letterSpacing="widest" textTransform="uppercase">Language</FormLabel>
+                <Wrap spacing={2}>
+                    {WORLD_LANGUAGES.map(opt => (
+                        <Tag 
+                            key={opt} 
+                            size="md" 
+                            variant={selectedLanguages.includes(opt) ? "solid" : "outline"} 
+                            colorScheme="teal" 
+                            cursor="pointer"
+                            onClick={() => toggleFilter(opt, selectedLanguages, setSelectedLanguages)}
+                        >
+                            {opt}
+                        </Tag>
+                    ))}
+                </Wrap>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel fontWeight="800" fontSize="xs" letterSpacing="widest" textTransform="uppercase">Location</FormLabel>
+                <Select value={selectedCities[0] || ""} onChange={(e) => setSelectedCities(e.target.value ? [e.target.value] : [])}>
+                    <option value="">All Cities</option>
+                    {MAJOR_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel fontWeight="800" fontSize="xs" letterSpacing="widest" textTransform="uppercase">Seniority Level</FormLabel>
+                <Select value={selectedExpLevel} onChange={(e) => setSelectedExpLevel(e.target.value)}>
+                    {SUPERVISOR_EXPERIENCE_LEVELS.map(lvl => <option key={lvl.value} value={lvl.value}>{lvl.label}</option>)}
+                </Select>
+              </FormControl>
+
+              <VStack align="stretch" spacing={4}>
+                <FormLabel fontWeight="800" fontSize="xs" letterSpacing="widest" textTransform="uppercase" mb={0}>Rate (₹{costRange[0]} - ₹{costRange[1]})</FormLabel>
+                <RangeSlider 
+                    aria-label={['min', 'max']} 
+                    defaultValue={[0, 10000]} 
+                    min={0} 
+                    max={15000} 
+                    step={500}
+                    colorScheme="teal"
+                    onChangeEnd={(val) => setCostRange(val)}
+                >
+                    <RangeSliderTrack h={1}>
+                        <RangeSliderFilledTrack />
+                    </RangeSliderTrack>
+                    <RangeSliderThumb index={0} boxSize={5} shadow="md" border="2px solid white" />
+                    <RangeSliderThumb index={1} boxSize={5} shadow="md" border="2px solid white" />
+                </RangeSlider>
+              </VStack>
+            </VStack>
+          </DrawerBody>
+          <Box p={6} borderTopWidth="1px">
+            <Button w="full" bg="teal.800" color="white" borderRadius="full" h="56px" onClick={onClose} _hover={{ bg: "teal.900" }}>
+                Show Results
+            </Button>
+            {activeFilterCount > 0 && (
+                <Button w="full" variant="ghost" mt={2} onClick={resetFilters}>Reset All</Button>
+            )}
+          </Box>
+        </DrawerContent>
+      </Drawer>
     </Box>
   );
 }
