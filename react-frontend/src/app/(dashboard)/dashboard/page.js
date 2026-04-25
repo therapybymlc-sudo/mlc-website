@@ -11,7 +11,7 @@ import { apiPost } from "../../../api.js";
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();
   const { getToken } = useClerkAuth();
-  const { roles = [], isTherapist, isClient, isAdmin } = useAuth();
+  const { roles = [], isTherapist, isClient, isAdmin, metadataRoles = [] } = useAuth();
   const router = useRouter();
   const [resolvingRole, setResolvingRole] = useState(false);
   const attemptedRoleRef = useRef("");
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const autoRole = String(searchParams.get("role") || "").toLowerCase();
 
   const hasExplicitRole = roles.length > 0;
+  const hasMetadataRole = metadataRoles.length > 0;
   const isLikelyJwt = (token) =>
     typeof token === "string" && token.split(".").length === 3;
 
@@ -56,10 +57,19 @@ export default function DashboardPage() {
       return;
     }
 
-    // No manual role picker: infer role from explicit redirect hint only.
-    // If role metadata is missing and we cannot infer intent, go to role-based login.
+    // No canonical profile role yet.
+    // If metadata suggests an intended role, bootstrap canonical profile via onboard automatically.
+    if (!hasExplicitRole && hasMetadataRole) {
+      const preferred = metadataRoles.includes("therapist") ? "therapist" : "client";
+      if (!resolvingRole && attemptedRoleRef.current !== preferred) {
+        handleResolveRole(preferred);
+        return;
+      }
+    }
+
+    // Last fallback: ask user to sign in through role-specific path.
     router.replace("/login");
-  }, [isLoaded, isSignedIn, hasExplicitRole, isTherapist, isClient, isAdmin, router, autoRole, resolvingRole]);
+  }, [isLoaded, isSignedIn, hasExplicitRole, hasMetadataRole, isTherapist, isClient, isAdmin, router, autoRole, resolvingRole, metadataRoles]);
 
   const handleResolveRole = async (role) => {
     setResolvingRole(true);

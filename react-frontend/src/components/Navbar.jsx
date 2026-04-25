@@ -35,6 +35,7 @@ import NextLink from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const logoSrc = "/logo_tra.png";
 
@@ -62,6 +63,7 @@ export default function Navbar() {
   const { signOut } = useClerk();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
+  const { isAdmin, isTherapist } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
@@ -274,13 +276,9 @@ export default function Navbar() {
                   <MenuDivider />
                   
                   {(() => {
-                    const metadataRoles = user?.publicMetadata?.roles || [];
-                    const roleList = Array.isArray(metadataRoles)
-                      ? metadataRoles
-                      : [user?.publicMetadata?.role].filter(Boolean);
                     const therapistContext =
-                      roleList.includes("therapist") ||
-                      roleList.includes("admin") ||
+                      isTherapist ||
+                      isAdmin ||
                       pathname.startsWith("/dashboard/therapist");
                     const dashboardBase = therapistContext ? "/dashboard/therapist" : "/dashboard/client";
                     
@@ -324,7 +322,7 @@ export default function Navbar() {
                   >
                     Resources & Tools
                   </MenuItem>
-                  {(roleList.includes("therapist") || roleList.includes("admin")) && (
+                  {(isTherapist || isAdmin) && (
                     <MenuItem
                       as={NextLink}
                       href="/dashboard/therapist/subscription"

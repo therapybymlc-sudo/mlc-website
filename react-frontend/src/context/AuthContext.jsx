@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   const urlRole = (searchParams?.get("role") || "").toLowerCase();
   const onTherapistRoute = pathname.startsWith("/dashboard/therapist");
 
-  const roles = useMemo(() => {
+  const metadataRoles = useMemo(() => {
     const metaRoles = user?.publicMetadata?.roles || user?.unsafeMetadata?.roles;
     if (Array.isArray(metaRoles)) return metaRoles;
 
@@ -33,20 +33,11 @@ export const AuthProvider = ({ children }) => {
     return [];
   }, [user]);
 
-  const isAdmin = roles.includes("admin");
-  const isTherapist = roles.includes("therapist");
-  const isClient = roles.includes("client");
-  const isNewUser = roles.length === 0;
-
-  const isPremium = isAdmin || roles.includes("premium");
-
   const wantsTherapistOnly = urlRole === "therapist" || onTherapistRoute;
-
-  const isTherapistPreview =
-    !isTherapist && !isAdmin && onTherapistRoute && roles.length === 0;
 
   const [therapistProfile, setTherapistProfile] = useState(null);
   const [clientProfile, setClientProfile] = useState(null);
+  const [whoami, setWhoami] = useState(null);
   const isLikelyJwt = (token) => typeof token === "string" && token.split(".").length === 3;
 
   const getApiToken = async () => {
@@ -64,32 +55,36 @@ export const AuthProvider = ({ children }) => {
     const loadProfiles = async () => {
       if (!isLoaded || !isSignedIn) {
         if (mounted) {
+          setWhoami(null);
           setTherapistProfile(null);
           setClientProfile(null);
         }
         return;
       }
       try {
-        const fetchTasks = [];
-        if (isTherapist) {
-          fetchTasks.push(apiGet("therapists/me/").catch(() => null));
-        } else {
-          fetchTasks.push(Promise.resolve(null));
-        }
+        // DB-backed canonical role context (source of truth).
+        const who = await apiGet("whoami/").catch(() => null);
+        const canonicalRoles = Array.isArray(who?.canonical_roles) ? who.canonical_roles : [];
+        const hasTherapistCanonical = canonicalRoles.includes("therapist") || !!who?.has_therapist_profile;
+        const hasClientCanonical = canonicalRoles.includes("client") || !!who?.has_client_profile;
+        const hasAdminCanonical = canonicalRoles.includes("admin") || !!who?.admin_by_email || !!who?.admin_by_user_id;
 
-        const skipClientProfile = isTherapist || isAdmin || wantsTherapistOnly || isTherapistPreview;
+        const metadataIsTherapist = metadataRoles.includes("therapist");
+        const metadataIsClient = metadataRoles.includes("client");
+        const metadataIsAdmin = metadataRoles.includes("admin");
 
-        if (isClient || (!isTherapist && !isAdmin && !skipClientProfile)) {
-          fetchTasks.push(apiGet("clients/me/").catch(() => null));
-        } else {
-          fetchTasks.push(Promise.resolve(null));
-        }
+        const shouldFetchTherapist = hasTherapistCanonical || hasAdminCanonical || metadataIsTherapist || metadataIsAdmin || wantsTherapistOnly;
+        const shouldFetchClient = !wantsTherapistOnly && (hasClientCanonical || metadataIsClient);
 
-        const [tData, cData] = await Promise.all(fetchTasks);
+        const [tData, cData] = await Promise.all([
+          shouldFetchTherapist ? apiGet("therapists/me/").catch(() => null) : Promise.resolve(null),
+          shouldFetchClient ? apiGet("clients/me/").catch(() => null) : Promise.resolve(null),
+        ]);
 
         if (mounted) {
-          if (tData) setTherapistProfile(tData);
-          if (cData) setClientProfile(cData);
+          setWhoami(who);
+          setTherapistProfile(tData || null);
+          setClientProfile(cData || null);
         }
       } catch (err) {
         console.warn("Profile load failed", err);
@@ -104,12 +99,24 @@ export const AuthProvider = ({ children }) => {
     isSignedIn,
     getToken,
     tokenTemplate,
-    isTherapist,
-    isClient,
-    isAdmin,
+    metadataRoles,
     wantsTherapistOnly,
-    isTherapistPreview,
   ]);
+
+  const canonicalRoles = useMemo(() => {
+    const fromWhoami = Array.isArray(whoami?.canonical_roles) ? whoami.canonical_roles : [];
+    const normalized = fromWhoami.map((r) => String(r).toLowerCase());
+    if (normalized.length > 0) return Array.from(new Set(normalized));
+    return metadataRoles.map((r) => String(r).toLowerCase());
+  }, [whoami, metadataRoles]);
+
+  const isAdmin = canonicalRoles.includes("admin");
+  const isTherapist = canonicalRoles.includes("therapist");
+  const isClient = canonicalRoles.includes("client");
+  const isNewUser = canonicalRoles.length === 0;
+
+  const isPremium = isAdmin || canonicalRoles.includes("premium");
+  const isTherapistPreview = !isTherapist && !isAdmin && onTherapistRoute && canonicalRoles.length === 0;
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -142,7 +149,8 @@ export const AuthProvider = ({ children }) => {
         loading: !isLoaded,
         login,
         logout,
-        roles,
+        roles: canonicalRoles,
+        metadataRoles,
         isAdmin,
         isTherapist,
         isClient,
@@ -154,6 +162,7 @@ export const AuthProvider = ({ children }) => {
         isTherapistPremium: !!therapistProfile?.is_premium,
         isTherapistPreview,
         previewRole: null,
+        whoami,
         clerk,
       }}
     >

@@ -51,7 +51,7 @@ import { useAuth } from '../../../context/AuthContext';
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const { therapistProfile } = useAuth();
+  const { therapistProfile, isAdmin, isTherapist } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -59,20 +59,6 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const { isAdmin, isTherapist } = useMemo(() => {
-    if (!user) return { isAdmin: false, isTherapist: false };
-    const metaRoles = user.publicMetadata?.roles || user.unsafeMetadata?.roles;
-    const roles = Array.isArray(metaRoles)
-      ? metaRoles
-      : [
-          user.publicMetadata?.role || user.unsafeMetadata?.role
-        ].filter(Boolean);
-    return {
-      isAdmin: roles.includes('admin'),
-      isTherapist: roles.includes('therapist') || roles.includes('admin')
-    };
-  }, [user]);
 
   const isTherapistPendingVerification =
     !!isTherapist &&

@@ -183,6 +183,43 @@ def whoami(request):
     payload_email = payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None
     payload_sub = payload.get("sub") if isinstance(payload, dict) else None
     user_email = getattr(request.user, "email", None)
+    normalized_email = (payload_email or user_email or "").strip().lower()
+
+    # Canonical profile signals (DB source of truth, no profile creation here).
+    from therapy.models import TherapistProfile, ClientProfile
+
+    therapist_profile = None
+    client_profile = None
+    try:
+        therapist_profile = getattr(request.user, "therapist_profile", None)
+    except Exception:
+        therapist_profile = None
+    try:
+        client_profile = getattr(request.user, "client_profile", None)
+    except Exception:
+        client_profile = None
+
+    if not therapist_profile:
+        therapist_profile = TherapistProfile.objects.filter(user=request.user).first()
+    if not therapist_profile and normalized_email:
+        therapist_profile = TherapistProfile.objects.filter(email__iexact=normalized_email).first()
+
+    if not client_profile:
+        client_profile = ClientProfile.objects.filter(user=request.user).first()
+    if not client_profile and normalized_email:
+        client_profile = ClientProfile.objects.filter(email__iexact=normalized_email).first()
+
+    admin_by_email = normalized_email in admin_emails
+    admin_by_user_id = payload_sub in admin_user_ids
+
+    canonical_roles = []
+    if admin_by_email or admin_by_user_id:
+        canonical_roles.append("admin")
+    if therapist_profile:
+        canonical_roles.append("therapist")
+    if client_profile:
+        canonical_roles.append("client")
+
     return Response({
         "user": str(request.user),
         "user_email": user_email,
@@ -191,8 +228,14 @@ def whoami(request):
         "roles": [str(r).lower() for r in roles if r],
         "admin_emails": admin_emails,
         "admin_user_ids": admin_user_ids,
-        "admin_by_email": (payload_email or user_email or "").lower() in admin_emails,
-        "admin_by_user_id": payload_sub in admin_user_ids,
+        "admin_by_email": admin_by_email,
+        "admin_by_user_id": admin_by_user_id,
+        "canonical_roles": canonical_roles,
+        "has_therapist_profile": bool(therapist_profile),
+        "has_client_profile": bool(client_profile),
+        "therapist_profile_id": getattr(therapist_profile, "id", None),
+        "client_profile_id": getattr(client_profile, "id", None),
+        "therapist_verified": bool(getattr(therapist_profile, "is_verified", False)),
     })
 
 @api_view(["GET"])
