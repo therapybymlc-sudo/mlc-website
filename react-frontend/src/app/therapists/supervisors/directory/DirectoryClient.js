@@ -480,38 +480,6 @@ export default function DirectoryClient() {
                 )}
             </HStack>
           </Flex>
-                    <MenuList p={6} borderRadius="2xl" shadow="2xl" minW="300px">
-                        <VStack align="stretch" spacing={4}>
-                            <HStack justify="space-between">
-                                <Text fontWeight="700" fontSize="sm">Supervision Rate</Text>
-                                <Text fontSize="xs" fontWeight="800" color="teal.600">₹{costRange[0]} - ₹{costRange[1]}</Text>
-                            </HStack>
-                            <RangeSlider 
-                                aria-label={['min', 'max']} 
-                                defaultValue={[0, 10000]} 
-                                min={0} 
-                                max={15000} 
-                                step={500}
-                                colorScheme="teal"
-                                onChangeEnd={(val) => setCostRange(val)}
-                            >
-                                <RangeSliderTrack h={1}>
-                                    <RangeSliderFilledTrack />
-                                </RangeSliderTrack>
-                                <RangeSliderThumb index={0} boxSize={5} shadow="md" border="2px solid white" />
-                                <RangeSliderThumb index={1} boxSize={5} shadow="md" border="2px solid white" />
-                            </RangeSlider>
-                        </VStack>
-                    </MenuList>
-                </Menu>
-            </Wrap>
-
-            {activeFilterCount > 0 && (
-                <Button variant="ghost" color="red.500" fontSize="xs" fontWeight="800" onClick={resetFilters} leftIcon={<FiX />}>
-                    CLEAR
-                </Button>
-            )}
-          </Flex>
         </Container>
       </Box>
 
