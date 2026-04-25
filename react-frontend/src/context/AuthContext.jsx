@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs";
-import { apiGet, setTokenGetter } from "../api.js";
+import { apiGet, apiPost, setTokenGetter } from "../api.js";
 
 const AuthContext = createContext(null);
 
@@ -75,9 +75,27 @@ export const AuthProvider = ({ children }) => {
 
         const shouldFetchTherapist = hasTherapistCanonical || hasAdminCanonical || metadataIsTherapist || metadataIsAdmin || wantsTherapistOnly;
         const shouldFetchClient = !wantsTherapistOnly && (hasClientCanonical || metadataIsClient);
+        const fetchTherapistProfile = async () => {
+          if (!shouldFetchTherapist) return null;
+          try {
+            return await apiGet("therapists/me/");
+          } catch (err) {
+            const status = err?.response?.status;
+            // Self-heal canonical therapist profile on first-login race conditions.
+            if (status === 404 && (metadataIsTherapist || metadataIsAdmin || wantsTherapistOnly)) {
+              try {
+                await apiPost("onboard/", { role: "therapist" });
+                return await apiGet("therapists/me/").catch(() => null);
+              } catch (_onboardErr) {
+                return null;
+              }
+            }
+            return null;
+          }
+        };
 
         const [tData, cData] = await Promise.all([
-          shouldFetchTherapist ? apiGet("therapists/me/").catch(() => null) : Promise.resolve(null),
+          fetchTherapistProfile(),
           shouldFetchClient ? apiGet("clients/me/").catch(() => null) : Promise.resolve(null),
         ]);
 
