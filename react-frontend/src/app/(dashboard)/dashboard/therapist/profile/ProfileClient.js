@@ -9,7 +9,7 @@ import {
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
   FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX
 } from "react-icons/fi";
-import { apiGet, apiPut, apiPost } from "../../../../../api.js";
+import { apiGet, apiPut, apiPost, apiPatch, apiPatchForm } from "../../../../../api.js";
 import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
@@ -85,7 +85,11 @@ export default function ProfileClient() {
     
     // 2. Credentials
     qualification_highest: "",
+    highest_qualification: "",
     qualification_title: "",
+    highest_qualification_proof: null,
+    resume_file: null,
+    linkedin_url: "",
     university: "",
     year_completed: "",
     experience_years: 0,
@@ -107,6 +111,13 @@ export default function ProfileClient() {
     // 5. Clinical Scope
     concerns_levels: {}, 
     exclusions: "",
+    clinical_judgment_answers: {
+      first_10_min_response: "",
+      stalled_therapy_case: "",
+      scope_and_referral_judgment: "",
+      suicidal_ideation_response: "",
+      difficult_clients_self_management: "",
+    },
     
     // 6. Approach
     primary_orientation: "",
@@ -132,7 +143,22 @@ export default function ProfileClient() {
     // 9. Internal
     internal_risk_level: "Moderate",
     risk_protocols: { psychiatrist: "", hospital: "", location: "", contact: "", notes: "" },
-    best_fit_notes: ""
+    best_fit_notes: "",
+
+    // 10. Supervisor Application
+    supervision_bio: "",
+    supervision_areas: [],
+    supervision_modalities: [],
+    supervision_years_experience: 0,
+    supervision_application_answers: {
+      current_supervisee_experience: "",
+      supervision_modalities_experience: "",
+      difficult_supervision_areas: "",
+      scope_and_escalation_judgment: "",
+      high_risk_case_supervision: "",
+      feedback_and_rupture_repair: "",
+      supervisor_self_reflection: "",
+    },
   });
 
   const [tabIndex, setTabIndex] = useState(0);
@@ -188,7 +214,7 @@ export default function ProfileClient() {
     if (!requireBasicAccess()) return;
     const success = await handleSave(false);
     if (success) {
-      setTabIndex((prev) => (prev + 1) % 8);
+      setTabIndex((prev) => (prev + 1) % 9);
       toast({ title: "Progress Saved", status: "success", duration: 1500 });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -203,7 +229,36 @@ export default function ProfileClient() {
     setKeywordInput("");
   };
 
+  const handleSubmitSupervisionApplication = async () => {
+    if (!requireBasicAccess()) return;
+    const saved = await handleSave(false);
+    if (!saved) return;
+    setLoading(true);
+    try {
+      const response = await apiPost("therapists/submit-supervision-application/", {});
+      toast({
+        title: "Supervision application submitted",
+        description: "Your existing therapist profile and supervision responses were sent together. Feel free to further edit your therapist profile to reflect your experience and growth.",
+        status: "success",
+        duration: 6000,
+      });
+    } catch (error) {
+      const detail = error?.response?.data?.detail || "Could not submit supervision application.";
+      const missing = error?.response?.data?.missing_fields;
+      toast({
+        title: "Submission blocked",
+        description: Array.isArray(missing) && missing.length ? `${detail} Missing: ${missing.join(", ")}` : detail,
+        status: "warning",
+        duration: 5000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fileInputRef = useRef(null);
+  const qualificationProofRef = useRef(null);
+  const resumeFileRef = useRef(null);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -221,6 +276,22 @@ export default function ProfileClient() {
       setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       toast({ title: "Upload failed", status: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileFileUpload = async (fieldName, file) => {
+    if (!profile.id || !file) return;
+    const formDataUpload = new FormData();
+    formDataUpload.append(fieldName, file);
+    setLoading(true);
+    try {
+      const updated = await apiPatchForm(`therapists/${profile.id}/`, formDataUpload);
+      setProfile((prev) => ({ ...prev, ...updated }));
+      toast({ title: "File uploaded", status: "success", duration: 2000 });
+    } catch (err) {
+      toast({ title: "Upload failed", description: "Please try again.", status: "error" });
     } finally {
       setLoading(false);
     }
@@ -252,6 +323,18 @@ export default function ProfileClient() {
         accept="image/*" 
         onChange={handlePhotoUpload} 
       />
+      <input
+        type="file"
+        ref={qualificationProofRef}
+        style={{ display: "none" }}
+        onChange={(e) => handleProfileFileUpload("highest_qualification_proof", e.target.files?.[0])}
+      />
+      <input
+        type="file"
+        ref={resumeFileRef}
+        style={{ display: "none" }}
+        onChange={(e) => handleProfileFileUpload("resume_file", e.target.files?.[0])}
+      />
       <VStack align="stretch" spacing={6} mb={10}>
         <Flex 
           direction={{ base: "column", md: "row" }}
@@ -276,6 +359,15 @@ export default function ProfileClient() {
             </Box>
           </Alert>
         )}
+        <Alert status="info" borderRadius="xl" bg="blue.50">
+          <AlertIcon />
+          <Box>
+            <AlertTitle fontSize="sm">Profile Completion Guide</AlertTitle>
+            <AlertDescription fontSize="sm">
+              Complete each tab in order. To submit for clinical review, you must add your highest qualification, LinkedIn, qualification proof, CV/resume, and all Clinical Judgment answers.
+            </AlertDescription>
+          </Box>
+        </Alert>
       </VStack>
 
       <Tabs index={tabIndex} onChange={(i) => setTabIndex(i)} variant="enclosed" colorScheme="teal" isLazy>
@@ -293,6 +385,7 @@ export default function ProfileClient() {
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiAward} mr={2}/> Credentials</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiUsers} mr={2}/> Populations</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiTarget} mr={2}/> Clinical Scope</Tab>
+          <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiAlertCircle} mr={2}/> Clinical Judgment</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiHeart} mr={2}/> Therapeutic Approach</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiClock} mr={2}/> Availability</Tab>
           <Tab whiteSpace="nowrap" flexShrink={0} borderRadius="xl" px={{ base: 4, md: 8 }} mr={2} border="1px solid" borderColor="gray.100" fontSize={{ base: "xs", md: "sm" }}><Icon as={FiBook} mr={2}/> Bio & Media</Tab>
@@ -319,6 +412,7 @@ export default function ProfileClient() {
                   <FormControl isRequired>
                     <FormLabel fontWeight="700">Public Headline</FormLabel>
                     <Input placeholder="Focused on trauma and relationship wellness..." value={profile.headline} onChange={(e) => setProfile({...profile, headline: e.target.value})} variant="filled" borderRadius="xl" />
+                    <Text fontSize="xs" color="gray.500" mt={2}>Keep this specific. 8-14 words works best for discoverability.</Text>
                   </FormControl>
                </VStack>
                <VStack align="center" justify="center">
@@ -336,9 +430,14 @@ export default function ProfileClient() {
           <TabPanel>
             <VStack align="stretch" spacing={8}>
                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                  <FormControl>
+                  <FormControl isRequired>
                     <FormLabel fontWeight="700">Highest Qualification</FormLabel>
-                    <Input placeholder="e.g. Ph.D, M.Phil" value={profile.qualification_highest} onChange={(e) => setProfile({...profile, qualification_highest: e.target.value})} borderRadius="xl" />
+                    <Input placeholder="e.g. Ph.D, M.Phil" value={profile.highest_qualification || profile.qualification_highest || ""} onChange={(e) => setProfile({...profile, highest_qualification: e.target.value, qualification_highest: e.target.value})} borderRadius="xl" />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="700">LinkedIn Profile URL</FormLabel>
+                    <Input placeholder="https://www.linkedin.com/in/your-profile" value={profile.linkedin_url || ""} onChange={(e) => setProfile({...profile, linkedin_url: e.target.value})} borderRadius="xl" />
+                    <Text fontSize="xs" color="gray.500" mt={2}>Use your full profile URL so admin can verify credentials faster.</Text>
                   </FormControl>
                   <FormControl>
                     <FormLabel fontWeight="700">Degree Title</FormLabel>
@@ -357,7 +456,7 @@ export default function ProfileClient() {
                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                   <FormControl>
                     <FormLabel fontWeight="700">Total Years of Experience</FormLabel>
-                    <Input type="number" value={profile.experience_years} onChange={(e) => setProfile({...profile, experience_years: e.target.value})} borderRadius="xl" />
+                    <Input type="number" value={profile.years_experience ?? profile.experience_years ?? 0} onChange={(e) => setProfile({...profile, years_experience: e.target.value, experience_years: e.target.value})} borderRadius="xl" />
                   </FormControl>
                   <FormControl>
                     <FormLabel fontWeight="700">Post-Qualification Years</FormLabel>
@@ -371,8 +470,26 @@ export default function ProfileClient() {
                <Box p={8} border="2px dashed" borderColor="gray.200" borderRadius="3xl" textAlign="center">
                   <Icon as={FiBriefcase} boxSize={8} color="gray.300" mb={2} />
                   <Text fontWeight="600" color="gray.500">Professional Documents (Internal Only)</Text>
-                  <Text fontSize="xs" color="gray.400" mb={4}>Degree Certificate, CV/Resume, License Proof</Text>
-                  <Button size="sm" colorScheme="teal" variant="outline">Upload Files</Button>
+                  <Text fontSize="xs" color="gray.400" mb={4}>Highest qualification proof and CV/Resume are required before review.</Text>
+                  <HStack justify="center" spacing={3}>
+                    <Button size="sm" colorScheme="teal" variant="outline" onClick={() => qualificationProofRef.current?.click()}>
+                      Upload Qualification Proof
+                    </Button>
+                    <Button size="sm" colorScheme="teal" variant="outline" onClick={() => resumeFileRef.current?.click()}>
+                      Upload CV / Resume
+                    </Button>
+                  </HStack>
+                  <VStack mt={4} spacing={1}>
+                    <Text fontSize="xs" color={profile.highest_qualification_proof ? "green.600" : "red.500"}>
+                      Qualification proof: {profile.highest_qualification_proof ? "uploaded" : "missing"}
+                    </Text>
+                    <Text fontSize="xs" color={profile.resume_file ? "green.600" : "red.500"}>
+                      CV / Resume: {profile.resume_file ? "uploaded" : "missing"}
+                    </Text>
+                  </VStack>
+                  <Text fontSize="xs" color="gray.500" mt={3}>
+                    Accepted: PDF, DOC, DOCX, JPG, PNG. Upload clear and readable files.
+                  </Text>
                </Box>
                <Divider my={6} />
                 <Flex justify="flex-end">
@@ -396,6 +513,7 @@ export default function ProfileClient() {
 
                <Box>
                   <FormLabel fontWeight="800" mb={4}>Age Groups Served</FormLabel>
+                  <Text fontSize="xs" color="gray.500" mb={3}>Select only groups you actively work with in current practice.</Text>
                   <Wrap spacing={3}>
                      {CATEGORIES.AGE_GROUPS.map(age => (
                        <Checkbox key={age} isChecked={profile.age_groups?.includes(age)} onChange={() => toggleArray('age_groups', age)}>{age}</Checkbox>
@@ -543,6 +661,9 @@ export default function ProfileClient() {
 
                <Box>
                   <FormLabel fontWeight="800" mb={2}>Presenting Concerns Matrix</FormLabel>
+                 <Text fontSize="xs" color="gray.500" mb={3}>
+                   Mark at least 5 concerns to help matching quality and reduce client mismatch.
+                 </Text>
                   <Box p={4} bg="gray.50" borderRadius="xl" mb={6} border="1px solid" borderColor="gray.100">
                     <Heading size="xs" mb={3} textTransform="uppercase" color="gray.500">Choosing the right level:</Heading>
                     <VStack align="stretch" spacing={2}>
@@ -580,6 +701,48 @@ export default function ProfileClient() {
           </TabPanel>
 
           {/* 5. Approach */}
+          {/* 5. Clinical Judgment (Internal Only) */}
+          <TabPanel>
+            <VStack align="stretch" spacing={6}>
+              <Alert status="warning" borderRadius="xl">
+                <AlertIcon />
+                <Box>
+                  <AlertTitle fontSize="sm">Internal Clinical Vetting Only</AlertTitle>
+                  <AlertDescription fontSize="xs">
+                    These answers are required for MLC internal review and are never shown on your public profile.
+                  </AlertDescription>
+                </Box>
+              </Alert>
+              <Text fontSize="xs" color="gray.500">
+                Write concrete, real-case style answers. One-line answers are usually returned for revision.
+              </Text>
+              <FormControl isRequired>
+                <FormLabel fontWeight="700">A client says: "I feel stuck and don’t know what’s wrong with me." How would you respond in the first 10 minutes?</FormLabel>
+                <Textarea minH="140px" value={profile.clinical_judgment_answers?.first_10_min_response || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), first_10_min_response: e.target.value } })} borderRadius="xl" />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontWeight="700">Describe a case where therapy was not progressing. What did you do?</FormLabel>
+                <Textarea minH="140px" value={profile.clinical_judgment_answers?.stalled_therapy_case || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), stalled_therapy_case: e.target.value } })} borderRadius="xl" />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontWeight="700">When would you decide a client is outside your scope and refer out?</FormLabel>
+                <Textarea minH="140px" value={profile.clinical_judgment_answers?.scope_and_referral_judgment || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), scope_and_referral_judgment: e.target.value } })} borderRadius="xl" />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontWeight="700">Briefly describe how you assess and respond to suicidal ideation in a client.</FormLabel>
+                <Textarea minH="140px" value={profile.clinical_judgment_answers?.suicidal_ideation_response || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), suicidal_ideation_response: e.target.value } })} borderRadius="xl" />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel fontWeight="700">What kind of clients do you find difficult to work with, and how do you manage that?</FormLabel>
+                <Textarea minH="140px" value={profile.clinical_judgment_answers?.difficult_clients_self_management || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), difficult_clients_self_management: e.target.value } })} borderRadius="xl" />
+              </FormControl>
+              <Flex justify="flex-end">
+                <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+              </Flex>
+            </VStack>
+          </TabPanel>
+
+          {/* 6. Approach */}
           <TabPanel>
             <VStack align="stretch" spacing={10}>
                <Box>
@@ -740,6 +903,7 @@ export default function ProfileClient() {
                   <FormControl>
                      <FormLabel fontWeight="700">In-Person Locations</FormLabel>
                      <Input placeholder="e.g. Banjara Hills, Hyderabad" value={profile.locations} onChange={(e) => setProfile({...profile, locations: e.target.value})} borderRadius="xl" />
+                     <Text fontSize="xs" color="gray.500" mt={2}>If you offer in-person sessions, add exact locality and city.</Text>
                   </FormControl>
                </VStack>
                <Divider my={6} />
@@ -755,6 +919,7 @@ export default function ProfileClient() {
                <FormControl>
                   <FormLabel fontWeight="800">Professional Bio (150+ words recommended for visibility)</FormLabel>
                   <Textarea value={profile.bio} onChange={(e) => setProfile({...profile, bio: e.target.value})} borderRadius="2xl" rows={10} placeholder="Talk about your journey, style, and approach..." />
+                  <Text fontSize="xs" color="gray.500" mt={2}>Include training background, populations served, and therapeutic style.</Text>
                </FormControl>
                
                <Box bg="#F9FBFA" p={8} borderRadius="3xl">
@@ -826,6 +991,95 @@ export default function ProfileClient() {
                      <FormLabel fontWeight="700">Internal Matching Notes</FormLabel>
                      <Textarea bg="white" placeholder="Best fit cases, specific exclusion patterns, etc." value={profile.best_fit_notes} onChange={(e) => setProfile({...profile, best_fit_notes: e.target.value})} borderRadius="xl" />
                   </FormControl>
+                  <Divider my={{ base: 6, md: 10 }} />
+
+                  <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid" borderColor="orange.200">
+                    <VStack align="stretch" spacing={5}>
+                      <Heading size="sm" color="orange.700">Supervisor Licensing Application</Heading>
+                      <Text fontSize="xs" color="gray.600">
+                        Use this section only if you are applying to supervise other therapists. Minimum eligibility is 5+ years experience.
+                      </Text>
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                        <FormControl>
+                          <FormLabel fontSize="xs" fontWeight="bold">Years Supervising (formal/informal)</FormLabel>
+                          <Input
+                            type="number"
+                            bg="white"
+                            value={profile.supervision_years_experience || 0}
+                            onChange={(e) => setProfile({ ...profile, supervision_years_experience: e.target.value })}
+                            borderRadius="xl"
+                          />
+                        </FormControl>
+                        <FormControl>
+                          <FormLabel fontSize="xs" fontWeight="bold">Supervision Areas</FormLabel>
+                          <Input
+                            placeholder="e.g. Trauma cases, Case formulation, Ethics"
+                            bg="white"
+                            value={Array.isArray(profile.supervision_areas) ? profile.supervision_areas.join(", ") : ""}
+                            onChange={(e) => setProfile({ ...profile, supervision_areas: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })}
+                            borderRadius="xl"
+                          />
+                        </FormControl>
+                      </SimpleGrid>
+                      <FormControl>
+                        <FormLabel fontSize="xs" fontWeight="bold">Supervision Modalities You Can Supervise In</FormLabel>
+                        <Input
+                          placeholder="e.g. CBT, DBT, Psychodynamic, Couples therapy"
+                          bg="white"
+                          value={Array.isArray(profile.supervision_modalities) ? profile.supervision_modalities.join(", ") : ""}
+                          onChange={(e) => setProfile({ ...profile, supervision_modalities: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })}
+                          borderRadius="xl"
+                        />
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel fontSize="xs" fontWeight="bold">Supervision Philosophy / Bio</FormLabel>
+                        <Textarea
+                          bg="white"
+                          value={profile.supervision_bio || ""}
+                          onChange={(e) => setProfile({ ...profile, supervision_bio: e.target.value })}
+                          borderRadius="xl"
+                        />
+                      </FormControl>
+
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">What is your current supervisee experience (types of supervisees, stages, case complexity)?</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.current_supervisee_experience || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), current_supervisee_experience: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">What modalities do you have direct experience supervising in, and how do you guide fidelity?</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.supervision_modalities_experience || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), supervision_modalities_experience: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">Which parts of supervision feel most difficult for you, and how do you work through them?</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.difficult_supervision_areas || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), difficult_supervision_areas: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">When would you escalate, pause, or reassign a supervisee case due to scope/safety concerns?</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.scope_and_escalation_judgment || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), scope_and_escalation_judgment: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">Describe how you supervise high-risk situations (self-harm, suicidality, severe deterioration).</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.high_risk_case_supervision || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), high_risk_case_supervision: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">How do you give difficult feedback and repair rupture when supervisees become defensive or disengaged?</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.feedback_and_rupture_repair || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), feedback_and_rupture_repair: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="bold">What is your current growth edge as a supervisor, and how are you actively improving it?</FormLabel>
+                        <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.supervisor_self_reflection || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), supervisor_self_reflection: e.target.value } })} borderRadius="xl" />
+                      </FormControl>
+
+                      <HStack justify="flex-end">
+                        <Button colorScheme="orange" borderRadius="full" onClick={handleSubmitSupervisionApplication} isLoading={loading}>
+                          Submit Supervision Application
+                        </Button>
+                      </HStack>
+                      <Text fontSize="xs" color="gray.600" textAlign="right">
+                        Feel free to further edit your therapist profile to reflect your experience and growth.
+                      </Text>
+                    </VStack>
+                  </Box>
                   <Divider my={{ base: 6, md: 10 }} />
                   <Flex justify="center" pt={6}>
                     <Button 

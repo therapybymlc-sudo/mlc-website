@@ -11,6 +11,13 @@ from .notifications import get_scheduling_action_url
 # 🔹 Therapist & Client Models
 # ===========================
 class TherapistProfile(models.Model):
+    class ProfileStatus(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SUBMITTED = "submitted", "Pending Review"
+        CHANGES_REQUESTED = "changes_requested", "Changes Requested"
+        AWAITING_CONTRACT = "awaiting_contract", "Awaiting Contract"
+        APPROVED = "approved", "Approved (Live)"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -59,6 +66,18 @@ class TherapistProfile(models.Model):
     city = models.CharField(max_length=100, blank=True, null=True)
     state = models.CharField(max_length=100, blank=True, null=True)
     years_experience = models.PositiveIntegerField(default=0)
+    highest_qualification = models.CharField(max_length=255, blank=True, null=True)
+    highest_qualification_proof = models.FileField(
+        upload_to="therapist_profile/qualification_proofs/",
+        blank=True,
+        null=True,
+    )
+    resume_file = models.FileField(
+        upload_to="therapist_profile/resumes/",
+        blank=True,
+        null=True,
+    )
+    linkedin_url = models.URLField(blank=True, null=True)
     hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     supervision_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     session_duration = models.PositiveIntegerField(default=50) # in minutes
@@ -70,19 +89,71 @@ class TherapistProfile(models.Model):
     is_supervisor = models.BooleanField(default=False)
     supervision_status = models.CharField(
         max_length=20, 
-        choices=[("none", "None"), ("pending", "Pending"), ("approved", "Approved")], 
+        choices=[
+            ("none", "None"),
+            ("pending", "Supervision Review"),
+            ("awaiting_contract", "Supervision Awaiting Contract"),
+            ("approved", "Licensed Supervisor"),
+        ], 
         default="none"
     )
+    profile_status = models.CharField(
+        max_length=24,
+        choices=ProfileStatus.choices,
+        default=ProfileStatus.DRAFT,
+        db_index=True,
+    )
+    admin_feedback = models.TextField(blank=True, null=True)
+    supervisor_admin_feedback = models.TextField(blank=True, null=True)
+    is_initially_published = models.BooleanField(default=False)
+    is_supervisor_licensed = models.BooleanField(default=False)
+    clinical_judgment_answers = models.JSONField(default=dict, blank=True)
     supervision_bio = models.TextField(blank=True, null=True)
     supervision_years_experience = models.PositiveIntegerField(default=0)
     supervision_areas = models.JSONField(default=list, blank=True) # e.g. ["Clinical", "Organizational"]
     supervision_modalities = models.JSONField(default=list, blank=True) # Max 3 major ones
+    supervision_application_answers = models.JSONField(default=dict, blank=True)
     
     # Physical Space Support (Hybrid Clinic)
     has_physical_space = models.BooleanField(default=False)
     physical_space_images = models.JSONField(default=list, blank=True) # List of image URLs
     physical_space_location = models.TextField(blank=True, null=True) # Address/City info
     physical_space_notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="therapist_profile_status_valid",
+                check=models.Q(
+                    profile_status__in=[
+                        "draft",
+                        "submitted",
+                        "changes_requested",
+                        "awaiting_contract",
+                        "approved",
+                    ]
+                ),
+            ),
+            models.CheckConstraint(
+                name="therapist_supervision_status_valid",
+                check=models.Q(
+                    supervision_status__in=[
+                        "none",
+                        "pending",
+                        "awaiting_contract",
+                        "approved",
+                    ]
+                ),
+            ),
+            # Supervision contract/licensed stages are blocked until profile vetting is approved/live.
+            models.CheckConstraint(
+                name="supervision_advanced_requires_profile_approved",
+                check=(
+                    models.Q(supervision_status__in=["none", "pending"])
+                    | models.Q(profile_status="approved")
+                ),
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.name

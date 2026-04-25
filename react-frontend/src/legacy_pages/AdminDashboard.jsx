@@ -79,6 +79,15 @@ const emptyService = {
   is_active: true,
 };
 
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api").replace(/\/+$/, "");
+const API_ORIGIN = API_BASE.replace(/\/api$/, "");
+
+const resolveAssetUrl = (url) => {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${API_ORIGIN}${url.startsWith("/") ? url : `/${url}`}`;
+};
+
 const defaultHomeDraft = {
   hero: {
     title: "MLC Therapy",
@@ -963,6 +972,7 @@ export default function AdminDashboard() {
   const [therapistApplyId, setTherapistApplyId] = useState(null);
 
   const [unverifiedTherapists, setUnverifiedTherapists] = useState([]);
+  const [allTherapists, setAllTherapists] = useState([]);
   const [therapistApplications, setTherapistApplications] = useState([]);
 
   const [contactMessages, setContactMessages] = useState([]);
@@ -1407,6 +1417,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchAllTherapists = async () => {
+    try {
+      const data = await apiGet("therapists/");
+      setAllTherapists(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) {
+      console.error("Failed to fetch therapists", err);
+    }
+  };
+
+  const getTherapistByEmail = (email) => {
+    const normalized = (email || "").trim().toLowerCase();
+    if (!normalized) return null;
+    return allTherapists.find((t) => (t.email || "").trim().toLowerCase() === normalized) || null;
+  };
+
   const fetchTherapistApplications = async () => {
     try {
       const data = await apiGet("manage-therapist-applications/");
@@ -1429,6 +1454,7 @@ export default function AdminDashboard() {
       fetchCareersContent();
       fetchTherapistApplyContent();
       fetchUnverifiedTherapists();
+      fetchAllTherapists();
       fetchTherapistApplications();
       fetchContactMessages();
       fetchQuickBookings();
@@ -2435,6 +2461,9 @@ export default function AdminDashboard() {
                 <Heading size="sm" mb={4} color="mlc.greenDark">
                   Therapist Applications ({therapistApplications.filter(a => a.status === 'pending').length} Pending)
                 </Heading>
+                <Text fontSize="xs" color="gray.500" mb={4}>
+                  Review order: 1) Request changes or approve profile content, 2) send contract, 3) verify contract to publish profile live.
+                </Text>
                 {therapistApplications.length === 0 ? (
                   <Text color="gray.500" fontSize="sm">No applications found.</Text>
                 ) : (
@@ -2452,9 +2481,9 @@ export default function AdminDashboard() {
                             <Text fontSize="sm" color="gray.600">{app.email} • {app.phone}</Text>
                           </VStack>
                           <HStack spacing={3}>
-                             <Button size="sm" variant="ghost" onClick={() => window.open(app.resume, "_blank")}>CV</Button>
-                             {app.qualification_doc && <Button size="sm" variant="ghost" onClick={() => window.open(app.qualification_doc, "_blank")}>Quals</Button>}
-                             {app.license_doc && <Button size="sm" variant="ghost" onClick={() => window.open(app.license_doc, "_blank")}>License</Button>}
+                             <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.resume), "_blank")}>CV</Button>
+                             {app.qualification_doc && <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.qualification_doc), "_blank")}>Quals</Button>}
+                             {app.license_doc && <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.license_doc), "_blank")}>License</Button>}
                           </HStack>
                         </HStack>
 
@@ -2513,15 +2542,22 @@ export default function AdminDashboard() {
                                   colorScheme="red" 
                                   size="sm"
                                   onClick={async () => {
-                                    if(!confirm("Are you sure you want to reject this application?")) return;
+                                    if(!confirm("Send this back for profile changes?")) return;
                                     try { 
-                                      await apiPut(`manage-therapist-applications/${app.id}/`, { status: "rejected" });
+                                      const notes = document.getElementById(`notes-${app.id}`)?.value || "Please update profile details and resubmit.";
+                                      const matchingProfile = getTherapistByEmail(app.email);
+                                      if (matchingProfile?.id) {
+                                        await apiPost(`therapists/${matchingProfile.id}/request-profile-changes/`, { feedback: notes });
+                                      } else {
+                                        await apiPut(`manage-therapist-applications/${app.id}/`, { status: "rejected" });
+                                      }
                                       fetchTherapistApplications();
-                                      toast({ status: "info", title: "Application rejected" });
+                                      fetchAllTherapists();
+                                      toast({ status: "info", title: "Changes requested" });
                                     } catch { toast({ status: "error", title: "Action failed" }); }
                                   }}
                                 >
-                                  Reject
+                                  Request Changes
                                 </Button>
                                 <Button 
                                   bg="mlc.green" 
@@ -2531,29 +2567,50 @@ export default function AdminDashboard() {
                                   onClick={async () => {
                                     const notes = document.getElementById(`notes-${app.id}`)?.value;
                                     try {
-                                      await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes });
-                                      
-                                      // Automatically find and verify the profile if email matches
-                                      const matchingProfile = unverifiedTherapists.find(p => p.email.toLowerCase() === app.email.toLowerCase());
-                                      if (matchingProfile) {
-                                        await apiPost(`therapists/verify/${matchingProfile.id}/`, {});
+                                      const matchingProfile = getTherapistByEmail(app.email);
+                                      if (matchingProfile?.id) {
+                                        await apiPost(`therapists/${matchingProfile.id}/approve-content-send-contract/`, { feedback: notes || "" });
+                                      } else {
+                                        await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes });
                                       }
-
-                                      toast({ status: "success", title: "Therapist Approved!", description: "Application status updated and profile created." });
+                                      toast({ status: "success", title: "Content approved", description: "Contract stage initiated." });
                                       fetchTherapistApplications();
+                                      fetchAllTherapists();
                                       fetchUnverifiedTherapists();
                                     } catch {
-                                      toast({ status: "error", title: "Approval failed", description: "Please check console for details." });
+                                      toast({ status: "error", title: "Approval failed", description: "Please check required profile fields and try again." });
                                     }
                                   }}
                                 >
-                                  Approve & Onboard
+                                  Approve Content & Send Contract
                                 </Button>
                              </HStack>
                           </VStack>
                         )}
                         {app.status === 'approved' && (
                           <HStack justify="flex-end" borderTop="1px dashed" borderColor="gray.200" pt={4}>
+                            <Button
+                              size="sm"
+                              colorScheme="green"
+                              onClick={async () => {
+                                try {
+                                  const matchingProfile = getTherapistByEmail(app.email);
+                                  if (!matchingProfile?.id) {
+                                    toast({ status: "warning", title: "Profile not found", description: "Run Re-verify / Repair first." });
+                                    return;
+                                  }
+                                  await apiPost(`therapists/${matchingProfile.id}/verify-contract-approve-profile/`, {});
+                                  toast({ status: "success", title: "Contract verified", description: "Profile is now published live." });
+                                  fetchTherapistApplications();
+                                  fetchAllTherapists();
+                                  fetchUnverifiedTherapists();
+                                } catch {
+                                  toast({ status: "error", title: "Publish failed", description: "Please try again." });
+                                }
+                              }}
+                            >
+                              Verify Contract & Publish
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -2563,6 +2620,7 @@ export default function AdminDashboard() {
                                   await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: "Manual re-verify/repair from admin portal." });
                                   toast({ status: "success", title: "Verification repaired", description: "Canonical profile verification sync re-applied." });
                                   fetchTherapistApplications();
+                                  fetchAllTherapists();
                                   fetchUnverifiedTherapists();
                                 } catch {
                                   toast({ status: "error", title: "Repair failed", description: "Please try again." });

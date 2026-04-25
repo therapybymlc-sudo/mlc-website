@@ -625,6 +625,7 @@ def _require_admin(request):
 # ----------------------------
 class TherapistProfileViewSet(viewsets.ModelViewSet):
     serializer_class = TherapistProfileSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
@@ -751,6 +752,184 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             
         serializer = self.get_serializer(therapist)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["post"], url_path="submit-for-review")
+    def submit_for_review(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=True)
+        if not therapist:
+            return Response({"detail": "Therapist profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if therapist.profile_status in {
+            TherapistProfile.ProfileStatus.SUBMITTED,
+            TherapistProfile.ProfileStatus.AWAITING_CONTRACT,
+            TherapistProfile.ProfileStatus.APPROVED,
+        }:
+            return Response(
+                {"detail": "Profile is already submitted or approved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        required_fields = {
+            "name": therapist.name,
+            "email": therapist.email,
+            "bio": therapist.bio,
+            "highest_qualification": therapist.highest_qualification,
+            "linkedin_url": therapist.linkedin_url,
+            "resume_file": therapist.resume_file,
+            "highest_qualification_proof": therapist.highest_qualification_proof,
+        }
+        missing = [k for k, v in required_fields.items() if not v]
+
+        answers = therapist.clinical_judgment_answers or {}
+        required_questions = [
+            "first_10_min_response",
+            "stalled_therapy_case",
+            "scope_and_referral_judgment",
+            "suicidal_ideation_response",
+            "difficult_clients_self_management",
+        ]
+        missing_questions = [q for q in required_questions if not str(answers.get(q, "")).strip()]
+        if missing_questions:
+            missing.append("clinical_judgment_answers")
+
+        if therapist.has_physical_space:
+            if not therapist.physical_space_location:
+                missing.append("physical_space_location")
+            if not therapist.physical_space_images:
+                missing.append("physical_space_images")
+
+        if missing:
+            return Response(
+                {
+                    "detail": "Please complete all required profile sections before submitting for review.",
+                    "missing_fields": sorted(set(missing)),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        therapist.profile_status = TherapistProfile.ProfileStatus.SUBMITTED
+        therapist.admin_feedback = ""
+        therapist.save(update_fields=["profile_status", "admin_feedback"])
+        return Response({"detail": "Profile submitted for review successfully."})
+
+    @action(detail=True, methods=["post"], url_path="request-profile-changes")
+    def request_profile_changes(self, request, pk=None):
+        _require_admin(request)
+        therapist = self.get_object()
+        feedback = (request.data.get("feedback") or "").strip()
+        if not feedback:
+            return Response({"detail": "Feedback is required."}, status=status.HTTP_400_BAD_REQUEST)
+        therapist.profile_status = TherapistProfile.ProfileStatus.CHANGES_REQUESTED
+        therapist.admin_feedback = feedback
+        therapist.save(update_fields=["profile_status", "admin_feedback"])
+        return Response({"detail": "Profile sent back for changes."})
+
+    @action(detail=True, methods=["post"], url_path="approve-content-send-contract")
+    def approve_content_send_contract(self, request, pk=None):
+        _require_admin(request)
+        therapist = self.get_object()
+        feedback = (request.data.get("feedback") or "").strip()
+        therapist.profile_status = TherapistProfile.ProfileStatus.AWAITING_CONTRACT
+        if feedback:
+            therapist.admin_feedback = feedback
+        therapist.save(update_fields=["profile_status", "admin_feedback"])
+        return Response(
+            {
+                "detail": "Profile content approved. Contract email should be sent to therapist's registered email.",
+                "email": therapist.email,
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="verify-contract-approve-profile")
+    def verify_contract_approve_profile(self, request, pk=None):
+        _require_admin(request)
+        therapist = self.get_object()
+        final_comment = (request.data.get("feedback") or "").strip()
+        therapist.profile_status = TherapistProfile.ProfileStatus.APPROVED
+        therapist.is_verified = True
+        therapist.is_initially_published = True
+        if final_comment:
+            therapist.admin_feedback = final_comment
+        therapist.save(update_fields=["profile_status", "is_verified", "is_initially_published", "admin_feedback"])
+        return Response({"detail": "Contract verified and profile approved."})
+
+    @action(detail=False, methods=["post"], url_path="submit-supervision-application")
+    def submit_supervision_application(self, request):
+        therapist = _resolve_therapist_from_request(request, allow_create=True)
+        if not therapist:
+            return Response({"detail": "Therapist profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if (therapist.years_experience or 0) < 5:
+            return Response(
+                {"detail": "At least 5 years of therapist experience is required before supervisor application."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if therapist.supervision_status in {"pending", "awaiting_contract", "approved"}:
+            return Response(
+                {"detail": "Supervision application is already in progress or approved."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        answers = therapist.supervision_application_answers or {}
+        required_keys = [
+            "current_supervisee_experience",
+            "supervision_modalities_experience",
+            "difficult_supervision_areas",
+            "scope_and_escalation_judgment",
+            "high_risk_case_supervision",
+            "feedback_and_rupture_repair",
+            "supervisor_self_reflection",
+        ]
+        missing = [key for key in required_keys if not str(answers.get(key, "")).strip()]
+
+        required_profile_fields = {
+            "supervision_bio": therapist.supervision_bio,
+            "supervision_areas": therapist.supervision_areas,
+            "supervision_modalities": therapist.supervision_modalities,
+            "supervision_years_experience": therapist.supervision_years_experience,
+        }
+        for key, value in required_profile_fields.items():
+            if not value:
+                missing.append(key)
+
+        if missing:
+            return Response(
+                {
+                    "detail": "Please complete all supervision application questions before submitting.",
+                    "missing_fields": sorted(set(missing)),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        therapist.supervision_status = "pending"
+        therapist.supervisor_admin_feedback = ""
+        therapist.save(update_fields=["supervision_status", "supervisor_admin_feedback"])
+        submission_payload = {
+            "therapist_profile": {
+                "id": therapist.id,
+                "name": therapist.name,
+                "email": therapist.email,
+                "years_experience": therapist.years_experience,
+                "highest_qualification": therapist.highest_qualification,
+                "linkedin_url": therapist.linkedin_url,
+                "bio": therapist.bio,
+                "specialties": therapist.specialties,
+                "modalities": therapist.modalities,
+                "concerns": therapist.concerns,
+                "supervision_bio": therapist.supervision_bio,
+                "supervision_years_experience": therapist.supervision_years_experience,
+                "supervision_areas": therapist.supervision_areas,
+                "supervision_modalities": therapist.supervision_modalities,
+            },
+            "supervision_application_answers": answers,
+        }
+        return Response(
+            {
+                "detail": "Supervision application submitted for review.",
+                "submitted_dossier": submission_payload,
+            }
+        )
 
     @action(detail=False, methods=["get"], url_path="jitsi-token")
     def jitsi_token(self, request):

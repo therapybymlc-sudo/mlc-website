@@ -207,6 +207,27 @@ export async function apiUpload(path, formData) {
   return res.json();
 }
 
+export async function apiPatchForm(path, formData) {
+  let token = null;
+  if (tokenGetter) {
+    token = await tokenGetter();
+  }
+  if (!token) {
+    token = await resolveClerkTokenFallback();
+  }
+  const cleanPath = preparePath(path).replace(/^\/+/, "");
+  const url = `${API_BASE}/${cleanPath}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json();
+}
+
 // ==============================
 // Note Template CRUD Helpers
 // ==============================
