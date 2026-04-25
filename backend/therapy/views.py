@@ -3026,6 +3026,12 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
                 profile.name = f"{app.first_name} {app.last_name}"
                 profile.save()
 
+            # Bind approved profile to the canonical Django user (if present).
+            matched_user = User.objects.filter(email__iexact=app.email).first()
+            if matched_user and profile.user_id != matched_user.id:
+                profile.user = matched_user
+                profile.save(update_fields=["user"])
+
             # Keep verification consistent across duplicate rows of the same identity.
             TherapistProfile.objects.filter(email__iexact=app.email).update(is_verified=True)
             if profile.user_id:
@@ -3043,7 +3049,13 @@ class VerifyTherapistView(APIView):
         try:
             profile = TherapistProfile.objects.get(pk=pk)
             profile.is_verified = True
-            profile.save(update_fields=["is_verified"])
+            # Attach to canonical user on manual verify as well.
+            matched_user = User.objects.filter(email__iexact=profile.email).first()
+            if matched_user and profile.user_id != matched_user.id:
+                profile.user = matched_user
+                profile.save(update_fields=["is_verified", "user"])
+            else:
+                profile.save(update_fields=["is_verified"])
 
             # Ensure the canonical row for this identity reflects verification too.
             TherapistProfile.objects.filter(email__iexact=profile.email).update(is_verified=True)
