@@ -240,6 +240,22 @@ def _resolve_therapist_from_request(request, allow_create=False):
     try:
         therapist_profile = getattr(user, "therapist_profile", None)
         if therapist_profile:
+            # If the linked row is unverified, prefer a verified row for the same identity.
+            if not therapist_profile.is_verified:
+                verified_candidate = TherapistProfile.objects.filter(
+                    Q(user=user) | (Q(email__iexact=auth_email) if auth_email else Q(pk__in=[])),
+                    is_verified=True,
+                ).exclude(pk=therapist_profile.pk).first()
+                if verified_candidate:
+                    with transaction.atomic():
+                        if verified_candidate.user_id != user.id:
+                            verified_candidate.user = user
+                            verified_candidate.save(update_fields=["user"])
+                        if therapist_profile.user_id == user.id:
+                            therapist_profile.user = None
+                            therapist_profile.save(update_fields=["user"])
+                    therapist_profile = verified_candidate
+
             # If this account email points to a different therapist profile, reconcile to one canonical row.
             if auth_email:
                 profile_by_email = TherapistProfile.objects.filter(email__iexact=auth_email).first()
@@ -3010,6 +3026,11 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
                 profile.is_verified = True
                 profile.name = f"{app.first_name} {app.last_name}"
                 profile.save()
+
+            # Keep verification consistent across duplicate rows of the same identity.
+            TherapistProfile.objects.filter(email__iexact=app.email).update(is_verified=True)
+            if profile.user_id:
+                TherapistProfile.objects.filter(user_id=profile.user_id).update(is_verified=True)
                 
         return Response({"detail": f"Application for {app.first_name} approved and profile created."})
 
@@ -3024,6 +3045,11 @@ class VerifyTherapistView(APIView):
             profile = TherapistProfile.objects.get(pk=pk)
             profile.is_verified = True
             profile.save(update_fields=["is_verified"])
+
+            # Ensure the canonical row for this identity reflects verification too.
+            TherapistProfile.objects.filter(email__iexact=profile.email).update(is_verified=True)
+            if profile.user_id:
+                TherapistProfile.objects.filter(user_id=profile.user_id).update(is_verified=True)
             
             return Response({"detail": f"Therapist {profile.name} verified successfully."})
         except TherapistProfile.DoesNotExist:
