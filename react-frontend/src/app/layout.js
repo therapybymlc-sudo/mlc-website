@@ -24,7 +24,6 @@ export default function RootLayout({ children }) {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "MLC Health and Wellness Centre",
-    "alternateName": "MLC Mental Health Organization",
     "url": "https://www.mlchealth.in",
     "logo": "https://www.mlchealth.in/logo_tra.png",
     "description": "A Mental Health Organization providing structured, ethical, and evidence-informed therapy across India.",
