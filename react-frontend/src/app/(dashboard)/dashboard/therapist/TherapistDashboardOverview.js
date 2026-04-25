@@ -105,6 +105,7 @@ export default function TherapistDashboardOverview() {
   const [stats, setStats] = useState({ clients: 0, appointments: 0, requests: 0 });
   const [upcoming, setUpcoming] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
 
@@ -113,25 +114,29 @@ export default function TherapistDashboardOverview() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [clientData, apptData, profileData, bookingReqRes] = await Promise.all([
-          apiGet("clients/"),
-          apiGet("appointments/"),
-          apiGet("therapists/me/"),
-          apiGet("therapist-booking-requests/").catch(() => []),
-        ]);
-        const brList = Array.isArray(bookingReqRes) ? bookingReqRes : (bookingReqRes?.results || []);
-        const pendingRequests = brList.filter((r) => r.status === "pending").length;
-        setStats({
-          clients: clientData?.length || 0,
-          appointments: apptData?.length || 0,
-          requests: pendingRequests,
-        });
-        setUpcoming(apptData || []);
-        setProfile(profileData);
-      } catch (err) {
-        console.warn("Dashboard sync failed", err);
-      }
+      const [clientRes, apptRes, profileRes, bookingRes] = await Promise.allSettled([
+        apiGet("clients/"),
+        apiGet("appointments/"),
+        apiGet("therapists/me/"),
+        apiGet("therapist-booking-requests/"),
+      ]);
+
+      const clientData = clientRes.status === "fulfilled" ? clientRes.value : [];
+      const apptData = apptRes.status === "fulfilled" ? apptRes.value : [];
+      const profileData = profileRes.status === "fulfilled" ? profileRes.value : null;
+      const bookingReqRes = bookingRes.status === "fulfilled" ? bookingRes.value : [];
+
+      const brList = Array.isArray(bookingReqRes) ? bookingReqRes : (bookingReqRes?.results || []);
+      const pendingRequests = brList.filter((r) => r.status === "pending").length;
+
+      setStats({
+        clients: Array.isArray(clientData) ? clientData.length : (clientData?.results?.length || 0),
+        appointments: Array.isArray(apptData) ? apptData.length : (apptData?.results?.length || 0),
+        requests: pendingRequests,
+      });
+      setUpcoming(Array.isArray(apptData) ? apptData : (apptData?.results || []));
+      setProfile(profileData);
+      setProfileLoaded(true);
     };
     fetchData();
   }, []);
@@ -208,7 +213,7 @@ export default function TherapistDashboardOverview() {
         </Flex>
 
         {/* ⚠️ Verification Alert */}
-        {(profile?.is_verified === false || !profile) && (
+        {profileLoaded && profile?.is_verified === false && (
           <Box mb={8} p={6} borderRadius="3xl" bg="orange.50" border="1px solid" borderColor="orange.200" shadow="sm">
             <Flex direction={{ base: "column", md: "row" }} gap={4} justify="space-between" align="center">
               <HStack align="flex-start" spacing={4}>

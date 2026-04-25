@@ -81,6 +81,13 @@ from therapy.services.admin_reports import (
     build_report,
     get_period_bounds,
 )
+from therapy.services.rocket_chat import (
+    RocketChatError,
+    ensure_dm_room,
+    get_config as get_rocket_chat_config,
+    get_or_create_user as rocket_chat_get_or_create_user,
+    login_managed_user as rocket_chat_login_managed_user,
+)
 from therapy.serializers import (
     TherapistProfileSerializer,
     TherapistApplicationSerializer,
@@ -225,18 +232,45 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if not user or not user.is_authenticated or user.id is None:
         return None
 
-    # Prefer explicit linkage
+    payload = getattr(request, "auth", {})
+    payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
+    auth_email = (getattr(user, "email", None) or payload_email or "").strip().lower() or None
+
+    # Prefer explicit linkage (single canonical profile for this auth user)
     try:
         therapist_profile = getattr(user, "therapist_profile", None)
         if therapist_profile:
+            # If this account email points to a different therapist profile, reconcile to one canonical row.
+            if auth_email:
+                profile_by_email = TherapistProfile.objects.filter(email__iexact=auth_email).first()
+                if profile_by_email and profile_by_email.id != therapist_profile.id:
+                    # Only re-link when safe (target is unowned or already owned by this user).
+                    if profile_by_email.user_id in (None, user.id):
+                        # Prefer the email-matching profile when it's verified or current row is placeholder-ish.
+                        current_is_placeholder = str(therapist_profile.email or "").endswith("@local")
+                        if profile_by_email.is_verified or current_is_placeholder:
+                            with transaction.atomic():
+                                old_profile = therapist_profile
+                                profile_by_email.user = user
+                                profile_by_email.save(update_fields=["user"])
+                                if old_profile.user_id == user.id:
+                                    old_profile.user = None
+                                    old_profile.save(update_fields=["user"])
+                            therapist_profile = profile_by_email
+
+            # Keep canonical profile email synced with auth identity when safe.
+            current_email = str(therapist_profile.email or "").lower()
+            if auth_email and current_email != auth_email:
+                existing = TherapistProfile.objects.filter(email__iexact=auth_email).exclude(pk=therapist_profile.pk).exists()
+                if not existing:
+                    therapist_profile.email = auth_email
+                    therapist_profile.save(update_fields=["email"])
             return therapist_profile
     except Exception:
         pass
 
     # Step 1: Try to find by email from user or token (Ruthless Match)
-    payload = getattr(request, "auth", {})
-    payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
-    email = getattr(user, "email", None) or payload_email
+    email = auth_email
     
     therapist = None
     if email:
@@ -2912,10 +2946,7 @@ class OnboardUserRoleView(APIView):
             return Response(payload)
             
         elif role == "therapist":
-            if not getattr(user, "therapist_profile", None):
-                name = getattr(user, "get_full_name", lambda: "")().strip() or getattr(user, "username", "Unnamed Therapist")
-                email = getattr(user, "email", None) or f"therapist_{user.pk}@local"
-                TherapistProfile.objects.create(user=user, name=name, email=email, is_verified=False)
+            _resolve_therapist_from_request(request, allow_create=True)
             synced, sync_error = self._sync_clerk_role(user, "therapist")
             payload = {
                 "detail": "Therapist profile created successfully and pending verification.",
@@ -3807,3 +3838,110 @@ class AdminReportsOverviewView(APIView):
 
         start, end, months_in_period, label, period_type = get_period_bounds(period, year, month, quarter)
         return Response(build_full_overview_payload(start, end, months_in_period, period_type, label))
+
+
+class RocketChatSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cfg = get_rocket_chat_config()
+        if not cfg.enabled:
+            return Response(
+                {
+                    "enabled": False,
+                    "detail": "Rocket.Chat is not configured.",
+                }
+            )
+
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        client = _resolve_client_from_request(request)
+        if not therapist and not client:
+            return Response({"detail": "Therapist or client profile required."}, status=status.HTTP_403_FORBIDDEN)
+
+        is_therapist_view = therapist is not None
+        if is_therapist_view:
+            relationships = list(
+                TherapeuticRelationship.objects.filter(
+                    therapist=therapist,
+                    status=TherapeuticRelationship.Status.ACTIVE,
+                ).select_related("client")
+            )
+            peers = [rel.client for rel in relationships]
+            current_name = therapist.name
+            current_email = therapist.email
+            current_username = f"mlc_therapist_{therapist.id}"
+            role = "therapist"
+        else:
+            relationships = list(
+                TherapeuticRelationship.objects.filter(
+                    client=client,
+                    status=TherapeuticRelationship.Status.ACTIVE,
+                ).select_related("therapist")
+            )
+            peers = [rel.therapist for rel in relationships]
+            current_name = client.name
+            current_email = client.email
+            current_username = f"mlc_client_{client.id}"
+            role = "client"
+
+        try:
+            current_user = rocket_chat_get_or_create_user(
+                cfg,
+                username=current_username,
+                name=current_name,
+                email=current_email,
+            )
+            peer_summaries = []
+            for rel in relationships:
+                if is_therapist_view:
+                    peer = rel.client
+                    peer_username = f"mlc_client_{peer.id}"
+                    peer_role = "client"
+                else:
+                    peer = rel.therapist
+                    peer_username = f"mlc_therapist_{peer.id}"
+                    peer_role = "therapist"
+                peer_user = rocket_chat_get_or_create_user(
+                    cfg,
+                    username=peer_username,
+                    name=peer.name,
+                    email=peer.email,
+                )
+                ensure_dm_room(
+                    cfg,
+                    username_a=current_user["username"],
+                    username_b=peer_user["username"],
+                )
+                peer_summaries.append(
+                    {
+                        "relationship_id": rel.id,
+                        "peer_id": peer.id,
+                        "peer_name": peer.name,
+                        "peer_role": peer_role,
+                        "peer_username": peer_user["username"],
+                    }
+                )
+
+            login = rocket_chat_login_managed_user(cfg, username=current_user["username"])
+            return Response(
+                {
+                    "enabled": True,
+                    "role": role,
+                    "rocket_chat_url": cfg.base_url,
+                    "current_user": {
+                        "username": login.get("username") or current_user["username"],
+                        "name": login.get("name") or current_name,
+                        "user_id": login.get("user_id"),
+                    },
+                    "login_token": login.get("auth_token"),
+                    "peers": peer_summaries,
+                }
+            )
+        except RocketChatError as exc:
+            return Response(
+                {
+                    "enabled": False,
+                    "detail": str(exc),
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )

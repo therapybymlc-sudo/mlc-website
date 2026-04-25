@@ -108,6 +108,7 @@ export default function DashboardLayout({ children }) {
       { label: 'Overview', icon: FiLayout, href: '/dashboard/client', isClient: true },
       { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
       { label: 'Booking requests', icon: FiInbox, href: '/dashboard/client/booking-requests' },
+      { label: 'Messages', icon: FiMessageSquare, href: '/dashboard/client/messages' },
       { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
       { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
       { label: 'My Profile', icon: FiUser, href: '/dashboard/client/profile' },

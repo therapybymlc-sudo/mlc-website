@@ -76,6 +76,7 @@ from therapy.views import (
     AdminReportsOverviewView,
     AdminReportsCatalogView,
     AdminReportDetailView,
+    RocketChatSessionView,
     SupportTicketViewSet,
 )
 
@@ -229,6 +230,7 @@ urlpatterns = [
     path("api/therapists/verify/<int:pk>/", VerifyTherapistView.as_view(), name="verify-therapist"),
     path("api/admin/reports/catalog/", AdminReportsCatalogView.as_view(), name="admin-reports-catalog"),
     path("api/admin/reports/overview/", AdminReportsOverviewView.as_view(), name="admin-reports-overview"),
+    path("api/chat/rocket/session/", RocketChatSessionView.as_view(), name="rocket-chat-session"),
     path(
         "api/admin/reports/<slug:report_key>/",
         AdminReportDetailView.as_view(),
