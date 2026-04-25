@@ -33,7 +33,7 @@ import NextLink from "next/link";
 const MotionBox = motion(Box);
 const MotionVStack = motion(VStack);
 
-export default function RelationalTherapyPage() {
+export default function CouplesTherapyPage() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -72,7 +72,7 @@ export default function RelationalTherapyPage() {
               color="teal.900" 
               lineHeight="1.1"
             >
-              Relational <br /> Therapy
+              Couples <br /> Therapy
             </Heading>
             <Text 
               fontSize={{ base: "lg", md: "xl" }} 
@@ -81,7 +81,7 @@ export default function RelationalTherapyPage() {
               fontFamily="'Inter', sans-serif"
               lineHeight="tall"
             >
-              Navigating the complexities of connection. We provide a neutral, safe, and structured environment for couples and partners to explore dynamics, rebuild trust, and deepen intimacy.
+              Navigating the complexities of connection. We provide a neutral, safe, and structured environment for partners to explore dynamics, rebuild trust, and deepen intimacy.
             </Text>
             <Stack direction={{ base: "column", sm: "row" }} spacing={4} w="full">
               <Button 
@@ -97,7 +97,7 @@ export default function RelationalTherapyPage() {
                 transition="all 0.3s"
                 rightIcon={<FiArrowRight />}
               >
-                Find a Relational Specialist
+                Find a Specialist
               </Button>
               <Button 
                 as={NextLink} 
@@ -123,7 +123,7 @@ export default function RelationalTherapyPage() {
               transition={{ duration: 1.2 }}
             >
               <Image 
-                src="/relational_therapy_hero_1777124311020.png" 
+                src="/couples_therapy_hero.png" 
                 alt="Partners in deep conversation" 
                 objectFit="cover" 
                 h="full" 
@@ -177,7 +177,7 @@ export default function RelationalTherapyPage() {
               Beyond Conflict. <br /> Towards Connection.
             </Heading>
             <Text fontSize="lg" color="gray.600" lineHeight="tall">
-              Relational therapy at MLC focuses on the "space between" two people. We don't just look at individual issues; we look at the system you've built together.
+              Couples therapy at MLC focuses on the "space between" two people. We don't just look at individual issues; we look at the system you've built together.
             </Text>
             <Text fontSize="lg" color="gray.600" lineHeight="tall">
               Our approach is neutral, non-judgmental, and evidence-informed. We help you move past repetitive arguments and reach the underlying emotional needs that drive them.
@@ -249,12 +249,12 @@ export default function RelationalTherapyPage() {
           <VStack spacing={12}>
             <VStack spacing={4} textAlign="center">
               <Heading size="2xl" fontFamily="'Forum', serif" color="teal.900">Partner FAQ</Heading>
-              <Text color="gray.500">Frequently asked questions about relational sessions.</Text>
+              <Text color="gray.500">Frequently asked questions about couples sessions.</Text>
             </VStack>
 
             <Accordion allowToggle w="full">
               {[
-                { q: "Do both partners need to be present?", a: "Yes, for relational therapy, it is standard for both/all partners to be present. The 'client' is the relationship itself." },
+                { q: "Do both partners need to be present?", a: "Yes, for couples therapy, it is standard for both/all partners to be present. The 'client' is the relationship itself." },
                 { q: "What if my partner is hesitant?", a: "It's common for one partner to feel more ready than the other. We recommend a brief inquiry call where we can address concerns about 'taking sides' or judgment." },
                 { q: "How many sessions will we need?", a: "This varies significantly. Most couples start with 8-12 sessions to stabilize communication before moving into deeper relational work." },
                 { q: "Is this only for married couples?", a: "Not at all. We support partners in all stages—dating, cohabitating, pre-marital, polyamorous, or those navigating conscious uncoupling." },

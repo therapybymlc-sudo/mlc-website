@@ -26,7 +26,7 @@ import {
 import { motion } from "framer-motion";
 import { 
   FiSmile, FiCheck, FiArrowRight, FiEdit3, FiZap, 
-  FiSun, FiCoffee, FiShield, FiHeart
+  FiSun, FiCoffee, FiShield, FiHeart, FiUsers
 } from "react-icons/fi";
 import NextLink from "next/link";
 
@@ -123,7 +123,7 @@ export default function AdolescentTherapyPage() {
               transition={{ duration: 1.2 }}
             >
               <Image 
-                src="/adolescent_therapy_hero_1777124379859.png" 
+                src="/adolescent_therapy_hero.png" 
                 alt="Teenager in a creative therapy space" 
                 objectFit="cover" 
                 h="full" 

@@ -125,7 +125,7 @@ export default function WorkshopsPage() {
               transition={{ duration: 1.2 }}
             >
               <Image 
-                src="/workshops_hero_1777124460180.png" 
+                src="/workshops_hero.png" 
                 alt="Community workshop circle" 
                 objectFit="cover" 
                 h="full" 

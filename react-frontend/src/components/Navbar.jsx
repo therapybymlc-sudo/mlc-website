@@ -47,9 +47,8 @@ const navLinks = [
     href: "/services",
     subLinks: [
       { label: "Individual Therapy", href: "/individual-therapy" },
-      { label: "Relational Therapy", href: "/couples-therapy" },
+      { label: "Couples Therapy", href: "/couples-therapy" },
       { label: "Adolescent Therapy", href: "/adolescent-therapy" },
-      { label: "Workshops & Circles", href: "/workshops" },
     ]
   },
   { label: "Find a Therapist", href: "/therapists/discovery" },
@@ -59,6 +58,7 @@ const navLinks = [
     subLinks: [
       { label: "Therapist Community", href: "/dashboard/therapist/community" },
       { label: "Clinical Supervision", href: "/supervision" },
+      { label: "Workshops & Circles", href: "/workshops" },
       { label: "Join the Collective", href: "/signup/therapist" },
     ]
   },
@@ -78,12 +78,14 @@ const HoverMenu = ({ link, pathname, isActive }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   
   return (
-    <Menu isOpen={isOpen} isLazy gutter={10} placement="bottom">
+    <Menu isOpen={isOpen} isLazy gutter={0} placement="bottom">
       <Box 
         onMouseEnter={onOpen} 
         onMouseLeave={onClose}
         position="relative" 
         display="inline-block"
+        pb={4}
+        mb="-16px"
       >
         <HStack spacing={1} cursor="pointer">
           <ChakraLink
@@ -119,6 +121,7 @@ const HoverMenu = ({ link, pathname, isActive }) => {
           zIndex={1001}
           onMouseEnter={onOpen}
           onMouseLeave={onClose}
+          mt="-2px"
         >
           {link.subLinks.map((sub) => (
             <MenuItem

@@ -134,7 +134,7 @@ export default function IndividualTherapyPage() {
               transition={{ duration: 1.2 }}
             >
               <Image 
-                src="/individual_therapy_hero_1777124244418.png" 
+                src="/individual_therapy_hero.png" 
                 alt="Serene therapy room" 
                 objectFit="cover" 
                 h="full" 

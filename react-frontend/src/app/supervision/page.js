@@ -126,7 +126,7 @@ export default function SupervisionPage() {
               transition={{ duration: 1.2 }}
             >
               <Image 
-                src="/supervision_hero_1777124589632.png" 
+                src="/supervision_hero.png" 
                 alt="Therapists in mentorship session" 
                 objectFit="cover" 
                 h="full" 
