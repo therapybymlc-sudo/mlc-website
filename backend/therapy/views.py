@@ -290,7 +290,11 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if not allow_create and not is_admin:
         return None
 
-    if not is_therapist:
+    # Root-cause guard:
+    # For allow_create flows (e.g. /therapists/me during first-login onboarding),
+    # do NOT require role metadata to already contain "therapist".
+    # This prevents a bootstrap deadlock where role-sync lags and no profile is created.
+    if not allow_create and not is_therapist:
         return None
 
     # Step 3: Create NEW profile if needed
