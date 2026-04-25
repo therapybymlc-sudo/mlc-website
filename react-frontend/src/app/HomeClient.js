@@ -150,7 +150,7 @@ export default function HomeClient() {
         <Box position="relative" zIndex={2} maxW="4xl" w="full">
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
-            alt="MLC Therapy Logo"
+            alt="MLC Health and Wellness Centre Official Logo - A symbol of holistic healing and growth"
             boxSize={{ base: "90px", sm: "110px", md: "130px" }}
             mb={8}
             mx="auto"
@@ -330,7 +330,7 @@ export default function HomeClient() {
           </Box>
           <Image
             src="/new-therapy-room.jpg"
-            alt="Therapy Room"
+            alt="A beautifully designed, modern therapy room at MLC Centre, featuring warm lighting and a calm atmosphere for client sessions"
             borderRadius="2xl"
             boxShadow="xl"
             w="100%"

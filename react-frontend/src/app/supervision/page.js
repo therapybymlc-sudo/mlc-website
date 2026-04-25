@@ -127,7 +127,7 @@ export default function SupervisionPage() {
             >
               <Image 
                 src="/supervision_hero.png" 
-                alt="Therapists in mentorship session" 
+                alt="Two experienced therapists in a reflective mentorship session, focusing on professional growth and clinical identity" 
                 objectFit="cover" 
                 h="full" 
                 w="full" 
@@ -180,7 +180,7 @@ export default function SupervisionPage() {
               src="https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=800" 
               borderRadius="3xl" 
               shadow="2xl" 
-              alt="Professional development"
+              alt="A therapist reviewing clinical materials, representing the commitment to depth and professional excellence at MLC"
             />
             <Box 
               position="absolute" 

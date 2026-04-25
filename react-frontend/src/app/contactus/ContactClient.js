@@ -156,7 +156,7 @@ export default function ContactClient() {
 
             <Image
               src={content.hero.image_url || "/contact-illustration.jpg"}
-              alt="Serene communication illustration"
+              alt="A peaceful and professional illustration representing secure communication and empathetic connection at MLC Health"
               borderRadius="2xl"
               boxShadow="md"
               maxH="400px"

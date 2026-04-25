@@ -124,7 +124,7 @@ export default function AdolescentTherapyPage() {
             >
               <Image 
                 src="/adolescent_therapy_hero.png" 
-                alt="Teenager in a creative therapy space" 
+                alt="A welcoming and creative therapy room for teenagers, featuring art supplies, comfortable seating, and a bean bag, representing a safe space for youth expression" 
                 objectFit="cover" 
                 h="full" 
                 w="full" 
@@ -151,7 +151,7 @@ export default function AdolescentTherapyPage() {
               src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=800" 
               borderRadius="3xl" 
               shadow="2xl" 
-              alt="Creative arts in therapy"
+              alt="An adolescent engaging in creative arts during a therapy session, showcasing non-verbal self-expression"
             />
             <Circle 
               position="absolute" 
@@ -239,7 +239,7 @@ export default function AdolescentTherapyPage() {
               src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&q=80&w=800" 
               borderRadius="4xl" 
               shadow="2xl" 
-              alt="Teenager feeling supported"
+              alt="A supportive scene representing the therapeutic bond and safety provided to adolescents at MLC"
             />
           </SimpleGrid>
         </Container>

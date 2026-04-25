@@ -135,7 +135,7 @@ export default function IndividualTherapyPage() {
             >
               <Image 
                 src="/individual_therapy_hero.png" 
-                alt="Serene therapy room" 
+                alt="A serene, sunlit therapy room with comfortable seating and greenery, representing a safe space for individual healing" 
                 objectFit="cover" 
                 h="full" 
                 w="full" 
@@ -190,10 +190,10 @@ export default function IndividualTherapyPage() {
 
           <Box position="relative">
             <Image 
-              src="https://images.unsplash.com/photo-1544126592-807daa2b565b?auto=format&fit=crop&q=80&w=800" 
+              src="https://images.unsplash.com/photo-1544126592-807daa2b5d7a?auto=format&fit=crop&q=80&w=800" 
               borderRadius="3xl" 
               shadow="2xl" 
-              alt="Therapeutic conversation"
+              alt="Two people engaged in a supportive, empathetic therapeutic conversation in a modern office"
             />
             <Box 
               position="absolute" 

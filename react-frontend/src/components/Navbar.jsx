@@ -185,7 +185,7 @@ export default function Navbar() {
         >
           <Image
             src={logoSrc}
-            alt="MLC Logo"
+            alt="MLC Health and Wellness Centre - Professional therapy services in India"
             boxSize={{ base: "40px", md: "50px" }}
           />
           <Box lineHeight="1.1" display={{ base: "none", sm: "block" }}>

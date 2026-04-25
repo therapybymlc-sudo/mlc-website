@@ -105,14 +105,12 @@ export default function TeamClient() {
                   _hover={{ transform: "translateY(-4px)", boxShadow: "lg" }}
                   onClick={() => setActiveMember(member)}
                 >
-                  {member.photo_url && (
                     <Image
                       src={member.photo_url}
-                      alt={member.name}
+                      alt={`Professional profile photo of ${member.name}, ${member.title} at MLC Health and Wellness Centre`}
                       borderRadius="xl"
                       mb={4}
                     />
-                  )}
                   <Heading size="md" fontFamily="'Playfair Display', var(--font-playfair), serif">
                     {member.name}
                   </Heading>
@@ -178,17 +176,15 @@ export default function TeamClient() {
             p={{ base: 6, md: 8 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {activeMember.photo_url && (
               <Image
                 src={activeMember.photo_url}
-                alt={activeMember.name}
+                alt={`Full profile portrait of ${activeMember.name}, specialized ${activeMember.title} at MLC Health`}
                 borderRadius="xl"
                 mb={5}
                 maxH="320px"
                 w="100%"
                 objectFit="cover"
               />
-            )}
             <Heading size="lg" fontFamily="'Playfair Display', serif" mb={2}>
               {activeMember.name}
             </Heading>

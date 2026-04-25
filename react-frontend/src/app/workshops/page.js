@@ -126,7 +126,7 @@ export default function WorkshopsPage() {
             >
               <Image 
                 src="/workshops_hero.png" 
-                alt="Community workshop circle" 
+                alt="A group of people sitting in a supportive community circle in a beautifully lit, modern workshop space, representing collective healing" 
                 objectFit="cover" 
                 h="full" 
                 w="full" 
@@ -178,7 +178,7 @@ export default function WorkshopsPage() {
                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800" 
                 borderRadius="3xl" 
                 shadow="2xl" 
-                alt="Supportive community"
+                alt="Diverse group of individuals engaged in a collaborative community learning workshop"
               />
               <Box 
                 position="absolute" 

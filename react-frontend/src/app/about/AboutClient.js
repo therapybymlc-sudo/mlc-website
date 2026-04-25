@@ -83,8 +83,8 @@ export default function AboutClient() {
             <MotionBox initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
               {/* IMAGE FIX: Using relative path from public folder if possible, or correct absolute path for dev proxy */}
               <Image 
-                src="/serene_therapy_office_1776423989664.png" 
-                alt="MLC Serene Office" 
+                src="/serene_office.png" 
+                alt="A tranquil and professional therapy office at MLC Centre, designed with natural elements and soft lighting to promote healing and calm" 
                 borderRadius="3rem" 
                 shadow="2xl" 
                 objectFit="cover"
@@ -156,13 +156,13 @@ export default function AboutClient() {
             </MotionBox>
             <MotionBox initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
                {/* IMAGE FIX */}
-               <Image 
-                 src="/clinical_matching_graph_1776424018069.png" 
-                 alt="Clinical Insight" 
-                 borderRadius="3rem"
-                 shadow="2xl"
-                 fallback={<Box h="400px" w="full" bg="teal.800" borderRadius="3rem" />}
-               />
+                <Image 
+                  src="/clinical_insight.png" 
+                  alt="A visual representation of the Mentis, Lumine et Corpus philosophy, illustrating the integration of mind, light, and body in therapy" 
+                  borderRadius="3rem"
+                  shadow="2xl"
+                  fallback={<Box h="400px" w="full" bg="teal.800" borderRadius="3rem" />}
+                />
             </MotionBox>
           </SimpleGrid>
         </Container>

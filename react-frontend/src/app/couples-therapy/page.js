@@ -124,7 +124,7 @@ export default function CouplesTherapyPage() {
             >
               <Image 
                 src="/couples_therapy_hero.png" 
-                alt="Partners in deep conversation" 
+                alt="Two partners sitting together on a modern sofa, engaged in a constructive and calm dialogue, representing relationship growth and connection" 
                 objectFit="cover" 
                 h="full" 
                 w="full" 
@@ -151,7 +151,7 @@ export default function CouplesTherapyPage() {
               src="https://images.unsplash.com/photo-1516534775068-ba3e84589b9c?auto=format&fit=crop&q=80&w=800" 
               borderRadius="3xl" 
               shadow="2xl" 
-              alt="Emotional connection"
+              alt="A symbolic image of two people holding hands or sitting close, emphasizing emotional connection and trust"
             />
             <Box 
               position="absolute" 
