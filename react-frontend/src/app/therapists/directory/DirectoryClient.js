@@ -345,6 +345,8 @@ export default function DirectoryClient() {
       setSearchTerm("");
   };
 
+  if (!isMounted) return null;
+
   return (
     <Box bg="#FDFBFA" minH="100vh" pb={20}>
       {/* 🌿 VISIONARY HERO */}
@@ -595,7 +597,7 @@ export default function DirectoryClient() {
                       </Text>
                       <Button as={NextLink} href="/about" variant="link" color="teal.800" fontWeight="900" rightIcon={<FiArrowRight />}>Learn about our standards</Button>
                   </VStack>
-                  <Image src="/clinical_excellence_placeholder.png" fallbackSrc="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=600" borderRadius="3xl" shadow="xl" />
+                  <Image src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=800" fallbackSrc="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=600" borderRadius="3xl" shadow="xl" />
               </SimpleGrid>
           </Box>
       </Container>

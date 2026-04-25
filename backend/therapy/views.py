@@ -1829,39 +1829,40 @@ class TherapistCancelSubscriptionView(APIView):
         )
 
 class PublicTherapistDirectoryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
-        client = _resolve_client_from_request(request)
-        if not client:
-            return _profile_required_response("client")
-
-        team_members = TeamMember.objects.filter(
-            is_active=True,
-            email__isnull=False,
-        ).exclude(email="")
-
-        emails = [m.email.lower() for m in team_members if m.email]
-        profiles = TherapistProfile.objects.filter(email__in=emails)
-        profile_by_email = {p.email.lower(): p for p in profiles}
+        # Return all verified therapists
+        profiles = TherapistProfile.objects.filter(is_verified=True)
+        
+        # If is_supervisor filter is passed, respect it (and seniority)
+        is_supervisor = request.query_params.get("is_supervisor")
+        if is_supervisor is not None:
+            is_supervisor_bool = is_supervisor.lower() == "true"
+            profiles = profiles.filter(is_supervisor=is_supervisor_bool)
+            if is_supervisor_bool:
+                profiles = profiles.filter(years_experience__gte=5)
 
         payload = []
-        for member in team_members:
-            profile = profile_by_email.get(member.email.lower())
-            if not profile:
-                continue
-            payload.append(
-                {
-                    "id": profile.id,
-                    "name": member.name or profile.name,
-                    "title": member.title,
-                    "photo_url": member.photo_url,
-                    "specialties": member.specialties,
-                }
-            )
-
-        serializer = TherapistDirectorySerializer(payload, many=True)
-        return Response(serializer.data)
+        for profile in profiles:
+            payload.append({
+                "id": profile.id,
+                "name": profile.name,
+                "title": profile.title or "Therapist",
+                "photo_url": profile.profile_image_url,
+                "profile_image_url": profile.profile_image_url,
+                "specialties": profile.specialties,
+                "languages": profile.languages,
+                "hourly_rate": profile.hourly_rate,
+                "years_experience": profile.years_experience,
+                "gender": profile.gender,
+                "city": profile.city,
+                "modality": profile.modality,
+                "bio": profile.bio,
+                "is_verified": profile.is_verified,
+                "is_supervisor": profile.is_supervisor,
+            })
+        return Response(payload)
 
 
 class BookingRequestViewSet(viewsets.ModelViewSet):
