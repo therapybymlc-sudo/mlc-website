@@ -20,6 +20,29 @@ export const metadata = {
 import CookieConsent from '../components/CookieConsent'
 
 export default function RootLayout({ children }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MedicalOrganization",
+    "name": "MLC Health and Wellness Centre",
+    "alternateName": "MLC Therapy",
+    "url": "https://www.mlchealth.in",
+    "logo": "https://www.mlchealth.in/logo_tra.png",
+    "description": "A Mental Health Organization providing structured, ethical, and evidence-informed therapy across India. Specialized in Individual, Couples, and Adolescent therapy.",
+    "email": "therapy@mlchealth.in",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "IN"
+    },
+    "areaServed": [
+      "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Pune", "Kolkata", 
+      "Ahmedabad", "Jaipur", "Lucknow", "Chandigarh", "Gurugram", "Noida", 
+      "Indore", "Bhopal", "Patna", "Vadodara", "Nagpur", "Kochi", "Coimbatore"
+    ],
+    "sameAs": [
+      "https://www.instagram.com/mlchealth"
+    ]
+  };
+
   return (
     <ClerkProvider
       appearance={{
@@ -49,6 +72,12 @@ export default function RootLayout({ children }) {
         className={`${inter.variable} ${playfair.variable} ${forum.variable}`}
         suppressHydrationWarning
       >
+        <head>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+        </head>
         <body suppressHydrationWarning>
           <Providers>
             <ClientWrapper>
