@@ -22,7 +22,7 @@ import CookieConsent from '../components/CookieConsent'
 export default function RootLayout({ children }) {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "MedicalOrganization",
+    "@type": "Organization",
     "name": "MLC Health and Wellness Centre",
     "alternateName": "MLC Therapy",
     "url": "https://www.mlchealth.in",
