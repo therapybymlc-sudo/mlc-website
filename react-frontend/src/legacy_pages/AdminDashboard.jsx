@@ -2552,6 +2552,27 @@ export default function AdminDashboard() {
                              </HStack>
                           </VStack>
                         )}
+                        {app.status === 'approved' && (
+                          <HStack justify="flex-end" borderTop="1px dashed" borderColor="gray.200" pt={4}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              colorScheme="teal"
+                              onClick={async () => {
+                                try {
+                                  await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: "Manual re-verify/repair from admin portal." });
+                                  toast({ status: "success", title: "Verification repaired", description: "Canonical profile verification sync re-applied." });
+                                  fetchTherapistApplications();
+                                  fetchUnverifiedTherapists();
+                                } catch {
+                                  toast({ status: "error", title: "Repair failed", description: "Please try again." });
+                                }
+                              }}
+                            >
+                              Re-verify / Repair
+                            </Button>
+                          </HStack>
+                        )}
                       </Box>
                     ))}
                   </VStack>

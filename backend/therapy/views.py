@@ -2997,14 +2997,13 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Admin permissions required."}, status=status.HTTP_403_FORBIDDEN)
             
         app = self.get_object()
-        if app.status == "approved":
-            return Response({"detail": "This application is already approved."}, status=status.HTTP_400_BAD_REQUEST)
             
         review_notes = request.data.get("review_notes", "")
         
         with transaction.atomic():
             app.status = "approved"
-            app.approved_at = timezone.now()
+            if not app.approved_at:
+                app.approved_at = timezone.now()
             if review_notes:
                 app.review_notes = review_notes
             app.save()
@@ -3032,7 +3031,7 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
             if profile.user_id:
                 TherapistProfile.objects.filter(user_id=profile.user_id).update(is_verified=True)
                 
-        return Response({"detail": f"Application for {app.first_name} approved and profile created."})
+        return Response({"detail": f"Application for {app.first_name} approved/repaired successfully."})
 
 
 class VerifyTherapistView(APIView):
