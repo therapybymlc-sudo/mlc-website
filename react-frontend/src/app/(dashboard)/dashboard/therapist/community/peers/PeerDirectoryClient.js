@@ -13,7 +13,7 @@ import {
   FiSearch, FiMessageSquare, FiMapPin, FiBriefcase, 
   FiAward, FiExternalLink, FiShare2, FiUserPlus, FiCheckCircle
 } from "react-icons/fi";
-import { apiGet, apiPost } from "../../../../../api.js";
+import { apiGet, apiPost } from "../../../../../../api.js";
 import NextLink from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
