@@ -49,7 +49,6 @@ const navLinks = [
       { label: "Individual Therapy", href: "/individual-therapy" },
       { label: "Relational Therapy", href: "/couples-therapy" },
       { label: "Adolescent Therapy", href: "/adolescent-therapy" },
-      { label: "Clinical Supervision", href: "/supervision" },
       { label: "Workshops & Circles", href: "/workshops" },
     ]
   },
@@ -79,7 +78,7 @@ const HoverMenu = ({ link, pathname, isActive }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   
   return (
-    <Menu isOpen={isOpen} isLazy gutter={0}>
+    <Menu isOpen={isOpen} isLazy gutter={10} placement="bottom">
       <Box 
         onMouseEnter={onOpen} 
         onMouseLeave={onClose}
