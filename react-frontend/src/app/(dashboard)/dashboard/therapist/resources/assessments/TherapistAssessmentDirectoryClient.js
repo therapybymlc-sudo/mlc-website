@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Box, Button, Heading, HStack, SimpleGrid, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, SimpleGrid, Spinner, Text, VStack } from "@chakra-ui/react";
 import { FiArrowLeft, FiClipboard } from "react-icons/fi";
 import { resourcesApi } from "../../../../../../api/resources";
 
@@ -61,7 +61,9 @@ export default function TherapistAssessmentDirectoryClient() {
                 <Box p={3} bg="rgba(86, 117, 109, 0.1)" borderRadius="xl">
                   <FiClipboard color="#56756D" />
                 </Box>
-                <Badge colorScheme="purple" variant="subtle">{item.abbreviation}</Badge>
+                <Box px={2} py={1} borderRadius="full" bg="purple.50">
+                  <Text fontSize="xs" color="purple.700" fontWeight="700">{item.abbreviation}</Text>
+                </Box>
                 <Heading size="sm">{item.name}</Heading>
                 <Text fontSize="xs" color="gray.500">
                   {item.completionTime} • Age {item.ageRange}

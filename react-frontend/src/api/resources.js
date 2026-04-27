@@ -68,6 +68,40 @@ const FALLBACK_ASSESSMENT_CATALOG = {
       scoringVersion: "1.0.0",
       attribution: "Patient Health Questionnaire–9 (PHQ-9), developed by Kroenke, Spitzer, and Williams, 2001. MLC does not claim ownership of this instrument.",
       disclaimer: "screening only — clinical interpretation required",
+      content: {
+        overviewGeneral:
+          "The Patient Health Questionnaire–9 (PHQ-9) is a 9-item self-report screening and outcome-monitoring measure for depressive symptoms over the previous 2 weeks. It reflects DSM-aligned depressive symptom domains and supports severity monitoring, but does not diagnose depression on its own.",
+        overview: {
+          therapistFacing:
+            "The PHQ-9 supports structured screening, baseline symptom measurement, treatment planning, risk visibility, and progress monitoring for adolescents and adults aged 13 years and older. It can be used in intake, treatment review, stepped care, relapse monitoring, and depressive symptom-focused care.",
+          clientFriendly:
+            "This questionnaire asks about common symptoms of depression during the past 2 weeks. Your answers help your therapist understand how much these symptoms may be affecting you and whether they are changing over time.",
+        },
+        mlcUseContext:
+          "Within MLC, PHQ-9 is therapist-assigned for intake, treatment monitoring, response review, risk-focused follow-up, and structured outcome tracking. It should be reviewed with presenting concern, therapy history, risk and safety profile, daily functioning, medical context, medication status, support system, substance use, and recent stressors. Item 9 must be handled as a visible risk-related item and reviewed by therapist when endorsed.",
+        administrationInstructions:
+          "PHQ-9 has 9 items rated over the previous 2 weeks with: 0 = Not at all, 1 = Several days, 2 = More than half the days, 3 = Nearly every day. Estimated completion time is approximately 2 minutes. Intended for therapist-assigned private completion by client with therapist interpretation.",
+        scoringInterpretation:
+          "Total score is the sum of all 9 items (0–27). Severity ranges: 0–4 No or minimal depressive symptoms; 5–9 Mild; 10–14 Moderate; 15–19 Moderately severe; 20–27 Severe depressive symptoms. A score of 10+ is commonly used as a clinical cutoff for increased likelihood of clinically significant depressive symptoms. Change score is current minus previous score; absolute change of 5+ points is commonly treated as clinically meaningful.",
+        psychometricProperties:
+          "PHQ-9 has broad validation evidence across primary care, adolescent, community, and international samples. Original validation reported strong internal consistency (around Cronbach alpha .89) and short-term test-retest reliability (around .84). Psychometric values and screening performance vary by population, setting, language, and comparison standard.",
+        limitationsEthics:
+          "PHQ-9 is not diagnostic. Interpretation requires clinical context including functioning, medical contributors, substance effects, grief/trauma, and broader history. Item 9 endorsement requires direct therapist follow-up, but crisis decisions should rely on full risk assessment (intent, plan, means, history, protective factors, supports, and immediate safety).",
+        disclaimer:
+          "This is a screening and progress-monitoring tool and not a standalone diagnostic instrument. Results must be interpreted by a qualified mental health professional.",
+        attribution:
+          "Patient Health Questionnaire–9 (PHQ-9), developed by Kroenke, Spitzer, and Williams, 2001. MLC does not claim ownership of this instrument.",
+        references: [
+          "Bianchi R et al. Is the PHQ-9 a unidimensional measure of depression? Psychological Assessment, 34(6), 595–603 (2022).",
+          "Johansson R et al. Depression, anxiety and their comorbidity in the Swedish general population. PeerJ, 1:e98 (2013).",
+          "Kocalevent R-D et al. Standardization of PHQ-9 in the general population. General Hospital Psychiatry, 35(5), 551–555 (2013).",
+          "Kroenke K, Spitzer RL, Williams JBW. The PHQ-9. Journal of General Internal Medicine, 16(9), 606–613 (2001).",
+          "Martin A et al. Validity of the Brief Patient Health Questionnaire Mood Scale. General Hospital Psychiatry, 28(1), 71–77 (2006).",
+          "McMillan D et al. Defining successful treatment outcome in depression using PHQ-9. Journal of Affective Disorders, 127(1), 122–129 (2010).",
+          "Richardson LP et al. Evaluation of PHQ-9 for detecting major depression among adolescents. Pediatrics, 126(6), 1117–1123 (2010).",
+          "Urtasun M et al. Validation and calibration of PHQ-9 in Argentina. BMC Psychiatry, 19:291 (2019).",
+        ],
+      },
     },
   ],
   formatVersion: "fallback-v1",

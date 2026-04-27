@@ -38,10 +38,16 @@ ASSESSMENT_REGISTRY: dict[str, dict[str, Any]] = {
         "itemCount": 9,
         "scoringType": "sum",
         "content": {
+            "overviewGeneral": (
+                "The Patient Health Questionnaire–9 (PHQ-9) is a 9-item self-report screening and "
+                "outcome-monitoring measure for depressive symptoms over the previous 2 weeks. "
+                "It reflects DSM-aligned symptom domains and supports symptom burden tracking, but "
+                "does not diagnose depression on its own."
+            ),
             "overview": {
                 "therapistFacing": (
-                    "The PHQ-9 supports structured screening, baseline symptom measurement, treatment planning, "
-                    "risk visibility, and progress monitoring for clients aged 13+."
+                    "The PHQ-9 supports structured screening, baseline measurement, treatment planning, "
+                    "risk visibility, and progress monitoring for adolescents and adults aged 13+."
                 ),
                 "clientFriendly": (
                     "This questionnaire asks about common symptoms of depression during the past 2 weeks. "
@@ -49,20 +55,34 @@ ASSESSMENT_REGISTRY: dict[str, dict[str, Any]] = {
                 ),
             },
             "mlcUseContext": (
-                "Within MLC, PHQ-9 is therapist-assigned for intake, monitoring, treatment response review, "
-                "risk review, and structured outcome tracking."
+                "Within MLC, the PHQ-9 is therapist-assigned for intake screening, treatment monitoring, "
+                "response review, risk review, and structured outcome tracking. Results should be reviewed "
+                "alongside presenting concern, therapy history, risk profile, daily functioning, medical and "
+                "medication context, supports, substance use, and recent stressors. Item 9 must be treated as "
+                "a visible risk-related item requiring therapist follow-up when endorsed."
             ),
             "administrationInstructions": (
-                "Rate each of 9 items for the past 2 weeks using 0-3 scale. "
-                "Complete privately; therapist reviews interpretation."
+                "PHQ-9 contains 9 items. The client rates frequency during the previous 2 weeks using: "
+                "0=Not at all, 1=Several days, 2=More than half the days, 3=Nearly every day. "
+                "Estimated completion time is approximately 2 minutes. Completed privately by client; "
+                "interpreted by therapist."
             ),
             "scoringInterpretation": (
-                "Total score is the sum of all 9 responses (0-27). Scores indicate symptom burden and require "
-                "clinical interpretation in context."
+                "Total score is the sum of item1-item9 (range 0-27). Severity bands: 0-4 No/minimal, "
+                "5-9 Mild, 10-14 Moderate, 15-19 Moderately severe, 20-27 Severe depressive symptoms. "
+                "A score >=10 is commonly used as a clinical cutoff for elevated likelihood of clinically "
+                "significant depressive symptoms. Change score is current-total minus previous-total; "
+                "absolute change >=5 is commonly treated as clinically meaningful."
+            ),
+            "psychometricProperties": (
+                "PHQ-9 has extensive validation evidence across primary care, adolescent, community, and "
+                "international samples. Original studies reported strong internal consistency (around alpha .89) "
+                "and test-retest reliability (around .84), with useful screening performance varying by population."
             ),
             "limitationsEthics": (
-                "PHQ-9 is not diagnostic. Item 9 endorsement requires direct therapist follow-up and broader "
-                "risk assessment."
+                "PHQ-9 is not diagnostic. Interpretation must consider context, functioning, medical contributors, "
+                "substance effects, trauma/grief, and broader clinical picture. Item 9 endorsement requires direct "
+                "follow-up but should not be the sole basis for crisis decisions; full risk assessment remains required."
             ),
             "disclaimer": "This is a screening and progress-monitoring tool and not a standalone diagnostic instrument.",
             "attribution": (
@@ -70,8 +90,14 @@ ASSESSMENT_REGISTRY: dict[str, dict[str, Any]] = {
                 "MLC does not claim ownership of this instrument."
             ),
             "references": [
+                "Bianchi R et al. Is the PHQ-9 a unidimensional measure of depression? Psychological Assessment (2022).",
+                "Johansson R et al. Depression, anxiety and their comorbidity in the Swedish general population. PeerJ (2013).",
+                "Kocalevent R-D et al. Standardization of PHQ-9 in the general population. General Hospital Psychiatry (2013).",
                 "Kroenke K, Spitzer RL, Williams JBW. The PHQ-9. Journal of General Internal Medicine (2001).",
-                "Kocalevent R-D, Hinz A, Brahler E. General Hospital Psychiatry (2013).",
+                "Martin A et al. Validity of the Brief PHQ Mood Scale. General Hospital Psychiatry (2006).",
+                "McMillan D et al. Defining treatment outcome in depression using PHQ-9. Journal of Affective Disorders (2010).",
+                "Richardson LP et al. Evaluation of PHQ-9 for adolescent depression detection. Pediatrics (2010).",
+                "Urtasun M et al. Validation and calibration of PHQ-9 in Argentina. BMC Psychiatry (2019).",
             ],
         },
         "items": [
