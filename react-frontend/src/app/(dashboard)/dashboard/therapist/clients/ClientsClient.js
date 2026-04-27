@@ -517,7 +517,7 @@ export default function ClientsClient() {
                </HStack>
                <Button
                  as="a"
-                 href={resolveFileUrl(file.file)}
+                 href={resolveFileUrl(file.file_url || file.file)}
                  target="_blank"
                  rel="noopener noreferrer"
                  size="xs"
@@ -655,7 +655,7 @@ export default function ClientsClient() {
                     {reportFile ? (
                       <Button
                         as="a"
-                        href={resolveFileUrl(reportFile.file)}
+                        href={resolveFileUrl(reportFile.file_url || reportFile.file)}
                         target="_blank"
                         rel="noopener noreferrer"
                         size="xs"

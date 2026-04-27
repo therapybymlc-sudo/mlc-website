@@ -676,10 +676,24 @@ class NoteSerializer(serializers.ModelSerializer):
 # Files / Events / Schedule
 # ----------------------------
 class ClientFileSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ClientFile
         fields = "__all__"
         extra_kwargs = {"uploaded_by": {"read_only": True}}
+
+    def get_file_url(self, obj):
+        if not getattr(obj, "file", None):
+            return ""
+        try:
+            url = obj.file.url
+        except Exception:
+            return ""
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(url)
+        return url
 
 
 class EventTypeSerializer(serializers.ModelSerializer):
