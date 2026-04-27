@@ -89,9 +89,9 @@ export default function TherapistResourcesClient() {
                         variant="outline"
                         colorScheme="purple"
                         borderRadius="full"
-                        onClick={() => router.push("/dashboard/therapist/clients")}
+                        onClick={() => router.push(`/dashboard/therapist/resources/assessments/${item.id}`)}
                       >
-                        Assign from Client File
+                        Open details
                       </Button>
                     </Box>
                   ))
@@ -114,7 +114,7 @@ export default function TherapistResourcesClient() {
               colorScheme="purple"
               w="100%"
               borderRadius="full"
-              onClick={() => router.push("/dashboard/therapist/clients")}
+              onClick={() => router.push("/dashboard/therapist/resources/assessments")}
             >
               View Assessment Directory
             </Button>
