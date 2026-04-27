@@ -5,7 +5,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
-import { apiGet, apiPost, apiPut } from "../../../../../api.js";
+import { apiGet, apiGetBlob, apiPost, apiPut } from "../../../../../api.js";
 import { resourcesApi } from "../../../../../api/resources.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
@@ -112,6 +112,42 @@ export default function ClientsClient() {
       return `${apiOrigin}/media/client_files/${filePath}`;
     }
     return `${apiOrigin}${filePath}`;
+  };
+
+  const resolveApiPath = (urlOrPath) => {
+    if (!urlOrPath) return "";
+    if (/^https?:\/\//i.test(urlOrPath)) {
+      try {
+        const parsed = new URL(urlOrPath);
+        urlOrPath = `${parsed.pathname}${parsed.search || ""}`;
+      } catch (_e) {
+        return "";
+      }
+    }
+    if (urlOrPath.startsWith("/api/")) return urlOrPath.slice(5);
+    if (urlOrPath.startsWith("api/")) return urlOrPath.slice(4);
+    if (urlOrPath.startsWith("/")) return urlOrPath.slice(1);
+    return urlOrPath;
+  };
+
+  const openFileWithAuth = async (file) => {
+    const apiPath = resolveApiPath(file?.download_url);
+    try {
+      if (apiPath) {
+        const blob = await apiGetBlob(apiPath);
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        return;
+      }
+      // Fallback for non-API hosted files.
+      const fallbackUrl = resolveFileUrl(file?.file_url || file?.file);
+      if (fallbackUrl) {
+        window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (_e) {
+      toast({ title: "Could not open file", status: "error" });
+    }
   };
 
   const fetchClients = async () => {
@@ -516,13 +552,10 @@ export default function ClientsClient() {
                   </VStack>
                </HStack>
                <Button
-                 as="a"
-                 href={file.download_url || resolveFileUrl(file.file_url || file.file)}
-                 target="_blank"
-                 rel="noopener noreferrer"
                  size="xs"
                  variant="ghost"
                  colorScheme="teal"
+                 onClick={() => openFileWithAuth(file)}
                >
                  View
                </Button>
@@ -654,14 +687,11 @@ export default function ClientsClient() {
                   <Td>
                     {reportFile ? (
                       <Button
-                        as="a"
-                        href={reportFile.download_url || resolveFileUrl(reportFile.file_url || reportFile.file)}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         size="xs"
                         colorScheme="teal"
                         variant="outline"
                         borderRadius="full"
+                        onClick={() => openFileWithAuth(reportFile)}
                       >
                         Open report
                       </Button>
