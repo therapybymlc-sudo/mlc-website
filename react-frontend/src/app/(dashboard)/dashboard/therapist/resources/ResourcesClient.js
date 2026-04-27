@@ -19,6 +19,7 @@ export default function TherapistResourcesClient() {
   const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
   const [assessments, setAssessments] = useState([]);
   const [loadingAssessments, setLoadingAssessments] = useState(true);
+  const [showAllAssessments, setShowAllAssessments] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -79,13 +80,24 @@ export default function TherapistResourcesClient() {
                 {assessments.length === 0 ? (
                   <Text fontSize="xs" color="gray.500">No assessments available yet.</Text>
                 ) : (
-                  assessments.slice(0, 4).map((item) => (
+                  assessments.slice(0, showAllAssessments ? assessments.length : 4).map((item) => (
                     <Box key={item.id} w="100%" p={2} borderRadius="lg" bg="gray.50">
                       <Text fontSize="xs" fontWeight="700">{item.name}</Text>
                       <Text fontSize="2xs" color="gray.500">{item.abbreviation} • {item.completionTime}</Text>
                     </Box>
                   ))
                 )}
+                {assessments.length > 4 ? (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="purple"
+                    alignSelf="flex-start"
+                    onClick={() => setShowAllAssessments((prev) => !prev)}
+                  >
+                    {showAllAssessments ? "Show fewer" : `Browse all (${assessments.length})`}
+                  </Button>
+                ) : null}
               </VStack>
             )}
             <Button
