@@ -2527,9 +2527,29 @@ class ClientFileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        therapist = _resolve_therapist_from_request(self.request, allow_create=True)
-        client_ids = _active_client_ids_for_therapist(therapist)
-        qs = ClientFile.objects.filter(client_id__in=client_ids).order_by("-uploaded_at")
+        roles = _extract_roles_from_auth(self.request)
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        client = _resolve_client_from_request(self.request)
+
+        scopes = []
+        if "admin" in roles:
+            scopes.append(ClientFile.objects.all())
+        if therapist:
+            scopes.append(
+                ClientFile.objects.filter(client_id__in=_active_client_ids_for_therapist(therapist))
+            )
+        if client:
+            scopes.append(ClientFile.objects.filter(client_id=client.id))
+
+        if not scopes:
+            qs = ClientFile.objects.none()
+        else:
+            qs = scopes[0]
+            for scope in scopes[1:]:
+                qs = qs | scope
+            qs = qs.distinct()
+
+        qs = qs.order_by("-uploaded_at")
         client_id = self.request.query_params.get("client")
         if client_id:
             # Sanitize: strip trailing slashes or non-numeric noise
@@ -4239,6 +4259,67 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
         assignment.response_data = response_data
         assignment.status = ClientFormAssignment.Status.SUBMITTED
         assignment.submitted_at = timezone.now()
+        assignment.save(update_fields=["response_data", "status", "submitted_at", "updated_at"])
+        return Response(self.get_serializer(assignment).data)
+
+    @action(detail=True, methods=["post"], url_path="regenerate-report")
+    def regenerate_report(self, request, pk=None):
+        assignment = self.get_object()
+        roles = _extract_roles_from_auth(request)
+        therapist = _resolve_therapist_from_request(request)
+        client = _resolve_client_from_request(request)
+        is_admin = "admin" in roles
+
+        can_regenerate = is_admin
+        if therapist and assignment.assigned_by_id == therapist.id:
+            can_regenerate = True
+        if client and assignment.assigned_to_id == client.id:
+            can_regenerate = True
+        if not can_regenerate:
+            return Response({"detail": "Not allowed to regenerate this report."}, status=status.HTTP_403_FORBIDDEN)
+
+        if assignment.form_type != ClientFormAssignment.FormType.ASSESSMENT:
+            return Response({"detail": "Report regeneration is only available for assessments."}, status=status.HTTP_400_BAD_REQUEST)
+
+        response_data = assignment.response_data if isinstance(assignment.response_data, dict) else {}
+        schema = assignment.form_schema or {}
+        responses = response_data.get("responses")
+        if not isinstance(responses, list):
+            return Response({"detail": "No saved responses found for this assessment."}, status=status.HTTP_400_BAD_REQUEST)
+
+        is_valid, validation_msg = validate_assessment_responses(schema, responses)
+        if not is_valid:
+            return Response({"detail": validation_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+        previous_score = response_data.get("previousScore")
+        if previous_score is not None and not isinstance(previous_score, (int, float)):
+            return Response({"detail": "previousScore must be numeric when provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        scoring_output = score_assessment(
+            schema,
+            responses,
+            int(previous_score) if previous_score is not None else None,
+        )
+        response_data["scoring"] = scoring_output
+
+        pdf_bytes = build_assessment_report_pdf_bytes(
+            assignment=assignment,
+            spec=schema,
+            scoring_output=scoring_output,
+            responses=responses,
+        )
+        stamp = timezone.now().strftime("%Y%m%d%H%M%S")
+        file_name = f"assessment_{assignment.id}_{stamp}.pdf"
+        client_file = ClientFile(client=assignment.assigned_to, uploaded_by=request.user)
+        client_file.file.save(file_name, ContentFile(pdf_bytes), save=True)
+        response_data["resultPdfFileId"] = client_file.id
+
+        if assignment.status == ClientFormAssignment.Status.ASSIGNED:
+            assignment.status = ClientFormAssignment.Status.SUBMITTED
+            if not assignment.submitted_at:
+                assignment.submitted_at = timezone.now()
+
+        assignment.response_data = response_data
         assignment.save(update_fields=["response_data", "status", "submitted_at", "updated_at"])
         return Response(self.get_serializer(assignment).data)
 

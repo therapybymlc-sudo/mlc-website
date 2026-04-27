@@ -88,6 +88,7 @@ export default function ClientsClient() {
   const [noteTemplates, setNoteTemplates] = useState([]);
   const [fetchingDetails, setFetchingDetails] = useState(false);
   const [assigningFormType, setAssigningFormType] = useState("");
+  const [regeneratingFormId, setRegeneratingFormId] = useState(null);
   const [assessmentCatalog, setAssessmentCatalog] = useState([]);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState("");
   const toast = useToast();
@@ -398,6 +399,20 @@ export default function ClientsClient() {
     }
   };
 
+  const regenerateAssessmentReport = async (form) => {
+    if (!form?.id || !selectedClient?.id) return;
+    try {
+      setRegeneratingFormId(form.id);
+      await resourcesApi.regenerateAssessmentReport(form.id);
+      toast({ title: "Assessment report regenerated", status: "success" });
+      await fetchFullClientDetails(selectedClient.id);
+    } catch (_e) {
+      toast({ title: "Could not regenerate assessment report", status: "error" });
+    } finally {
+      setRegeneratingFormId(null);
+    }
+  };
+
   const renderDetailsSection = () => (
     <VStack align="stretch" spacing={6} animation="fadeIn 0.5s">
       <DetailCard title="Personal Information" isEditing={isEditing}>
@@ -685,16 +700,31 @@ export default function ClientsClient() {
                   <Td>{form.due_date || "—"}</Td>
                   <Td>{form.submitted_at ? new Date(form.submitted_at).toLocaleDateString() : "—"}</Td>
                   <Td>
-                    {reportFile ? (
-                      <Button
-                        size="xs"
-                        colorScheme="teal"
-                        variant="outline"
-                        borderRadius="full"
-                        onClick={() => openFileWithAuth(reportFile)}
-                      >
-                        Open report
-                      </Button>
+                    {form.form_type === "assessment" && (form.status === "submitted" || form.status === "reviewed") ? (
+                      <HStack spacing={2}>
+                        {reportFile ? (
+                          <Button
+                            size="xs"
+                            colorScheme="teal"
+                            variant="outline"
+                            borderRadius="full"
+                            onClick={() => openFileWithAuth(reportFile)}
+                          >
+                            Open report
+                          </Button>
+                        ) : (
+                          <Text fontSize="xs" color="gray.500">Missing file</Text>
+                        )}
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          borderRadius="full"
+                          isLoading={regeneratingFormId === form.id}
+                          onClick={() => regenerateAssessmentReport(form)}
+                        >
+                          Regenerate
+                        </Button>
+                      </HStack>
                     ) : (
                       <Text fontSize="xs" color="gray.500">—</Text>
                     )}
