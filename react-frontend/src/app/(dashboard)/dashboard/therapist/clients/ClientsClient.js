@@ -92,6 +92,13 @@ export default function ClientsClient() {
   const [selectedAssessmentId, setSelectedAssessmentId] = useState("");
   const toast = useToast();
 
+  const resolveFileUrl = (filePath) => {
+    if (!filePath) return "";
+    if (/^https?:\/\//i.test(filePath)) return filePath;
+    const base = ((typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_BASE : null) || "").replace(/\/api\/?$/, "");
+    return base ? `${base}${filePath}` : filePath;
+  };
+
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -493,7 +500,17 @@ export default function ClientsClient() {
                      <Text fontSize="xs" color="gray.400">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
                   </VStack>
                </HStack>
-               <Button size="xs" variant="ghost" colorScheme="teal">View</Button>
+               <Button
+                 as="a"
+                 href={resolveFileUrl(file.file)}
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 size="xs"
+                 variant="ghost"
+                 colorScheme="teal"
+               >
+                 View
+               </Button>
             </HStack>
          ))}
       </SimpleGrid>
@@ -585,10 +602,14 @@ export default function ClientsClient() {
                 <Th>Assigned</Th>
                 <Th>Due</Th>
                 <Th>Submitted</Th>
+                <Th>Report</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {clientFormAssignments.map((form) => (
+              {clientFormAssignments.map((form) => {
+                const resultPdfFileId = form?.response_data?.resultPdfFileId;
+                const reportFile = clientFiles.find((file) => String(file.id) === String(resultPdfFileId));
+                return (
                 <Tr key={form.id}>
                   <Td>
                     <VStack align="start" spacing={0}>
@@ -615,8 +636,27 @@ export default function ClientsClient() {
                   <Td>{form.assigned_at ? new Date(form.assigned_at).toLocaleDateString() : "—"}</Td>
                   <Td>{form.due_date || "—"}</Td>
                   <Td>{form.submitted_at ? new Date(form.submitted_at).toLocaleDateString() : "—"}</Td>
+                  <Td>
+                    {reportFile ? (
+                      <Button
+                        as="a"
+                        href={resolveFileUrl(reportFile.file)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="xs"
+                        colorScheme="teal"
+                        variant="outline"
+                        borderRadius="full"
+                      >
+                        Open report
+                      </Button>
+                    ) : (
+                      <Text fontSize="xs" color="gray.500">—</Text>
+                    )}
+                  </Td>
                 </Tr>
-              ))}
+                );
+              })}
             </Tbody>
           </Table>
         </Box>
