@@ -81,4 +81,11 @@ export const resourcesApi = {
   submitAssessmentResponse(id, response_data) {
     return apiPost(`client-form-assignments/${id}/submit_response/`, { response_data });
   },
+  adminTestAdministerAssessment({ assessment_id, responses, previousScore = null }) {
+    return apiPost("client-form-assignments/admin-test-administer/", {
+      assessment_id,
+      responses,
+      previousScore,
+    });
+  },
 };

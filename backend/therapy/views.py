@@ -4040,8 +4040,17 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        roles = _extract_roles_from_auth(self.request)
         therapist = _resolve_therapist_from_request(self.request)
         client = _resolve_client_from_request(self.request)
+        if "admin" in roles:
+            qs = ClientFormAssignment.objects.all().select_related(
+                "assigned_by", "assigned_to", "therapeutic_relationship"
+            )
+            client_id = self.request.query_params.get("client")
+            if client_id:
+                qs = qs.filter(assigned_to_id=client_id)
+            return qs.order_by("-assigned_at")
 
         if therapist:
             qs = ClientFormAssignment.objects.filter(assigned_by=therapist).select_related(
@@ -4060,18 +4069,21 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
         return ClientFormAssignment.objects.none()
 
     def perform_create(self, serializer):
+        roles = _extract_roles_from_auth(self.request)
         therapist = _resolve_therapist_from_request(self.request)
-        if not therapist:
+        is_admin = "admin" in roles
+        if not therapist and not is_admin:
             raise exceptions.PermissionDenied("Therapist profile required.")
 
         assigned_to = serializer.validated_data.get("assigned_to")
-        relationship = TherapeuticRelationship.objects.filter(
-            therapist=therapist,
+        relationship_qs = TherapeuticRelationship.objects.filter(
             client=assigned_to,
             status=TherapeuticRelationship.Status.ACTIVE,
-        ).first()
+        )
+        relationship = relationship_qs.filter(therapist=therapist).first() if therapist else relationship_qs.first()
         if not relationship:
             raise exceptions.ValidationError({"assigned_to": "Active therapeutic relationship required."})
+        assignment_therapist = therapist or relationship.therapist
 
         form_type = serializer.validated_data.get("form_type")
         requested_assessment_id = (self.request.data.get("assessment_id") or "").strip().lower()
@@ -4121,7 +4133,7 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
             )
 
         serializer.save(
-            assigned_by=therapist,
+            assigned_by=assignment_therapist,
             assigned_to=assigned_to,
             therapeutic_relationship=relationship,
         )
@@ -4139,7 +4151,8 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
     def submit_response(self, request, pk=None):
         assignment = self.get_object()
         client = _resolve_client_from_request(request)
-        if not client or assignment.assigned_to_id != client.id:
+        is_admin = "admin" in _extract_roles_from_auth(request)
+        if not is_admin and (not client or assignment.assigned_to_id != client.id):
             return Response({"detail": "Only assigned client can submit this form."}, status=status.HTTP_403_FORBIDDEN)
 
         payload = request.data.get("response_data") or {}
@@ -4186,11 +4199,36 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
         assignment.save(update_fields=["response_data", "status", "submitted_at", "updated_at"])
         return Response(self.get_serializer(assignment).data)
 
+    @action(detail=False, methods=["post"], url_path="admin-test-administer")
+    def admin_test_administer(self, request):
+        _require_admin(request)
+        assessment_id = (request.data.get("assessment_id") or "").strip().lower()
+        spec = get_assessment_spec(assessment_id)
+        if not spec:
+            return Response({"detail": "Unknown assessment_id."}, status=status.HTTP_400_BAD_REQUEST)
+        responses = request.data.get("responses")
+        ok, validation_error = validate_assessment_responses(spec, responses)
+        if not ok:
+            return Response({"detail": validation_error}, status=status.HTTP_400_BAD_REQUEST)
+        previous_score = request.data.get("previousScore")
+        if previous_score is not None and not isinstance(previous_score, (int, float)):
+            return Response({"detail": "previousScore must be numeric."}, status=status.HTTP_400_BAD_REQUEST)
+        scoring = score_assessment(spec, responses, int(previous_score) if previous_score is not None else None)
+        return Response(
+            {
+                "assessmentId": assessment_id,
+                "assessmentName": spec.get("name"),
+                "scoring": scoring,
+                "requiresImmediateReview": scoring.get("requiresImmediateReview", False),
+            }
+        )
+
     @action(detail=True, methods=["post"])
     def mark_reviewed(self, request, pk=None):
         assignment = self.get_object()
         therapist = _resolve_therapist_from_request(request)
-        if not therapist or assignment.assigned_by_id != therapist.id:
+        is_admin = "admin" in _extract_roles_from_auth(request)
+        if not is_admin and (not therapist or assignment.assigned_by_id != therapist.id):
             return Response({"detail": "Only assigning therapist can mark reviewed."}, status=status.HTTP_403_FORBIDDEN)
 
         assignment.status = ClientFormAssignment.Status.REVIEWED
