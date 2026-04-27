@@ -329,5 +329,7 @@ urlpatterns = [
     path("api/config/", get_config, name="get-config"),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media files (client reports, vault uploads) in all environments.
+# Production should ideally use dedicated object storage/CDN, but this keeps
+# current local-disk uploads accessible over /media/... routes.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
