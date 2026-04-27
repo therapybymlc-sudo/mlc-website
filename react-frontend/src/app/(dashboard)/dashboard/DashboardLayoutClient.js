@@ -57,13 +57,15 @@ export default function DashboardLayout({ children }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const onClientDashboardRoute = pathname?.startsWith('/dashboard/client');
+  const onTherapistDashboardRoute = pathname?.startsWith('/dashboard/therapist');
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const isTherapistPendingVerification =
-    pathname?.startsWith('/dashboard/therapist') &&
+    onTherapistDashboardRoute &&
     !!isTherapist &&
     !isAdmin &&
     therapistProfile &&
@@ -131,8 +133,18 @@ export default function DashboardLayout({ children }) {
       ];
     }
 
+    // For dual-role users, keep nav aligned to active dashboard context.
+    if (onClientDashboardRoute) return clientLinks;
+    if (onTherapistDashboardRoute) return therapistLinks;
     return isTherapist ? therapistLinks : clientLinks;
-  }, [isTherapist, isAdmin, isTherapistPendingVerification, hasSupervisorEligibility]);
+  }, [
+    isTherapist,
+    isAdmin,
+    isTherapistPendingVerification,
+    hasSupervisorEligibility,
+    onClientDashboardRoute,
+    onTherapistDashboardRoute,
+  ]);
 
   if (!mounted || !isLoaded) {
     return (
