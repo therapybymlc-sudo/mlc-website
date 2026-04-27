@@ -10,6 +10,10 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.lineplots import LinePlot
+from reportlab.graphics.charts.axes import XValueAxis, YValueAxis
+from reportlab.graphics.widgets.markers import makeMarker
 
 
 DEFAULT_OUTPUT = {
@@ -280,6 +284,117 @@ def _table(data: list[list[Any]], col_widths=None):
     return tbl
 
 
+def _build_score_history_points(assignment, spec: dict[str, Any], scoring_output: dict[str, Any]) -> list[tuple[int, int]]:
+    """Return [(sequence_index, totalScore)] for same assessment/client over time."""
+    try:
+        from therapy.models import ClientFormAssignment  # local import avoids circulars
+    except Exception:
+        return [(1, int(scoring_output.get("totalScore", 0)))]
+
+    assessment_id = (spec.get("id") or "").strip().lower()
+    if not assessment_id or not getattr(assignment, "assigned_to_id", None):
+        return [(1, int(scoring_output.get("totalScore", 0)))]
+
+    submitted_statuses = [
+        ClientFormAssignment.Status.SUBMITTED,
+        ClientFormAssignment.Status.REVIEWED,
+    ]
+    rows = (
+        ClientFormAssignment.objects.filter(
+            assigned_to_id=assignment.assigned_to_id,
+            form_type=ClientFormAssignment.FormType.ASSESSMENT,
+            status__in=submitted_statuses,
+        )
+        .order_by("submitted_at", "id")
+        .only("id", "form_schema", "response_data", "submitted_at")
+    )
+    points: list[tuple[int, int]] = []
+    seq = 0
+    for row in rows:
+        row_spec_id = ((row.form_schema or {}).get("id") or "").strip().lower()
+        if row_spec_id != assessment_id:
+            continue
+        score = ((row.response_data or {}).get("scoring") or {}).get("totalScore")
+        if isinstance(score, (int, float)):
+            seq += 1
+            points.append((seq, int(score)))
+    if not points:
+        return [(1, int(scoring_output.get("totalScore", 0)))]
+    return points
+
+
+def _trend_label(change_score: int | None) -> str | None:
+    if change_score is None:
+        return None
+    if change_score <= -5:
+        return "Improvement"
+    if change_score >= 5:
+        return "Deterioration"
+    return "Stability / no reliable change"
+
+
+def _severity_interp(total_score: int) -> dict[str, str]:
+    # Mirrors the interpretation mapping contract from the PHQ-9 spec.
+    if 0 <= total_score <= 4:
+        return {
+            "therapistInterpretation": "Symptoms are absent or low and may not be causing significant impairment.",
+            "followUp": "Review presenting concern, functioning, and context. Continue monitoring if depression remains clinically relevant.",
+        }
+    if 5 <= total_score <= 9:
+        return {
+            "therapistInterpretation": "Symptoms may be present and may cause some distress or mild functional difficulty.",
+            "followUp": "Explore stressors, sleep, routines, coping, support system, and early intervention needs.",
+        }
+    if 10 <= total_score <= 14:
+        return {
+            "therapistInterpretation": "Suggests elevated symptom burden and increased likelihood of clinically significant depressive symptoms.",
+            "followUp": "Further clinical evaluation is recommended. Consider treatment planning, functional impairment, comorbidity, and risk review.",
+        }
+    if 15 <= total_score <= 19:
+        return {
+            "therapistInterpretation": "Symptoms are pronounced and likely affecting functioning, relationships, work, school, or self-care.",
+            "followUp": "Active clinical follow-up is recommended. Review risk, safety, treatment intensity, and supports.",
+        }
+    return {
+        "therapistInterpretation": "Symptoms are severe and may substantially disrupt daily functioning.",
+        "followUp": "Prompt therapist review is recommended. Assess risk, impairment, crisis needs, care coordination, and treatment intensity.",
+    }
+
+
+def _score_trend_chart(points: list[tuple[int, int]]) -> Drawing:
+    drawing = Drawing(16 * cm, 6 * cm)
+    chart = LinePlot()
+    chart.x = 1.1 * cm
+    chart.y = 0.8 * cm
+    chart.height = 4.5 * cm
+    chart.width = 13.8 * cm
+    chart.data = [points]
+    chart.lines[0].strokeColor = colors.HexColor("#1F6F61")
+    chart.lines[0].strokeWidth = 2
+    chart.lines[0].symbol = makeMarker("FilledCircle")
+    chart.lines[0].symbol.size = 5
+    chart.lines[0].symbol.fillColor = colors.HexColor("#1F6F61")
+
+    chart.xValueAxis = XValueAxis()
+    chart.xValueAxis.valueMin = 1
+    chart.xValueAxis.valueMax = max(p[0] for p in points) if points else 1
+    chart.xValueAxis.valueSteps = list(range(1, chart.xValueAxis.valueMax + 1))
+    chart.xValueAxis.labelTextFormat = lambda x: f"A{int(x)}"
+    chart.xValueAxis.visibleGrid = 0
+    chart.xValueAxis.strokeColor = colors.HexColor("#7A7A7A")
+
+    chart.yValueAxis = YValueAxis()
+    chart.yValueAxis.valueMin = 0
+    chart.yValueAxis.valueMax = 27
+    chart.yValueAxis.valueStep = 5
+    chart.yValueAxis.visibleGrid = 1
+    chart.yValueAxis.gridStrokeColor = colors.HexColor("#E3E8E6")
+    chart.yValueAxis.strokeColor = colors.HexColor("#7A7A7A")
+
+    drawing.add(chart)
+    return drawing
+
+
 def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scoring_output: dict[str, Any], responses: list[dict[str, Any]]) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(
@@ -292,6 +407,12 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         title=f"{spec.get('name', 'Assessment')} Report",
     )
     styles = getSampleStyleSheet()
+    total_score = int(scoring_output.get("totalScore", 0))
+    interpretation = _severity_interp(total_score)
+    change_score = scoring_output.get("changeScore")
+    trend_label = _trend_label(change_score if isinstance(change_score, int) else None)
+    score_points = _build_score_history_points(assignment, spec, scoring_output)
+
     story = [
         _p("MLC Assessment Report", styles["Title"]),
         Spacer(1, 0.3 * cm),
@@ -299,12 +420,31 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         _p(f"Assigned: {timezone.localtime(assignment.assigned_at).strftime('%Y-%m-%d %H:%M')}", styles["Normal"]),
         _p(f"Completed: {timezone.localtime(assignment.submitted_at).strftime('%Y-%m-%d %H:%M') if assignment.submitted_at else 'N/A'}", styles["Normal"]),
         Spacer(1, 0.25 * cm),
-        _p("Score Summary", styles["Heading3"]),
+        _p("Metadata", styles["Heading3"]),
     ]
+
+    meta_rows = [
+        ["Field", "Value"],
+        ["Assessment", spec.get("name", "")],
+        ["Abbreviation", spec.get("abbreviation", "")],
+        ["Assessment ID", spec.get("id", "")],
+        ["Domain", ", ".join(spec.get("domain", []) or [])],
+        ["Age range", spec.get("ageRange", "")],
+        ["Completion time", spec.get("completionTime", "")],
+        ["Scoring type", (spec.get("scoring") or {}).get("type", "")],
+        ["Version", spec.get("version", "")],
+        ["Scoring version", spec.get("scoringVersion", "")],
+    ]
+    story.append(_table(meta_rows, col_widths=[5.2 * cm, 11.3 * cm]))
+    story.extend([
+        Spacer(1, 0.3 * cm),
+        _p("Score Summary", styles["Heading3"]),
+    ])
 
     summary_rows = [
         ["Field", "Value"],
-        ["Total score", scoring_output.get("totalScore", 0)],
+        ["Total score", total_score],
+        ["Score range", f"{(spec.get('scoring') or {}).get('range', {}).get('min', 0)}-{(spec.get('scoring') or {}).get('range', {}).get('max', 27)}"],
         ["Severity", scoring_output.get("severityLabel", "")],
         ["Severity level", scoring_output.get("severityNumericLevel", 0)],
         ["Immediate review", "Yes" if scoring_output.get("requiresImmediateReview") else "No"],
@@ -317,17 +457,62 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         story.append(_p("Risk Flags", styles["Heading3"]))
         risk_rows = [["Flag", "Details"]]
         for flag in risk_flags:
-            risk_rows.append([flag.get("label", "Risk flag"), f"Item {flag.get('itemIndex')} (response {flag.get('responseValue')})"])
+            risk_rows.append(
+                [
+                    flag.get("label", "Risk flag"),
+                    (
+                        f"Urgency: {flag.get('urgency', 'high')} | "
+                        f"Item {flag.get('itemIndex')} response={flag.get('responseValue')} | "
+                        f"Action: {flag.get('action', '')}"
+                    ),
+                ]
+            )
         story.append(_table(risk_rows, col_widths=[7 * cm, 9.5 * cm]))
         story.append(Spacer(1, 0.3 * cm))
 
     story.append(_p("Interpretation", styles["Heading3"]))
-    story.append(
-        _p(
-            f"{scoring_output.get('severityLabel', 'Unknown')} symptom range. {spec.get('disclaimer', '')}",
-            styles["Normal"],
-        )
-    )
+    story.append(_p(f"{scoring_output.get('severityLabel', 'Unknown')} range.", styles["Normal"]))
+    story.append(_p(interpretation.get("therapistInterpretation", ""), styles["Normal"]))
+    story.append(_p(f"Follow-up: {interpretation.get('followUp', '')}", styles["Normal"]))
+    story.append(_p(
+        "Cutoff guidance: A score of 10 or higher is commonly used as a clinical cutoff suggesting increased likelihood of clinically significant depressive symptoms. "
+        "This does not diagnose depression and must be interpreted in context.",
+        styles["Normal"],
+    ))
+    story.append(_p(f"Disclaimer: {spec.get('disclaimer', '')}", styles["Normal"]))
+    story.append(Spacer(1, 0.25 * cm))
+
+    story.append(_p("Change / Progress", styles["Heading3"]))
+    change_rows = [
+        ["Field", "Value"],
+        ["Previous score", "N/A" if change_score is None else str(total_score - int(change_score))],
+        ["Current score", str(total_score)],
+        ["Change score", "N/A" if change_score is None else str(change_score)],
+        [
+            "Clinically significant change (>=5)",
+            "N/A" if scoring_output.get("clinicallySignificantChange") is None else ("Yes" if scoring_output.get("clinicallySignificantChange") else "No"),
+        ],
+        ["Trend label", trend_label or "N/A"],
+    ]
+    story.append(_table(change_rows, col_widths=[7 * cm, 9.5 * cm]))
+    story.append(Spacer(1, 0.25 * cm))
+
+    story.append(_p("Score Trend Graph", styles["Heading3"]))
+    story.append(_score_trend_chart(score_points))
+    story.append(Spacer(1, 0.25 * cm))
+
+    story.append(_p("Report Metadata", styles["Heading3"]))
+    report_meta_rows = [
+        ["Field", "Value"],
+        ["Assessment instance", str(getattr(assignment, "id", ""))],
+        ["Client ID", str(getattr(assignment, "assigned_to_id", ""))],
+        ["Therapist ID", str(getattr(assignment, "assigned_by_id", ""))],
+        ["Assessment ID", spec.get("id", "")],
+        ["Scored at", timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M")],
+        ["Reviewed", "Yes" if assignment.status == getattr(assignment.Status, "REVIEWED", "reviewed") else "No"],
+        ["Attribution", spec.get("attribution", "")],
+    ]
+    story.append(_table(report_meta_rows, col_widths=[4.7 * cm, 11.8 * cm]))
     story.append(Spacer(1, 0.35 * cm))
 
     # Required by product: response sheet always appended at end.
