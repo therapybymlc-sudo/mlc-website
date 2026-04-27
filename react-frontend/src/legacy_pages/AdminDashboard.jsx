@@ -30,6 +30,7 @@ import {
   Tabs,
   TabList,
   Tab,
+  Badge,
 } from "@chakra-ui/react";
 import { FiZap } from "react-icons/fi";
 import { useEffect, useRef, useState } from "react";
