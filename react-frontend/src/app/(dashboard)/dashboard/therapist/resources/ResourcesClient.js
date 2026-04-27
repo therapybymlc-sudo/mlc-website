@@ -83,7 +83,16 @@ export default function TherapistResourcesClient() {
                   assessments.slice(0, showAllAssessments ? assessments.length : 4).map((item) => (
                     <Box key={item.id} w="100%" p={2} borderRadius="lg" bg="gray.50">
                       <Text fontSize="xs" fontWeight="700">{item.name}</Text>
-                      <Text fontSize="2xs" color="gray.500">{item.abbreviation} • {item.completionTime}</Text>
+                      <Text fontSize="2xs" color="gray.500" mb={2}>{item.abbreviation} • {item.completionTime}</Text>
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        colorScheme="purple"
+                        borderRadius="full"
+                        onClick={() => router.push("/dashboard/therapist/clients")}
+                      >
+                        Assign from Client File
+                      </Button>
                     </Box>
                   ))
                 )}
@@ -107,7 +116,7 @@ export default function TherapistResourcesClient() {
               borderRadius="full"
               onClick={() => router.push("/dashboard/therapist/clients")}
             >
-              Assign from Client File
+              View Assessment Directory
             </Button>
           </VStack>
         </Box>
