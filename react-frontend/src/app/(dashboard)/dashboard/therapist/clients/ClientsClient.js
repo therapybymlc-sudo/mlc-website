@@ -6,6 +6,7 @@ import {
 import { useState, useEffect } from "react";
 import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
 import { apiGet, apiPost, apiPut } from "../../../../../api.js";
+import { resourcesApi } from "../../../../../api/resources.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
 
@@ -87,6 +88,8 @@ export default function ClientsClient() {
   const [noteTemplates, setNoteTemplates] = useState([]);
   const [fetchingDetails, setFetchingDetails] = useState(false);
   const [assigningFormType, setAssigningFormType] = useState("");
+  const [assessmentCatalog, setAssessmentCatalog] = useState([]);
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState("");
   const toast = useToast();
 
   const fetchClients = async () => {
@@ -129,6 +132,16 @@ export default function ClientsClient() {
   useEffect(() => {
     setMounted(true);
     fetchClients();
+    resourcesApi
+      .listAssessmentCatalog()
+      .then((payload) => {
+        const list = payload?.assessments || [];
+        setAssessmentCatalog(list);
+        if (list[0]?.id) setSelectedAssessmentId(list[0].id);
+      })
+      .catch(() => {
+        setAssessmentCatalog([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -305,6 +318,23 @@ export default function ClientsClient() {
       await fetchFullClientDetails(selectedClient.id);
     } catch (e) {
       toast({ title: "Could not assign form", status: "error" });
+    } finally {
+      setAssigningFormType("");
+    }
+  };
+
+  const assignAssessment = async () => {
+    if (!selectedClient?.id || !selectedAssessmentId) return;
+    try {
+      setAssigningFormType("assessment_spec");
+      await resourcesApi.assignAssessment({
+        assigned_to: selectedClient.id,
+        assessment_id: selectedAssessmentId,
+      });
+      toast({ title: "Assessment assigned", status: "success" });
+      await fetchFullClientDetails(selectedClient.id);
+    } catch (_e) {
+      toast({ title: "Could not assign assessment", status: "error" });
     } finally {
       setAssigningFormType("");
     }
@@ -514,6 +544,34 @@ export default function ClientsClient() {
           </Button>
         </HStack>
       </HStack>
+      <Box bg="purple.50" border="1px solid" borderColor="purple.100" borderRadius="xl" p={4}>
+        <Text fontSize="xs" color="purple.700" fontWeight="700" mb={2}>Assign structured assessment</Text>
+        <HStack wrap="wrap" spacing={3}>
+          <Select
+            value={selectedAssessmentId}
+            onChange={(e) => setSelectedAssessmentId(e.target.value)}
+            bg="white"
+            maxW="320px"
+            size="sm"
+          >
+            {assessmentCatalog.map((assessment) => (
+              <option key={assessment.id} value={assessment.id}>
+                {assessment.name}
+              </option>
+            ))}
+          </Select>
+          <Button
+            size="sm"
+            colorScheme="purple"
+            borderRadius="full"
+            onClick={assignAssessment}
+            isLoading={assigningFormType === "assessment_spec"}
+            isDisabled={!selectedAssessmentId}
+          >
+            Assign selected assessment
+          </Button>
+        </HStack>
+      </Box>
 
       {clientFormAssignments.length === 0 ? (
         <Text color="gray.500">No forms assigned yet.</Text>

@@ -31,6 +31,7 @@ import {
   TabList,
   Tab,
 } from "@chakra-ui/react";
+import { FiZap } from "react-icons/fi";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { 
@@ -878,6 +879,23 @@ const growthSectionBody = (sec) => {
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Mail} label="Contact Inquiries" id="messages" />
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={FileCheck} label="Booking Leads" id="bookings" />
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={HelpCircle} label="Support Tickets" id="support_tickets" />
+        
+        <Link href="/admin/feedback">
+          <HStack
+            spacing={3}
+            px={4}
+            py={3}
+            cursor="pointer"
+            color="gray.600"
+            borderRadius="xl"
+            transition="all 0.2s"
+            _hover={{ bg: "rgba(95, 160, 147, 0.05)", color: "mlc.green" }}
+          >
+            <Icon as={FiZap} size={18} />
+            <Text fontWeight="500">Improvement Architect</Text>
+            <Badge colorScheme="orange" variant="solid" fontSize="2xs" borderRadius="full">NEW</Badge>
+          </HStack>
+        </Link>
       </VStack>
 
       <VStack align="stretch" spacing={1}>

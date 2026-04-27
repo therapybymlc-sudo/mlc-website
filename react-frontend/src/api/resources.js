@@ -62,4 +62,23 @@ export const resourcesApi = {
   markAssignmentCompleted(id) {
     return apiPost(`client-resource-assignments/${id}/mark_completed/`, {});
   },
+  listFormAssignments(clientId) {
+    const query = clientId ? `?client=${clientId}` : "";
+    return apiGet(`client-form-assignments/${query}`);
+  },
+  listAssessmentCatalog() {
+    return apiGet("client-form-assignments/assessment-catalog/");
+  },
+  assignAssessment({ assigned_to, assessment_id, due_date, instructions }) {
+    return apiPost("client-form-assignments/", {
+      assigned_to,
+      form_type: "assessment",
+      assessment_id,
+      due_date,
+      instructions,
+    });
+  },
+  submitAssessmentResponse(id, response_data) {
+    return apiPost(`client-form-assignments/${id}/submit_response/`, { response_data });
+  },
 };

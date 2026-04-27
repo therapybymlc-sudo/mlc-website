@@ -82,6 +82,7 @@ from therapy.views import (
     CommunityThreadViewSet,
     CommunityCommentViewSet,
     ReferralViewSet,
+    PlatformFeedbackViewSet,
 )
 
 # ----------------------------
@@ -143,6 +144,7 @@ router.register(r"community/categories", CommunityCategoryViewSet, basename="com
 router.register(r"community/threads", CommunityThreadViewSet, basename="community-threads")
 router.register(r"community/comments", CommunityCommentViewSet, basename="community-comments")
 router.register(r"referrals", ReferralViewSet, basename="referrals")
+router.register(r"feedback", PlatformFeedbackViewSet, basename="feedback")
 
 # ----------------------------
 # Small utility/test endpoints

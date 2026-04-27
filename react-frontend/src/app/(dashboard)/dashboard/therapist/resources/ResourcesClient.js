@@ -1,9 +1,12 @@
 'use client'
 
-import { Box, Heading, Text, VStack, SimpleGrid, Icon, Button, Badge } from "@chakra-ui/react";
-import { FiBook, FiFolder, FiExternalLink, FiShare2 } from "react-icons/fi";
+import { Box, Heading, Text, VStack, SimpleGrid, Icon, Button, Badge, HStack, Spinner } from "@chakra-ui/react";
+import { FiBook, FiExternalLink, FiShare2, FiClipboard } from "react-icons/fi";
+import { useEffect, useState } from "react";
 import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
+import { resourcesApi } from "../../../../../api/resources";
+import { useRouter } from "next/navigation";
 
 const RESOURCES = [
   { title: "Clinical Guidelines 2024", type: "PDF", category: "Standard" },
@@ -14,6 +17,27 @@ const RESOURCES = [
 
 export default function TherapistResourcesClient() {
   const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
+  const [assessments, setAssessments] = useState([]);
+  const [loadingAssessments, setLoadingAssessments] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const payload = await resourcesApi.listAssessmentCatalog();
+        if (!cancelled) setAssessments(payload?.assessments || []);
+      } catch (_err) {
+        if (!cancelled) setAssessments([]);
+      } finally {
+        if (!cancelled) setLoadingAssessments(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <Box>
@@ -36,6 +60,46 @@ export default function TherapistResourcesClient() {
       )}
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} opacity={hasBasicAccess ? 1 : 0.8}>
+        <Box bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+          <VStack align="start" spacing={3}>
+            <Box p={3} bg="rgba(86, 117, 109, 0.1)" borderRadius="2xl">
+              <Icon as={FiClipboard} color="#56756D" boxSize={6} />
+            </Box>
+            <VStack align="start" spacing={0} w="100%">
+              <Badge variant="subtle" colorScheme="purple" mb={2}>Assessments</Badge>
+              <Heading size="sm" color="#2E2E2E">Self-Report Assessment Library</Heading>
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Assign evidence-based assessments to clients from their client file.
+              </Text>
+            </VStack>
+            {loadingAssessments ? (
+              <HStack spacing={2}><Spinner size="sm" color="teal.500" /><Text fontSize="xs">Loading assessments...</Text></HStack>
+            ) : (
+              <VStack align="start" spacing={2} w="100%">
+                {assessments.length === 0 ? (
+                  <Text fontSize="xs" color="gray.500">No assessments available yet.</Text>
+                ) : (
+                  assessments.slice(0, 4).map((item) => (
+                    <Box key={item.id} w="100%" p={2} borderRadius="lg" bg="gray.50">
+                      <Text fontSize="xs" fontWeight="700">{item.name}</Text>
+                      <Text fontSize="2xs" color="gray.500">{item.abbreviation} • {item.completionTime}</Text>
+                    </Box>
+                  ))
+                )}
+              </VStack>
+            )}
+            <Button
+              size="sm"
+              colorScheme="purple"
+              w="100%"
+              borderRadius="full"
+              onClick={() => router.push("/dashboard/therapist/clients")}
+            >
+              Assign from Client File
+            </Button>
+          </VStack>
+        </Box>
+
         {RESOURCES.map((res, i) => (
           <Box key={i} bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" _hover={{ shadow: 'md', transform: 'translateY(-2px)' }} transition="0.3s">
             <VStack align="start" spacing={3}>

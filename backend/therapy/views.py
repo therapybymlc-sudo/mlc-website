@@ -1,7 +1,17 @@
 from rest_framework import viewsets, status, exceptions
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes, action
-from therapy.services import generate_jitsi_token
+from therapy.services import (
+    assert_jitsi_room_allowed,
+    generate_jitsi_token,
+    resolve_jitsi_display_name,
+    list_assessment_specs,
+    get_assessment_spec,
+    build_assignment_schema,
+    validate_assessment_responses,
+    score_assessment,
+    build_assessment_report_pdf_bytes,
+)
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -20,6 +30,7 @@ import json
 import urllib.request
 import urllib.error
 from decimal import Decimal
+from django.core.files.base import ContentFile
 
 from therapy.models import (
     ScheduleEvent,
@@ -75,6 +86,7 @@ from therapy.models import (
     ContactMessage,
     TherapistScreening,
     Referral,
+    PlatformFeedback,
 )
 from therapy.utils import (
     calculate_dass_scores,
@@ -151,6 +163,7 @@ from therapy.serializers import (
     CommunityThreadSerializer,
     CommunityCommentSerializer,
     ReferralSerializer,
+    PlatformFeedbackSerializer,
 )
 
 # ... existing code ...
@@ -158,6 +171,29 @@ from therapy.serializers import (
 class SupportTicketViewSet(viewsets.ModelViewSet):
     serializer_class = SupportTicketSerializer
     permission_classes = [IsAuthenticated]
+
+class PlatformFeedbackViewSet(viewsets.ModelViewSet):
+    queryset = PlatformFeedback.objects.all()
+    serializer_class = PlatformFeedbackSerializer
+    
+    def get_permissions(self):
+        if self.action == 'create':
+            return [AllowAny()]
+        return [IsAuthenticated()] # Admin checks handled in get_queryset
+
+    def get_queryset(self):
+        # Only admins see all feedback
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return PlatformFeedback.objects.all()
+        # Normal users only see their own (though they mainly just submit)
+        if user.is_authenticated:
+            return PlatformFeedback.objects.filter(user=user)
+        return PlatformFeedback.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
 
     def get_queryset(self):
         roles = _extract_roles_from_auth(self.request)
@@ -931,13 +967,48 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(detail=True, methods=["post"], url_path="approve-supervisor-content-send-contract")
+    def approve_supervisor_content_send_contract(self, request, pk=None):
+        _require_admin(request)
+        therapist = self.get_object()
+        feedback = (request.data.get("feedback") or "").strip()
+        therapist.supervision_status = "awaiting_contract"
+        if feedback:
+            therapist.supervisor_admin_feedback = feedback
+        therapist.save(update_fields=["supervision_status", "supervisor_admin_feedback"])
+        return Response(
+            {
+                "detail": "Supervision content approved. Supervisor contract email should be sent.",
+                "email": therapist.email,
+            }
+        )
+
+    @action(detail=True, methods=["post"], url_path="verify-supervisor-contract-license")
+    def verify_supervisor_contract_license(self, request, pk=None):
+        _require_admin(request)
+        therapist = self.get_object()
+        final_comment = (request.data.get("feedback") or "").strip()
+        therapist.supervision_status = "approved"
+        therapist.is_supervisor = True
+        therapist.is_supervisor_licensed = True
+        if final_comment:
+            therapist.supervisor_admin_feedback = final_comment
+        therapist.save(update_fields=["supervision_status", "is_supervisor", "is_supervisor_licensed", "supervisor_admin_feedback"])
+        return Response({"detail": "Supervisor contract verified and license granted."})
+
     @action(detail=False, methods=["get"], url_path="jitsi-token")
     def jitsi_token(self, request):
         room_name = request.query_params.get("room", "MLC-Secure-Lounge")
+        ok, err = assert_jitsi_room_allowed(request.user, room_name)
+        if not ok:
+            return Response(
+                {"detail": err, "code": "session_room_closed"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         token = generate_jitsi_token(request.user, room_name)
         if not token:
             return Response({"detail": "Token generation failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({"token": token})
+        return Response({"token": token, "display_name": resolve_jitsi_display_name(request.user)})
 
 
 class TherapistSessionLinkViewSet(viewsets.ModelViewSet):
@@ -982,10 +1053,16 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="jitsi-token")
     def jitsi_token(self, request):
         room_name = request.query_params.get("room", "MLC-Secure-Lounge")
+        ok, err = assert_jitsi_room_allowed(request.user, room_name)
+        if not ok:
+            return Response(
+                {"detail": err, "code": "session_room_closed"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         token = generate_jitsi_token(request.user, room_name)
         if not token:
             return Response({"detail": "Token generation failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({"token": token})
+        return Response({"token": token, "display_name": resolve_jitsi_display_name(request.user)})
 
     def update(self, request, *args, **kwargs):
         from django.db import transaction
@@ -3997,6 +4074,7 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
             raise exceptions.ValidationError({"assigned_to": "Active therapeutic relationship required."})
 
         form_type = serializer.validated_data.get("form_type")
+        requested_assessment_id = (self.request.data.get("assessment_id") or "").strip().lower()
         default_schema = {
             "consent": {
                 "sections": [
@@ -4015,7 +4093,26 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
                 ]
             },
         }
-        if not serializer.validated_data.get("form_schema"):
+        if form_type == ClientFormAssignment.FormType.ASSESSMENT:
+            assessment_spec = get_assessment_spec(requested_assessment_id)
+            if not assessment_spec:
+                available = ", ".join([row.get("id") for row in list_assessment_specs()])
+                raise exceptions.ValidationError(
+                    {
+                        "assessment_id": (
+                            "Unknown assessment_id. "
+                            f"Use one of: {available}"
+                        )
+                    }
+                )
+            serializer.validated_data["form_schema"] = build_assignment_schema(requested_assessment_id)
+            if not serializer.validated_data.get("title"):
+                serializer.validated_data["title"] = assessment_spec.get("name") or "Client Assessment Form"
+            if not serializer.validated_data.get("instructions"):
+                serializer.validated_data["instructions"] = (
+                    "Please complete all items. Your responses are scored automatically for your therapist."
+                )
+        elif not serializer.validated_data.get("form_schema"):
             serializer.validated_data["form_schema"] = default_schema.get(form_type, {})
 
         if not serializer.validated_data.get("title"):
@@ -4029,6 +4126,15 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
             therapeutic_relationship=relationship,
         )
 
+    @action(detail=False, methods=["get"], url_path="assessment-catalog")
+    def assessment_catalog(self, request):
+        return Response(
+            {
+                "assessments": list_assessment_specs(),
+                "formatVersion": "gpt2-developer-spec-v1",
+            }
+        )
+
     @action(detail=True, methods=["post"])
     def submit_response(self, request, pk=None):
         assignment = self.get_object()
@@ -4036,7 +4142,45 @@ class ClientFormAssignmentViewSet(viewsets.ModelViewSet):
         if not client or assignment.assigned_to_id != client.id:
             return Response({"detail": "Only assigned client can submit this form."}, status=status.HTTP_403_FORBIDDEN)
 
-        assignment.response_data = request.data.get("response_data") or {}
+        payload = request.data.get("response_data") or {}
+        response_data = payload if isinstance(payload, dict) else {}
+        if assignment.form_type == ClientFormAssignment.FormType.ASSESSMENT:
+            schema = assignment.form_schema or {}
+            responses = response_data.get("responses")
+            if responses is None and isinstance(request.data.get("responses"), list):
+                responses = request.data.get("responses")
+                response_data = {"responses": responses}
+
+            is_valid, validation_msg = validate_assessment_responses(schema, responses)
+            if not is_valid:
+                return Response({"detail": validation_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+            previous_score = response_data.get("previousScore")
+            if previous_score is not None and not isinstance(previous_score, (int, float)):
+                return Response(
+                    {"detail": "previousScore must be numeric when provided."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            scoring_output = score_assessment(
+                schema,
+                responses,
+                int(previous_score) if previous_score is not None else None,
+            )
+            response_data["scoring"] = scoring_output
+
+            pdf_bytes = build_assessment_report_pdf_bytes(
+                assignment=assignment,
+                spec=schema,
+                scoring_output=scoring_output,
+                responses=responses,
+            )
+            stamp = timezone.now().strftime("%Y%m%d%H%M%S")
+            file_name = f"assessment_{assignment.id}_{stamp}.pdf"
+            client_file = ClientFile(client=assignment.assigned_to, uploaded_by=request.user)
+            client_file.file.save(file_name, ContentFile(pdf_bytes), save=True)
+            response_data["resultPdfFileId"] = client_file.id
+
+        assignment.response_data = response_data
         assignment.status = ClientFormAssignment.Status.SUBMITTED
         assignment.submitted_at = timezone.now()
         assignment.save(update_fields=["response_data", "status", "submitted_at", "updated_at"])

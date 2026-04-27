@@ -159,6 +159,19 @@ export default function ProfileClient() {
       feedback_and_rupture_repair: "",
       supervisor_self_reflection: "",
     },
+
+    // 11. Vetting & Status
+    profile_status: "draft",
+    is_initially_published: false,
+    admin_feedback: "",
+    supervision_status: "none",
+    supervisor_admin_feedback: "",
+    
+    // Physical Space Support
+    has_physical_space: false,
+    physical_space_images: [],
+    physical_space_location: "",
+    physical_space_notes: "",
   });
 
   const [tabIndex, setTabIndex] = useState(0);
@@ -303,6 +316,27 @@ export default function ProfileClient() {
     setProfile({...profile, [field]: updated});
   };
 
+  const handleSubmitForReview = async () => {
+    setLoading(true);
+    try {
+      await apiPost("therapists/submit-for-review/", {});
+      toast({ title: "Submitted", description: "Your profile is now under review.", status: "success" });
+      // Refresh to get updated status
+      const data = await apiGet("therapists/me/");
+      setProfile(prev => ({ ...prev, ...data }));
+    } catch (error) {
+      const detail = error?.response?.data?.detail || "Could not submit.";
+      const missing = error?.response?.data?.missing_fields;
+      toast({
+        title: "Submission failed",
+        description: Array.isArray(missing) ? `${detail} Missing: ${missing.join(", ")}` : detail,
+        status: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isMounted || !isUserLoaded) {
     return (
       <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="#FAFAFA">
@@ -346,8 +380,96 @@ export default function ProfileClient() {
               <Heading size={{ base: "lg", md: "xl" }} color="#2E2E2E" fontFamily="'Playfair Display', serif" whiteSpace="normal">Clinician Identity Hub</Heading>
               <Text color="gray.500" mt={1} fontSize={{ base: "sm", md: "md" }}>Define your professional scope, expertise, and public presence.</Text>
            </Box>
-           <Button leftIcon={<FiSave />} bg="#56756D" color="white" px={10} borderRadius="full" onClick={() => requireBasicAccess(() => handleSave())} isLoading={loading} _hover={{ bg: '#C9A960' }} shadow="xl" w={{ base: "full", md: "auto" }} flexShrink={0}>Finalize & Sync</Button>
+           <HStack spacing={4} w={{ base: "full", md: "auto" }}>
+              {/* Submit for Review Button - Shown when not approved */}
+              {(profile.profile_status === 'draft' || profile.profile_status === 'changes_requested') && (
+                <Button 
+                  leftIcon={<FiZap />} 
+                  bg="#C9A960" 
+                  color="white" 
+                  px={8} 
+                  borderRadius="full" 
+                  onClick={handleSubmitForReview} 
+                  isLoading={loading}
+                  _hover={{ bg: '#b39655' }}
+                  shadow="lg"
+                  w={{ base: "full", md: "auto" }}
+                >
+                  Submit for Review
+                </Button>
+              )}
+
+              {/* Sync Button - Only active when approved */}
+              <Button 
+                leftIcon={<FiSave />} 
+                bg={profile.profile_status === 'approved' ? "#56756D" : "gray.300"} 
+                color="white" 
+                px={10} 
+                borderRadius="full" 
+                onClick={() => requireBasicAccess(() => handleSave())} 
+                isLoading={loading} 
+                isDisabled={profile.profile_status !== 'approved'}
+                _hover={{ bg: profile.profile_status === 'approved' ? '#C9A960' : "gray.300" }} 
+                shadow="xl" 
+                w={{ base: "full", md: "auto" }} 
+                flexShrink={0}
+                title={profile.profile_status !== 'approved' ? "Syncing is locked until your profile is approved by an administrator." : ""}
+              >
+                Finalize & Sync
+              </Button>
+           </HStack>
         </Flex>
+
+        {/* 🔹 Vetting Status Banner */}
+        {profile.profile_status === 'changes_requested' && (
+          <Alert status="error" borderRadius="2xl" shadow="lg" border="1px solid" borderColor="red.200">
+            <AlertIcon boxSize={5} />
+            <Box flex="1">
+              <AlertTitle fontWeight="bold">Action Required: Administrator Comments</AlertTitle>
+              <AlertDescription display="block" mt={1} fontSize="sm" fontStyle="italic">
+                "{profile.admin_feedback || "Please review your profile details and resubmit."}"
+              </AlertDescription>
+            </Box>
+            <Button size="sm" bg="red.500" color="white" onClick={handleSubmitForReview} _hover={{ bg: 'red.600' }} ml={4}>Resubmit Now</Button>
+          </Alert>
+        )}
+
+        {profile.profile_status === 'submitted' && (
+          <Alert status="info" borderRadius="2xl" bg="blue.50" border="1px solid" borderColor="blue.100">
+            <AlertIcon />
+            <Box flex="1">
+              <AlertTitle>Profile Under Review</AlertTitle>
+              <AlertDescription fontSize="sm">
+                Our clinical team is reviewing your profile. You will receive an email once it is approved.
+              </AlertDescription>
+            </Box>
+          </Alert>
+        )}
+
+        {profile.profile_status === 'awaiting_contract' && (
+          <Alert status="success" borderRadius="2xl" bg="teal.50" border="1px solid" borderColor="teal.100">
+            <AlertIcon />
+            <Box flex="1">
+              <AlertTitle>Content Approved!</AlertTitle>
+              <AlertDescription fontSize="sm">
+                Your profile has passed review. Your contract to become a published therapist with MLC is waiting for you in your registered email. Once signed, your profile will go live.
+              </AlertDescription>
+            </Box>
+          </Alert>
+        )}
+
+        {profile.profile_status === 'approved' && (
+          <Alert status="success" borderRadius="2xl" bg="green.50" border="1px solid" borderColor="green.100">
+            <AlertIcon />
+            <Box flex="1">
+              <AlertTitle>Profile is Live & Published</AlertTitle>
+              <AlertDescription fontSize="sm">
+                Your profile is now public. You can sync updates any time using the button above.
+              </AlertDescription>
+            </Box>
+          </Alert>
+        )}
+
         {!hasBasicAccess && (
           <Alert status="warning" borderRadius="xl">
             <AlertIcon />
@@ -905,6 +1027,51 @@ export default function ProfileClient() {
                      <Input placeholder="e.g. Banjara Hills, Hyderabad" value={profile.locations} onChange={(e) => setProfile({...profile, locations: e.target.value})} borderRadius="xl" />
                      <Text fontSize="xs" color="gray.500" mt={2}>If you offer in-person sessions, add exact locality and city.</Text>
                   </FormControl>
+
+                  <Box p={6} bg="teal.50" borderRadius="2xl" border="1px solid" borderColor="teal.100">
+                    <VStack align="stretch" spacing={4}>
+                      <FormControl display="flex" alignItems="center">
+                        <FormLabel mb="0" fontWeight="700">I have a physical therapy room / clinic space</FormLabel>
+                        <Checkbox isChecked={profile.has_physical_space} onChange={(e) => setProfile({...profile, has_physical_space: e.target.checked})} />
+                      </FormControl>
+                      
+                      {profile.has_physical_space && (
+                        <VStack align="stretch" spacing={4} pt={2}>
+                          <FormControl isRequired>
+                            <FormLabel fontSize="xs" fontWeight="bold">Full Physical Address</FormLabel>
+                            <Textarea 
+                              bg="white" 
+                              placeholder="Complete address for in-person clients..." 
+                              value={profile.physical_space_location || ""} 
+                              onChange={(e) => setProfile({...profile, physical_space_location: e.target.value})} 
+                              borderRadius="xl"
+                            />
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel fontSize="xs" fontWeight="bold">Clinic / Room Images (URLs)</FormLabel>
+                            <Textarea 
+                              bg="white" 
+                              placeholder="Add image URLs (comma separated) or describe the space..." 
+                              value={Array.isArray(profile.physical_space_images) ? profile.physical_space_images.join(", ") : ""} 
+                              onChange={(e) => setProfile({...profile, physical_space_images: e.target.value.split(",").map(s => s.trim()).filter(Boolean)})} 
+                              borderRadius="xl"
+                            />
+                            <Text fontSize="xs" color="gray.500" mt={1}>Visuals help clients feel safe before their first session.</Text>
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel fontSize="xs" fontWeight="bold">Notes for In-Person Clients</FormLabel>
+                            <Textarea 
+                              bg="white" 
+                              placeholder="Entry instructions, parking, waiting area info..." 
+                              value={profile.physical_space_notes || ""} 
+                              onChange={(e) => setProfile({...profile, physical_space_notes: e.target.value})} 
+                              borderRadius="xl"
+                            />
+                          </FormControl>
+                        </VStack>
+                      )}
+                    </VStack>
+                  </Box>
                </VStack>
                <Divider my={6} />
                 <Flex justify="flex-end">
@@ -1070,14 +1237,62 @@ export default function ProfileClient() {
                         <Textarea bg="white" minH="110px" value={profile.supervision_application_answers?.supervisor_self_reflection || ""} onChange={(e) => setProfile({ ...profile, supervision_application_answers: { ...(profile.supervision_application_answers || {}), supervisor_self_reflection: e.target.value } })} borderRadius="xl" />
                       </FormControl>
 
-                      <HStack justify="flex-end">
-                        <Button colorScheme="orange" borderRadius="full" onClick={handleSubmitSupervisionApplication} isLoading={loading}>
-                          Submit Supervision Application
+                      {profile.supervision_status === 'pending' && (
+                        <Alert status="info" borderRadius="xl">
+                          <AlertIcon />
+                          <Box>
+                            <AlertTitle fontSize="sm">Supervision Application Under Review</AlertTitle>
+                            <AlertDescription fontSize="xs">We are reviewing your eligibility for supervisor licensing.</AlertDescription>
+                          </Box>
+                        </Alert>
+                      )}
+
+                      {profile.supervision_status === 'awaiting_contract' && (
+                        <Alert status="success" borderRadius="xl">
+                          <AlertIcon />
+                          <Box>
+                            <AlertTitle fontSize="sm">Supervision Approved (Awaiting Contract)</AlertTitle>
+                            <AlertDescription fontSize="xs">Your supervision contract has been sent to your email. Please sign it to activate your supervisor license.</AlertDescription>
+                          </Box>
+                        </Alert>
+                      )}
+
+                      {profile.supervision_status === 'approved' && (
+                        <Alert status="success" borderRadius="xl" bg="green.50">
+                          <AlertIcon />
+                          <Box>
+                            <AlertTitle fontSize="sm">Licensed MLC Supervisor</AlertTitle>
+                            <AlertDescription fontSize="xs">You are now authorized to supervise other clinicians on the platform.</AlertDescription>
+                          </Box>
+                        </Alert>
+                      )}
+
+                      {profile.supervisor_admin_feedback && (
+                         <Alert status="warning" borderRadius="xl">
+                            <AlertIcon />
+                            <Box>
+                               <AlertTitle fontSize="sm">Reviewer Feedback</AlertTitle>
+                               <AlertDescription fontSize="xs">"{profile.supervisor_admin_feedback}"</AlertDescription>
+                            </Box>
+                         </Alert>
+                      )}
+
+                      <HStack justify="flex-end" w="full">
+                        {Number(profile.experience_years) < 5 && (
+                          <Text fontSize="xs" color="orange.600" fontWeight="bold">
+                            Minimum 5 years post-qualification experience required for supervisor eligibility.
+                          </Text>
+                        )}
+                        <Button 
+                          colorScheme="orange" 
+                          borderRadius="full" 
+                          onClick={handleSubmitSupervisionApplication} 
+                          isLoading={loading}
+                          isDisabled={['pending', 'awaiting_contract', 'approved'].includes(profile.supervision_status) || Number(profile.experience_years) < 5}
+                        >
+                          {profile.supervision_status === 'approved' ? "Licensed Supervisor" : "Submit Supervision Application"}
                         </Button>
                       </HStack>
-                      <Text fontSize="xs" color="gray.600" textAlign="right">
-                        Feel free to further edit your therapist profile to reflect your experience and growth.
-                      </Text>
                     </VStack>
                   </Box>
                   <Divider my={{ base: 6, md: 10 }} />

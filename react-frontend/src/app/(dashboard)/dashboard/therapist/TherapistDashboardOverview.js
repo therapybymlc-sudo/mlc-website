@@ -41,6 +41,7 @@ import { apiGet } from "../../../../api.js";
 import TherapistSubscriptionGateway from "../../../../components/TherapistSubscriptionGateway";
 import { useTherapistSubscriptionGate } from "../../../../hooks/useTherapistSubscriptionGate";
 import { motion } from "framer-motion";
+import FeedbackWidget from "../../../../components/FeedbackWidget";
 
 const MotionBox = motion(Box);
 
@@ -407,6 +408,18 @@ export default function TherapistDashboardOverview() {
                 <Button size="xs" w="full" colorScheme="yellow" borderRadius="full" as={NextLink} href="/dashboard/therapist/subscription">
                   Upgrade to Pro
                 </Button>
+              </Box>
+
+              {/* 💡 Feedback Nudge Card */}
+              <Box p={6} bg="teal.50" borderRadius="3xl" border="1px dashed" borderColor="teal.200">
+                <HStack spacing={3} mb={3}>
+                  <Icon as={FiMessageSquare} color="teal.500" />
+                  <Text fontSize="xs" fontWeight="bold" color="teal.700">Improve MLC</Text>
+                </HStack>
+                <Text fontSize="xs" color="teal.800" mb={4}>
+                  Is something missing? Tell us how we can make your workspace better.
+                </Text>
+                <FeedbackWidget variant="inline" />
               </Box>
             </VStack>
           </Box>

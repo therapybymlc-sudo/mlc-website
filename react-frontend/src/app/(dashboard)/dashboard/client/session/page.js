@@ -19,35 +19,73 @@ const TherapyRoom = dynamic(() => import('../../../../../components/video/Therap
 });
 
 import { apiGet } from '../../../../../api';
+import { useAuth } from '../../../../../context/AuthContext';
 
 export default function SessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
+  const { user, therapistProfile, clientProfile } = useAuth();
   
   const roomUrl = searchParams.get('url') || "https://mlchealth.in/conference/MLC-Secure-Lounge"; 
   const [sessionActive, setSessionActive] = useState(true);
   const [sessionToken, setSessionToken] = useState(null);
+  const [jitsiDisplayName, setJitsiDisplayName] = useState(null);
+  const [tokenLoading, setTokenLoading] = useState(true);
+  const [sessionGateError, setSessionGateError] = useState(null);
 
   useEffect(() => {
-    // Automatically fetch a professional JaaS token from our backend
+    let cancelled = false;
     const fetchToken = async () => {
-      try {
-        const roomIdentifier = roomUrl.split('/').filter(Boolean).pop()?.toLowerCase();
-        // Try both therapist and client endpoints
-        const response = await apiGet(`therapists/jitsi-token/?room=${roomIdentifier}`)
-          .catch(() => apiGet(`clients/jitsi-token/?room=${roomIdentifier}`));
-        
-        if (response?.token) {
-          setSessionToken(response.token);
+      setTokenLoading(true);
+      setSessionGateError(null);
+      const roomIdentifier = roomUrl.split('/').filter(Boolean).pop()?.toLowerCase();
+      const endpoints = ['therapists', 'clients'];
+      let lastErr = null;
+      for (const ep of endpoints) {
+        try {
+          const response = await apiGet(`${ep}/jitsi-token/?room=${roomIdentifier}`);
+          if (cancelled) return;
+          if (response?.token) {
+            setSessionToken(response.token);
+            if (response?.display_name) {
+              setJitsiDisplayName(response.display_name);
+            }
+            setSessionGateError(null);
+            return;
+          }
+        } catch (err) {
+          lastErr = err;
+          const code = err.response?.data?.code;
+          const detail = err.response?.data?.detail;
+          if (err.response?.status === 403 && code === 'session_room_closed') {
+            if (!cancelled) {
+              setSessionGateError(detail || 'This video room is not open yet.');
+            }
+            return;
+          }
         }
-      } catch (err) {
-        console.warn("Could not fetch secure session token, falling back to guest mode.", err);
+      }
+      if (!cancelled && lastErr?.response?.data?.detail) {
+        setSessionGateError(lastErr.response.data.detail);
       }
     };
 
-    fetchToken();
+    fetchToken().finally(() => {
+      if (!cancelled) setTokenLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [roomUrl]);
+
+  const fallbackDisplayName =
+    therapistProfile?.name ||
+    clientProfile?.name ||
+    user?.fullName ||
+    (user?.primaryEmailAddress?.emailAddress
+      ? user.primaryEmailAddress.emailAddress.split("@")[0]
+      : null);
 
   if (!sessionActive) {
     return (
@@ -60,6 +98,41 @@ export default function SessionPage() {
             onClick={() => router.push('/dashboard/client')}
             bg="teal.800" 
             color="white" 
+            borderRadius="full"
+            px={10}
+          >
+            Return to Dashboard
+          </Button>
+        </VStack>
+      </Center>
+    );
+  }
+
+  if (tokenLoading) {
+    return (
+      <Center h="70vh">
+        <VStack spacing={4}>
+          <Spinner color="teal.500" size="xl" thickness="4px" />
+          <Text color="gray.500" fontSize="sm">Preparing your secure video link…</Text>
+        </VStack>
+      </Center>
+    );
+  }
+
+  if (sessionGateError) {
+    return (
+      <Center h="70vh" px={6}>
+        <VStack spacing={6} maxW="lg" textAlign="center">
+          <Icon as={FiShield} boxSize={12} color="orange.400" />
+          <Heading size="md" fontFamily="'Playfair Display', serif">Session not available</Heading>
+          <Text color="gray.600" fontSize="sm">{sessionGateError}</Text>
+          <Text fontSize="xs" color="gray.500">
+            The room opens 1 hour before your scheduled time and closes 1 hour after it ends.
+          </Text>
+          <Button
+            onClick={() => router.push('/dashboard/client')}
+            bg="teal.800"
+            color="white"
             borderRadius="full"
             px={10}
           >
@@ -93,6 +166,7 @@ export default function SessionPage() {
            <TherapyRoom 
             roomUrl={roomUrl} 
             jwt={sessionToken}
+            displayName={jitsiDisplayName || fallbackDisplayName}
             onLeave={() => {
               toast({ title: "Session Concluded", status: "info" });
               setSessionActive(false);

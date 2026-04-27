@@ -113,6 +113,8 @@ class TherapistProfile(models.Model):
     supervision_areas = models.JSONField(default=list, blank=True) # e.g. ["Clinical", "Organizational"]
     supervision_modalities = models.JSONField(default=list, blank=True) # Max 3 major ones
     supervision_application_answers = models.JSONField(default=dict, blank=True)
+    contract_signed_at = models.DateTimeField(null=True, blank=True)
+    supervisor_contract_signed_at = models.DateTimeField(null=True, blank=True)
     
     # Physical Space Support (Hybrid Clinic)
     has_physical_space = models.BooleanField(default=False)
@@ -2421,3 +2423,65 @@ class Referral(models.Model):
 
     def __str__(self):
         return f"Referral from {self.referring_therapist.name} to {self.receiving_therapist.name} for {self.client_name}"
+
+
+# ===========================
+# 💡 Global Feedback & Improvement System
+# ===========================
+class PlatformFeedback(models.Model):
+    class UserType(models.TextChoices):
+        THERAPIST = "therapist", "Therapist"
+        CLIENT = "client", "Client"
+        GUEST = "guest", "Guest"
+
+    class Category(models.TextChoices):
+        UI_UX = "ui_ux", "UI/UX Improvement"
+        FEATURE = "feature", "New Feature Request"
+        CLINICAL = "clinical", "Clinical Tool Improvement"
+        BUG = "bug", "Bug Report"
+        GENERAL = "general", "General Suggestion"
+
+    class Status(models.TextChoices):
+        NEW = "new", "New"
+        REVIEWED = "reviewed", "Reviewed"
+        PLANNED = "planned", "Planned"
+        IMPLEMENTED = "implemented", "Implemented"
+        DISMISSED = "dismissed", "Dismissed"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="platform_feedback"
+    )
+    user_type = models.CharField(
+        max_length=20,
+        choices=UserType.choices,
+        default=UserType.GUEST
+    )
+    page_path = models.CharField(
+        max_length=255,
+        help_text="The URL/Path where the feedback was submitted."
+    )
+    content = models.TextField()
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        default=Category.GENERAL
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NEW
+    )
+    admin_notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Platform Feedback"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Feedback from {self.user_type} on {self.page_path}"

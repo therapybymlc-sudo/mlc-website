@@ -1,7 +1,48 @@
 import jwt
 import time
-import uuid
 from django.conf import settings
+
+
+def resolve_jitsi_display_name(user):
+    """
+    Human-readable name for Jitsi / JaaS. Avoids Clerk-style usernames (user_...)
+    when Django first/last name were never synced.
+    """
+    if not user or not getattr(user, "pk", None):
+        return "Guest"
+
+    first = (getattr(user, "first_name", None) or "").strip()
+    last = (getattr(user, "last_name", None) or "").strip()
+    full = f"{first} {last}".strip()
+    if full:
+        return full
+
+    # Canonical clinical profiles (preferred over auth username)
+    try:
+        from therapy.models import ClientProfile, TherapistProfile
+
+        tp = TherapistProfile.objects.filter(user_id=user.pk).first()
+        if tp and (tp.name or "").strip():
+            return tp.name.strip()
+        cp = ClientProfile.objects.filter(user_id=user.pk).first()
+        if cp and (cp.name or "").strip():
+            return cp.name.strip()
+    except Exception:
+        pass
+
+    email = (getattr(user, "email", None) or "").strip()
+    if email and "@" in email and not email.endswith("@example.invalid"):
+        local = email.split("@", 1)[0].strip()
+        local = local.replace(".", " ").replace("_", " ").strip()
+        if local and not local.lower().startswith("user"):
+            return local if not local.islower() else local.title()
+
+    uname = (getattr(user, "username", None) or "").strip()
+    if uname and not uname.startswith("user_"):
+        return uname
+
+    return "MLC Participant"
+
 
 def generate_jitsi_token(user, room_name):
     """
@@ -11,7 +52,15 @@ def generate_jitsi_token(user, room_name):
         return None
 
     now = int(time.time())
-    
+
+    display_name = resolve_jitsi_display_name(user)
+    try:
+        from therapy.models import TherapistProfile
+
+        is_moderator = TherapistProfile.objects.filter(user_id=user.pk).exists()
+    except Exception:
+        is_moderator = False
+
     # Jitsi JaaS JWT Payload
     payload = {
         "aud": "jitsi",
@@ -29,10 +78,10 @@ def generate_jitsi_token(user, room_name):
                 "recording": True
             },
             "user": {
-                "name": f"{user.first_name} {user.last_name}" if user.first_name else user.username,
-                "email": user.email,
+                "name": display_name,
+                "email": user.email or "",
                 "id": str(user.id),
-                "moderator": True if hasattr(user, 'therapist_profile') else False
+                "moderator": is_moderator,
             }
         }
     }

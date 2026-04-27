@@ -53,6 +53,7 @@ from therapy.models import (
     CommunityThread,
     CommunityComment,
     Referral,
+    PlatformFeedback,
 )
 
 # ... existing code ...
@@ -1327,3 +1328,15 @@ class ReferralSerializer(serializers.ModelSerializer):
             "created_at", "updated_at"
         ]
         read_only_fields = ["id", "referring_therapist", "status", "created_at", "updated_at"]
+
+class PlatformFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlatformFeedback
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            validated_data["user"] = request.user
+        return super().create(validated_data)

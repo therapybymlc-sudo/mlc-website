@@ -48,6 +48,7 @@ import SidebarContent from './SidebarContent';
 import NotificationCenter from '../../../components/NotificationCenter';
 import WelcomeOnboarding from '../../../components/WelcomeOnboarding';
 import { useAuth } from '../../../context/AuthContext';
+import FeedbackWidget from '../../../components/FeedbackWidget';
 
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
@@ -274,6 +275,8 @@ export default function DashboardLayout({ children }) {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+      {/* Floating Feedback Widget */}
+      <FeedbackWidget variant="floating" />
     </Flex>
   );
 }

@@ -15,7 +15,7 @@ import {
 import { FiShield, FiLock } from 'react-icons/fi';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 
-export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
+export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [api, setApi] = useState(null);
@@ -23,6 +23,17 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  React.useEffect(() => {
+    if (!api) return;
+    const name = (displayName && String(displayName).trim()) || '';
+    if (!name) return;
+    try {
+      api.executeCommand('displayName', name);
+    } catch (_) {
+      /* non-fatal */
+    }
+  }, [api, displayName]);
 
   // JaaS Naming Convention: AppID/RoomName
   const JAAS_APP_ID = "vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406";
@@ -44,6 +55,14 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
 
     // Custom clinical setup
     jitsiApi.executeCommand('subject', 'MLC Secure Clinical Session');
+    const name = (displayName && String(displayName).trim()) || '';
+    if (name) {
+      try {
+        jitsiApi.executeCommand('displayName', name);
+      } catch (_) {
+        /* non-fatal */
+      }
+    }
     
     // Add listeners with a small guard to prevent "Double Exit" on login redirects
     jitsiApi.addEventListener('videoConferenceLeft', () => {
@@ -116,7 +135,7 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt }) {
             RECENT_LIST_ENABLED: false,
           }}
           userInfo={{
-            displayName: 'MLC Participant'
+            displayName: (displayName && String(displayName).trim()) || 'MLC Participant',
           }}
           onApiReady={handleApiReady}
           getIFrameRef={(iframeRef) => {

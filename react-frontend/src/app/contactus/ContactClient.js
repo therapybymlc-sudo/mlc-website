@@ -20,6 +20,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { apiGet, apiPost } from "../../api.js";
 import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
+import FeedbackWidget from "../../components/FeedbackWidget.jsx";
 
 const defaultContactContent = {
   hero: {
@@ -288,6 +289,13 @@ export default function ContactClient() {
             sx={richTextStyles}
             dangerouslySetInnerHTML={{ __html: content.closing.body }}
           />
+        </Container>
+      </Box>
+
+      {/* 🔹 Improvement Suggestion Section */}
+      <Box py={20} bg="white">
+        <Container maxW="4xl">
+           <FeedbackWidget variant="inline" />
         </Container>
       </Box>
     </Box>

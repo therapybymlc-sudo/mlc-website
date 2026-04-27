@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Button, HStack, Text, VStack } from "@chakra-ui/react";
+import { useEffect, useMemo, useState } from "react";
+import { Button, HStack, Text, VStack, Box, RadioGroup, Radio } from "@chakra-ui/react";
 import { resourcesApi } from "../../../api/resources";
 import SchedulePageHeader from "../../../components/scheduling/SchedulePageHeader";
 import ScheduleSectionCard from "../../../components/scheduling/ScheduleSectionCard";
@@ -14,17 +14,66 @@ export default function ClientResources() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [forms, setForms] = useState([]);
+  const [submittingFormId, setSubmittingFormId] = useState(null);
+  const [responsesByForm, setResponsesByForm] = useState({});
 
   const loadAssignments = async () => {
     try {
       setLoading(true);
       setError("");
-      const data = await resourcesApi.listClientAssignments();
+      const [data, formData] = await Promise.all([
+        resourcesApi.listClientAssignments(),
+        resourcesApi.listFormAssignments().catch(() => []),
+      ]);
       setAssignments(Array.isArray(data) ? data : []);
+      setForms(Array.isArray(formData) ? formData : formData.results || []);
     } catch (err) {
       setError(getSchedulingErrorMessage(err, "Unable to load resources."));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const assessmentForms = useMemo(
+    () => forms.filter((f) => f.form_type === "assessment" && f.status !== "reviewed"),
+    [forms]
+  );
+
+  const updateResponse = (formId, itemIndex, value) => {
+    setResponsesByForm((prev) => {
+      const current = prev[formId] || {};
+      return {
+        ...prev,
+        [formId]: {
+          ...current,
+          [itemIndex]: Number(value),
+        },
+      };
+    });
+  };
+
+  const submitAssessment = async (form) => {
+    const schema = form.form_schema || {};
+    const items = schema.items || [];
+    const formResponses = responsesByForm[form.id] || {};
+    const responses = items.map((item) => ({
+      itemIndex: item.itemIndex,
+      value: formResponses[item.itemIndex],
+    }));
+    const hasIncomplete = responses.some((row) => row.value === undefined || row.value === null);
+    if (hasIncomplete) {
+      setError("Please complete every assessment item before submitting.");
+      return;
+    }
+    try {
+      setSubmittingFormId(form.id);
+      await resourcesApi.submitAssessmentResponse(form.id, { responses });
+      await loadAssignments();
+    } catch (err) {
+      setError(getSchedulingErrorMessage(err, "Unable to submit assessment."));
+    } finally {
+      setSubmittingFormId(null);
     }
   };
 
@@ -131,6 +180,68 @@ export default function ClientResources() {
                 </ScheduleActionBar>
               </VStack>
             ))}
+          </VStack>
+        )}
+      </ScheduleSectionCard>
+      <ScheduleSectionCard
+        title="Assigned assessments"
+        subtitle="Complete therapist-assigned forms. Reports are auto-scored and shared with your therapist."
+      >
+        {assessmentForms.length === 0 ? (
+          <ScheduleEmptyState
+            title="No assessments assigned"
+            description="Your therapist can assign assessments here."
+          />
+        ) : (
+          <VStack spacing={5} align="stretch">
+            {assessmentForms.map((form) => {
+              const schema = form.form_schema || {};
+              const items = schema.items || [];
+              const responseScale = schema.responseScale || [];
+              return (
+                <Box key={form.id} border="1px solid" borderColor="gray.200" borderRadius="xl" p={4}>
+                  <VStack align="start" spacing={4}>
+                    <HStack justify="space-between" w="100%">
+                      <Text fontWeight="700">{form.title}</Text>
+                      <ScheduleStatusBadge status={form.status} label={form.status_label} />
+                    </HStack>
+                    <Text fontSize="sm" color="gray.600">{form.instructions}</Text>
+                    {items.map((item) => (
+                      <Box key={item.itemIndex} w="100%">
+                        <Text fontSize="sm" fontWeight="600" mb={2}>
+                          {item.itemNumber}. {item.itemText}
+                        </Text>
+                        <RadioGroup
+                          onChange={(value) => updateResponse(form.id, item.itemIndex, value)}
+                          value={
+                            responsesByForm[form.id]?.[item.itemIndex] !== undefined
+                              ? String(responsesByForm[form.id]?.[item.itemIndex])
+                              : ""
+                          }
+                        >
+                          <HStack spacing={4} wrap="wrap">
+                            {responseScale.map((scale) => (
+                              <Radio key={`${form.id}-${item.itemIndex}-${scale.value}`} value={String(scale.value)}>
+                                {scale.label}
+                              </Radio>
+                            ))}
+                          </HStack>
+                        </RadioGroup>
+                      </Box>
+                    ))}
+                    <Button
+                      colorScheme="teal"
+                      size="sm"
+                      borderRadius="full"
+                      onClick={() => submitAssessment(form)}
+                      isLoading={submittingFormId === form.id}
+                    >
+                      Submit assessment
+                    </Button>
+                  </VStack>
+                </Box>
+              );
+            })}
           </VStack>
         )}
       </ScheduleSectionCard>
