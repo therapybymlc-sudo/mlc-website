@@ -73,7 +73,9 @@ export const AuthProvider = ({ children }) => {
         const metadataIsClient = metadataRoles.includes("client");
         const metadataIsAdmin = metadataRoles.includes("admin");
 
-        const shouldFetchTherapist = hasTherapistCanonical || hasAdminCanonical || metadataIsTherapist || metadataIsAdmin || wantsTherapistOnly;
+        // Avoid noisy 404s on client pages by preferring canonical role signals
+        // and current route intent over stale metadata.
+        const shouldFetchTherapist = hasTherapistCanonical || hasAdminCanonical || wantsTherapistOnly;
         const shouldFetchClient = !wantsTherapistOnly && (hasClientCanonical || metadataIsClient);
         const fetchTherapistProfile = async () => {
           if (!shouldFetchTherapist) return null;
