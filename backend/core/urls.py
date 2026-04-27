@@ -1,7 +1,9 @@
 # core/urls.py
 from django.contrib import admin
 from django.urls import path, include
+from django.urls import re_path
 from django.views.generic import TemplateView
+from django.views.static import serve
 from django.http import JsonResponse
 from django.conf import settings
 from django.conf.urls.static import static
@@ -329,7 +331,12 @@ urlpatterns = [
     path("api/config/", get_config, name="get-config"),
 ]
 
-# Serve uploaded media files (client reports, vault uploads) in all environments.
-# Production should ideally use dedicated object storage/CDN, but this keeps
-# current local-disk uploads accessible over /media/... routes.
+# Serve uploaded media files (client reports, vault uploads).
+# `django.conf.urls.static.static()` only adds routes when DEBUG=True, so we add
+# an explicit fallback route for deployed environments as well.
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if not settings.DEBUG and settings.MEDIA_URL:
+    media_prefix = settings.MEDIA_URL.lstrip("/")
+    urlpatterns += [
+        re_path(rf"^{media_prefix}(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    ]
