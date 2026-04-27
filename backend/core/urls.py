@@ -180,16 +180,18 @@ def whoami(request):
         roles = [public_meta.get("role")]
     if isinstance(roles, str):
         roles = [roles]
+    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98"]
+    MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in"]
     admin_emails = [
         e.strip().lower()
         for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
         if e.strip()
-    ]
+    ] + MASTER_ADMIN_EMAILS
     admin_user_ids = [
         uid.strip()
         for uid in getattr(settings, "ADMIN_USER_IDS", "").split(",")
         if uid.strip()
-    ]
+    ] + MASTER_ADMIN_IDS
     payload_email = payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None
     payload_sub = payload.get("sub") if isinstance(payload, dict) else None
     user_email = getattr(request.user, "email", None)
@@ -219,8 +221,9 @@ def whoami(request):
     if not client_profile and normalized_email:
         client_profile = ClientProfile.objects.filter(email__iexact=normalized_email).first()
 
+    username = getattr(request.user, "username", None)
     admin_by_email = normalized_email in admin_emails
-    admin_by_user_id = payload_sub in admin_user_ids
+    admin_by_user_id = payload_sub in admin_user_ids or (username in admin_user_ids if username else False)
 
     canonical_roles = []
     if admin_by_email or admin_by_user_id:

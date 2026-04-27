@@ -1151,6 +1151,29 @@ class ClientFormAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientFormAssignment
         fields = "__all__"
+        read_only_fields = [
+            "id",
+            "therapeutic_relationship",
+            "assigned_by",
+            "assigned_by_name",
+            "assigned_to_name",
+            "form_type_label",
+            "status_label",
+            "status",
+            "assigned_at",
+            "submitted_at",
+            "reviewed_at",
+            "created_at",
+            "updated_at",
+        ]
+        extra_kwargs = {
+            "title": {"required": False, "allow_blank": True},
+            "instructions": {"required": False, "allow_blank": True},
+            "form_schema": {"required": False},
+            "response_data": {"required": False},
+            "therapist_note": {"required": False, "allow_blank": True},
+            "due_date": {"required": False, "allow_null": True},
+        }
 
 
 class AdminReportSnapshotSerializer(serializers.ModelSerializer):
