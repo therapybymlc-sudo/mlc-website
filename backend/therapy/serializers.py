@@ -677,6 +677,7 @@ class NoteSerializer(serializers.ModelSerializer):
 # ----------------------------
 class ClientFileSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
 
     class Meta:
         model = ClientFile
@@ -694,6 +695,13 @@ class ClientFileSerializer(serializers.ModelSerializer):
         if request is not None:
             return request.build_absolute_uri(url)
         return url
+
+    def get_download_url(self, obj):
+        request = self.context.get("request")
+        path = f"/api/files/{obj.id}/download/"
+        if request is not None:
+            return request.build_absolute_uri(path)
+        return path
 
 
 class EventTypeSerializer(serializers.ModelSerializer):

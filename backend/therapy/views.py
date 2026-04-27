@@ -31,6 +31,7 @@ import urllib.request
 import urllib.error
 from decimal import Decimal
 from django.core.files.base import ContentFile
+from django.http import FileResponse, Http404
 
 from therapy.models import (
     ScheduleEvent,
@@ -2539,6 +2540,23 @@ class ClientFileViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
+
+    @action(detail=True, methods=["get"], url_path="download")
+    def download(self, request, pk=None):
+        client_file = self.get_object()
+        if not client_file.file:
+            raise Http404("File not found.")
+        try:
+            client_file.file.open("rb")
+        except FileNotFoundError:
+            raise Http404("File not found.")
+        filename = os.path.basename(client_file.file.name) or "client-file"
+        return FileResponse(
+            client_file.file,
+            as_attachment=False,
+            filename=filename,
+            content_type="application/pdf" if filename.lower().endswith(".pdf") else None,
+        )
 
 
 # ----------------------------
