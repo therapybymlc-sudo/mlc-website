@@ -95,8 +95,23 @@ export default function ClientsClient() {
   const resolveFileUrl = (filePath) => {
     if (!filePath) return "";
     if (/^https?:\/\//i.test(filePath)) return filePath;
-    const base = ((typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_BASE : null) || "").replace(/\/api\/?$/, "");
-    return base ? `${base}${filePath}` : filePath;
+    const apiBase = (
+      (typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+      "http://localhost:8000/api"
+    ).replace(/\/+$/, "");
+    const apiOrigin = apiBase.replace(/\/api\/?$/, "");
+
+    // Handle values returned as "/media/...", "client_files/...", or bare filename.
+    if (filePath.startsWith("/media/")) {
+      return `${apiOrigin}${filePath}`;
+    }
+    if (filePath.startsWith("client_files/")) {
+      return `${apiOrigin}/media/${filePath}`;
+    }
+    if (!filePath.startsWith("/")) {
+      return `${apiOrigin}/media/client_files/${filePath}`;
+    }
+    return `${apiOrigin}${filePath}`;
   };
 
   const fetchClients = async () => {
