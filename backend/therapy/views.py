@@ -284,6 +284,15 @@ def _resolve_therapist_from_request(request, allow_create=False):
     payload = getattr(request, "auth", {})
     payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
     auth_email = (getattr(user, "email", None) or payload_email or "").strip().lower() or None
+    roles = _extract_roles_from_auth(request)
+    is_admin = "admin" in roles
+
+    # Strict role separation: client identities cannot access therapist profile flows.
+    if not is_admin:
+        has_client_profile = ClientProfile.objects.filter(user=user).exists()
+        has_client_email_identity = bool(auth_email) and ClientProfile.objects.filter(email__iexact=auth_email).exists()
+        if has_client_profile or has_client_email_identity:
+            return None
 
     # Prefer explicit linkage (single canonical profile for this auth user)
     try:
@@ -348,8 +357,6 @@ def _resolve_therapist_from_request(request, allow_create=False):
             return therapist
 
     # Step 2: If fail by email, check roles for NEW profile creation
-    roles = _extract_roles_from_auth(request)
-    is_admin = "admin" in roles
     is_therapist = any(role in roles for role in ["therapist", "premium_therapist", "admin"])
 
     if not allow_create and not is_admin:
@@ -3249,6 +3256,15 @@ class OnboardUserRoleView(APIView):
 
         # Ensure the user doesn't already have the requested profile
         if role == "client":
+            # Strict role separation: once therapist identity exists, block client onboarding.
+            existing_therapist = TherapistProfile.objects.filter(user=user).exists()
+            email = (getattr(user, "email", None) or "").strip().lower()
+            therapist_by_email = bool(email) and TherapistProfile.objects.filter(email__iexact=email).exists()
+            if existing_therapist or therapist_by_email:
+                return Response(
+                    {"detail": "This account is already linked to a therapist identity and cannot onboard as client."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             if not getattr(user, "client_profile", None):
                 _resolve_client_from_request(request)
             synced, sync_error = self._sync_clerk_role(user, "client")
@@ -3258,6 +3274,15 @@ class OnboardUserRoleView(APIView):
             return Response(payload)
             
         elif role == "therapist":
+            # Strict role separation: once client identity exists, block therapist onboarding.
+            existing_client = ClientProfile.objects.filter(user=user).exists()
+            email = (getattr(user, "email", None) or "").strip().lower()
+            client_by_email = bool(email) and ClientProfile.objects.filter(email__iexact=email).exists()
+            if existing_client or client_by_email:
+                return Response(
+                    {"detail": "This account is already linked to a client identity and cannot onboard as therapist."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
             _resolve_therapist_from_request(request, allow_create=True)
             synced, sync_error = self._sync_clerk_role(user, "therapist")
             payload = {

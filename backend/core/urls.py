@@ -225,12 +225,16 @@ def whoami(request):
     admin_by_email = normalized_email in admin_emails
     admin_by_user_id = payload_sub in admin_user_ids or (username in admin_user_ids if username else False)
 
+    is_admin = admin_by_email or admin_by_user_id
     canonical_roles = []
-    if admin_by_email or admin_by_user_id:
+    if is_admin:
         canonical_roles.append("admin")
-    if therapist_profile:
+    # Strict role separation: non-admin identities are either therapist OR client.
+    if not is_admin and client_profile:
+        canonical_roles.append("client")
+    elif therapist_profile:
         canonical_roles.append("therapist")
-    if client_profile:
+    elif client_profile:
         canonical_roles.append("client")
 
     return Response({
