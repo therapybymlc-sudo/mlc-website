@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Badge, Box, Button, Heading, HStack, Spinner, Table, Tbody, Td, Text, Th, Thead, Tr, VStack } from "@chakra-ui/react";
 import { FiArrowLeft } from "react-icons/fi";
-import { resourcesApi } from "../../../../../../../../api/resources";
+import { resourcesApi } from "../../../../../../../api/resources";
 
 const SectionBlock = ({ title, children }) => (
   <Box bg="white" border="1px solid" borderColor="gray.100" borderRadius="2xl" p={6}>

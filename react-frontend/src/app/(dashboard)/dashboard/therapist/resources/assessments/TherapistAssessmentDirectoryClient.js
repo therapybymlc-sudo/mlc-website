@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Box, Button, Heading, HStack, SimpleGrid, Spinner, Text, VStack } from "@chakra-ui/react";
 import { FiArrowLeft, FiClipboard } from "react-icons/fi";
-import { resourcesApi } from "../../../../../../../api/resources";
+import { resourcesApi } from "../../../../../../api/resources";
 
 export default function TherapistAssessmentDirectoryClient() {
   const router = useRouter();
