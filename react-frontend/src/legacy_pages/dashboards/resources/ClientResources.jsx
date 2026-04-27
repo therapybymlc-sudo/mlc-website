@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, HStack, Text, VStack, Box, RadioGroup, Radio } from "@chakra-ui/react";
+import { 
+  Button, HStack, Text, VStack, Box, RadioGroup, Radio,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton, 
+  useDisclosure, Icon, Circle, Divider, Badge 
+} from "@chakra-ui/react";
 import { resourcesApi } from "../../../api/resources";
 import SchedulePageHeader from "../../../components/scheduling/SchedulePageHeader";
 import ScheduleSectionCard from "../../../components/scheduling/ScheduleSectionCard";
@@ -9,18 +13,6 @@ import ScheduleLoadingState from "../../../components/scheduling/ScheduleLoading
 import ScheduleErrorState from "../../../components/scheduling/ScheduleErrorState";
 import ScheduleActionBar from "../../../components/scheduling/ScheduleActionBar";
 import { getSchedulingErrorMessage } from "../../../utils/schedulingErrors";
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
-  Icon,
-  Circle,
-  Divider,
-} from "@chakra-ui/react";
 import { FiArrowRight, FiCheckCircle, FiFileText, FiClock } from "react-icons/fi";
 import AssessmentForm from "../../../components/assessments/AssessmentForm";
 
@@ -249,7 +241,9 @@ export default function ClientResources() {
                                Score: {scoring.totalScore} {scoring.severityLabel ? `(${scoring.severityLabel})` : ""}
                              </Badge>
                           )}
-                          <Text fontSize="xs" color="gray.400">Submitted {new Date(form.submitted_at).toLocaleDateString()}</Text>
+                          <Text fontSize="xs" color="gray.400" suppressHydrationWarning>
+                             Submitted {new Date(form.submitted_at).toLocaleDateString()}
+                          </Text>
                        </VStack>
                     ) : (
                       <Button
