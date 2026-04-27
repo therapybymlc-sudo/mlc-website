@@ -63,6 +63,7 @@ export default function DashboardLayout({ children }) {
   }, []);
 
   const isTherapistPendingVerification =
+    pathname?.startsWith('/dashboard/therapist') &&
     !!isTherapist &&
     !isAdmin &&
     therapistProfile &&
