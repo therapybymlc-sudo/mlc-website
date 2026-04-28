@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Box, Button, Heading, HStack, Spinner, Table, Tbody, Td, Text, Th, Thead, Tr, VStack } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, Spinner, Table, Tbody, Td, Text, Th, Thead, Tr, VStack, Wrap } from "@chakra-ui/react";
 import { FiArrowLeft } from "react-icons/fi";
 import { resourcesApi } from "../../../../../../../api/resources";
 
@@ -68,7 +68,7 @@ export default function TherapistAssessmentDetailClient() {
         <Button size="sm" variant="ghost" leftIcon={<FiArrowLeft />} onClick={() => router.push("/dashboard/therapist/resources/assessments")}>
           Back to directory
         </Button>
-        <HStack>
+        <HStack wrap="wrap">
           <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
             {assessment.name}
           </Heading>
@@ -92,7 +92,7 @@ export default function TherapistAssessmentDetailClient() {
         ) : null}
       </VStack>
 
-      <HStack spacing={2} wrap="wrap">
+      <Wrap spacing={2}>
         <Button as="a" href="#overview" size="xs" variant="ghost" colorScheme="purple" borderRadius="full">Overview</Button>
         <Button as="a" href="#mlc-use-context" size="xs" variant="ghost" colorScheme="purple" borderRadius="full">MLC Use Context</Button>
         <Button as="a" href="#administration-instructions" size="xs" variant="ghost" colorScheme="purple" borderRadius="full">Administration</Button>
@@ -102,7 +102,7 @@ export default function TherapistAssessmentDetailClient() {
         <Button as="a" href="#platform-disclaimer" size="xs" variant="ghost" colorScheme="purple" borderRadius="full">Disclaimer</Button>
         <Button as="a" href="#attribution" size="xs" variant="ghost" colorScheme="purple" borderRadius="full">Attribution</Button>
         <Button as="a" href="#references" size="xs" variant="ghost" colorScheme="purple" borderRadius="full">References</Button>
-      </HStack>
+      </Wrap>
 
       <SectionBlock id="overview" title="Overview">
         <Text fontSize="sm" color="gray.700" mb={3} whiteSpace="pre-wrap">
@@ -128,24 +128,26 @@ export default function TherapistAssessmentDetailClient() {
 
       <SectionBlock id="scoring-interpretation" title="Scoring & Interpretation">
         <Text fontSize="sm" color="gray.700" mb={3} whiteSpace="pre-wrap">{content?.scoringInterpretation || "No scoring interpretation text available."}</Text>
-        <Table size="sm" variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Range</Th>
-              <Th>Severity</Th>
-              <Th>Level</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {(assessment.severityBands || []).map((band) => (
-              <Tr key={`${band.min}-${band.max}`}>
-                <Td>{band.min}-{band.max}</Td>
-                <Td>{band.label}</Td>
-                <Td>{band.severityNumericLevel}</Td>
+        <Box overflowX="auto" w="100%">
+          <Table size="sm" variant="simple" minW="400px">
+            <Thead>
+              <Tr>
+                <Th>Range</Th>
+                <Th>Severity</Th>
+                <Th>Level</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+            <Tbody>
+              {(assessment.severityBands || []).map((band) => (
+                <Tr key={`${band.min}-${band.max}`}>
+                  <Td>{band.min}-{band.max}</Td>
+                  <Td>{band.label}</Td>
+                  <Td>{band.severityNumericLevel}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
       </SectionBlock>
 
       <SectionBlock id="limitations-ethics" title="Limitations & Ethics">
