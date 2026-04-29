@@ -52,13 +52,13 @@ function FinalizedNoteView({ template, values, client }) {
            </Box>
            <SimpleGrid columns={1} spacing={6} p={8}>
               {(section.fields || []).map(f => {
-                const val = values[f.field_key] || values[f.id];
-                if (val === undefined || val === null || val === "") return null;
+                const val = values[f.field_key] ?? values[String(f.id)] ?? values[f.id];
+                const display = Array.isArray(val) ? val.join(", ") : (val === undefined || val === null || val === "" ? "—" : String(val));
                 return (
                   <Box key={f.id || f.field_key} pb={4} borderBottom="1px solid" borderColor="gray.50" _last={{ borderBottom: "none" }}>
                      <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">{f.label}</Text>
                      <Text fontSize="md" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall">
-                        {Array.isArray(val) ? val.join(", ") : String(val)}
+                        {display}
                      </Text>
                   </Box>
                 );
@@ -173,6 +173,8 @@ export default function NoteEditorClient() {
   const [noteStatus, setNoteStatus] = useState("draft");
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [searchNotes, setSearchNotes] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
+  const HISTORY_PAGE_SIZE = 5;
 
   const appointmentId = searchParams.get("appointmentId");
   const eventTypeId = searchParams.get("eventTypeId");
@@ -224,6 +226,71 @@ export default function NoteEditorClient() {
   const selectedTemplate = useMemo(() => 
     templates.find(t => String(t.id) === String(selectedTemplateId)), 
   [templates, selectedTemplateId]);
+
+  const sortedPastNotes = useMemo(() => {
+    return [...pastNotes].sort((a, b) => {
+      const aTs = new Date(a.updated_at || a.created_at || 0).getTime();
+      const bTs = new Date(b.updated_at || b.created_at || 0).getTime();
+      return bTs - aTs;
+    });
+  }, [pastNotes]);
+
+  const filteredPastNotes = useMemo(() => {
+    const q = searchNotes.trim().toLowerCase();
+    if (!q) return sortedPastNotes;
+    return sortedPastNotes.filter((n) => {
+      const name = String(n.template_name || "").toLowerCase();
+      const status = String(n.status || "").toLowerCase();
+      const text = JSON.stringify(n.data || {}).toLowerCase();
+      return name.includes(q) || status.includes(q) || text.includes(q);
+    });
+  }, [sortedPastNotes, searchNotes]);
+
+  const totalHistoryPages = Math.max(1, Math.ceil(filteredPastNotes.length / HISTORY_PAGE_SIZE));
+  const pagedPastNotes = useMemo(() => {
+    const start = (historyPage - 1) * HISTORY_PAGE_SIZE;
+    return filteredPastNotes.slice(start, start + HISTORY_PAGE_SIZE);
+  }, [filteredPastNotes, historyPage]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [searchNotes, pastNotes.length]);
+
+  useEffect(() => {
+    if (historyPage > totalHistoryPages) setHistoryPage(totalHistoryPages);
+  }, [historyPage, totalHistoryPages]);
+
+  const renderHistoryData = (note) => {
+    const tpl = templates.find((t) => String(t.id) === String(note.template));
+    const noteValues = note.data || {};
+    const groupedSections = (tpl?.sections && tpl.sections.length > 0)
+      ? tpl.sections
+      : [{ title: "Clinical Record", fields: tpl?.fields || [] }];
+
+    return (
+      <VStack align="stretch" spacing={3}>
+        {groupedSections.map((section, idx) => (
+          <Box key={`${note.id}-sec-${idx}`} bg="gray.50" borderRadius="lg" p={3}>
+            <Text fontSize="2xs" color="gray.500" fontWeight="700" textTransform="uppercase" mb={2}>
+              {section.title || "Section"}
+            </Text>
+            <VStack align="stretch" spacing={2}>
+              {(section.fields || []).map((field) => {
+                const val = noteValues[field.field_key] ?? noteValues[String(field.id)] ?? noteValues[field.id];
+                const display = Array.isArray(val) ? val.join(", ") : (val === undefined || val === null || val === "" ? "—" : String(val));
+                return (
+                  <Box key={`${note.id}-${field.id || field.field_key}`}>
+                    <Text fontSize="2xs" color="teal.600" fontWeight="700">{field.label}</Text>
+                    <Text fontSize="xs" color="gray.700" whiteSpace="pre-wrap">{display}</Text>
+                  </Box>
+                );
+              })}
+            </VStack>
+          </Box>
+        ))}
+      </VStack>
+    );
+  };
 
   const handleSave = async (statusOverride) => {
     try {
@@ -387,17 +454,61 @@ export default function NoteEditorClient() {
                               <Icon as={FiSearch} color="gray.400" />
                               <Input variant="unstyled" fontSize="xs" placeholder="Filter history..." value={searchNotes} onChange={e => setSearchNotes(e.target.value)} />
                            </HStack>
-                           {pastNotes.length === 0 ? <Text fontSize="xs" color="gray.400" textAlign="center">No prior session records.</Text> : (
-                             pastNotes.map(n => (
+                           {filteredPastNotes.length === 0 ? <Text fontSize="xs" color="gray.400" textAlign="center">No prior session records.</Text> : (
+                             <>
+                               <VStack align="stretch" spacing={3} maxH="68vh" overflowY="auto" pr={1}>
+                               {pagedPastNotes.map(n => (
                                <Box key={n.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.100" _hover={{ bg: 'gray.50' }}>
                                   <HStack justify="space-between" mb={2}>
                                      <Text fontWeight="bold" fontSize="xs">{n.template_name}</Text>
                                      <Badge size="xs" colorScheme={n.status === 'final' ? 'green' : 'orange'}>{n.status}</Badge>
                                   </HStack>
-                                  <Text fontSize="2xs" color="gray.400" mb={3}>{new Date(n.created_at).toLocaleDateString()}</Text>
-                                  <Button size="xs" variant="outline" borderRadius="full" leftIcon={<FiCopy />} onClick={() => { setValues(n.data || {}); toast({ title: "Clinical Data Cloned", status: "info" }); }}>Copy to Current</Button>
+                                  <Text fontSize="2xs" color="gray.400" mb={3}>
+                                    {new Date(n.updated_at || n.created_at).toLocaleString()}
+                                  </Text>
+                                  {renderHistoryData(n)}
+                                  <HStack mt={3}>
+                                    <Button size="xs" variant="outline" borderRadius="full" leftIcon={<FiCopy />} onClick={() => { setValues(n.data || {}); toast({ title: "Clinical Data Cloned", status: "info" }); }}>
+                                      Copy to Current
+                                    </Button>
+                                    <Button
+                                      size="xs"
+                                      variant="ghost"
+                                      borderRadius="full"
+                                      onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${clientId}&noteId=${n.id}`)}
+                                    >
+                                      Open note
+                                    </Button>
+                                  </HStack>
                                </Box>
-                             ))
+                               ))}
+                               </VStack>
+                               <HStack justify="space-between" pt={1}>
+                                 <Text fontSize="2xs" color="gray.500">
+                                   Page {historyPage} of {totalHistoryPages}
+                                 </Text>
+                                 <HStack>
+                                   <Button
+                                     size="xs"
+                                     variant="outline"
+                                     borderRadius="full"
+                                     onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                                     isDisabled={historyPage <= 1}
+                                   >
+                                     Previous
+                                   </Button>
+                                   <Button
+                                     size="xs"
+                                     variant="outline"
+                                     borderRadius="full"
+                                     onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                                     isDisabled={historyPage >= totalHistoryPages}
+                                   >
+                                     Next
+                                   </Button>
+                                 </HStack>
+                               </HStack>
+                             </>
                            )}
                         </VStack>
                      </TabPanel>
