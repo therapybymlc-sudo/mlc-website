@@ -8,7 +8,7 @@ import {
   Center, Grid, GridItem
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
-import { FiArrowLeft, FiSave, FiCheckCircle, FiCopy, FiClock, FiSearch, FiUser, FiCalendar, FiAlertCircle, FiClipboard, FiDownload } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiCheckCircle, FiCopy, FiClock, FiSearch, FiUser, FiCalendar, FiAlertCircle, FiClipboard, FiDownload, FiPlus } from "react-icons/fi";
 import { apiGet, apiPost, apiPut } from "../../../../../../api.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportNoteToPDF } from "../../../../../../utils/ClinicalPDFService.js";
