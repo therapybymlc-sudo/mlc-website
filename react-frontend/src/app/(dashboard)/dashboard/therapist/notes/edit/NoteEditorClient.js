@@ -16,9 +16,81 @@ import { exportNoteToPDF } from "../../../../../../utils/ClinicalPDFService.js";
 /* =========================================
    Structured Field Renderer
 ========================================= */
+/* =========================================
+   Finalized Note Viewer (Non-Editable)
+========================================= */
+function FinalizedNoteView({ template, values, client }) {
+  const fieldsByRef = {};
+  if (template?.fields) {
+    template.fields.forEach(f => {
+      if (f.field_key) fieldsByRef[f.field_key] = f;
+      fieldsByRef[f.id] = f;
+    });
+  }
+  if (template?.sections) {
+    template.sections.forEach(s => {
+      if (s.fields) {
+        s.fields.forEach(f => {
+          if (f.field_key) fieldsByRef[f.field_key] = f;
+          if (f.id) fieldsByRef[f.id] = f;
+        });
+      }
+    });
+  }
+
+  // Group current values by section for rendering
+  const sections = (template?.sections && template.sections.length > 0) 
+    ? template.sections 
+    : [{ title: "Clinical Record", fields: template?.fields || [] }];
+
+  return (
+    <VStack align="stretch" spacing={8} pb={20}>
+      {sections.map((section, idx) => (
+        <Box key={idx} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
+           <Box bg="gray.50" px={8} py={4} borderBottom="1px solid" borderColor="gray.100">
+              <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest">{section.title || "Section"}</Heading>
+           </Box>
+           <SimpleGrid columns={1} spacing={6} p={8}>
+              {(section.fields || []).map(f => {
+                const val = values[f.field_key] || values[f.id];
+                if (val === undefined || val === null || val === "") return null;
+                return (
+                  <Box key={f.id || f.field_key} pb={4} borderBottom="1px solid" borderColor="gray.50" _last={{ borderBottom: "none" }}>
+                     <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">{f.label}</Text>
+                     <Text fontSize="md" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall">
+                        {Array.isArray(val) ? val.join(", ") : String(val)}
+                     </Text>
+                  </Box>
+                );
+              })}
+           </SimpleGrid>
+        </Box>
+      ))}
+      
+      {/* Fallback for orphaned data points (data in values but not in current template) */}
+      {Object.entries(values).some(([k]) => !fieldsByRef[k]) && (
+        <Box bg="orange.50" borderRadius="3xl" p={8} border="1px dashed" borderColor="orange.200">
+           <Heading size="xs" color="orange.700" mb={4}>LEGACY / UNMAPPED DATA POINTS</Heading>
+           <SimpleGrid columns={1} spacing={4}>
+              {Object.entries(values).map(([k, v]) => {
+                if (fieldsByRef[k]) return null;
+                return (
+                  <HStack key={k} justify="space-between" align="start">
+                     <Text fontSize="xs" fontWeight="bold" color="orange.400">{k.toUpperCase()}</Text>
+                     <Text fontSize="sm" color="orange.800">{Array.isArray(v) ? v.join(", ") : String(v)}</Text>
+                  </HStack>
+                );
+              })}
+           </SimpleGrid>
+        </Box>
+      )}
+    </VStack>
+  );
+}
+
 function FieldInput({ field, value, onChange, isReadOnly = false }) {
   const { field_type, options = {} } = field;
-  const set = (val) => onChange(field.id, val);
+  const set = (val) => onChange(field.field_key || field.id, val);
   const choices = Array.isArray(options.choices) ? options.choices : [];
 
   switch (field_type) {
@@ -238,24 +310,28 @@ export default function NoteEditorClient() {
                     </VStack>
                  </Center>
                ) : (
-                 (selectedTemplate.sections && selectedTemplate.sections.length > 0 
-                   ? selectedTemplate.sections 
-                   : [{ title: "General Assessment", fields: selectedTemplate.fields }]
-                 ).map((section, si) => (
-                   <Box key={si} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-                      <Box bg="teal.50" px={8} py={3} borderBottom="1px solid" borderColor="teal.50">
-                         <Heading size="xs" color="teal.700" letterSpacing="wider">{section.title || "Observation"}</Heading>
-                      </Box>
-                      <VStack p={8} align="stretch" spacing={6}>
-                         {(section.fields || []).map(f => (
-                           <FormControl key={f.id}>
-                              <FormLabel fontSize="sm" fontWeight="bold">{f.label}</FormLabel>
-                              <FieldInput field={f} value={values[f.id]} onChange={(fid, val) => setValues({...values, [fid]: val})} isReadOnly={isReadOnly} />
-                           </FormControl>
-                         ))}
-                      </VStack>
-                   </Box>
-                 ))
+                 isReadOnly ? (
+                   <FinalizedNoteView template={selectedTemplate} values={values} client={client} />
+                 ) : (
+                   (selectedTemplate.sections && selectedTemplate.sections.length > 0 
+                     ? selectedTemplate.sections 
+                     : [{ title: "General Assessment", fields: selectedTemplate.fields }]
+                   ).map((section, si) => (
+                     <Box key={si} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
+                        <Box bg="teal.50" px={8} py={3} borderBottom="1px solid" borderColor="teal.50">
+                           <Heading size="xs" color="teal.700" letterSpacing="wider">{section.title || "Observation"}</Heading>
+                        </Box>
+                        <VStack p={8} align="stretch" spacing={6}>
+                           {(section.fields || []).map(f => (
+                             <FormControl key={f.id}>
+                                <FormLabel fontSize="sm" fontWeight="bold">{f.label}</FormLabel>
+                                <FieldInput field={f} value={values[f.field_key] || values[f.id]} onChange={(fid, val) => setValues({...values, [fid]: val})} isReadOnly={isReadOnly} />
+                             </FormControl>
+                           ))}
+                        </VStack>
+                     </Box>
+                   ))
+                 )
                 )}
                 
                 {selectedTemplate && (

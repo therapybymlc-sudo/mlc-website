@@ -428,14 +428,14 @@ class NoteFieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = NoteField
         # expose full options to render checkboxes/select/likert in UI
-        fields = ["id", "label", "field_type", "is_required", "order", "options"]
+        fields = ["id", "label", "field_key", "field_type", "is_required", "order", "options"]
 
 
 class NoteFieldWriteSerializer(serializers.ModelSerializer):
     """Write serializer for creating/updating fields via NoteTemplateSerializer.new_fields."""
     class Meta:
         model = NoteField
-        fields = ["id", "label", "field_type", "is_required", "order", "options"]
+        fields = ["id", "label", "field_key", "field_type", "is_required", "order", "options"]
 
     def validate(self, attrs):
         label = (attrs.get("label") or "").strip()
@@ -512,6 +512,7 @@ class NoteTemplateSerializer(serializers.ModelSerializer):
             NoteField.objects.create(
                 template=template,
                 label=f.get("label", "").strip(),
+                field_key=f.get("field_key") or f.get("id") or str(order),
                 field_type=f.get("field_type", "text"),
                 is_required=bool(f.get("is_required", False)),
                 order=f.get("order", order),
@@ -546,6 +547,7 @@ class NoteTemplateSerializer(serializers.ModelSerializer):
             NoteField.objects.create(
                 template=instance,
                 label=f.get("label", "").strip(),
+                field_key=f.get("field_key") or f.get("id") or str(order),
                 field_type=f.get("field_type", "text"),
                 is_required=bool(f.get("is_required", False)),
                 order=f.get("order", order),

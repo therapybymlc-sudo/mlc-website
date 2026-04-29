@@ -458,10 +458,13 @@ export default function ClientsClient() {
 
   const RenderClinicalData = ({ note }) => {
     const template = noteTemplates.find(t => String(t.id) === String(note.template));
-    if (!template) return <Text fontSize="xs" color="gray.400">{JSON.stringify(note.data)}</Text>;
+    if (!template) return <Text fontSize="xs" color="gray.400">Legacy Data: {JSON.stringify(note.data)}</Text>;
 
-    const fieldsByLabel = {};
-    (template.fields || []).forEach(f => { fieldsByLabel[f.id] = f; });
+    const fieldsByRef = {};
+    (template.fields || []).forEach(f => { 
+      if (f.field_key) fieldsByRef[f.field_key] = f;
+      fieldsByRef[f.id] = f; 
+    });
 
     // Bundle by sections
     const sections = template.sections && template.sections.length > 0
@@ -472,31 +475,32 @@ export default function ClientsClient() {
       <VStack align="stretch" spacing={6} mt={4}>
          {sections.map((section, idx) => {
            const sectionFields = section.fields || [];
-           const fieldedData = sectionFields.filter(sf => note.data[sf.id]);
+           // Check if this section has ANY data
+           const hasData = sectionFields.some(sf => note.data[sf.field_key] || note.data[sf.id]);
 
-           if (fieldedData.length === 0) return null;
+           if (!hasData) return null;
 
            return (
-             <Box key={idx} bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.100">
-                <Text fontWeight="bold" fontSize="xs" color="teal.600" textTransform="uppercase" mb={3} letterSpacing="wider">{section.title || "Observation"}</Text>
-                <VStack align="stretch" spacing={3}>
+             <Box key={idx} bg="gray.50" p={5} borderRadius="2xl" border="1px solid" borderColor="teal.50">
+                <Text fontWeight="bold" fontSize="xs" color="teal.700" textTransform="uppercase" mb={4} letterSpacing="widest">{section.title || "Observation"}</Text>
+                <SimpleGrid columns={1} spacing={4}>
                    {sectionFields.map(field => {
-                      const val = note.data[field.id];
-                      if (!val) return null;
+                      const val = note.data[field.field_key] || note.data[field.id];
+                      if (val === undefined || val === null || val === "") return null;
                       return (
-                        <Box key={field.id}>
-                           <Text fontSize="xs" color="gray.500" fontWeight="bold">{field.label}</Text>
+                        <Box key={field.id || field.field_key} pb={2}>
+                           <Text fontSize="2xs" color="gray.400" fontWeight="bold" textTransform="uppercase">{field.label}</Text>
                            {Array.isArray(val) ? (
                               <HStack spacing={2} mt={1} wrap="wrap">
-                                 {val.map((v, i) => <Badge key={i} colorScheme="teal" variant="subtle" borderRadius="full" px={2} textTransform="none">{v}</Badge>)}
+                                 {val.map((v, i) => <Badge key={i} bg="white" color="teal.600" border="1px solid" borderColor="teal.100" borderRadius="full" px={2} textTransform="none" fontSize="xs">{v}</Badge>)}
                               </HStack>
                            ) : (
-                              <Text fontSize="sm" color="gray.800" whiteSpace="pre-wrap">{String(val)}</Text>
+                              <Text fontSize="sm" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall">{String(val)}</Text>
                            )}
                         </Box>
                       );
                    })}
-                </VStack>
+                </SimpleGrid>
              </Box>
            );
          })}
@@ -527,24 +531,53 @@ export default function ClientsClient() {
          </Center>
        ) : (
          clientNotes.map(note => (
-           <Box key={note.id} bg="white" p={6} borderRadius="2xl" border="1px solid" borderColor="gray.100" shadow="sm">
-              <HStack justify="space-between" mb={3}>
-                 <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold">{note.template_name || "Note"}</Text>
-                    <Text fontSize="xs" color="gray.400">{new Date(note.created_at).toLocaleString()}</Text>
+            <Box 
+              key={note.id} 
+              bg="white" 
+              p={8} 
+              borderRadius="3xl" 
+              border="1px solid" 
+              borderColor="gray.100" 
+              shadow="sm"
+              cursor="pointer"
+              _hover={{ shadow: 'md', borderColor: 'teal.100' }}
+              transition="0.2s"
+              onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}&noteId=${note.id}`)}
+            >
+              <HStack justify="space-between" mb={4}>
+                 <VStack align="start" spacing={1}>
+                    <HStack>
+                       <Icon as={FiFileText} color="teal.500" />
+                       <Text fontWeight="bold" fontSize="lg" color="gray.800">{note.template_name || "Clinical Note"}</Text>
+                    </HStack>
+                    <HStack fontSize="xs" color="gray.400" spacing={3}>
+                       <HStack><Icon as={FiClock} /> <Text>{new Date(note.created_at).toLocaleString()}</Text></HStack>
+                       <Text>•</Text>
+                       <Text>{note.status.toUpperCase()}</Text>
+                    </HStack>
                  </VStack>
-                 <HStack>
-                    <Button size="xs" variant="ghost" leftIcon={<FiDownload />} onClick={(e) => { 
-                      e.stopPropagation(); 
-                      const tpl = noteTemplates.find(t => String(t.id) === String(note.template));
-                      exportNoteToPDF(selectedClient, note, "MLC Professional", tpl); 
-                    }}>PDF</Button>
-                    <Badge borderRadius="full" px={3} colorScheme={note.status === 'final' ? 'green' : 'orange'} variant="subtle">{note.status.toUpperCase()}</Badge>
+                 <HStack spacing={3}>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      leftIcon={<FiDownload />} 
+                      borderRadius="full"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        const tpl = noteTemplates.find(t => String(t.id) === String(note.template));
+                        exportNoteToPDF(selectedClient, note, "MLC Professional", tpl); 
+                      }}
+                    >
+                      Export PDF
+                    </Button>
+                    <Badge borderRadius="full" px={4} py={1} colorScheme={note.status === 'final' ? 'green' : 'orange'} variant="subtle" fontSize="2xs">
+                       {note.status === 'final' ? 'FINALIZED' : 'DRAFT'}
+                    </Badge>
                  </HStack>
               </HStack>
-              <Divider />
+              <Divider mb={6} />
               <RenderClinicalData note={note} />
-           </Box>
+            </Box>
          ))
        )}
     </VStack>

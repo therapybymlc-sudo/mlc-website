@@ -1367,6 +1367,7 @@ class NoteField(models.Model):
         NoteTemplate, related_name="fields", on_delete=models.CASCADE
     )
     label = models.CharField(max_length=255)
+    field_key = models.CharField(max_length=100, blank=True, null=True, help_text="Stable identifier for this field")
     field_type = models.CharField(
         max_length=50,
         choices=[

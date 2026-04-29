@@ -58,15 +58,32 @@ export const exportNoteToPDF = async (client, note, therapistName, template) => 
   doc.text(`Clinician: ${therapistName || 'MLC Professional'}`, 20, 62);
   doc.text(`Session Model: ${template?.name || note?.template_name || 'Standard Note'}`, 20, 69);
 
-  // Content Table - Mapping IDs to Labels
-  const fieldsById = {};
-  if (template?.fields) template.fields.forEach(f => { fieldsById[f.id] = f.label; });
+  // Content Table - Mapping IDs/Keys to Labels
+  const fieldsByRef = {};
+  if (template?.fields) {
+    template.fields.forEach(f => { 
+      if (f.field_key) fieldsByRef[f.field_key] = f.label;
+      fieldsByRef[f.id] = f.label; 
+    });
+  }
+
+  // Also check sections if fields are missing (some older templates might have them nested)
+  if (template?.sections) {
+    template.sections.forEach(s => {
+      if (s.fields) {
+        s.fields.forEach(f => {
+           if (f.field_key) fieldsByRef[f.field_key] = f.label;
+           if (f.id) fieldsByRef[f.id] = f.label;
+        });
+      }
+    });
+  }
 
   const tableData = Object.entries(note.data || {}).map(([key, val]) => {
-    const label = fieldsById[key] || `Observation (${key})`;
+    const label = fieldsByRef[key] || `Question ID: ${key}`;
     return [
       label.toUpperCase(),
-      Array.isArray(val) ? val.join(', ') : String(val)
+      Array.isArray(val) ? val.join(', ') : (val === null || val === undefined ? '—' : String(val))
     ];
   });
 
@@ -76,6 +93,10 @@ export const exportNoteToPDF = async (client, note, therapistName, template) => 
     body: tableData,
     theme: 'striped',
     headStyles: { fillStyle: 'dark', fillColor: [86, 117, 109] },
+    columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 60 },
+      1: { cellWidth: 'auto' }
+    },
     margin: { left: 20, right: 20 },
     didDrawPage: (data) => {
       addWatermark(doc);
@@ -136,8 +157,23 @@ export const exportAllClientNotes = async (client, notes, therapistName, allTemp
     addGridWatermark(doc);
     
     const template = allTemplates.find(t => String(t.id) === String(note.template));
-    const fieldsById = {};
-    if (template?.fields) template.fields.forEach(f => { fieldsById[f.id] = f.label; });
+    const fieldsByRef = {};
+    if (template?.fields) {
+      template.fields.forEach(f => {
+        if (f.field_key) fieldsByRef[f.field_key] = f.label;
+        fieldsByRef[f.id] = f.label;
+      });
+    }
+    if (template?.sections) {
+      template.sections.forEach(s => {
+        if (s.fields) {
+          s.fields.forEach(f => {
+             if (f.field_key) fieldsByRef[f.field_key] = f.label;
+             if (f.id) fieldsByRef[f.id] = f.label;
+          });
+        }
+      });
+    }
 
     doc.setFontSize(18);
     doc.setTextColor(86, 117, 109);
@@ -146,10 +182,10 @@ export const exportAllClientNotes = async (client, notes, therapistName, allTemp
     doc.text(`Model: ${template?.name || note.template_name || 'Note'}`, 20, 32);
 
     const tableData = Object.entries(note.data || {}).map(([key, val]) => {
-        const label = fieldsById[key] || `Inquiry ${key}`;
+        const label = fieldsByRef[key] || `Inquiry ${key}`;
         return [
             label.toUpperCase(),
-            Array.isArray(val) ? val.join(', ') : String(val)
+            Array.isArray(val) ? val.join(', ') : (val === null || val === undefined ? '—' : String(val))
         ];
     });
 
@@ -159,6 +195,10 @@ export const exportAllClientNotes = async (client, notes, therapistName, allTemp
       body: tableData,
       theme: 'plain',
       headStyles: { fillColor: [245, 245, 245], textColor: [86, 117, 109] },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 60 },
+        1: { cellWidth: 'auto' }
+      },
       margin: { bottom: 30 },
       didDrawPage: (data) => {
          addDisclaimer(doc);

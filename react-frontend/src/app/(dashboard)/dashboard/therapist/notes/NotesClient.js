@@ -57,6 +57,7 @@ export default function NotesClient() {
   const addField = (atIndex = -1) => {
     const newField = {
       label: "New Question",
+      field_key: `f_${Math.random().toString(36).substr(2, 9)}`,
       field_type: "text",
       is_required: false,
       order: 0,
@@ -71,6 +72,7 @@ export default function NotesClient() {
   const addSection = (atIndex = -1) => {
     const newSection = {
       label: "New Section",
+      field_key: `s_${Math.random().toString(36).substr(2, 9)}`,
       field_type: "section",
       order: 0,
     };
