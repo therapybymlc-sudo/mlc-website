@@ -42,14 +42,16 @@ function FinalizedNoteView({ template, values, providerName, linkedAppointment }
   const sections = (template?.sections && template.sections.length > 0) 
     ? template.sections 
     : [{ title: "Clinical Record", fields: template?.fields || [] }];
+  const systemKeys = new Set(["provider_name", "appointment", "appointment_id", "session_id"]);
+  const unmappedEntries = Object.entries(values || {}).filter(([k]) => !fieldsByRef[k] && !systemKeys.has(String(k)));
 
   return (
-    <VStack align="stretch" spacing={8} pb={20}>
+    <VStack align="stretch" spacing={{ base: 4, md: 8 }} pb={{ base: 10, md: 20 }}>
       <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-         <Box bg="gray.50" px={8} py={4} borderBottom="1px solid" borderColor="gray.100">
+         <Box bg="gray.50" px={{ base: 4, md: 8 }} py={{ base: 3, md: 4 }} borderBottom="1px solid" borderColor="gray.100">
             <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest">Session Context</Heading>
          </Box>
-         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} p={8}>
+         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }} p={{ base: 4, md: 8 }}>
             <Box>
               <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Provider</Text>
               <Text fontSize="md" color="gray.800">{providerName || "—"}</Text>
@@ -67,17 +69,17 @@ function FinalizedNoteView({ template, values, providerName, linkedAppointment }
 
       {sections.map((section, idx) => (
         <Box key={idx} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-           <Box bg="gray.50" px={8} py={4} borderBottom="1px solid" borderColor="gray.100">
+           <Box bg="gray.50" px={{ base: 4, md: 8 }} py={{ base: 3, md: 4 }} borderBottom="1px solid" borderColor="gray.100">
               <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest">{section.title || "Section"}</Heading>
            </Box>
-           <SimpleGrid columns={1} spacing={6} p={8}>
+           <SimpleGrid columns={1} spacing={{ base: 4, md: 6 }} p={{ base: 4, md: 8 }}>
               {(section.fields || []).map(f => {
                 const val = values[f.field_key] ?? values[String(f.id)] ?? values[f.id];
                 const display = Array.isArray(val) ? val.join(", ") : (val === undefined || val === null || val === "" ? "—" : String(val));
                 return (
                   <Box key={f.id || f.field_key} pb={4} borderBottom="1px solid" borderColor="gray.50" _last={{ borderBottom: "none" }}>
                      <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">{f.label}</Text>
-                     <Text fontSize="md" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall">
+                     <Text fontSize="md" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall" wordBreak="break-word">
                         {display}
                      </Text>
                   </Box>
@@ -88,16 +90,17 @@ function FinalizedNoteView({ template, values, providerName, linkedAppointment }
       ))}
       
       {/* Fallback for orphaned data points (data in values but not in current template) */}
-      {Object.entries(values).some(([k]) => !fieldsByRef[k]) && (
-        <Box bg="orange.50" borderRadius="3xl" p={8} border="1px dashed" borderColor="orange.200">
+      {unmappedEntries.length > 0 && (
+        <Box bg="orange.50" borderRadius="3xl" p={{ base: 4, md: 8 }} border="1px dashed" borderColor="orange.200">
            <Heading size="xs" color="orange.700" mb={4}>LEGACY / UNMAPPED DATA POINTS</Heading>
            <SimpleGrid columns={1} spacing={4}>
-              {Object.entries(values).map(([k, v]) => {
-                if (fieldsByRef[k]) return null;
+              {unmappedEntries.map(([k, v]) => {
                 return (
-                  <HStack key={k} justify="space-between" align="start">
+                  <HStack key={k} justify="space-between" align="start" spacing={3}>
                      <Text fontSize="xs" fontWeight="bold" color="orange.400">{k.toUpperCase()}</Text>
-                     <Text fontSize="sm" color="orange.800">{Array.isArray(v) ? v.join(", ") : String(v)}</Text>
+                     <Text fontSize="sm" color="orange.800" textAlign="right" wordBreak="break-word">
+                       {Array.isArray(v) ? v.join(", ") : String(v)}
+                     </Text>
                   </HStack>
                 );
               })}
@@ -318,7 +321,7 @@ export default function NoteEditorClient() {
                 return (
                   <Box key={`${note.id}-${field.id || field.field_key}`}>
                     <Text fontSize="2xs" color="teal.600" fontWeight="700">{field.label}</Text>
-                    <Text fontSize="xs" color="gray.700" whiteSpace="pre-wrap">{display}</Text>
+                    <Text fontSize="xs" color="gray.700" whiteSpace="pre-wrap" wordBreak="break-word">{display}</Text>
                   </Box>
                 );
               })}
@@ -361,9 +364,9 @@ export default function NoteEditorClient() {
   if (!mounted || loading) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
 
   return (
-    <Box>
+    <Box maxW="100%" overflowX="hidden">
       {/* Top Cockpit Bar */}
-      <Flex direction={{ base: "column", md: "row" }} justify="space-between" align="center" mb={8} gap={4} bg="white" p={6} borderRadius="3xl" shadow="sm">
+      <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} mb={8} gap={4} bg="white" p={{ base: 4, md: 6 }} borderRadius="3xl" shadow="sm">
          <HStack spacing={4}>
             <IconButton icon={<FiArrowLeft />} onClick={() => router.back()} borderRadius="full" variant="ghost" />
             <VStack align="start" spacing={0}>
@@ -379,7 +382,7 @@ export default function NoteEditorClient() {
                </HStack>
             </VStack>
          </HStack>
-         <HStack spacing={3}>
+         <HStack spacing={3} justify={{ base: "flex-start", md: "flex-end" }} flexWrap="wrap">
                 <Button
                   leftIcon={<FiPlus />}
                   variant="ghost"
@@ -391,11 +394,11 @@ export default function NoteEditorClient() {
           </HStack>
       </Flex>
 
-      <Grid templateColumns={{ base: "1fr", xl: "1fr 380px" }} gap={8}>
+      <Grid templateColumns={{ base: "1fr", xl: "minmax(0,1fr) 360px" }} gap={{ base: 4, md: 8 }}>
          {/* LEFT: Structured Entry Workstation */}
-         <GridItem>
+         <GridItem minW={0}>
             <VStack align="stretch" spacing={6}>
-               <Box bg="blue.50" p={6} borderRadius="2xl" border="1px dashed" borderColor="blue.100">
+               <Box bg="blue.50" p={{ base: 4, md: 6 }} borderRadius="2xl" border="1px dashed" borderColor="blue.100">
                   <VStack align="stretch" spacing={4}>
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                       <FormControl>
@@ -452,14 +455,14 @@ export default function NoteEditorClient() {
                      : [{ title: "General Assessment", fields: selectedTemplate.fields }]
                    ).map((section, si) => (
                      <Box key={si} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-                        <Box bg="teal.50" px={8} py={3} borderBottom="1px solid" borderColor="teal.50">
+                        <Box bg="teal.50" px={{ base: 4, md: 8 }} py={3} borderBottom="1px solid" borderColor="teal.50">
                            <Heading size="xs" color="teal.700" letterSpacing="wider">{section.title || "Observation"}</Heading>
                         </Box>
-                        <VStack p={8} align="stretch" spacing={6}>
+                        <VStack p={{ base: 4, md: 8 }} align="stretch" spacing={6}>
                            {(section.fields || []).map(f => (
                              <FormControl key={f.id}>
                                 <FormLabel fontSize="sm" fontWeight="bold">{f.label}</FormLabel>
-                                <FieldInput field={f} value={values[f.field_key] || values[f.id]} onChange={(fid, val) => setValues({...values, [fid]: val})} isReadOnly={isReadOnly} />
+                               <FieldInput field={f} value={values[f.field_key] ?? values[f.id]} onChange={(fid, val) => setValues({...values, [fid]: val})} isReadOnly={isReadOnly} />
                              </FormControl>
                            ))}
                         </VStack>
@@ -471,11 +474,15 @@ export default function NoteEditorClient() {
                 {selectedTemplate && (
                   <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" mt={4}>
                     <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} spacing={6}>
-                       <VStack align="start" spacing={1}>
-                          <Text fontWeight="bold" fontSize="sm" color="gray.600">Session Status: {noteStatus.toUpperCase()}</Text>
-                          <Text fontSize="xs" color="gray.400">Ensure all clinical fields are accurate before finalization.</Text>
+                       <VStack align="start" spacing={1} minW={{ base: "100%", md: "260px" }}>
+                          <Text fontWeight="bold" fontSize="sm" color="gray.600" whiteSpace="normal" wordBreak="normal">
+                            Session Status: {noteStatus.toUpperCase()}
+                          </Text>
+                          <Text fontSize="xs" color="gray.400" whiteSpace="normal" wordBreak="break-word">
+                            Ensure all clinical fields are accurate before finalization.
+                          </Text>
                        </VStack>
-                       <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
+                       <Stack direction={{ base: "column", sm: "row" }} spacing={4} flexWrap="wrap">
                           <Button
                             leftIcon={<FiDownload />}
                             variant="outline"
@@ -525,8 +532,8 @@ export default function NoteEditorClient() {
           </GridItem>
 
          {/* RIGHT: Clinical Reference Sidebar */}
-         <GridItem>
-            <Box bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" position="sticky" top="20px">
+         <GridItem minW={0}>
+            <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" position={{ base: "relative", xl: "sticky" }} top="20px">
                <Tabs variant="soft-rounded" colorScheme="teal" size="sm">
                   <TabList mb={4} bg="gray.50" p={1} borderRadius="full">
                      <Tab flex="1">Clinical History</Tab>
@@ -541,14 +548,14 @@ export default function NoteEditorClient() {
                            </HStack>
                            {filteredPastNotes.length === 0 ? <Text fontSize="xs" color="gray.400" textAlign="center">No prior session records.</Text> : (
                              <>
-                               <VStack align="stretch" spacing={3} maxH="68vh" overflowY="auto" pr={1}>
+                              <VStack align="stretch" spacing={3} maxH={{ base: "none", xl: "68vh" }} overflowY={{ base: "visible", xl: "auto" }} pr={1}>
                                {pagedPastNotes.map(n => (
                                <Box key={n.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.100" _hover={{ bg: 'gray.50' }}>
                                   <HStack justify="space-between" mb={2}>
                                      <Text fontWeight="bold" fontSize="xs">{n.template_name}</Text>
                                      <Badge size="xs" colorScheme={n.status === 'final' ? 'green' : 'orange'}>{n.status}</Badge>
                                   </HStack>
-                                  <Text fontSize="2xs" color="gray.400" mb={3}>
+                                    <Text fontSize="2xs" color="gray.400" mb={3} wordBreak="break-word">
                                     {new Date(n.updated_at || n.created_at).toLocaleString()}
                                   </Text>
                                   {renderHistoryData(n)}
