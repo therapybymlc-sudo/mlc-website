@@ -606,21 +606,21 @@ export default function ClientsClient() {
            if (!hasData) return null;
 
            return (
-             <Box key={idx} bg="gray.50" p={5} borderRadius="2xl" border="1px solid" borderColor="teal.50">
-                <Text fontWeight="bold" fontSize="xs" color="teal.700" textTransform="uppercase" mb={4} letterSpacing="widest">{section.title || "Observation"}</Text>
+            <Box key={idx} bg="gray.50" p={{ base: 3, md: 5 }} borderRadius="2xl" border="1px solid" borderColor="teal.50" overflow="hidden">
+               <Text fontWeight="bold" fontSize="xs" color="teal.700" textTransform="uppercase" mb={4} letterSpacing="widest" whiteSpace="normal" wordBreak="break-word">{section.title || "Observation"}</Text>
                 <SimpleGrid columns={1} spacing={4}>
                    {sectionFields.map(field => {
                       const val = note.data[field.field_key] || note.data[field.id];
                       if (val === undefined || val === null || val === "") return null;
                       return (
-                        <Box key={field.id || field.field_key} pb={2}>
-                           <Text fontSize="2xs" color="gray.400" fontWeight="bold" textTransform="uppercase">{field.label}</Text>
+                        <Box key={field.id || field.field_key} pb={2} minW={0}>
+                           <Text fontSize="2xs" color="gray.400" fontWeight="bold" textTransform="uppercase" whiteSpace="normal" wordBreak="break-word">{field.label}</Text>
                            {Array.isArray(val) ? (
-                              <HStack spacing={2} mt={1} wrap="wrap">
+                              <HStack spacing={2} mt={1} flexWrap="wrap">
                                  {val.map((v, i) => <Badge key={i} bg="white" color="teal.600" border="1px solid" borderColor="teal.100" borderRadius="full" px={2} textTransform="none" fontSize="xs">{v}</Badge>)}
                               </HStack>
                            ) : (
-                              <Text fontSize="sm" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall">{String(val)}</Text>
+                              <Text fontSize="sm" color="gray.800" whiteSpace="pre-wrap" wordBreak="break-word" overflowWrap="anywhere" lineHeight="tall">{String(val)}</Text>
                            )}
                         </Box>
                       );
@@ -798,14 +798,15 @@ export default function ClientsClient() {
 
   const renderFormsSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
-      <HStack justify="space-between" mb={3} wrap="wrap" gap={3}>
+      <HStack justify="space-between" mb={3} flexWrap="wrap" gap={3}>
         <Heading size="md">Assigned Client Forms</Heading>
-        <HStack>
+        <HStack flexWrap="wrap" w={{ base: "full", md: "auto" }}>
           <Button
             size="sm"
             colorScheme="teal"
             variant="outline"
             borderRadius="full"
+            w={{ base: "full", sm: "auto" }}
             onClick={() => assignClientForm("consent")}
             isLoading={assigningFormType === "consent"}
           >
@@ -815,6 +816,7 @@ export default function ClientsClient() {
             size="sm"
             colorScheme="teal"
             borderRadius="full"
+            w={{ base: "full", sm: "auto" }}
             onClick={() => assignClientForm("assessment")}
             isLoading={assigningFormType === "assessment"}
           >
@@ -855,15 +857,15 @@ export default function ClientsClient() {
         <Text color="gray.500">No forms assigned yet.</Text>
       ) : (
         <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" overflowX="auto">
-          <Table variant="simple" size="sm">
+          <Table variant="simple" size="sm" minW="760px">
             <Thead>
               <Tr>
-                <Th>Form</Th>
-                <Th>Status</Th>
-                <Th>Assigned</Th>
-                <Th>Due</Th>
-                <Th>Submitted</Th>
-                <Th>Report</Th>
+                <Th whiteSpace="nowrap">Form</Th>
+                <Th whiteSpace="nowrap">Status</Th>
+                <Th whiteSpace="nowrap">Assigned</Th>
+                <Th whiteSpace="nowrap">Due</Th>
+                <Th whiteSpace="nowrap">Submitted</Th>
+                <Th whiteSpace="nowrap">Report</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -874,7 +876,7 @@ export default function ClientsClient() {
                 <Tr key={form.id}>
                   <Td>
                     <VStack align="start" spacing={0}>
-                      <Text fontWeight="700">{form.title}</Text>
+                      <Text fontWeight="700" whiteSpace="normal" wordBreak="break-word">{form.title}</Text>
                       <Text fontSize="xs" color="gray.500">{form.form_type_label || form.form_type}</Text>
                     </VStack>
                   </Td>

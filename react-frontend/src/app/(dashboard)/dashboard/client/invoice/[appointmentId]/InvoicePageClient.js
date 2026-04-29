@@ -34,7 +34,13 @@ export default function InvoicePageClient() {
       if (!appointmentId) return;
       try {
         setLoading(true);
-        const appt = await apiGet(`client-appointments/${appointmentId}/`);
+        let appt = null;
+        try {
+          appt = await apiGet(`client-appointments/${appointmentId}/`);
+        } catch (_clientScopeError) {
+          // Therapist-side invoice view can access the generic appointments endpoint.
+          appt = await apiGet(`appointments/${appointmentId}/`);
+        }
         setAppointment(appt);
         if (appt?.therapist) {
           const t = await apiGet(`therapists/${appt.therapist}/`);
@@ -51,7 +57,8 @@ export default function InvoicePageClient() {
 
   const issueDate = useMemo(() => new Date(), []);
   const amount = Number(therapist?.hourly_rate || 0);
-  const invoiceNo = `MLC-INV-${appointmentId?.substring(0, 8) || appointmentId}`;
+  const safeAppointmentId = String(appointmentId || "");
+  const invoiceNo = `MLC-INV-${safeAppointmentId.slice(0, 8) || safeAppointmentId}`;
 
   const logoUrl = "https://raw.githubusercontent.com/therapybymlc-sudo/mlc-website/main/public/images/mlc_logo_main.png"; // Placeholder or direct URL if available, but since I have the image in prompt, I'll use a local path if it exists, or just use the provided description.
   // Actually, I'll use the absolute path to the logo if I can find it in the repo, or just use a placeholder for now and the user can confirm.

@@ -308,12 +308,7 @@ export default function ScheduleClient() {
   const SessionSummaryView = () => {
     const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
     const typeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
-    
-    // Defensive date string for hydration stability
-    const [displayDate, setDisplayDate] = useState("");
-    useEffect(() => {
-        if (form.start_time) setDisplayDate(new Date(form.start_time).toLocaleString());
-    }, [form.start_time]);
+    const displayDate = form.start_time ? new Date(form.start_time).toLocaleString() : "";
 
     return (
         <VStack spacing={0} align="stretch" bg="white" borderRadius="3xl" overflow="hidden">
