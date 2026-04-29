@@ -3,13 +3,15 @@ from __future__ import annotations
 from io import BytesIO
 from typing import Any
 from xml.sax.saxutils import escape
+import urllib.request
+import urllib.error
 
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, Image
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.lineplots import LinePlot
 from reportlab.graphics.charts.axes import XValueAxis, YValueAxis
@@ -20,7 +22,7 @@ DEFAULT_OUTPUT = {
     "totalScore": 0,
     "severityLabel": "",
     "severityNumericLevel": 0,
-    "subscaleScores": {},
+    "subscaleScores": None,
     "riskFlags": [],
     "changeScore": None,
     "clinicallySignificantChange": None,
@@ -31,16 +33,16 @@ DEFAULT_OUTPUT = {
 ASSESSMENT_REGISTRY: dict[str, dict[str, Any]] = {
     "phq_9": {
         "id": "phq_9",
-        "name": "Patient Health Questionnaire–9",
+        "name": "Patient Health Questionnaire-9",
         "abbreviation": "PHQ-9",
-        "domain": ["depressive_symptoms", "screening", "progress_monitoring"],
+        "domain": "Depression",
         "ageRange": "13+",
-        "completionTime": "approximately 2 minutes",
-        "administration": "therapist_assigned_self_report",
+        "completionTime": "2 minutes",
+        "administration": "Self-report, therapist-assigned",
         "clientVisibility": "client_completes_only",
         "therapistVisibility": "full_results",
         "itemCount": 9,
-        "scoringType": "sum",
+        "scoringType": "Summed ordinal scale (0–3 per item)",
         "content": {
             "overviewGeneral": (
                 "The Patient Health Questionnaire–9 (PHQ-9) is a 9-item self-report screening and "
@@ -129,17 +131,14 @@ ASSESSMENT_REGISTRY: dict[str, dict[str, Any]] = {
             {"min": 15, "max": 19, "label": "Moderately severe depressive symptoms", "severityNumericLevel": 3},
             {"min": 20, "max": 27, "label": "Severe depressive symptoms", "severityNumericLevel": 4},
         ],
-        "subscaleScores": {},
+        "subscaleScores": None,
         "riskFlags": [
             {
                 "id": "item9_self_harm",
-                "label": "Item 9 endorsed: thoughts of death or self-harm",
-                "urgency": "critical",
+                "label": "Self-harm / death thoughts endorsed",
+                "urgency": "high",
                 "trigger": {"itemIndex": 8, "operator": ">", "value": 0},
-                "action": (
-                    "Trigger visible system alert, highlight in therapist-facing report, "
-                    "require therapist follow-up, and prevent silent storage."
-                ),
+                "action": "Trigger alert, highlight in report, require therapist review",
             }
         ],
         "outputs": [
@@ -152,12 +151,9 @@ ASSESSMENT_REGISTRY: dict[str, dict[str, Any]] = {
             "clinicallySignificantChange",
             "requiresImmediateReview",
         ],
-        "version": "1.0.0",
-        "scoringVersion": "1.0.0",
-        "attribution": (
-            "Patient Health Questionnaire–9 (PHQ-9), developed by Kroenke, Spitzer, and Williams, 2001. "
-            "MLC does not claim ownership of this instrument."
-        ),
+        "version": "1.0",
+        "scoringVersion": "1.0",
+        "attribution": "Kroenke, Spitzer, Williams (2001)",
         "disclaimer": "screening only — clinical interpretation required",
     }
 }
@@ -206,13 +202,14 @@ def validate_assessment_responses(spec: dict[str, Any], responses: Any) -> tuple
 
 def score_assessment(spec: dict[str, Any], responses: list[dict[str, Any]], previous_score: int | None = None) -> dict[str, Any]:
     output = dict(DEFAULT_OUTPUT)
+    output["subscaleScores"] = spec.get("subscaleScores")
     total = sum(int(r.get("value", 0)) for r in responses)
     output["totalScore"] = total
 
     for band in spec.get("severityBands", []):
         if band.get("min", 0) <= total <= band.get("max", 0):
             output["severityLabel"] = band.get("label", "")
-            output["severityNumericLevel"] = band.get("severityNumericLevel", 0)
+            output["severityNumericLevel"] = band.get("severityNumericLevel", band.get("level", 0))
             break
 
     risk_flags = detect_risk_flags(spec, responses)
@@ -271,17 +268,75 @@ def _table(data: list[list[Any]], col_widths=None):
     tbl.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#305E57")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#56756D")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f7faf9")]),
+                ("FONTSIZE", (0, 0), (-1, 0), 8.5),
+                ("FONTSIZE", (0, 1), (-1, -1), 8),
+                ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#D7DEDB")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAF9")]),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ]
         )
     )
     return tbl
+
+
+def _section_title(text: str, styles):
+    return Paragraph(f"<font color='#2F3E3A'><b>{escape(str(text))}</b></font>", styles["Heading3"])
+
+
+def _load_mlc_logo() -> BytesIO | None:
+    # Prefer live brand logo used by website; fail gracefully if unavailable.
+    logo_urls = [
+        "https://www.mlchealth.in/logo_tra.png",
+        "https://mlchealth.in/logo_tra.png",
+        "https://www.mlchealth.in/logo.png",
+    ]
+    for url in logo_urls:
+        try:
+            with urllib.request.urlopen(url, timeout=5) as resp:
+                payload = resp.read()
+                if payload:
+                    return BytesIO(payload)
+        except (urllib.error.URLError, TimeoutError, ValueError):
+            continue
+    return None
+
+
+def _brand_header(styles):
+    logo_io = _load_mlc_logo()
+    logo_cell: Any = ""
+    if logo_io is not None:
+        try:
+            logo = Image(logo_io, width=2.6 * cm, height=2.6 * cm)
+            logo.hAlign = "LEFT"
+            logo_cell = logo
+        except Exception:
+            logo_cell = ""
+
+    heading_html = (
+        "<font color='#56756D'><b>MLC Health &amp; Wellness Centre</b></font><br/>"
+        "<font size='12'><b>Assessment Report</b></font><br/>"
+        "<font size='9' color='#4A5568'>Clinical Outcome Summary</font>"
+    )
+    heading = Paragraph(heading_html, styles["Normal"])
+    t = Table([[logo_cell, heading]], colWidths=[3 * cm, 13.5 * cm])
+    t.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+    return t
 
 
 def _build_score_history_points(assignment, spec: dict[str, Any], scoring_output: dict[str, Any]) -> list[tuple[int, int]]:
@@ -414,13 +469,19 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
     score_points = _build_score_history_points(assignment, spec, scoring_output)
 
     story = [
-        _p("MLC Assessment Report", styles["Title"]),
-        Spacer(1, 0.3 * cm),
+        _brand_header(styles),
+        Spacer(1, 0.2 * cm),
+        Table(
+            [[""]],
+            colWidths=[16.5 * cm],
+            style=TableStyle([("LINEBELOW", (0, 0), (-1, -1), 1.2, colors.HexColor("#C9A960"))]),
+        ),
+        Spacer(1, 0.25 * cm),
         _p(spec.get("name", "Assessment"), styles["Heading2"]),
         _p(f"Assigned: {timezone.localtime(assignment.assigned_at).strftime('%Y-%m-%d %H:%M')}", styles["Normal"]),
         _p(f"Completed: {timezone.localtime(assignment.submitted_at).strftime('%Y-%m-%d %H:%M') if assignment.submitted_at else 'N/A'}", styles["Normal"]),
         Spacer(1, 0.25 * cm),
-        _p("Metadata", styles["Heading3"]),
+        _section_title("Metadata", styles),
     ]
 
     meta_rows = [
@@ -428,7 +489,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         ["Assessment", spec.get("name", "")],
         ["Abbreviation", spec.get("abbreviation", "")],
         ["Assessment ID", spec.get("id", "")],
-        ["Domain", ", ".join(spec.get("domain", []) or [])],
+        ["Domain", ", ".join(spec.get("domain", [])) if isinstance(spec.get("domain"), list) else str(spec.get("domain", ""))],
         ["Age range", spec.get("ageRange", "")],
         ["Completion time", spec.get("completionTime", "")],
         ["Scoring type", (spec.get("scoring") or {}).get("type", "")],
@@ -438,7 +499,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
     story.append(_table(meta_rows, col_widths=[5.2 * cm, 11.3 * cm]))
     story.extend([
         Spacer(1, 0.3 * cm),
-        _p("Score Summary", styles["Heading3"]),
+        _section_title("Score Summary", styles),
     ])
 
     summary_rows = [
@@ -454,7 +515,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
 
     risk_flags = scoring_output.get("riskFlags") or []
     if risk_flags:
-        story.append(_p("Risk Flags", styles["Heading3"]))
+        story.append(_section_title("Risk Flags", styles))
         risk_rows = [["Flag", "Details"]]
         for flag in risk_flags:
             risk_rows.append(
@@ -470,7 +531,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         story.append(_table(risk_rows, col_widths=[7 * cm, 9.5 * cm]))
         story.append(Spacer(1, 0.3 * cm))
 
-    story.append(_p("Interpretation", styles["Heading3"]))
+    story.append(_section_title("Interpretation", styles))
     story.append(_p(f"{scoring_output.get('severityLabel', 'Unknown')} range.", styles["Normal"]))
     story.append(_p(interpretation.get("therapistInterpretation", ""), styles["Normal"]))
     story.append(_p(f"Follow-up: {interpretation.get('followUp', '')}", styles["Normal"]))
@@ -482,7 +543,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
     story.append(_p(f"Disclaimer: {spec.get('disclaimer', '')}", styles["Normal"]))
     story.append(Spacer(1, 0.25 * cm))
 
-    story.append(_p("Change / Progress", styles["Heading3"]))
+    story.append(_section_title("Change / Progress", styles))
     change_rows = [
         ["Field", "Value"],
         ["Previous score", "N/A" if change_score is None else str(total_score - int(change_score))],
@@ -497,11 +558,12 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
     story.append(_table(change_rows, col_widths=[7 * cm, 9.5 * cm]))
     story.append(Spacer(1, 0.25 * cm))
 
-    story.append(_p("Score Trend Graph", styles["Heading3"]))
+    story.append(_section_title("Score Trend Graph", styles))
+    story.append(_p("PHQ-9 total score trajectory across completed assignments.", styles["Normal"]))
     story.append(_score_trend_chart(score_points))
     story.append(Spacer(1, 0.25 * cm))
 
-    story.append(_p("Report Metadata", styles["Heading3"]))
+    story.append(_section_title("Report Metadata", styles))
     report_meta_rows = [
         ["Field", "Value"],
         ["Assessment instance", str(getattr(assignment, "id", ""))],
@@ -516,7 +578,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
     story.append(Spacer(1, 0.35 * cm))
 
     # Required by product: response sheet always appended at end.
-    story.append(_p("Client Response Sheet", styles["Heading2"]))
+    story.append(_section_title("Client Response Sheet", styles))
     item_by_index = {item.get("itemIndex"): item for item in spec.get("items", [])}
     label_map = {row.get("value"): row.get("label") for row in spec.get("responseScale", [])}
     response_rows = [["Item", "Question", "Response"]]
