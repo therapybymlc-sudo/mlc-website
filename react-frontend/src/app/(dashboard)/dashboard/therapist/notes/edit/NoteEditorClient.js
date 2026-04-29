@@ -19,7 +19,7 @@ import { exportNoteToPDF } from "../../../../../../utils/ClinicalPDFService.js";
 /* =========================================
    Finalized Note Viewer (Non-Editable)
 ========================================= */
-function FinalizedNoteView({ template, values, providerName, linkedAppointment }) {
+function FinalizedNoteView({ template, values, providerName, linkedAppointment, embedded = false }) {
   const fieldsByRef = {};
   if (template?.fields) {
     template.fields.forEach(f => {
@@ -45,10 +45,8 @@ function FinalizedNoteView({ template, values, providerName, linkedAppointment }
   const systemKeys = new Set(["provider_name", "appointment", "appointment_id", "session_id"]);
   const unmappedEntries = Object.entries(values || {}).filter(([k]) => !fieldsByRef[k] && !systemKeys.has(String(k)));
 
-  return (
-    <VStack align="stretch" spacing={{ base: 4, md: 8 }} pb={{ base: 10, md: 20 }}>
-      <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" p={{ base: 4, md: 8 }}>
-        <VStack align="stretch" spacing={{ base: 5, md: 6 }}>
+  const content = (
+    <VStack align="stretch" spacing={{ base: 5, md: 6 }}>
           <Box>
             <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest" mb={3}>Session Context</Heading>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 3, md: 4 }}>
@@ -89,7 +87,17 @@ function FinalizedNoteView({ template, values, providerName, linkedAppointment }
             </Box>
           ))}
         </VStack>
-      </Box>
+  );
+
+  return (
+    <VStack align="stretch" spacing={{ base: 4, md: 8 }}>
+      {embedded ? (
+        content
+      ) : (
+        <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" p={{ base: 4, md: 8 }}>
+          {content}
+        </Box>
+      )}
       
       {/* Fallback for orphaned data points (data in values but not in current template) */}
       {unmappedEntries.length > 0 && (
@@ -363,6 +371,17 @@ export default function NoteEditorClient() {
     appointments.find(a => String(a.id) === String(selectedAppointmentId)),
   [appointments, selectedAppointmentId]);
 
+  const handleAddMedicalAlert = () => {
+    const existingAlert = String(values.medical_alert || "").trim();
+    if (existingAlert) {
+      toast({ title: "Medical alert already present", status: "info" });
+      return;
+    }
+    const seedAlert = `Critical considerations: ${client?.emergency_contact ? `Emergency contact - ${client.emergency_contact}` : "None documented."}`;
+    setValues((prev) => ({ ...prev, medical_alert: seedAlert }));
+    toast({ title: "Medical alert added to note", status: "success" });
+  };
+
   if (!mounted || loading) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
 
   return (
@@ -434,7 +453,34 @@ export default function NoteEditorClient() {
                   </VStack>
                </Box>
 
-               <Button variant="link" color="red.400" size="xs" leftIcon={<FiAlertCircle />} alignSelf="start" mb={2}>+ ADD MEDICAL ALERT</Button>
+               <Button
+                 variant="link"
+                 color="red.400"
+                 size="xs"
+                 leftIcon={<FiAlertCircle />}
+                 alignSelf="start"
+                 mb={2}
+                 onClick={handleAddMedicalAlert}
+                 isDisabled={isReadOnly}
+               >
+                 + ADD MEDICAL ALERT
+               </Button>
+
+               {values.medical_alert && (
+                 <Box bg="red.50" border="1px solid" borderColor="red.100" borderRadius="2xl" p={4}>
+                   <FormControl>
+                     <FormLabel fontSize="xs" fontWeight="bold" color="red.600">MEDICAL ALERT</FormLabel>
+                     <Textarea
+                       value={values.medical_alert}
+                       onChange={(e) => setValues({ ...values, medical_alert: e.target.value })}
+                       isReadOnly={isReadOnly}
+                       bg="white"
+                       borderRadius="xl"
+                       minH="80px"
+                     />
+                   </FormControl>
+                 </Box>
+               )}
 
                {!selectedTemplate ? (
                  <Center py={20} bg="white" borderRadius="3xl" border="1px solid" borderColor="gray.100">
@@ -445,12 +491,52 @@ export default function NoteEditorClient() {
                  </Center>
                ) : (
                  isReadOnly ? (
-                  <FinalizedNoteView
-                    template={selectedTemplate}
-                    values={values}
-                    providerName={providerName || values.provider_name}
-                    linkedAppointment={linkedAppointment}
-                  />
+                  <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" p={{ base: 4, md: 8 }}>
+                    <FinalizedNoteView
+                      template={selectedTemplate}
+                      values={values}
+                      providerName={providerName || values.provider_name}
+                      linkedAppointment={linkedAppointment}
+                      embedded
+                    />
+                    <Divider my={6} />
+                    <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} spacing={6}>
+                      <VStack align="start" spacing={1} minW={{ base: "100%", md: "260px" }}>
+                        <Text fontWeight="bold" fontSize="sm" color="gray.600" whiteSpace="normal" wordBreak="normal">
+                          Session Status: {noteStatus.toUpperCase()}
+                        </Text>
+                        <Text fontSize="xs" color="gray.400" whiteSpace="normal" wordBreak="break-word">
+                          Ensure all clinical fields are accurate before finalization.
+                        </Text>
+                      </VStack>
+                      <Stack direction={{ base: "column", sm: "row" }} spacing={4} flexWrap="wrap">
+                        <Button
+                          leftIcon={<FiDownload />}
+                          variant="outline"
+                          borderColor="teal.200"
+                          color="teal.600"
+                          borderRadius="full"
+                          onClick={() =>
+                            exportNoteToPDF(
+                              client,
+                              { data: values, template: selectedTemplateId, template_name: selectedTemplate?.name },
+                              "MLC Professional",
+                              selectedTemplate
+                            )
+                          }
+                          isDisabled={!selectedTemplateId}
+                        >
+                          Export PDF
+                        </Button>
+                        <Button leftIcon={<FiSave />} variant="ghost" color="gray.500" isDisabled _hover={{ bg: 'gray.50' }}>
+                          Save Draft
+                        </Button>
+                        <Button leftIcon={<FiCheckCircle />} bg="#2C8B9A" color="white" px={10} borderRadius="full" isDisabled shadow="lg">
+                          Record Finalized
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Box>
                  ) : (
                    (selectedTemplate.sections && selectedTemplate.sections.length > 0 
                      ? selectedTemplate.sections 
@@ -473,7 +559,7 @@ export default function NoteEditorClient() {
                  )
                 )}
                 
-                {selectedTemplate && (
+                {selectedTemplate && !isReadOnly && (
                   <Box bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" mt={4}>
                     <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "stretch", md: "center" }} spacing={6}>
                        <VStack align="start" spacing={1} minW={{ base: "100%", md: "260px" }}>

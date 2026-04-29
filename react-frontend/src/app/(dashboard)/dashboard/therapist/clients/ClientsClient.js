@@ -1,11 +1,11 @@
 'use client'
 
 import {
-  Box, Heading, Text, Input, Button, VStack, HStack, Table, Thead, Tbody, Tr, Th, Td, useToast, Spinner, SimpleGrid, FormControl, FormLabel, Badge, Divider, Icon, Stack, Grid, GridItem, Progress, Flex, Avatar, Center, Select, Textarea, Checkbox, CheckboxGroup, Radio, RadioGroup, Link,
+  Box, Heading, Text, Input, Button, VStack, HStack, Table, Thead, Tbody, Tr, Th, Td, useToast, Spinner, SimpleGrid, FormControl, FormLabel, Badge, Divider, Icon, Stack, Grid, GridItem, Progress, Flex, Avatar, Center, Select, Textarea, Checkbox, CheckboxGroup, Radio, RadioGroup, Link, Collapse,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
-import { apiGet, apiGetBlob, apiPost, apiPut } from "../../../../../api.js";
+import { apiDelete, apiGet, apiGetBlob, apiPost, apiPut, apiUpload } from "../../../../../api.js";
 import { resourcesApi } from "../../../../../api/resources.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
@@ -91,6 +91,13 @@ export default function ClientsClient() {
   const [regeneratingFormId, setRegeneratingFormId] = useState(null);
   const [assessmentCatalog, setAssessmentCatalog] = useState([]);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState("");
+  const [showTerminatedDrawer, setShowTerminatedDrawer] = useState(false);
+  const [showArchivedFiles, setShowArchivedFiles] = useState(false);
+  const [renamingFileId, setRenamingFileId] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [relationshipTransitioning, setRelationshipTransitioning] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const uploadInputRef = useRef(null);
   const toast = useToast();
 
   const resolveFileUrl = (filePath) => {
@@ -169,7 +176,7 @@ export default function ClientsClient() {
       const [c, n, f, a, t, formAssignments] = await Promise.all([
         apiGet(`clients/${clientId}/`),
         apiGet(`notes/?client=${clientId}`),
-        apiGet(`files/?client=${clientId}`),
+        apiGet(`files/?client=${clientId}&include_archived=1`),
         apiGet(`appointments/?client=${clientId}`),
         apiGet("note-templates/"),
         apiGet(`client-form-assignments/?client=${clientId}`).catch(() => []),
@@ -279,10 +286,111 @@ export default function ClientsClient() {
     }
   };
 
+  const handleTerminateRelationship = async () => {
+    if (!selectedClient?.id) return;
+    try {
+      setRelationshipTransitioning(true);
+      await apiPost(`clients/${selectedClient.id}/terminate-relationship/`, {
+        reason: "Therapy concluded",
+        notes: editClient.termination_notes || "",
+      });
+      toast({ title: "Relationship terminated", status: "success" });
+      await fetchClients();
+      await fetchFullClientDetails(selectedClient.id);
+    } catch (_e) {
+      toast({ title: "Could not terminate relationship", status: "error" });
+    } finally {
+      setRelationshipTransitioning(false);
+    }
+  };
+
+  const handleReactivateRelationship = async () => {
+    if (!selectedClient?.id) return;
+    try {
+      setRelationshipTransitioning(true);
+      await apiPost(`clients/${selectedClient.id}/reactivate-relationship/`, {});
+      toast({ title: "Relationship reactivated", status: "success" });
+      await fetchClients();
+      await fetchFullClientDetails(selectedClient.id);
+    } catch (_e) {
+      toast({ title: "Could not reactivate relationship", status: "error" });
+    } finally {
+      setRelationshipTransitioning(false);
+    }
+  };
+
+  const startRename = (file) => {
+    setRenamingFileId(file.id);
+    setRenameValue(file.display_name || file.file?.split("/").pop() || "Document");
+  };
+
+  const saveRename = async (fileId) => {
+    const cleanName = renameValue.trim();
+    if (!cleanName || !selectedClient?.id) return;
+    try {
+      await apiPut(`files/${fileId}/`, { display_name: cleanName });
+      setRenamingFileId(null);
+      setRenameValue("");
+      await fetchFullClientDetails(selectedClient.id);
+      toast({ title: "File renamed", status: "success" });
+    } catch (_e) {
+      toast({ title: "Could not rename file", status: "error" });
+    }
+  };
+
+  const archiveFile = async (fileId, archive = true) => {
+    if (!selectedClient?.id) return;
+    try {
+      await apiPut(`files/${fileId}/`, {
+        is_archived: archive,
+        archived_at: archive ? new Date().toISOString() : null,
+      });
+      await fetchFullClientDetails(selectedClient.id);
+      toast({ title: archive ? "File archived" : "File restored", status: "success" });
+    } catch (_e) {
+      toast({ title: archive ? "Could not archive file" : "Could not restore file", status: "error" });
+    }
+  };
+
+  const deleteFile = async (fileId) => {
+    if (!selectedClient?.id) return;
+    try {
+      await apiDelete(`files/${fileId}/`);
+      await fetchFullClientDetails(selectedClient.id);
+      toast({ title: "File deleted", status: "success" });
+    } catch (_e) {
+      toast({ title: "Could not delete file", status: "error" });
+    }
+  };
+
+  const handleUploadDocument = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedClient?.id) return;
+    try {
+      setUploadingFile(true);
+      const formData = new FormData();
+      formData.append("client", selectedClient.id);
+      formData.append("file", file);
+      formData.append("display_name", file.name);
+      await apiUpload("files/", formData);
+      await fetchFullClientDetails(selectedClient.id);
+      toast({ title: "Document uploaded", status: "success" });
+    } catch (_e) {
+      toast({ title: "Could not upload document", status: "error" });
+    } finally {
+      setUploadingFile(false);
+      event.target.value = "";
+    }
+  };
+
   const filteredClients = clients.filter(c => 
     c.name?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase())
   );
+  const activeClients = filteredClients.filter((c) => !c.terminated_patient);
+  const terminatedClients = filteredClients.filter((c) => !!c.terminated_patient);
+  const activeFiles = clientFiles.filter((f) => !f.is_archived);
+  const archivedFiles = clientFiles.filter((f) => !!f.is_archived);
 
   const renderClientHeader = () => (
     <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'center' }} mb={8} gap={4}>
@@ -317,6 +425,15 @@ export default function ClientsClient() {
             <Button leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} variant={isEditing ? "solid" : "outline"} colorScheme={isEditing ? "green" : "gray"} borderRadius="full" onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}>
               {isEditing ? "Save Changes" : "Edit Profile"}
             </Button>
+            {selectedClient?.terminated_patient ? (
+              <Button variant="outline" colorScheme="green" borderRadius="full" onClick={handleReactivateRelationship} isLoading={relationshipTransitioning}>
+                Reactivate Relationship
+              </Button>
+            ) : (
+              <Button variant="outline" colorScheme="red" borderRadius="full" onClick={handleTerminateRelationship} isLoading={relationshipTransitioning}>
+                Terminate Relationship
+              </Button>
+            )}
           </>
         ) : (
           <Button leftIcon={<FiUser />} colorScheme="teal" borderRadius="full" px={8} onClick={() => setViewMode("add")}>+ Add New Client</Button>
@@ -587,29 +704,65 @@ export default function ClientsClient() {
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
        <HStack justify="space-between" mb={4}>
          <Heading size="md">Clinical Vault</Heading>
-         <Button leftIcon={<FiPaperclip />} variant="outline" size="sm" borderRadius="full">Upload Document</Button>
+         <Button leftIcon={<FiPaperclip />} variant="outline" size="sm" borderRadius="full" onClick={() => uploadInputRef.current?.click()} isLoading={uploadingFile}>
+           Upload Document
+         </Button>
+         <Input ref={uploadInputRef} type="file" display="none" onChange={handleUploadDocument} />
       </HStack>
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-         {clientFiles.length === 0 ? <Text color="gray.500">No documents found.</Text> : clientFiles.map(file => (
+         {activeFiles.length === 0 ? <Text color="gray.500">No documents found.</Text> : activeFiles.map(file => (
             <HStack key={file.id} p={4} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100" justify="space-between">
                <HStack>
                   <Icon as={FiPaperclip} color="teal.500" />
                   <VStack align="start" spacing={0}>
-                     <Text fontSize="sm" fontWeight="bold">{file.file?.split('/').pop() || "Document"}</Text>
+                     {renamingFileId === file.id ? (
+                      <HStack>
+                        <Input size="xs" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+                        <Button size="xs" onClick={() => saveRename(file.id)}>Save</Button>
+                        <Button size="xs" variant="ghost" onClick={() => { setRenamingFileId(null); setRenameValue(""); }}>Cancel</Button>
+                      </HStack>
+                     ) : (
+                      <Text fontSize="sm" fontWeight="bold">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
+                     )}
                      <Text fontSize="xs" color="gray.400">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
                   </VStack>
                </HStack>
-               <Button
-                 size="xs"
-                 variant="ghost"
-                 colorScheme="teal"
-                 onClick={() => openFileWithAuth(file)}
-               >
-                 View
-               </Button>
+               <HStack>
+                 <Button size="xs" variant="ghost" colorScheme="teal" onClick={() => openFileWithAuth(file)}>View</Button>
+                 <Button size="xs" variant="ghost" onClick={() => startRename(file)}>Rename</Button>
+                 <Button size="xs" variant="ghost" colorScheme="orange" onClick={() => archiveFile(file.id, true)}>Archive</Button>
+                 <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteFile(file.id)}>Delete</Button>
+               </HStack>
             </HStack>
          ))}
       </SimpleGrid>
+      {archivedFiles.length > 0 && (
+        <Box mt={2} border="1px solid" borderColor="gray.100" borderRadius="2xl" p={4} bg="gray.50">
+          <HStack justify="space-between">
+            <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="wider">Archived Files</Heading>
+            <Button size="xs" variant="ghost" onClick={() => setShowArchivedFiles((v) => !v)}>
+              {showArchivedFiles ? "Collapse" : "Expand"}
+            </Button>
+          </HStack>
+          <Collapse in={showArchivedFiles} animateOpacity>
+            <VStack align="stretch" mt={3} spacing={2}>
+              {archivedFiles.map((file) => (
+                <HStack key={file.id} p={3} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100" justify="space-between">
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="sm" fontWeight="700">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
+                    <Text fontSize="xs" color="gray.400">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
+                  </VStack>
+                  <HStack>
+                    <Button size="xs" variant="ghost" colorScheme="teal" onClick={() => openFileWithAuth(file)}>View</Button>
+                    <Button size="xs" variant="ghost" colorScheme="green" onClick={() => archiveFile(file.id, false)}>Restore</Button>
+                    <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteFile(file.id)}>Delete</Button>
+                  </HStack>
+                </HStack>
+              ))}
+            </VStack>
+          </Collapse>
+        </Box>
+      )}
     </VStack>
   );
 
@@ -857,11 +1010,13 @@ export default function ClientsClient() {
             <Text color="gray.500" fontSize="sm">No billed sessions yet.</Text>
           ) : (
             <VStack align="stretch" spacing={3}>
-              {clientAppointments.slice(0, 10).map(appt => (
+              {clientAppointments.slice(0, 10).map(appt => {
+                const apptId = String(appt?.id ?? '');
+                return (
                 <Flex key={appt.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.50" align="center" justify="space-between" _hover={{ bg: 'gray.50' }}>
                   <VStack align="start" spacing={0}>
                     <Text fontWeight="bold" fontSize="sm">{new Date(appt.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-                    <Text fontSize="2xs" color="gray.500">MLC-INV-{appt.id.substring(0, 8)}</Text>
+                    <Text fontSize="2xs" color="gray.500">MLC-INV-{apptId.slice(0, 8) || 'N/A'}</Text>
                   </VStack>
                   <HStack spacing={4}>
                     <Badge colorScheme={appt.status === 'completed' ? 'green' : 'orange'} variant="subtle" borderRadius="full">
@@ -880,7 +1035,8 @@ export default function ClientsClient() {
                     </Button>
                   </HStack>
                 </Flex>
-              ))}
+                );
+              })}
             </VStack>
           )}
           <Text mt={6} fontSize="2xs" color="gray.400" fontStyle="italic">
@@ -933,7 +1089,7 @@ export default function ClientsClient() {
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {filteredClients.map((client) => (
+                    {activeClients.map((client) => (
                       <Tr key={client.id} _hover={{ bg: "gray.50" }} transition="0.2s" cursor="pointer" onClick={() => { setSelectedClient(client); setViewMode("detail"); }}>
                         <Td>
                           <HStack>
@@ -950,10 +1106,46 @@ export default function ClientsClient() {
                   </Tbody>
                 </Table>
               </Box>
+              {terminatedClients.length > 0 && (
+                <Box mt={6} border="1px solid" borderColor="gray.100" borderRadius="2xl" p={4} bg="gray.50">
+                  <HStack justify="space-between">
+                    <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="wider">Terminated Clients</Heading>
+                    <Button size="xs" variant="ghost" onClick={() => setShowTerminatedDrawer((v) => !v)}>
+                      {showTerminatedDrawer ? "Collapse" : "Expand"}
+                    </Button>
+                  </HStack>
+                  <Collapse in={showTerminatedDrawer} animateOpacity>
+                    <VStack align="stretch" mt={3} spacing={2}>
+                      {terminatedClients.map((client) => (
+                        <HStack
+                          key={client.id}
+                          p={3}
+                          bg="white"
+                          borderRadius="xl"
+                          border="1px solid"
+                          borderColor="gray.100"
+                          justify="space-between"
+                          cursor="pointer"
+                          onClick={() => { setSelectedClient(client); setViewMode("detail"); }}
+                        >
+                          <HStack>
+                            <Avatar size="xs" name={client.name} bg="red.50" color="red.500" />
+                            <VStack align="start" spacing={0}>
+                              <Text fontSize="sm" fontWeight="700">{client.name}</Text>
+                              <Text fontSize="xs" color="gray.500">{client.email}</Text>
+                            </VStack>
+                          </HStack>
+                          <Badge colorScheme="red" variant="subtle" borderRadius="full">TERMINATED</Badge>
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </Collapse>
+                </Box>
+              )}
 
               {/* Mobile Card List */}
               <VStack display={{ base: "flex", md: "none" }} spacing={4} align="stretch">
-                {filteredClients.map((client) => (
+                {activeClients.map((client) => (
                   <Box 
                     key={client.id} 
                     p={4} 

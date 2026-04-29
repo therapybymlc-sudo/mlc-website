@@ -5,8 +5,8 @@ from therapy.models import Appointment, AvailabilitySlot, BookingRequest, Notifi
 from therapy.notifications import get_scheduling_action_url
 
 
-def cancel_appointment(appointment: Appointment, cancelled_by=None, reason="", reopen_slot=True):
-    if not appointment.is_cancellable:
+def cancel_appointment(appointment: Appointment, cancelled_by=None, reason="", reopen_slot=True, force=False):
+    if not force and not appointment.is_cancellable:
         raise ValidationError("This appointment cannot be cancelled.")
 
     appointment.status = Appointment.Status.CANCELLED

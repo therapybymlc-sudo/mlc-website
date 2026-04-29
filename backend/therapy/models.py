@@ -1477,6 +1477,9 @@ class ClientFile(models.Model):
     )
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     file = models.FileField(upload_to="client_files/")
+    display_name = models.CharField(max_length=255, blank=True, null=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

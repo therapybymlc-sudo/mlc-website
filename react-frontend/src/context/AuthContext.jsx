@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const urlRole = (searchParams?.get("role") || "").toLowerCase();
   const onTherapistRoute = pathname.startsWith("/dashboard/therapist");
+  const onClientRoute = pathname.startsWith("/dashboard/client");
 
   const metadataRoles = useMemo(() => {
     const metaRoles = user?.publicMetadata?.roles || user?.unsafeMetadata?.roles;
@@ -75,7 +76,8 @@ export const AuthProvider = ({ children }) => {
 
         // Avoid noisy 404s on client pages by preferring canonical role signals
         // and current route intent over stale metadata.
-        const shouldFetchTherapist = hasTherapistCanonical || hasAdminCanonical || wantsTherapistOnly;
+        const shouldFetchTherapist =
+          hasAdminCanonical || wantsTherapistOnly || (hasTherapistCanonical && !onClientRoute);
         const shouldFetchClient = !wantsTherapistOnly && (hasClientCanonical || metadataIsClient);
         const fetchTherapistProfile = async () => {
           if (!shouldFetchTherapist) return null;
@@ -121,6 +123,7 @@ export const AuthProvider = ({ children }) => {
     tokenTemplate,
     metadataRoles,
     wantsTherapistOnly,
+    onClientRoute,
   ]);
 
   const canonicalRoles = useMemo(() => {

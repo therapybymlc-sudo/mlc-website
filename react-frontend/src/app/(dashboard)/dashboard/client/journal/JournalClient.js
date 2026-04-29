@@ -59,7 +59,7 @@ const MotionBox = motion(Box);
 
 export default function JournalClient() {
   const toast = useToast();
-  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated, clientProfile } = useAuth();
   const { user } = useUser();
   const [isMounted, setIsMounted] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -511,7 +511,7 @@ export default function JournalClient() {
             <JournalBookView 
                 entries={[...entries].reverse()} 
                 onClose={() => setShowBook(false)} 
-                userName={user?.fullName || "MLC Client"} 
+                userName={clientProfile?.name || user?.fullName || user?.firstName || "MLC Client"} 
             />
         )}
     </Box>

@@ -18,6 +18,7 @@ import {
   Th,
   Td,
   Badge,
+  Stack,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiVideo } from "react-icons/fi";

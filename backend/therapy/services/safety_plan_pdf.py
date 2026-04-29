@@ -111,6 +111,22 @@ def build_safety_plan_pdf_bytes(*, client, plan, saved_at=None):
         textColor=colors.HexColor("#6B7280"),
         fontSize=9,
     )
+    table_label_style = ParagraphStyle(
+        "TableLabel",
+        parent=body_style,
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        wordWrap="CJK",
+    )
+    table_value_style = ParagraphStyle(
+        "TableValue",
+        parent=body_style,
+        fontName="Helvetica",
+        fontSize=9,
+        leading=12,
+        wordWrap="CJK",
+    )
 
     story = []
     story.append(Paragraph("Personal Safety Plan", title_style))
@@ -123,10 +139,30 @@ def build_safety_plan_pdf_bytes(*, client, plan, saved_at=None):
     story.append(Spacer(1, 10))
 
     profile_rows = [
-        ["Client Name", getattr(client, "name", "") or "—", "Date Saved", saved_at.strftime("%d %b %Y, %I:%M %p")],
-        ["Age", str(_calculate_age(getattr(client, "date_of_birth", None))), "Sex", getattr(client, "sex", "") or "—"],
-        ["Contact Number", getattr(client, "phone_number", "") or "—", "Email", getattr(client, "email", "") or "—"],
-        ["Emergency Contact Name", emergency_name, "Emergency Contact Number", emergency_number],
+        [
+            Paragraph("Client Name", table_label_style),
+            Paragraph(str(getattr(client, "name", "") or "—"), table_value_style),
+            Paragraph("Date Saved", table_label_style),
+            Paragraph(saved_at.strftime("%d %b %Y, %I:%M %p"), table_value_style),
+        ],
+        [
+            Paragraph("Age", table_label_style),
+            Paragraph(str(_calculate_age(getattr(client, "date_of_birth", None))), table_value_style),
+            Paragraph("Sex", table_label_style),
+            Paragraph(str(getattr(client, "sex", "") or "—"), table_value_style),
+        ],
+        [
+            Paragraph("Contact Number", table_label_style),
+            Paragraph(str(getattr(client, "phone_number", "") or "—"), table_value_style),
+            Paragraph("Email", table_label_style),
+            Paragraph(str(getattr(client, "email", "") or "—"), table_value_style),
+        ],
+        [
+            Paragraph("Emergency Contact Name", table_label_style),
+            Paragraph(str(emergency_name), table_value_style),
+            Paragraph("Emergency Contact Number", table_label_style),
+            Paragraph(str(emergency_number), table_value_style),
+        ],
     ]
     profile_table = Table(profile_rows, colWidths=[1.45 * inch, 1.95 * inch, 1.6 * inch, 2.3 * inch])
     profile_table.setStyle(
@@ -135,9 +171,6 @@ def build_safety_plan_pdf_bytes(*, client, plan, saved_at=None):
                 ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F7FAFC")),
                 ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#D1D5DB")),
                 ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#E5E7EB")),
-                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),

@@ -176,7 +176,7 @@ export default function ScheduleClient() {
       // Process Booked Appointments (skip rows mirrored from schedule events — those render as schedule-events)
       const appointmentData = Array.isArray(appointmentRes) ? appointmentRes : appointmentRes.results || [];
       const bookedAppointments = appointmentData
-        .filter((apt) => !apt.schedule_event)
+        .filter((apt) => !apt.schedule_event && !!apt.booking_request)
         .map((apt) => {
         return {
           id: `apt-${apt.id}`,
@@ -998,7 +998,14 @@ export default function ScheduleClient() {
 
       <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered scrollBehavior="inside">
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
-        <ModalContent borderRadius="3xl" overflow="hidden">
+        <ModalContent
+          borderRadius="3xl"
+          overflow="hidden"
+          onKeyDown={(e) => {
+            // Prevent underlying calendar keyboard handlers from stealing focus/closing.
+            e.stopPropagation();
+          }}
+        >
            {isFormView ? <SessionFormView /> : <SessionSummaryView />}
         </ModalContent>
       </Modal>

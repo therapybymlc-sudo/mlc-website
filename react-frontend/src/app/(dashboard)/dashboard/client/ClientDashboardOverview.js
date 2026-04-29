@@ -138,6 +138,14 @@ export default function ClientDashboardOverview() {
     : 0;
 
   const nextAppt = appointments.length > 0 ? appointments[0] : null;
+  const primaryRelationship =
+    relationships.find((rel) => rel?.is_primary) ||
+    relationships[0] ||
+    null;
+  const preferredTherapistId =
+    primaryRelationship?.therapist_id ||
+    primaryRelationship?.therapist?.id ||
+    null;
 
   const weeklyPrompts = [
     {
@@ -394,7 +402,17 @@ export default function ClientDashboardOverview() {
             ) : (
                 <VStack align="start" spacing={6}>
                     <Text fontSize="sm" opacity={0.9}>No pending sessions.</Text>
-                    <Button as={NextLink} href="/therapists/discovery" size="md" bg="white" color="#56756D" borderRadius="full" w="full">Schedule</Button>
+                    <Button
+                      as={NextLink}
+                      href={preferredTherapistId ? `/therapists/${preferredTherapistId}#booking-calendar` : "/therapists/discovery"}
+                      size="md"
+                      bg="white"
+                      color="#56756D"
+                      borderRadius="full"
+                      w="full"
+                    >
+                      Schedule
+                    </Button>
                 </VStack>
             )}
         </Box>

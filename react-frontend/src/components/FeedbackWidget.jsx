@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  Box, Button, FormControl, FormLabel, Textarea, VStack, HStack, Text, Icon, useToast, Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverBody, PopoverArrow, PopoverCloseButton, Select, IconButton, Badge, Tooltip
+  Box, Button, FormControl, FormLabel, Textarea, VStack, HStack, Text, Icon, useToast, Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverBody, PopoverArrow, PopoverCloseButton, Select, IconButton, Badge, Tooltip, Portal
 } from "@chakra-ui/react";
 import { FiMessageSquare, FiSend, FiStar, FiInfo, FiLayout, FiZap, FiCheckCircle } from "react-icons/fi";
 import { apiPost } from "../api";
@@ -118,6 +118,7 @@ export default function FeedbackWidget({ variant = "floating" }) {
         onClose={() => setIsOpen(false)} 
         placement="top-end"
         closeOnBlur={false}
+        strategy="fixed"
       >
         <PopoverTrigger>
           <Tooltip label="Have a suggestion? Click here" placement="left" borderRadius="lg" hasArrow>
@@ -136,19 +137,21 @@ export default function FeedbackWidget({ variant = "floating" }) {
             />
           </Tooltip>
         </PopoverTrigger>
-        <PopoverContent borderRadius="2xl" shadow="2xl" border="none" w="320px">
-          <PopoverHeader border="none" pt={5} px={5}>
-            <HStack>
-              <Icon as={FiZap} color="orange.400" />
-              <Text fontWeight="900" fontSize="md" color="teal.900" fontFamily="'Playfair Display', serif">Improvement Architect</Text>
-            </HStack>
-          </PopoverHeader>
-          <PopoverArrow />
-          <PopoverCloseButton mt={2} mr={2} />
-          <PopoverBody p={5}>
-            {widgetContent}
-          </PopoverBody>
-        </PopoverContent>
+        <Portal>
+          <PopoverContent borderRadius="2xl" shadow="2xl" border="none" w="320px">
+            <PopoverHeader border="none" pt={5} px={5}>
+              <HStack>
+                <Icon as={FiZap} color="orange.400" />
+                <Text fontWeight="900" fontSize="md" color="teal.900" fontFamily="'Playfair Display', serif">Improvement Architect</Text>
+              </HStack>
+            </PopoverHeader>
+            <PopoverArrow />
+            <PopoverCloseButton mt={2} mr={2} />
+            <PopoverBody p={5}>
+              {widgetContent}
+            </PopoverBody>
+          </PopoverContent>
+        </Portal>
       </Popover>
     </Box>
   );

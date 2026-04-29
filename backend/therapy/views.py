@@ -19,7 +19,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
 from django.db import transaction, models, IntegrityError
 from django.core.exceptions import ValidationError
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone
 from django.conf import settings
 from datetime import datetime, date, time, timedelta
@@ -439,19 +439,22 @@ def _resolve_therapist_from_request(request, allow_create=False):
     if not allow_create and not is_therapist:
         return None
 
-    # Step 3: Create NEW profile if needed
-    name = (
-        getattr(user, "get_full_name", lambda: "")().strip()
-        or getattr(user, "username", None)
-        or "Unnamed Therapist"
-    )
-    final_email = email or f"therapist_{user.pk or 'nouser'}@local"
-    
-    therapist = TherapistProfile.objects.filter(email__iexact=final_email).first()
+    # Step 3: Create NEW profile if needed.
+    # Hard guard: never create therapist profiles with synthetic local emails.
+    if not email:
+        return None
+
+    raw_name = getattr(user, "get_full_name", lambda: "")().strip()
+    username = (getattr(user, "username", None) or "").strip()
+    name = raw_name or (username if username and not username.startswith("user_") else "")
+    if not name:
+        name = "Therapist"
+
+    therapist = TherapistProfile.objects.filter(email__iexact=email).first()
     if not therapist:
         therapist = TherapistProfile.objects.create(
             user=user,
-            email=final_email,
+            email=email,
             name=name
         )
     elif therapist.user_id != user.id:
@@ -468,6 +471,8 @@ def _resolve_client_from_request(request):
     user = getattr(request, "user", None)
     if not user or not user.is_authenticated:
         return None
+    payload = getattr(request, "auth", {})
+    payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
 
     # 1. Check direct relationship
     client_profile = getattr(user, "client_profile", None)
@@ -480,13 +485,25 @@ def _resolve_client_from_request(request):
         
         # NEVER use "user_..." as a name
         if full_name and not full_name.startswith("user_"):
-            if not client_profile.name or client_profile.name.startswith("user_") or client_profile.name == "Unknown":
+            current_name = (client_profile.name or "").strip()
+            name_placeholder = (
+                not current_name
+                or current_name.startswith("user_")
+                or current_name in {"Unknown", "New Client", "Client", "Unnamed Client"}
+            )
+            if name_placeholder:
                 client_profile.name = full_name
                 save_needed = True
         
-        email = getattr(user, "email", None)
+        email = (getattr(user, "email", None) or payload_email or "").strip().lower() or None
         if email and not email.endswith("@example.invalid"):
-            if not client_profile.email or "@example.invalid" in client_profile.email:
+            current_email = (client_profile.email or "").strip().lower()
+            email_placeholder = (
+                not current_email
+                or "@example.invalid" in current_email
+                or current_email.endswith("@local")
+            )
+            if email_placeholder:
                 client_profile.email = email
                 save_needed = True
             
@@ -495,7 +512,7 @@ def _resolve_client_from_request(request):
         return client_profile
 
     # 2. Aggressive Email Search (Before creating anything new)
-    email = getattr(user, "email", None)
+    email = (getattr(user, "email", None) or payload_email or "").strip().lower() or None
     if not client_profile and email and not email.endswith("@example.invalid"):
         client_profile = ClientProfile.objects.filter(email__iexact=email).first()
         if client_profile:
@@ -509,15 +526,23 @@ def _resolve_client_from_request(request):
     if "therapist" in roles and "admin" not in roles:
         return None
         
-    # 4. Create new profile as a LAST resort
+    # 4. Create new profile as a LAST resort.
+    # Hard guard: never create client profiles with synthetic local emails.
+    if not email or email.endswith("@example.invalid"):
+        return None
+
     first = user.first_name.strip()
     last = user.last_name.strip()
     display_name = f"{first} {last}".strip()
     
     if not display_name or display_name.startswith("user_"):
-        display_name = "New Client"
+        username = (getattr(user, "username", None) or "").strip()
+        if username and not username.startswith("user_"):
+            display_name = username
+        else:
+            display_name = "Client"
         
-    safe_email = email if (email and not email.endswith("@example.invalid")) else f"client_{user.pk or 'nouser'}@local"
+    safe_email = email
     
     from django.db import IntegrityError
     try:
@@ -1218,6 +1243,66 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         client = serializer.save(therapist=therapist)
         _ensure_relationship(therapist, client, make_primary=True)
 
+    @action(detail=True, methods=["post"], url_path="terminate-relationship")
+    def terminate_relationship(self, request, pk=None):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return Response({"detail": "Therapist profile required."}, status=status.HTTP_403_FORBIDDEN)
+
+        client = self.get_object()
+        reason = (request.data.get("reason") or "").strip()
+        notes = (request.data.get("notes") or "").strip()
+
+        active_relationships = TherapeuticRelationship.objects.filter(
+            therapist=therapist,
+            client=client,
+        ).exclude(status=TherapeuticRelationship.Status.ENDED)
+
+        if not active_relationships.exists():
+            return Response({"detail": "No active relationship found for this client."}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+        active_relationships.update(
+            status=TherapeuticRelationship.Status.ENDED,
+            ended_at=now,
+            notes=notes or F("notes"),
+            updated_at=now,
+        )
+
+        client.terminated_patient = True
+        if reason:
+            reasons = list(client.termination_reasons or [])
+            if reason not in reasons:
+                reasons.append(reason)
+            client.termination_reasons = reasons
+        if notes:
+            client.termination_notes = notes
+        client.save(update_fields=["terminated_patient", "termination_reasons", "termination_notes"])
+        return Response({"detail": "Relationship terminated."}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="reactivate-relationship")
+    def reactivate_relationship(self, request, pk=None):
+        therapist = _resolve_therapist_from_request(request, allow_create=False)
+        if not therapist:
+            return Response({"detail": "Therapist profile required."}, status=status.HTTP_403_FORBIDDEN)
+
+        client = self.get_object()
+        rel = TherapeuticRelationship.objects.filter(
+            therapist=therapist,
+            client=client,
+        ).order_by("-updated_at").first()
+
+        if rel:
+            rel.status = TherapeuticRelationship.Status.ACTIVE
+            rel.ended_at = None
+            rel.save(update_fields=["status", "ended_at", "updated_at"])
+        else:
+            _ensure_relationship(therapist, client, make_primary=False)
+
+        client.terminated_patient = False
+        client.save(update_fields=["terminated_patient"])
+        return Response({"detail": "Relationship reactivated."}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=["post"], url_path="link_by_email")
     def link_by_email(self, request):
         email = request.data.get("email")
@@ -1325,6 +1410,7 @@ class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
                 cancelled_by=request.user,
                 reason=reason,
                 reopen_slot=bool(reopen_slot),
+                force=True,
             )
         except ValidationError as exc:
             return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
@@ -2618,6 +2704,9 @@ class ClientFileViewSet(viewsets.ModelViewSet):
                 qs = qs | scope
             qs = qs.distinct()
 
+        include_archived = str(self.request.query_params.get("include_archived", "")).lower() in {"1", "true", "yes"}
+        if not include_archived:
+            qs = qs.filter(is_archived=False)
         qs = qs.order_by("-uploaded_at")
         client_id = self.request.query_params.get("client")
         if client_id:
@@ -2628,7 +2717,10 @@ class ClientFileViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(uploaded_by=self.request.user)
+        created = serializer.save(uploaded_by=self.request.user)
+        if not created.display_name:
+            created.display_name = os.path.basename(created.file.name) if created.file else "Document"
+            created.save(update_fields=["display_name"])
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, pk=None):
@@ -3373,7 +3465,15 @@ class OnboardUserRoleView(APIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
             if not getattr(user, "client_profile", None):
-                _resolve_client_from_request(request)
+                created_client = _resolve_client_from_request(request)
+                if not created_client:
+                    return Response(
+                        {
+                            "detail": "Could not create client profile yet. Please complete your real name and primary email in your account identity first.",
+                            "code": "identity_incomplete",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             synced, sync_error = self._sync_clerk_role(user, "client")
             payload = {"detail": "Client profile created successfully.", "role": "client", "clerk_role_synced": synced}
             if sync_error:
@@ -3390,7 +3490,15 @@ class OnboardUserRoleView(APIView):
                     {"detail": "This account is already linked to a client identity and cannot onboard as therapist."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-            _resolve_therapist_from_request(request, allow_create=True)
+            therapist = _resolve_therapist_from_request(request, allow_create=True)
+            if not therapist:
+                return Response(
+                    {
+                        "detail": "Could not create therapist profile yet. Please complete your real name and primary email in your account identity first.",
+                        "code": "identity_incomplete",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             synced, sync_error = self._sync_clerk_role(user, "therapist")
             payload = {
                 "detail": "Therapist profile created successfully and pending verification.",
