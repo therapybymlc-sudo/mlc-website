@@ -68,8 +68,13 @@ def _resolve_therapist_from_request(request, allow_create=False):
         if not allow_create:
             return None
 
-        display_name = (getattr(auth_user, "get_full_name", lambda: "")() or username or "Unnamed Therapist")
-        safe_email = email or f"therapist_{auth_user.pk or 'nouser'}@local"
+        if not email or email.endswith("@example.invalid"):
+            return None
+
+        display_name = (getattr(auth_user, "get_full_name", lambda: "")() or "")
+        if not display_name.strip():
+            display_name = username if username and not str(username).startswith("user_") else "Therapist"
+        safe_email = email
         therapist = TherapistProfile.objects.create(
             user=auth_user,
             name=display_name,
@@ -104,8 +109,14 @@ def _resolve_client_from_request(request):
                 client.save(update_fields=["user"])
             return client
             
-        display_name = getattr(auth_user, "get_full_name", lambda: "")() or getattr(auth_user, "username", "Unknown")
-        safe_email = email or f"client_{auth_user.pk or 'nouser'}@local"
+        if email.endswith("@example.invalid"):
+            return None
+
+        display_name = getattr(auth_user, "get_full_name", lambda: "")() or ""
+        if not str(display_name).strip():
+            username = getattr(auth_user, "username", "") or ""
+            display_name = username if username and not str(username).startswith("user_") else "Client"
+        safe_email = email
         client = ClientProfile.objects.create(
             user=auth_user,
             name=display_name,

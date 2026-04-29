@@ -152,8 +152,16 @@ export default function ScheduleClient() {
 
       // Process Schedule Events
       const eventData = Array.isArray(eventRes) ? eventRes : eventRes.results || [];
+      const appointmentData = Array.isArray(appointmentRes) ? appointmentRes : appointmentRes.results || [];
+      const linkedAppointmentByScheduleEvent = {};
+      appointmentData.forEach((apt) => {
+        if (apt.schedule_event) {
+          linkedAppointmentByScheduleEvent[String(apt.schedule_event)] = apt;
+        }
+      });
       const scheduleEvents = eventData.map(ev => {
         const typeInfo = typeMap[ev.event_type] || {};
+        const linkedAppointment = linkedAppointmentByScheduleEvent[String(ev.id)];
         return {
           id: `event-${ev.id}`,
           originalId: ev.id,
@@ -169,12 +177,14 @@ export default function ScheduleClient() {
               event_type: ev.event_type,
               notes: ev.notes,
               status: ev.status,
+              attendance_status: ev.attendance_status,
+              appointment_id: linkedAppointment?.id || null,
+              appointment_status: linkedAppointment?.status || null,
           }
         };
       });
 
       // Process Booked Appointments (skip rows mirrored from schedule events — those render as schedule-events)
-      const appointmentData = Array.isArray(appointmentRes) ? appointmentRes : appointmentRes.results || [];
       const bookedAppointments = appointmentData
         .filter((apt) => !apt.schedule_event && !!apt.booking_request)
         .map((apt) => {
@@ -286,7 +296,8 @@ export default function ScheduleClient() {
         start_time: toLocalISO(event.start),
         end_time: toLocalISO(event.end),
         notes: event.extendedProps.notes || "",
-        status: event.extendedProps.status || "scheduled",
+        status: event.extendedProps.appointment_status || event.extendedProps.status || "scheduled",
+        attendance_status: event.extendedProps.attendance_status || "",
         repeat_enabled: false,
         repeat_interval: "weekly",
         repeat_count: 1,
@@ -365,9 +376,59 @@ export default function ScheduleClient() {
                         <Box bg="gray.50" p={5} borderRadius="2xl" border="1px solid" borderColor="gray.100">
                              <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={4}>ATTENDANCE</Text>
                              <VStack align="stretch" spacing={2}>
-                                <Button size="sm" colorScheme="teal" variant={form.status === 'arrived' ? 'solid' : 'outline'} borderRadius="xl" onClick={() => { setForm({...form, status: 'arrived'}); handleUpdate(); }}>Mark as Arrived</Button>
-                                <Button size="sm" colorScheme="red" variant={form.status === 'no_show' ? 'solid' : 'outline'} borderRadius="xl" onClick={() => { setForm({...form, status: 'no_show'}); handleUpdate(); }}>No Show</Button>
-                                <Button size="sm" colorScheme="green" variant={form.status === 'completed' ? 'solid' : 'outline'} borderRadius="xl" onClick={() => { setForm({...form, status: 'completed'}); handleUpdate(); }}>Session Completed</Button>
+                                <Button
+                                  size="sm"
+                                  colorScheme="teal"
+                                  variant={selectedEvent?.extendedProps?.attendance_status === 'arrived' ? 'solid' : 'outline'}
+                                  borderRadius="xl"
+                                  onClick={() => handleUpdate({ attendance_status: "arrived" }, { closeAfterSave: false })}
+                                >
+                                  Mark as Arrived
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  colorScheme="red"
+                                  variant={selectedEvent?.extendedProps?.attendance_status === 'did_not_arrive' ? 'solid' : 'outline'}
+                                  borderRadius="xl"
+                                  onClick={() => handleUpdate({ attendance_status: "did_not_arrive" }, { closeAfterSave: false })}
+                                >
+                                  No Show
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  colorScheme="green"
+                                  variant={form.status === 'completed' ? 'solid' : 'outline'}
+                                  borderRadius="xl"
+                                  onClick={async () => {
+                                    const linkedAppointmentId = selectedEvent?.extendedProps?.appointment_id;
+                                    if (!linkedAppointmentId) {
+                                      toast({ title: "No linked appointment to complete", status: "warning" });
+                                      return;
+                                    }
+                                    try {
+                                      await apiPost(`appointments/${linkedAppointmentId}/mark_completed/`, {});
+                                      setForm((prev) => ({ ...prev, status: "completed" }));
+                                      setEvents((prev) =>
+                                        prev.map((ev) =>
+                                          ev.id === selectedEvent.id
+                                            ? {
+                                                ...ev,
+                                                extendedProps: {
+                                                  ...ev.extendedProps,
+                                                  appointment_status: "completed",
+                                                },
+                                              }
+                                            : ev
+                                        )
+                                      );
+                                      toast({ title: "Session marked completed", status: "success" });
+                                    } catch (_e) {
+                                      toast({ title: "Could not mark completed", status: "error" });
+                                    }
+                                  }}
+                                >
+                                  Session Completed
+                                </Button>
                              </VStack>
                         </Box>
                         
@@ -703,33 +764,70 @@ export default function ScheduleClient() {
       }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (overrides = {}, options = {}) => {
+    const { closeAfterSave = true } = options;
     if (!requireBasicAccess()) return;
     if (!selectedEvent || !currentTherapistId) return;
     const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
+    const nextForm = { ...form, ...overrides };
 
     try {
-      const selectedTypeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
+      const selectedTypeObj = eventTypes.find(t => String(t.id) === String(nextForm.event_type));
       const payload = {
-        title: form.title,
+        title: nextForm.title,
         therapist: currentTherapistId,
-        client: form.client ? Number(form.client) : null,
-        event_type: form.event_type ? Number(form.event_type) : null,
-        start_time: form.start_time,
-        end_time: form.end_time,
-        notes: form.notes,
-        status: form.status,
+        client: nextForm.client ? Number(nextForm.client) : null,
+        event_type: nextForm.event_type ? Number(nextForm.event_type) : null,
+        start_time: nextForm.start_time,
+        end_time: nextForm.end_time,
+        notes: nextForm.notes,
+        status: nextForm.status,
         color: selectedTypeObj?.color || selectedEvent.backgroundColor,
       };
 
       const endpoint = selectedEvent.extendedProps?.model === 'appointment' 
         ? 'appointments' 
         : 'schedule-events';
+      if (endpoint === "schedule-events") {
+        payload.attendance_status = nextForm.attendance_status ?? selectedEvent.extendedProps?.attendance_status ?? null;
+      }
 
       await apiPut(`${endpoint}/${originalId}/`, payload);
+      setForm(nextForm);
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.id === selectedEvent.id
+            ? {
+                ...ev,
+                extendedProps: {
+                  ...ev.extendedProps,
+                  attendance_status:
+                    endpoint === "schedule-events"
+                      ? payload.attendance_status
+                      : ev.extendedProps.attendance_status,
+                  appointment_status:
+                    endpoint === "appointments"
+                      ? payload.status
+                      : (ev.extendedProps.appointment_status || payload.status),
+                  notes: payload.notes,
+                },
+              }
+            : ev
+        )
+      );
+      if (selectedEvent?.setExtendedProp) {
+        if (endpoint === "schedule-events") {
+          selectedEvent.setExtendedProp("attendance_status", payload.attendance_status);
+        }
+        if (endpoint === "appointments") {
+          selectedEvent.setExtendedProp("appointment_status", payload.status);
+        }
+      }
       toast({ title: "Session updated", status: "success" });
-      onClose();
-      fetchData();
+      if (closeAfterSave) {
+        onClose();
+        fetchData();
+      }
     } catch (err) {
       toast({ title: "Update failed", status: "error" });
     }
@@ -951,6 +1049,16 @@ export default function ScheduleClient() {
               eventContent={(arg) => {
                   const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
+                  const attendance = arg.event.extendedProps?.attendance_status;
+                  const appointmentStatus = arg.event.extendedProps?.appointment_status;
+                  const statusIcon =
+                    appointmentStatus === "completed"
+                      ? "📝"
+                      : attendance === "arrived"
+                        ? "🟦"
+                        : attendance === "did_not_arrive"
+                          ? "🟥"
+                          : "";
                   
                   // Even more aggressive mobile scaling to prevent warping
                   const titleSize = { base: "0.8rem", md: `${Math.max(0.9, Math.min(1.08, 0.68 + (slotHeight * 0.12)))}rem` };
@@ -969,7 +1077,7 @@ export default function ScheduleClient() {
                             lineHeight="1.1"
                             display="block"
                           >
-                              {arg.event.title}
+                              {arg.event.title} {statusIcon}
                           </Text>
                           <Text 
                             fontWeight="600 !important" 
@@ -1005,8 +1113,10 @@ export default function ScheduleClient() {
             // Prevent underlying calendar keyboard handlers from stealing focus/closing.
             e.stopPropagation();
           }}
+          onKeyUp={(e) => e.stopPropagation()}
+          onKeyPress={(e) => e.stopPropagation()}
         >
-           {isFormView ? <SessionFormView /> : <SessionSummaryView />}
+           {isFormView ? SessionFormView() : SessionSummaryView()}
         </ModalContent>
       </Modal>
 

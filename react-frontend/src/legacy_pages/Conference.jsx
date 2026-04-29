@@ -7,6 +7,7 @@ import { apiGet } from '../api.js';
 
 export default function Conference() {
   const { roomId } = useParams();
+  const normalizedRoomId = String(roomId || "").toLowerCase();
   const navigate = useNavigate();
   const {
     isTherapist,
@@ -25,16 +26,36 @@ export default function Conference() {
 
   useEffect(() => {
     if (authLoading) return;
+    if (!normalizedRoomId) {
+      setTokenLoading(false);
+      return;
+    }
     if (!isAuthenticated) {
       setTokenLoading(false);
       return;
     }
+    // Wait until role resolution stabilizes so we don't call the wrong endpoint first.
+    if (!isTherapist && !isClient) return;
+
+    const normalizeDetail = (raw) => {
+      if (!raw) return "";
+      if (typeof raw === "string") return raw;
+      if (typeof raw === "object") {
+        if (typeof raw.detail === "string") return raw.detail;
+        try {
+          return JSON.stringify(raw);
+        } catch (_e) {
+          return "";
+        }
+      }
+      return String(raw);
+    };
 
     const fetchToken = async () => {
       setTokenError(null);
       try {
         const endpoint = isTherapist ? 'therapists' : 'clients';
-        const res = await apiGet(`${endpoint}/jitsi-token/?room=${roomId.toLowerCase()}`);
+        const res = await apiGet(`${endpoint}/jitsi-token/?room=${normalizedRoomId}`);
         if (res?.token) {
           setJwt(res.token);
         } else {
@@ -45,7 +66,7 @@ export default function Conference() {
         }
       } catch (err) {
         console.error("Failed to fetch Jitsi token:", err);
-        const detail = err.response?.data?.detail;
+        const detail = normalizeDetail(err.response?.data?.detail || err.response?.data);
         const code = err.response?.data?.code;
         if (err.response?.status === 403 && (code === 'session_room_closed' || detail)) {
           setTokenError(detail || 'This video room is not open yet.');
@@ -58,7 +79,7 @@ export default function Conference() {
     };
 
     fetchToken();
-  }, [roomId, isTherapist, isClient, isAuthenticated, authLoading]);
+  }, [normalizedRoomId, isTherapist, isClient, isAuthenticated, authLoading]);
 
   if (authLoading || tokenLoading) {
     return (

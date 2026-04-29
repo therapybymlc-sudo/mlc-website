@@ -5,7 +5,7 @@ import {
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
 import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
-import { apiDelete, apiGet, apiGetBlob, apiPost, apiPut, apiUpload } from "../../../../../api.js";
+import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost, apiPut, apiUpload } from "../../../../../api.js";
 import { resourcesApi } from "../../../../../api/resources.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
@@ -288,6 +288,8 @@ export default function ClientsClient() {
 
   const handleTerminateRelationship = async () => {
     if (!selectedClient?.id) return;
+    const confirmed = window.confirm("Are you sure you'd like to terminate this client relationship?");
+    if (!confirmed) return;
     try {
       setRelationshipTransitioning(true);
       await apiPost(`clients/${selectedClient.id}/terminate-relationship/`, {
@@ -328,7 +330,7 @@ export default function ClientsClient() {
     const cleanName = renameValue.trim();
     if (!cleanName || !selectedClient?.id) return;
     try {
-      await apiPut(`files/${fileId}/`, { display_name: cleanName });
+      await apiPatch(`files/${fileId}/`, { display_name: cleanName });
       setRenamingFileId(null);
       setRenameValue("");
       await fetchFullClientDetails(selectedClient.id);
@@ -341,7 +343,7 @@ export default function ClientsClient() {
   const archiveFile = async (fileId, archive = true) => {
     if (!selectedClient?.id) return;
     try {
-      await apiPut(`files/${fileId}/`, {
+      await apiPatch(`files/${fileId}/`, {
         is_archived: archive,
         archived_at: archive ? new Date().toISOString() : null,
       });
@@ -354,6 +356,8 @@ export default function ClientsClient() {
 
   const deleteFile = async (fileId) => {
     if (!selectedClient?.id) return;
+    const confirmed = window.confirm("Delete this file permanently? This action cannot be undone.");
+    if (!confirmed) return;
     try {
       await apiDelete(`files/${fileId}/`);
       await fetchFullClientDetails(selectedClient.id);
@@ -394,21 +398,23 @@ export default function ClientsClient() {
 
   const renderClientHeader = () => (
     <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'center' }} mb={8} gap={4}>
-      <HStack spacing={4}>
+      <HStack spacing={4} align="start">
         {viewMode === "detail" && (
           <Button variant="ghost" onClick={() => setViewMode("list")} leftIcon={<FiArrowLeft />}>Back</Button>
         )}
-        <VStack align="start" spacing={0}>
-          <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
-            {viewMode === "detail" ? selectedClient?.name : "Clinical Caseload"}
+        <VStack align="start" spacing={0} minW={0}>
+          <Heading size={{ base: "md", md: "lg" }} color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif" whiteSpace="normal" wordBreak="break-word" lineHeight="1.1">
+            {viewMode === "detail"
+              ? `${selectedClient?.name || ""}${selectedClient?.terminated_patient ? " [TERMINATED]" : ""}`
+              : "Clinical Caseload"}
           </Heading>
-          <Text color="gray.500">
+          <Text color="gray.500" fontSize={{ base: "xs", md: "sm" }} wordBreak="break-word">
             {viewMode === "detail" ? selectedClient?.email : "Manage patient documentation and clinical history."}
           </Text>
         </VStack>
       </HStack>
 
-      <HStack spacing={3}>
+      <Stack direction={{ base: "column", lg: "row" }} spacing={3} align={{ base: "stretch", lg: "center" }} w={{ base: "full", lg: "auto" }}>
         {viewMode === "detail" ? (
           <>
             <Button 
@@ -417,28 +423,30 @@ export default function ClientsClient() {
               borderColor="teal.200" 
               color="teal.600" 
               borderRadius="full"
+              w={{ base: "full", lg: "auto" }}
+              size={{ base: "sm", md: "md" }}
               onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Professional", noteTemplates)}
             >
               Export Full Records
             </Button>
-            <Button leftIcon={<FiCalendar />} colorScheme="teal" borderRadius="full" onClick={() => router.push('/dashboard/therapist/schedule')}>Book Appointment</Button>
-            <Button leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} variant={isEditing ? "solid" : "outline"} colorScheme={isEditing ? "green" : "gray"} borderRadius="full" onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}>
+            <Button leftIcon={<FiCalendar />} colorScheme="teal" borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={() => router.push('/dashboard/therapist/schedule')}>Book Appointment</Button>
+            <Button leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} variant={isEditing ? "solid" : "outline"} colorScheme={isEditing ? "green" : "gray"} borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}>
               {isEditing ? "Save Changes" : "Edit Profile"}
             </Button>
             {selectedClient?.terminated_patient ? (
-              <Button variant="outline" colorScheme="green" borderRadius="full" onClick={handleReactivateRelationship} isLoading={relationshipTransitioning}>
+              <Button variant="outline" colorScheme="green" borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={handleReactivateRelationship} isLoading={relationshipTransitioning}>
                 Reactivate Relationship
               </Button>
             ) : (
-              <Button variant="outline" colorScheme="red" borderRadius="full" onClick={handleTerminateRelationship} isLoading={relationshipTransitioning}>
+              <Button variant="outline" colorScheme="red" borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={handleTerminateRelationship} isLoading={relationshipTransitioning}>
                 Terminate Relationship
               </Button>
             )}
           </>
         ) : (
-          <Button leftIcon={<FiUser />} colorScheme="teal" borderRadius="full" px={8} onClick={() => setViewMode("add")}>+ Add New Client</Button>
+          <Button leftIcon={<FiUser />} colorScheme="teal" borderRadius="full" px={8} w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={() => setViewMode("add")}>+ Add New Client</Button>
         )}
-      </HStack>
+      </Stack>
     </Flex>
   );
 
@@ -446,7 +454,7 @@ export default function ClientsClient() {
     if (fetchingDetails) return <Center py={20}><VStack><Spinner color="teal.500" /><Text>Syncing Clinical Record...</Text></VStack></Center>;
     
     return (
-      <Grid templateColumns={{ base: "1fr", lg: "240px 1fr" }} gap={8}>
+      <Grid templateColumns={{ base: "1fr", lg: "240px minmax(0,1fr)" }} gap={{ base: 4, md: 8 }}>
         {/* Sidebar Nav */}
         <GridItem>
           <VStack align="stretch" spacing={2} bg="white" p={4} borderRadius="2xl" border="1px solid" borderColor="gray.100">
@@ -627,7 +635,7 @@ export default function ClientsClient() {
 
   const renderNotesSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
-       <HStack justify="space-between" mb={4}>
+      <HStack justify="space-between" mb={4} flexWrap="wrap" gap={3}>
           <Heading size="md">Session Documentation</Heading>
           <Button 
             leftIcon={<FiClipboard />} 
@@ -651,7 +659,7 @@ export default function ClientsClient() {
             <Box 
               key={note.id} 
               bg="white" 
-              p={8} 
+              p={{ base: 4, md: 8 }} 
               borderRadius="3xl" 
               border="1px solid" 
               borderColor="gray.100" 
@@ -661,19 +669,19 @@ export default function ClientsClient() {
               transition="0.2s"
               onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}&noteId=${note.id}`)}
             >
-              <HStack justify="space-between" mb={4}>
-                 <VStack align="start" spacing={1}>
+              <Stack direction={{ base: "column", md: "row" }} justify="space-between" mb={4} spacing={3}>
+                 <VStack align="start" spacing={1} minW={0}>
                     <HStack>
                        <Icon as={FiFileText} color="teal.500" />
-                       <Text fontWeight="bold" fontSize="lg" color="gray.800">{note.template_name || "Clinical Note"}</Text>
+                       <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} color="gray.800" wordBreak="break-word">{note.template_name || "Clinical Note"}</Text>
                     </HStack>
-                    <HStack fontSize="xs" color="gray.400" spacing={3}>
+                    <HStack fontSize="xs" color="gray.400" spacing={3} flexWrap="wrap">
                        <HStack><Icon as={FiClock} /> <Text>{new Date(note.created_at).toLocaleString()}</Text></HStack>
                        <Text>•</Text>
                        <Text>{note.status.toUpperCase()}</Text>
                     </HStack>
                  </VStack>
-                 <HStack spacing={3}>
+                 <HStack spacing={3} flexWrap="wrap">
                     <Button 
                       size="sm" 
                       variant="ghost" 
@@ -691,7 +699,7 @@ export default function ClientsClient() {
                        {note.status === 'final' ? 'FINALIZED' : 'DRAFT'}
                     </Badge>
                  </HStack>
-              </HStack>
+              </Stack>
               <Divider mb={6} />
               <RenderClinicalData note={note} />
             </Box>
@@ -702,7 +710,7 @@ export default function ClientsClient() {
 
   const renderFilesSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
-       <HStack justify="space-between" mb={4}>
+       <HStack justify="space-between" mb={4} flexWrap="wrap" gap={3}>
          <Heading size="md">Clinical Vault</Heading>
          <Button leftIcon={<FiPaperclip />} variant="outline" size="sm" borderRadius="full" onClick={() => uploadInputRef.current?.click()} isLoading={uploadingFile}>
            Upload Document
@@ -711,29 +719,33 @@ export default function ClientsClient() {
       </HStack>
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
          {activeFiles.length === 0 ? <Text color="gray.500">No documents found.</Text> : activeFiles.map(file => (
-            <HStack key={file.id} p={4} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100" justify="space-between">
-               <HStack>
+            <Box key={file.id} p={{ base: 3, md: 4 }} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100">
+               <HStack align="start" spacing={3}>
                   <Icon as={FiPaperclip} color="teal.500" />
-                  <VStack align="start" spacing={0}>
+                  <VStack align="start" spacing={1} flex="1" minW={0}>
                      {renamingFileId === file.id ? (
-                      <HStack>
+                      <Stack direction={{ base: "column", sm: "row" }} w="full" spacing={2}>
                         <Input size="xs" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
-                        <Button size="xs" onClick={() => saveRename(file.id)}>Save</Button>
-                        <Button size="xs" variant="ghost" onClick={() => { setRenamingFileId(null); setRenameValue(""); }}>Cancel</Button>
-                      </HStack>
+                        <HStack>
+                          <Button size="xs" onClick={() => saveRename(file.id)}>Save</Button>
+                          <Button size="xs" variant="ghost" onClick={() => { setRenamingFileId(null); setRenameValue(""); }}>Cancel</Button>
+                        </HStack>
+                      </Stack>
                      ) : (
-                      <Text fontSize="sm" fontWeight="bold">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
+                      <Text fontSize="sm" fontWeight="bold" wordBreak="break-word" whiteSpace="normal">
+                        {file.display_name || file.file?.split('/').pop() || "Document"}
+                      </Text>
                      )}
-                     <Text fontSize="xs" color="gray.400">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
+                     <Text fontSize="xs" color="gray.400" whiteSpace="normal">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
                   </VStack>
                </HStack>
-               <HStack>
+               <Stack direction={{ base: "column", sm: "row" }} spacing={2} mt={3}>
                  <Button size="xs" variant="ghost" colorScheme="teal" onClick={() => openFileWithAuth(file)}>View</Button>
                  <Button size="xs" variant="ghost" onClick={() => startRename(file)}>Rename</Button>
                  <Button size="xs" variant="ghost" colorScheme="orange" onClick={() => archiveFile(file.id, true)}>Archive</Button>
                  <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteFile(file.id)}>Delete</Button>
-               </HStack>
-            </HStack>
+               </Stack>
+            </Box>
          ))}
       </SimpleGrid>
       {archivedFiles.length > 0 && (
@@ -747,17 +759,17 @@ export default function ClientsClient() {
           <Collapse in={showArchivedFiles} animateOpacity>
             <VStack align="stretch" mt={3} spacing={2}>
               {archivedFiles.map((file) => (
-                <HStack key={file.id} p={3} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100" justify="space-between">
-                  <VStack align="start" spacing={0}>
-                    <Text fontSize="sm" fontWeight="700">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
+                <Box key={file.id} p={3} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100">
+                  <VStack align="start" spacing={1}>
+                    <Text fontSize="sm" fontWeight="700" wordBreak="break-word" whiteSpace="normal">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
                     <Text fontSize="xs" color="gray.400">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
                   </VStack>
-                  <HStack>
+                  <Stack direction={{ base: "column", sm: "row" }} spacing={2} mt={3}>
                     <Button size="xs" variant="ghost" colorScheme="teal" onClick={() => openFileWithAuth(file)}>View</Button>
                     <Button size="xs" variant="ghost" colorScheme="green" onClick={() => archiveFile(file.id, false)}>Restore</Button>
                     <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteFile(file.id)}>Delete</Button>
-                  </HStack>
-                </HStack>
+                  </Stack>
+                </Box>
               ))}
             </VStack>
           </Collapse>
@@ -812,12 +824,12 @@ export default function ClientsClient() {
       </HStack>
       <Box bg="purple.50" border="1px solid" borderColor="purple.100" borderRadius="xl" p={4}>
         <Text fontSize="xs" color="purple.700" fontWeight="700" mb={2}>Assign structured assessment</Text>
-        <HStack wrap="wrap" spacing={3}>
+        <Stack direction={{ base: "column", md: "row" }} spacing={3}>
           <Select
             value={selectedAssessmentId}
             onChange={(e) => setSelectedAssessmentId(e.target.value)}
             bg="white"
-            maxW="320px"
+            maxW={{ base: "full", md: "320px" }}
             size="sm"
           >
             {assessmentCatalog.map((assessment) => (
@@ -836,13 +848,13 @@ export default function ClientsClient() {
           >
             Assign selected assessment
           </Button>
-        </HStack>
+        </Stack>
       </Box>
 
       {clientFormAssignments.length === 0 ? (
         <Text color="gray.500">No forms assigned yet.</Text>
       ) : (
-        <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" overflow="hidden">
+        <Box bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" overflowX="auto">
           <Table variant="simple" size="sm">
             <Thead>
               <Tr>
@@ -1004,7 +1016,7 @@ export default function ClientsClient() {
           </Box>
        </DetailCard>
 
-       <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+       <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
           <Heading size="xs" textTransform="uppercase" color="gray.400" mb={6} letterSpacing="wider">Session Invoices</Heading>
           {clientAppointments.length === 0 ? (
             <Text color="gray.500" fontSize="sm">No billed sessions yet.</Text>
@@ -1012,15 +1024,21 @@ export default function ClientsClient() {
             <VStack align="stretch" spacing={3}>
               {clientAppointments.slice(0, 10).map(appt => {
                 const apptId = String(appt?.id ?? '');
+                const status = String(appt?.status || "").toLowerCase();
+                const paymentStatus = String(appt?.payment_status || "").toLowerCase();
+                const isCancelled = status === "cancelled";
+                const isPaid = !isCancelled && (paymentStatus === "paid" || status === "completed");
+                const invoiceState = isCancelled ? "CANCELLED" : (isPaid ? "PAID" : "PENDING");
+                const invoiceColor = isCancelled ? "red" : (isPaid ? "green" : "orange");
                 return (
-                <Flex key={appt.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.50" align="center" justify="space-between" _hover={{ bg: 'gray.50' }}>
+                <Flex key={appt.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.50" align={{ base: "start", md: "center" }} direction={{ base: "column", md: "row" }} gap={3} justify="space-between" _hover={{ bg: 'gray.50' }}>
                   <VStack align="start" spacing={0}>
                     <Text fontWeight="bold" fontSize="sm">{new Date(appt.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
                     <Text fontSize="2xs" color="gray.500">MLC-INV-{apptId.slice(0, 8) || 'N/A'}</Text>
                   </VStack>
-                  <HStack spacing={4}>
-                    <Badge colorScheme={appt.status === 'completed' ? 'green' : 'orange'} variant="subtle" borderRadius="full">
-                      {appt.status === 'completed' ? 'PAID' : 'PENDING'}
+                  <HStack spacing={4} w={{ base: "full", md: "auto" }} justify={{ base: "space-between", md: "flex-end" }}>
+                    <Badge colorScheme={invoiceColor} variant="subtle" borderRadius="full">
+                      {invoiceState}
                     </Badge>
                     <Button 
                       size="xs" 
@@ -1178,12 +1196,12 @@ export default function ClientsClient() {
       )}
 
       {viewMode === "add" && (
-        <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" maxW="4xl" mx="auto">
+        <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" maxW="4xl" mx="auto">
           <Heading size="md" mb={8}>Clinical Registration Form</Heading>
           <VStack spacing={10} align="stretch">
              {/* Same structure as detail sections but editable by default */}
              <DetailCard title="Identity Basics">
-                <SimpleGrid columns={2} spacing={6}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                    <FormControl isRequired><FormLabel fontSize="xs">First Name</FormLabel><Input placeholder="Legal First Name" value={newClient.first_name} onChange={(e) => setNewClient({...newClient, first_name: e.target.value})} borderRadius="xl" /></FormControl>
                    <FormControl isRequired><FormLabel fontSize="xs">Last Name</FormLabel><Input placeholder="Legal Surname" value={newClient.last_name} onChange={(e) => setNewClient({...newClient, last_name: e.target.value})} borderRadius="xl" /></FormControl>
                    <FormControl isRequired><FormLabel fontSize="xs">Profession Email</FormLabel><Input type="email" placeholder="patient@example.com" value={newClient.email} onChange={(e) => setNewClient({...newClient, email: e.target.value})} borderRadius="xl" /></FormControl>
@@ -1192,7 +1210,7 @@ export default function ClientsClient() {
              </DetailCard>
              
              <DetailCard title="Clinical Specifics">
-                <SimpleGrid columns={2} spacing={6}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                    <FormControl><FormLabel fontSize="xs">Date of Birth</FormLabel><Input type="date" value={newClient.date_of_birth} onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})} borderRadius="xl" /></FormControl>
                    <FormControl><FormLabel fontSize="xs">Sex</FormLabel><Select value={newClient.sex} onChange={(e) => setNewClient({...newClient, sex: e.target.value})} borderRadius="xl"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option></Select></FormControl>
                 </SimpleGrid>
@@ -1227,9 +1245,9 @@ function NavButton({ icon, label, count, active, onClick }) {
       onClick={onClick}
       transition="0.2s"
     >
-      <HStack>
+      <HStack minW={0}>
          <Icon as={icon} />
-         <Text fontSize="sm" fontWeight={active ? "bold" : "medium"}>{label}</Text>
+         <Text fontSize="sm" fontWeight={active ? "bold" : "medium"} whiteSpace="normal" wordBreak="break-word">{label}</Text>
       </HStack>
       {count !== undefined && <Badge colorScheme="teal" borderRadius="full" px={2}>{count}</Badge>}
     </HStack>
@@ -1238,7 +1256,7 @@ function NavButton({ icon, label, count, active, onClick }) {
 
 function DetailCard({ title, children, isEditing }) {
   return (
-    <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" borderTop={isEditing ? "4px solid" : "1px solid"} borderTopColor={isEditing ? "teal.500" : "gray.100"}>
+    <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" borderTop={isEditing ? "4px solid" : "1px solid"} borderTopColor={isEditing ? "teal.500" : "gray.100"}>
        <Heading size="xs" textTransform="uppercase" color="gray.400" mb={6} letterSpacing="wider">{title}</Heading>
        {children}
     </Box>

@@ -49,11 +49,12 @@ import NotificationCenter from '../../../components/NotificationCenter';
 import WelcomeOnboarding from '../../../components/WelcomeOnboarding';
 import { useAuth } from '../../../context/AuthContext';
 import FeedbackWidget from '../../../components/FeedbackWidget';
+import OnboardingModal from './client/OnboardingModal';
 
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const { therapistProfile, isAdmin, isTherapist } = useAuth();
+  const { therapistProfile, clientProfile, isAdmin, isTherapist, isClient } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -70,6 +71,28 @@ export default function DashboardLayout({ children }) {
     !isAdmin &&
     therapistProfile &&
     therapistProfile.is_verified === false;
+
+  const isPlaceholderClientIdentity = useMemo(() => {
+    const name = String(clientProfile?.name || "").trim().toLowerCase();
+    const email = String(clientProfile?.email || "").trim().toLowerCase();
+    const placeholderName =
+      !name ||
+      name.startsWith("user_") ||
+      ["new client", "client", "unknown", "unnamed client"].includes(name);
+    const placeholderEmail =
+      !email ||
+      email.endsWith("@local") ||
+      email.endsWith("@example.invalid") ||
+      !email.includes("@");
+    return placeholderName || placeholderEmail;
+  }, [clientProfile]);
+
+  const shouldForceClientOnboarding =
+    !!clientProfile?.id &&
+    !!isClient &&
+    !isAdmin &&
+    !isTherapistPendingVerification &&
+    isPlaceholderClientIdentity;
 
   const therapistYearsExperience = Number(therapistProfile?.years_experience || 0);
   const hasSupervisorEligibility = isAdmin || therapistYearsExperience >= 5;
@@ -272,6 +295,13 @@ export default function DashboardLayout({ children }) {
 
       {/* Dashboard Walkthrough */}
       <WelcomeOnboarding links={links} />
+
+      <OnboardingModal
+        isOpen={shouldForceClientOnboarding}
+        onClose={() => {}}
+        profileId={clientProfile?.id}
+        currentEmail={clientProfile?.email || user?.primaryEmailAddress?.emailAddress || ""}
+      />
 
       {/* Mobile Sidebar Drawer */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>

@@ -29,10 +29,30 @@ export default function OnboardingModal({ isOpen, onClose, profileId, currentEma
   const toast = useToast();
 
   const handleSave = async () => {
-    if (!formData.name.trim() || formData.name.toLowerCase() === 'new client') {
+    const normalizedName = formData.name.trim().toLowerCase();
+    const normalizedEmail = formData.email.trim().toLowerCase();
+
+    if (
+      !normalizedName ||
+      ['new client', 'client', 'unknown', 'unnamed client'].includes(normalizedName) ||
+      normalizedName.startsWith('user_')
+    ) {
       toast({
         title: "Name Required",
         description: "Please enter your real full name.",
+        status: "warning",
+      });
+      return;
+    }
+    if (
+      !normalizedEmail ||
+      !normalizedEmail.includes('@') ||
+      normalizedEmail.endsWith('@local') ||
+      normalizedEmail.endsWith('@example.invalid')
+    ) {
+      toast({
+        title: "Valid Email Required",
+        description: "Please enter your real email address.",
         status: "warning",
       });
       return;
