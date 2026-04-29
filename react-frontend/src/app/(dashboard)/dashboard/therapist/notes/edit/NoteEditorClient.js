@@ -191,7 +191,7 @@ export default function NoteEditorClient() {
   const [pastNotes, setPastNotes] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [providerName, setProviderName] = useState("");
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState(appointmentId || "");
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [values, setValues] = useState({});
   const [noteStatus, setNoteStatus] = useState("draft");
@@ -237,8 +237,6 @@ export default function NoteEditorClient() {
         setNoteStatus(n.status);
         setIsReadOnly(n.status === "final");
         setSelectedAppointmentId(n.appointment ? String(n.appointment) : (appointmentId || ""));
-      } else {
-        setSelectedAppointmentId(appointmentId || "");
       }
     } catch (e) {
       toast({ title: "Clinical Sync Error", status: "error" });
@@ -248,6 +246,11 @@ export default function NoteEditorClient() {
   };
 
   useEffect(() => { setMounted(true); loadData(); }, [clientId, noteId]);
+  useEffect(() => {
+    if (!noteId) {
+      setSelectedAppointmentId(appointmentId || "");
+    }
+  }, [appointmentId, noteId]);
 
   const selectedTemplate = useMemo(() => 
     templates.find(t => String(t.id) === String(selectedTemplateId)), 
