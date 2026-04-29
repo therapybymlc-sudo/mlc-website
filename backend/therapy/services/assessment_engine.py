@@ -265,7 +265,22 @@ def _p(text: str, style):
 
 
 def _table(data: list[list[Any]], col_widths=None):
-    tbl = Table(data, colWidths=col_widths, repeatRows=1)
+    # Ensure long text wraps and rows auto-expand naturally.
+    cell_styles = getSampleStyleSheet()
+    wrapped_body = []
+    for row_index, row in enumerate(data):
+        if row_index == 0:
+            wrapped_body.append(row)
+            continue
+        wrapped_row = []
+        for cell in row:
+            if isinstance(cell, str):
+                wrapped_row.append(Paragraph(escape(cell), cell_styles["BodyText"]))
+            else:
+                wrapped_row.append(cell)
+        wrapped_body.append(wrapped_row)
+
+    tbl = Table(wrapped_body, colWidths=col_widths, repeatRows=1)
     tbl.setStyle(
         TableStyle(
             [
@@ -281,6 +296,7 @@ def _table(data: list[list[Any]], col_widths=None):
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
                 ("TOPPADDING", (0, 0), (-1, -1), 4),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("WORDWRAP", (0, 0), (-1, -1), "LTR"),
             ]
         )
     )
