@@ -181,6 +181,8 @@ export default function NoteEditorClient() {
   
   const clientId = searchParams.get("clientId");
   const noteId = searchParams.get("noteId");
+  const appointmentId = searchParams.get("appointmentId");
+  const eventTypeId = searchParams.get("eventTypeId");
   
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -197,9 +199,6 @@ export default function NoteEditorClient() {
   const [searchNotes, setSearchNotes] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
   const HISTORY_PAGE_SIZE = 5;
-
-  const appointmentId = searchParams.get("appointmentId");
-  const eventTypeId = searchParams.get("eventTypeId");
 
   const loadData = async () => {
     try {
