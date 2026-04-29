@@ -11,11 +11,12 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, Image
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, Image, PageBreak
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.lineplots import LinePlot
 from reportlab.graphics.charts.axes import XValueAxis, YValueAxis
 from reportlab.graphics.widgets.markers import makeMarker
+from reportlab.graphics.shapes import Rect, String, Line
 
 
 DEFAULT_OUTPUT = {
@@ -450,6 +451,34 @@ def _score_trend_chart(points: list[tuple[int, int]]) -> Drawing:
     return drawing
 
 
+def _severity_bar_chart(total_score: int) -> Drawing:
+    drawing = Drawing(16 * cm, 2.4 * cm)
+    x0 = 0.6 * cm
+    y0 = 0.95 * cm
+    w = 14.8 * cm
+    h = 0.55 * cm
+    bands = [
+        (0, 4, colors.HexColor("#D7DCE0")),   # minimal
+        (5, 9, colors.HexColor("#E8D79A")),   # mild
+        (10, 14, colors.HexColor("#E7B86D")), # moderate
+        (15, 19, colors.HexColor("#D9865B")), # mod severe
+        (20, 27, colors.HexColor("#C95A5A")), # severe
+    ]
+    full_range = 27
+    for bmin, bmax, col in bands:
+        bx = x0 + (bmin / full_range) * w
+        bw = ((bmax - bmin + 1) / (full_range + 1)) * w
+        drawing.add(Rect(bx, y0, bw, h, fillColor=col, strokeColor=colors.white, strokeWidth=0.3))
+
+    marker_x = x0 + (max(0, min(total_score, full_range)) / full_range) * w
+    drawing.add(Line(marker_x, y0 - 0.2 * cm, marker_x, y0 + h + 0.28 * cm, strokeColor=colors.HexColor("#1F3D2B"), strokeWidth=1.4))
+    drawing.add(String(marker_x - 0.35 * cm, y0 + h + 0.35 * cm, f"{total_score}", fontSize=8, fillColor=colors.HexColor("#1F3D2B")))
+    drawing.add(String(x0, y0 - 0.45 * cm, "0", fontSize=7, fillColor=colors.HexColor("#4A5568")))
+    drawing.add(String(x0 + w - 0.45 * cm, y0 - 0.45 * cm, "27", fontSize=7, fillColor=colors.HexColor("#4A5568")))
+    drawing.add(String(x0, 0.2 * cm, "Severity Bar (PHQ-9)", fontSize=8, fillColor=colors.HexColor("#4A5568")))
+    return drawing
+
+
 def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scoring_output: dict[str, Any], responses: list[dict[str, Any]]) -> bytes:
     buf = BytesIO()
     doc = SimpleDocTemplate(
@@ -465,129 +494,158 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
     total_score = int(scoring_output.get("totalScore", 0))
     interpretation = _severity_interp(total_score)
     change_score = scoring_output.get("changeScore")
-    trend_label = _trend_label(change_score if isinstance(change_score, int) else None)
-    score_points = _build_score_history_points(assignment, spec, scoring_output)
+    prev_score = (total_score - int(change_score)) if isinstance(change_score, int) else None
+    submitted_at = timezone.localtime(assignment.submitted_at) if assignment.submitted_at else None
+    assigned_at = timezone.localtime(assignment.assigned_at) if assignment.assigned_at else None
+    client = getattr(assignment, "assigned_to", None)
+    therapist = getattr(assignment, "assigned_by", None)
+    dob = getattr(client, "date_of_birth", None)
+    age_display = ""
+    if dob:
+        try:
+            now_date = timezone.localdate()
+            age = now_date.year - dob.year - ((now_date.month, now_date.day) < (dob.month, dob.day))
+            age_display = str(age)
+        except Exception:
+            age_display = ""
+    time_taken = ""
+    if assigned_at and submitted_at:
+        delta = submitted_at - assigned_at
+        secs = int(delta.total_seconds())
+        if secs < 60:
+            time_taken = f"{secs}s"
+        else:
+            time_taken = f"{secs // 60}m {secs % 60}s"
 
     story = [
+        # PAGE 1 - Summary
         _brand_header(styles),
         Spacer(1, 0.2 * cm),
-        Table(
-            [[""]],
-            colWidths=[16.5 * cm],
-            style=TableStyle([("LINEBELOW", (0, 0), (-1, -1), 1.2, colors.HexColor("#C9A960"))]),
-        ),
+        Table([[""]], colWidths=[16.5 * cm], style=TableStyle([("LINEBELOW", (0, 0), (-1, -1), 1.2, colors.HexColor("#C9A960"))])),
         Spacer(1, 0.25 * cm),
-        _p(spec.get("name", "Assessment"), styles["Heading2"]),
-        _p(f"Assigned: {timezone.localtime(assignment.assigned_at).strftime('%Y-%m-%d %H:%M')}", styles["Normal"]),
-        _p(f"Completed: {timezone.localtime(assignment.submitted_at).strftime('%Y-%m-%d %H:%M') if assignment.submitted_at else 'N/A'}", styles["Normal"]),
+        _p(spec.get("name", "Patient Health Questionnaire-9 (PHQ-9)"), styles["Heading2"]),
+        _p("Depression Assessment Report", styles["Normal"]),
         Spacer(1, 0.25 * cm),
-        _section_title("Metadata", styles),
+        _section_title("Client Information", styles),
     ]
-
-    meta_rows = [
-        ["Field", "Value"],
-        ["Assessment", spec.get("name", "")],
-        ["Abbreviation", spec.get("abbreviation", "")],
-        ["Assessment ID", spec.get("id", "")],
-        ["Domain", ", ".join(spec.get("domain", [])) if isinstance(spec.get("domain"), list) else str(spec.get("domain", ""))],
-        ["Age range", spec.get("ageRange", "")],
-        ["Completion time", spec.get("completionTime", "")],
-        ["Scoring type", (spec.get("scoring") or {}).get("type", "")],
-        ["Version", spec.get("version", "")],
-        ["Scoring version", spec.get("scoringVersion", "")],
+    client_rows = [
+        ["Name", getattr(client, "name", "") or ""],
+        ["Date of Birth", str(dob or "N/A")],
+        ["Age", age_display or "N/A"],
+        ["Assessor", getattr(therapist, "name", "") or ""],
+        ["Date Administered", submitted_at.strftime("%Y-%m-%d %H:%M") if submitted_at else "N/A"],
+        ["Time Taken", time_taken or "N/A"],
     ]
-    story.append(_table(meta_rows, col_widths=[5.2 * cm, 11.3 * cm]))
-    story.extend([
-        Spacer(1, 0.3 * cm),
-        _section_title("Score Summary", styles),
-    ])
-
+    story.append(_table(client_rows, col_widths=[5.2 * cm, 11.3 * cm]))
+    story.extend([Spacer(1, 0.3 * cm), _section_title("Results Summary", styles)])
     summary_rows = [
-        ["Field", "Value"],
-        ["Total score", total_score],
-        ["Score range", f"{(spec.get('scoring') or {}).get('range', {}).get('min', 0)}-{(spec.get('scoring') or {}).get('range', {}).get('max', 27)}"],
-        ["Severity", scoring_output.get("severityLabel", "")],
-        ["Severity level", scoring_output.get("severityNumericLevel", 0)],
-        ["Immediate review", "Yes" if scoring_output.get("requiresImmediateReview") else "No"],
+        ["Total Score", "Range", "Severity", "Level"],
+        [str(total_score), "0-27", scoring_output.get("severityLabel", ""), str(scoring_output.get("severityNumericLevel", 0))],
     ]
-    story.append(_table(summary_rows, col_widths=[6.5 * cm, 10 * cm]))
-    story.append(Spacer(1, 0.3 * cm))
+    story.append(_table(summary_rows, col_widths=[3 * cm, 2.2 * cm, 8.3 * cm, 3 * cm]))
+    story.extend([Spacer(1, 0.22 * cm), _section_title("Score Visualization", styles), _severity_bar_chart(total_score), Spacer(1, 0.2 * cm)])
 
     risk_flags = scoring_output.get("riskFlags") or []
-    if risk_flags:
-        story.append(_section_title("Risk Flags", styles))
-        risk_rows = [["Flag", "Details"]]
-        for flag in risk_flags:
-            risk_rows.append(
+    if scoring_output.get("requiresImmediateReview") and risk_flags:
+        alert = Table(
+            [[f"Immediate Review Required: {risk_flags[0].get('label', 'Risk flag triggered.')}"]],
+            colWidths=[16.5 * cm],
+        )
+        alert.setStyle(
+            TableStyle(
                 [
-                    flag.get("label", "Risk flag"),
-                    (
-                        f"Urgency: {flag.get('urgency', 'high')} | "
-                        f"Item {flag.get('itemIndex')} response={flag.get('responseValue')} | "
-                        f"Action: {flag.get('action', '')}"
-                    ),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFE5E5")),
+                    ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#CC0000")),
+                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#900000")),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                    ("TOPPADDING", (0, 0), (-1, -1), 6),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                 ]
             )
-        story.append(_table(risk_rows, col_widths=[7 * cm, 9.5 * cm]))
-        story.append(Spacer(1, 0.3 * cm))
+        )
+        story.append(alert)
+        story.append(Spacer(1, 0.2 * cm))
 
-    story.append(_section_title("Interpretation", styles))
-    story.append(_p(f"{scoring_output.get('severityLabel', 'Unknown')} range.", styles["Normal"]))
-    story.append(_p(interpretation.get("therapistInterpretation", ""), styles["Normal"]))
-    story.append(_p(f"Follow-up: {interpretation.get('followUp', '')}", styles["Normal"]))
-    story.append(_p(
-        "Cutoff guidance: A score of 10 or higher is commonly used as a clinical cutoff suggesting increased likelihood of clinically significant depressive symptoms. "
-        "This does not diagnose depression and must be interpreted in context.",
-        styles["Normal"],
-    ))
-    story.append(_p(f"Disclaimer: {spec.get('disclaimer', '')}", styles["Normal"]))
-    story.append(Spacer(1, 0.25 * cm))
+    story.append(_section_title("Clinical Interpretation", styles))
+    story.append(_p(f"{scoring_output.get('severityLabel', 'Unknown')} range. {interpretation.get('therapistInterpretation', '')}", styles["Normal"]))
 
-    story.append(_section_title("Change / Progress", styles))
-    change_rows = [
-        ["Field", "Value"],
-        ["Previous score", "N/A" if change_score is None else str(total_score - int(change_score))],
-        ["Current score", str(total_score)],
-        ["Change score", "N/A" if change_score is None else str(change_score)],
-        [
-            "Clinically significant change (>=5)",
-            "N/A" if scoring_output.get("clinicallySignificantChange") is None else ("Yes" if scoring_output.get("clinicallySignificantChange") else "No"),
-        ],
-        ["Trend label", trend_label or "N/A"],
-    ]
-    story.append(_table(change_rows, col_widths=[7 * cm, 9.5 * cm]))
-    story.append(Spacer(1, 0.25 * cm))
+    # PAGE 2 - Clinical context
+    story.append(PageBreak())
+    story.append(_brand_header(styles))
+    story.append(Spacer(1, 0.2 * cm))
+    story.append(_section_title("Scoring and Interpretation Information", styles))
+    story.append(_p("The PHQ-9 total score ranges from 0 to 27, reflecting the severity of depressive symptoms.", styles["Normal"]))
+    story.append(_p("Scores of 5, 10, 15, and 20 represent thresholds for mild, moderate, moderately severe, and severe depression respectively. A cutoff score of 10 or higher is commonly used to identify clinically significant depressive symptoms.", styles["Normal"]))
+    story.append(_p("Changes of 5 points or more are considered clinically meaningful.", styles["Normal"]))
+    story.append(Spacer(1, 0.2 * cm))
+    story.append(_section_title("Severity Band Explanations", styles))
+    band_rows = [["Range", "Severity", "Interpretation", "Follow-up"]]
+    for band in spec.get("severityBands", []):
+        sample_interp = _severity_interp(int(band.get("max", 0)))
+        band_rows.append([
+            f"{band.get('min', 0)}-{band.get('max', 0)}",
+            band.get("label", ""),
+            sample_interp.get("therapistInterpretation", ""),
+            sample_interp.get("followUp", ""),
+        ])
+    story.append(_table(band_rows, col_widths=[1.5 * cm, 4.5 * cm, 5.1 * cm, 5.4 * cm]))
+    story.append(Spacer(1, 0.2 * cm))
+    story.append(_section_title("Expanded Context", styles))
+    story.append(_p("Cutoff >=10 suggests increased likelihood of clinically significant depressive symptoms. This is a screening and progress-monitoring tool and not a standalone diagnostic instrument.", styles["Normal"]))
+    story.append(_p("Reliable change threshold: 5 points.", styles["Normal"]))
 
-    story.append(_section_title("Score Trend Graph", styles))
-    story.append(_p("PHQ-9 total score trajectory across completed assignments.", styles["Normal"]))
-    story.append(_score_trend_chart(score_points))
-    story.append(Spacer(1, 0.25 * cm))
+    # Progress section only when previous score exists.
+    if prev_score is not None:
+        story.append(Spacer(1, 0.2 * cm))
+        story.append(_section_title("Progress Over Time", styles))
+        progress_rows = [
+            ["Previous", "Current", "Change", "Clinically Significant"],
+            [
+                str(prev_score),
+                str(total_score),
+                str(change_score),
+                "Yes" if scoring_output.get("clinicallySignificantChange") else "No",
+            ],
+        ]
+        story.append(_table(progress_rows, col_widths=[3.8 * cm, 3.8 * cm, 3.8 * cm, 5.1 * cm]))
 
-    story.append(_section_title("Report Metadata", styles))
-    report_meta_rows = [
-        ["Field", "Value"],
-        ["Assessment instance", str(getattr(assignment, "id", ""))],
-        ["Client ID", str(getattr(assignment, "assigned_to_id", ""))],
-        ["Therapist ID", str(getattr(assignment, "assigned_by_id", ""))],
-        ["Assessment ID", spec.get("id", "")],
-        ["Scored at", timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M")],
-        ["Reviewed", "Yes" if assignment.status == getattr(assignment.Status, "REVIEWED", "reviewed") else "No"],
-        ["Attribution", spec.get("attribution", "")],
-    ]
-    story.append(_table(report_meta_rows, col_widths=[4.7 * cm, 11.8 * cm]))
-    story.append(Spacer(1, 0.35 * cm))
-
-    # Required by product: response sheet always appended at end.
-    story.append(_section_title("Client Response Sheet", styles))
+    # PAGE 3 - Response matrix
+    story.append(PageBreak())
+    story.append(_brand_header(styles))
+    story.append(Spacer(1, 0.2 * cm))
+    story.append(_section_title("Client Responses", styles))
     item_by_index = {item.get("itemIndex"): item for item in spec.get("items", [])}
-    label_map = {row.get("value"): row.get("label") for row in spec.get("responseScale", [])}
-    response_rows = [["Item", "Question", "Response"]]
+    response_rows = [[
+        "#",
+        "Item",
+        "Not at all",
+        "Several days",
+        "More than half the days",
+        "Nearly every day",
+    ]]
     for response in sorted(responses, key=lambda r: r.get("itemIndex", 0)):
         idx = response.get("itemIndex")
         question = item_by_index.get(idx, {}).get("itemText", f"Item {idx}")
         value = response.get("value")
-        response_rows.append([str((idx or 0) + 1), question, f"{value} - {label_map.get(value, '')}"])
-    story.append(_table(response_rows, col_widths=[1.2 * cm, 10.3 * cm, 5 * cm]))
+        row = [str((idx or 0) + 1), question, "", "", "", ""]
+        if isinstance(value, int) and 0 <= value <= 3:
+            row[2 + value] = "X"
+        response_rows.append(row)
+    response_tbl = _table(response_rows, col_widths=[0.9 * cm, 8.6 * cm, 1.7 * cm, 1.7 * cm, 2.2 * cm, 1.9 * cm])
+    response_style = TableStyle([])
+    for r_i, response in enumerate(sorted(responses, key=lambda r: r.get("itemIndex", 0)), start=1):
+        idx = response.get("itemIndex")
+        value = response.get("value")
+        if idx == 8 and isinstance(value, int) and value > 0:
+            response_style.add("BACKGROUND", (0, r_i), (-1, r_i), colors.HexColor("#FFF4F4"))
+        if isinstance(value, int) and 0 <= value <= 3:
+            col = 2 + value
+            response_style.add("BACKGROUND", (col, r_i), (col, r_i), colors.HexColor("#D4AF37"))
+    response_tbl.setStyle(response_style)
+    story.append(response_tbl)
 
     doc.build(story)
     return buf.getvalue()
