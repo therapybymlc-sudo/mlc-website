@@ -19,7 +19,7 @@ import { exportNoteToPDF } from "../../../../../../utils/ClinicalPDFService.js";
 /* =========================================
    Finalized Note Viewer (Non-Editable)
 ========================================= */
-function FinalizedNoteView({ template, values, client }) {
+function FinalizedNoteView({ template, values, providerName, linkedAppointment }) {
   const fieldsByRef = {};
   if (template?.fields) {
     template.fields.forEach(f => {
@@ -45,6 +45,26 @@ function FinalizedNoteView({ template, values, client }) {
 
   return (
     <VStack align="stretch" spacing={8} pb={20}>
+      <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
+         <Box bg="gray.50" px={8} py={4} borderBottom="1px solid" borderColor="gray.100">
+            <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest">Session Context</Heading>
+         </Box>
+         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6} p={8}>
+            <Box>
+              <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Provider</Text>
+              <Text fontSize="md" color="gray.800">{providerName || "—"}</Text>
+            </Box>
+            <Box>
+              <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Session</Text>
+              <Text fontSize="md" color="gray.800">
+                {linkedAppointment
+                  ? `${new Date(linkedAppointment.date || linkedAppointment.start_time).toLocaleString()}`
+                  : "—"}
+              </Text>
+            </Box>
+         </SimpleGrid>
+      </Box>
+
       {sections.map((section, idx) => (
         <Box key={idx} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
            <Box bg="gray.50" px={8} py={4} borderBottom="1px solid" borderColor="gray.100">
@@ -168,6 +188,8 @@ export default function NoteEditorClient() {
   const [templates, setTemplates] = useState([]);
   const [pastNotes, setPastNotes] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [providerName, setProviderName] = useState("");
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(appointmentId || "");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [values, setValues] = useState({});
   const [noteStatus, setNoteStatus] = useState("draft");
@@ -182,17 +204,19 @@ export default function NoteEditorClient() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tpls, clnt, prev, appts] = await Promise.all([
+      const [tpls, clnt, prev, appts, therapistMe] = await Promise.all([
         apiGet("note-templates/"),
         clientId ? apiGet(`clients/${clientId}/`) : Promise.resolve(null),
         clientId ? apiGet(`notes/?client=${clientId}`) : Promise.resolve([]),
         clientId ? apiGet(`appointments/?client=${clientId}`) : Promise.resolve([]),
+        apiGet("therapists/me/").catch(() => null),
       ]);
       const templatesList = Array.isArray(tpls) ? tpls : tpls.results || [];
       setTemplates(templatesList);
       setClient(clnt);
       setPastNotes(Array.isArray(prev) ? prev : prev.results || []);
       setAppointments(Array.isArray(appts) ? appts : appts.results || []);
+      setProviderName(therapistMe?.name || therapistMe?.first_name || "");
       
       // 🚀 Clinical Hot-Link: MISSION AUTO-PILOT
       if (!noteId && eventTypeId && templatesList.length > 0) {
@@ -213,6 +237,9 @@ export default function NoteEditorClient() {
         setValues(n.data || {});
         setNoteStatus(n.status);
         setIsReadOnly(n.status === "final");
+        setSelectedAppointmentId(n.appointment ? String(n.appointment) : (appointmentId || ""));
+      } else {
+        setSelectedAppointmentId(appointmentId || "");
       }
     } catch (e) {
       toast({ title: "Clinical Sync Error", status: "error" });
@@ -226,6 +253,14 @@ export default function NoteEditorClient() {
   const selectedTemplate = useMemo(() => 
     templates.find(t => String(t.id) === String(selectedTemplateId)), 
   [templates, selectedTemplateId]);
+
+  const sortedAppointments = useMemo(() => {
+    return [...appointments].sort((a, b) => {
+      const aTs = new Date(a.date || a.start_time || 0).getTime();
+      const bTs = new Date(b.date || b.start_time || 0).getTime();
+      return bTs - aTs;
+    });
+  }, [appointments]);
 
   const sortedPastNotes = useMemo(() => {
     return [...pastNotes].sort((a, b) => {
@@ -298,9 +333,12 @@ export default function NoteEditorClient() {
       const payload = {
         client: Number(clientId),
         template: Number(selectedTemplateId),
-        data: values,
+        data: {
+          ...values,
+          provider_name: providerName || values.provider_name,
+        },
         status: status,
-        appointment: appointmentId ? Number(appointmentId) : null,
+        appointment: selectedAppointmentId ? Number(selectedAppointmentId) : null,
       };
       if (noteId) await apiPut(`notes/${noteId}/`, payload);
       else {
@@ -315,8 +353,8 @@ export default function NoteEditorClient() {
   };
 
   const linkedAppointment = useMemo(() => 
-    appointments.find(a => String(a.id) === String(appointmentId)),
-  [appointments, appointmentId]);
+    appointments.find(a => String(a.id) === String(selectedAppointmentId)),
+  [appointments, selectedAppointmentId]);
 
   if (!mounted || loading) return <Center py={20}><Spinner color="teal.500" size="xl" /></Center>;
 
@@ -340,16 +378,13 @@ export default function NoteEditorClient() {
             </VStack>
          </HStack>
          <HStack spacing={3}>
-                <Button 
-                  leftIcon={<FiDownload />} 
-                  variant="outline" 
-                  borderColor="teal.200" 
-                  color="teal.600" 
+                <Button
+                  leftIcon={<FiPlus />}
+                  variant="ghost"
                   borderRadius="full"
-                  onClick={() => exportNoteToPDF(client, { data: values, template: selectedTemplateId, template_name: selectedTemplate?.name }, "MLC Professional", selectedTemplate)}
-                  isDisabled={!selectedTemplateId}
+                  onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${clientId}`)}
                 >
-                  Export PDF
+                  New Note
                 </Button>
           </HStack>
       </Flex>
@@ -359,12 +394,37 @@ export default function NoteEditorClient() {
          <GridItem>
             <VStack align="stretch" spacing={6}>
                <Box bg="blue.50" p={6} borderRadius="2xl" border="1px dashed" borderColor="blue.100">
-                  <FormControl>
-                     <FormLabel fontSize="xs" fontWeight="bold" color="blue.600">SELECTED CLINICAL TEMPLATE</FormLabel>
-                     <Select bg="white" borderRadius="xl" placeholder="Choose a structural model..." value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)} isDisabled={isReadOnly}>
-                        {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                     </Select>
-                  </FormControl>
+                  <VStack align="stretch" spacing={4}>
+                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                      <FormControl>
+                        <FormLabel fontSize="xs" fontWeight="bold" color="blue.600">PROVIDER</FormLabel>
+                        <Input bg="white" borderRadius="xl" value={providerName || "—"} isReadOnly />
+                      </FormControl>
+                      <FormControl>
+                        <FormLabel fontSize="xs" fontWeight="bold" color="blue.600">SESSION</FormLabel>
+                        <Select
+                          bg="white"
+                          borderRadius="xl"
+                          placeholder="Select session"
+                          value={selectedAppointmentId}
+                          onChange={(e) => setSelectedAppointmentId(e.target.value)}
+                          isDisabled={isReadOnly}
+                        >
+                          {sortedAppointments.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {new Date(a.date || a.start_time).toLocaleString()} - {a.status_label || a.status || "Session"}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </SimpleGrid>
+                    <FormControl>
+                       <FormLabel fontSize="xs" fontWeight="bold" color="blue.600">SELECTED CLINICAL TEMPLATE</FormLabel>
+                       <Select bg="white" borderRadius="xl" placeholder="Choose a structural model..." value={selectedTemplateId} onChange={e => setSelectedTemplateId(e.target.value)} isDisabled={isReadOnly}>
+                          {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                       </Select>
+                    </FormControl>
+                  </VStack>
                </Box>
 
                <Button variant="link" color="red.400" size="xs" leftIcon={<FiAlertCircle />} alignSelf="start" mb={2}>+ ADD MEDICAL ALERT</Button>
@@ -378,7 +438,12 @@ export default function NoteEditorClient() {
                  </Center>
                ) : (
                  isReadOnly ? (
-                   <FinalizedNoteView template={selectedTemplate} values={values} client={client} />
+                  <FinalizedNoteView
+                    template={selectedTemplate}
+                    values={values}
+                    providerName={providerName || values.provider_name}
+                    linkedAppointment={linkedAppointment}
+                  />
                  ) : (
                    (selectedTemplate.sections && selectedTemplate.sections.length > 0 
                      ? selectedTemplate.sections 
@@ -409,6 +474,24 @@ export default function NoteEditorClient() {
                           <Text fontSize="xs" color="gray.400">Ensure all clinical fields are accurate before finalization.</Text>
                        </VStack>
                        <Stack direction={{ base: "column", sm: "row" }} spacing={4}>
+                          <Button
+                            leftIcon={<FiDownload />}
+                            variant="outline"
+                            borderColor="teal.200"
+                            color="teal.600"
+                            borderRadius="full"
+                            onClick={() =>
+                              exportNoteToPDF(
+                                client,
+                                { data: values, template: selectedTemplateId, template_name: selectedTemplate?.name },
+                                "MLC Professional",
+                                selectedTemplate
+                              )
+                            }
+                            isDisabled={!selectedTemplateId}
+                          >
+                            Export PDF
+                          </Button>
                           <Button 
                             leftIcon={<FiSave />} 
                             variant="ghost" 
