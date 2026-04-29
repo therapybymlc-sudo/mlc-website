@@ -11,6 +11,7 @@ from therapy.services import (
     validate_assessment_responses,
     score_assessment,
     build_assessment_report_pdf_bytes,
+    build_safety_plan_pdf_bytes,
 )
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -27,6 +28,7 @@ import base64
 import hashlib
 import hmac
 import json
+from io import BytesIO
 import urllib.request
 import urllib.error
 from decimal import Decimal
@@ -170,31 +172,9 @@ from therapy.serializers import (
 # ... existing code ...
 
 class SupportTicketViewSet(viewsets.ModelViewSet):
+    queryset = SupportTicket.objects.all()
     serializer_class = SupportTicketSerializer
     permission_classes = [IsAuthenticated]
-
-class PlatformFeedbackViewSet(viewsets.ModelViewSet):
-    queryset = PlatformFeedback.objects.all()
-    serializer_class = PlatformFeedbackSerializer
-    
-    def get_permissions(self):
-        if self.action == 'create':
-            return [AllowAny()]
-        return [IsAuthenticated()] # Admin checks handled in get_queryset
-
-    def get_queryset(self):
-        # Only admins see all feedback
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return PlatformFeedback.objects.all()
-        # Normal users only see their own (though they mainly just submit)
-        if user.is_authenticated:
-            return PlatformFeedback.objects.filter(user=user)
-        return PlatformFeedback.objects.none()
-
-    def perform_create(self, serializer):
-        user = self.request.user if self.request.user.is_authenticated else None
-        serializer.save(user=user)
 
     def get_queryset(self):
         roles = _extract_roles_from_auth(self.request)
@@ -218,7 +198,7 @@ class PlatformFeedbackViewSet(viewsets.ModelViewSet):
             if client:
                 user_role = "client"
                 user_name = client.name
-        
+
         serializer.save(
             user=user,
             user_role=user_role,
@@ -235,6 +215,30 @@ class PlatformFeedbackViewSet(viewsets.ModelViewSet):
         ticket.admin_notes = request.data.get("admin_notes", ticket.admin_notes)
         ticket.save()
         return Response(SupportTicketSerializer(ticket).data)
+
+
+class PlatformFeedbackViewSet(viewsets.ModelViewSet):
+    queryset = PlatformFeedback.objects.all()
+    serializer_class = PlatformFeedbackSerializer
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [AllowAny()]
+        return [IsAuthenticated()]  # Admin checks handled in get_queryset
+
+    def get_queryset(self):
+        # Only admins see all feedback
+        user = self.request.user
+        if user.is_staff or user.is_superuser:
+            return PlatformFeedback.objects.all()
+        # Normal users only see their own (though they mainly just submit)
+        if user.is_authenticated:
+            return PlatformFeedback.objects.filter(user=user)
+        return PlatformFeedback.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
 from therapy.permissions import (
     IsTherapistOwnerOfSlot,
     IsClientOwnerOfBookingRequest,
@@ -267,6 +271,71 @@ def _profile_required_response(profile_type: str):
             "profile_type": profile_type,
         },
         status=status.HTTP_403_FORBIDDEN,
+    )
+
+
+def _save_safety_plan_artifacts(request, client, plan):
+    saved_at = timezone.now()
+    pdf_bytes = build_safety_plan_pdf_bytes(client=client, plan=plan, saved_at=saved_at)
+    stamp = saved_at.strftime("%Y%m%d%H%M%S")
+    file_name = f"safety_plan_{client.id}_{stamp}.pdf"
+
+    uploader = request.user if getattr(request.user, "is_authenticated", False) else client.user
+    if uploader is not None:
+        client_file = ClientFile(client=client, uploaded_by=uploader)
+        client_file.file.save(file_name, ContentFile(pdf_bytes), save=True)
+
+    relationship = (
+        TherapeuticRelationship.objects.filter(
+            client=client,
+            status=TherapeuticRelationship.Status.ACTIVE,
+        )
+        .select_related("therapist")
+        .first()
+    )
+    if not relationship:
+        return
+
+    therapist = relationship.therapist
+    resource_title = f"Safety Plan Report - {client.name}"
+    resource_description = (
+        "Auto-generated PDF report of the client's current safety plan, "
+        "including responses and crisis support guidance."
+    )
+    resource = (
+        Resource.objects.filter(
+            therapist=therapist,
+            title=resource_title,
+            resource_type=Resource.ResourceType.FILE,
+        )
+        .order_by("-updated_at")
+        .first()
+    )
+    if not resource:
+        resource = Resource.objects.create(
+            therapist=therapist,
+            title=resource_title,
+            description=resource_description,
+            resource_type=Resource.ResourceType.FILE,
+            tags=["auto_generated", "safety_plan", f"client:{client.id}"],
+            is_active=True,
+        )
+    else:
+        resource.description = resource_description
+        resource.is_active = True
+        resource.save(update_fields=["description", "is_active", "updated_at"])
+
+    resource.file.save(file_name, ContentFile(pdf_bytes), save=True)
+
+    SharedResourceAssignment.objects.get_or_create(
+        therapeutic_relationship=relationship,
+        resource=resource,
+        assigned_by=therapist,
+        assigned_to=client,
+        defaults={
+            "therapist_note": "Safety plan PDF generated automatically after client save.",
+            "status": SharedResourceAssignment.Status.ASSIGNED,
+        },
     )
 
 
@@ -3778,7 +3847,17 @@ class SafetyPlanViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         client = _resolve_client_from_request(self.request)
-        serializer.save(client=client)
+        if not client:
+            raise exceptions.PermissionDenied("Client profile required.")
+        plan = serializer.save(client=client)
+        _save_safety_plan_artifacts(self.request, client, plan)
+
+    def perform_update(self, serializer):
+        client = _resolve_client_from_request(self.request)
+        if not client:
+            raise exceptions.PermissionDenied("Client profile required.")
+        plan = serializer.save(client=client)
+        _save_safety_plan_artifacts(self.request, client, plan)
 
     @action(detail=False, methods=['get'])
     def current(self, request):
@@ -3787,6 +3866,21 @@ class SafetyPlanViewSet(viewsets.ModelViewSet):
         plan, created = SafetyPlan.objects.get_or_create(client=client)
         serializer = self.get_serializer(plan)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="current/export-pdf")
+    def export_current_pdf(self, request):
+        client = _resolve_client_from_request(request)
+        if not client:
+            return Response({"detail": "Client profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        plan, _ = SafetyPlan.objects.get_or_create(client=client)
+        pdf_bytes = build_safety_plan_pdf_bytes(client=client, plan=plan, saved_at=timezone.now())
+        filename = f"safety_plan_{client.id}.pdf"
+        return FileResponse(
+            BytesIO(pdf_bytes),
+            as_attachment=True,
+            filename=filename,
+            content_type="application/pdf",
+        )
 
 class TherapeuticRelationshipViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TherapeuticRelationshipSerializer

@@ -9,3 +9,4 @@ from .assessment_engine import (
     score_assessment,
     build_assessment_report_pdf_bytes,
 )
+from .safety_plan_pdf import build_safety_plan_pdf_bytes

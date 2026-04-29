@@ -47,47 +47,49 @@ function FinalizedNoteView({ template, values, providerName, linkedAppointment }
 
   return (
     <VStack align="stretch" spacing={{ base: 4, md: 8 }} pb={{ base: 10, md: 20 }}>
-      <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-         <Box bg="gray.50" px={{ base: 4, md: 8 }} py={{ base: 3, md: 4 }} borderBottom="1px solid" borderColor="gray.100">
-            <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest">Session Context</Heading>
-         </Box>
-         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }} p={{ base: 4, md: 8 }}>
-            <Box>
-              <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Provider</Text>
-              <Text fontSize="md" color="gray.800">{providerName || "—"}</Text>
-            </Box>
-            <Box>
-              <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Session</Text>
-              <Text fontSize="md" color="gray.800">
-                {linkedAppointment
-                  ? `${new Date(linkedAppointment.date || linkedAppointment.start_time).toLocaleString()}`
-                  : "—"}
-              </Text>
-            </Box>
-         </SimpleGrid>
-      </Box>
+      <Box bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" p={{ base: 4, md: 8 }}>
+        <VStack align="stretch" spacing={{ base: 5, md: 6 }}>
+          <Box>
+            <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest" mb={3}>Session Context</Heading>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 3, md: 4 }}>
+              <Box>
+                <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Provider</Text>
+                <Text fontSize="md" color="gray.800">{providerName || "—"}</Text>
+              </Box>
+              <Box>
+                <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">Session</Text>
+                <Text fontSize="md" color="gray.800">
+                  {linkedAppointment
+                    ? `${new Date(linkedAppointment.date || linkedAppointment.start_time).toLocaleString()}`
+                    : "—"}
+                </Text>
+              </Box>
+            </SimpleGrid>
+          </Box>
 
-      {sections.map((section, idx) => (
-        <Box key={idx} bg="white" borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" overflow="hidden">
-           <Box bg="gray.50" px={{ base: 4, md: 8 }} py={{ base: 3, md: 4 }} borderBottom="1px solid" borderColor="gray.100">
-              <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest">{section.title || "Section"}</Heading>
-           </Box>
-           <SimpleGrid columns={1} spacing={{ base: 4, md: 6 }} p={{ base: 4, md: 8 }}>
-              {(section.fields || []).map(f => {
-                const val = values[f.field_key] ?? values[String(f.id)] ?? values[f.id];
-                const display = Array.isArray(val) ? val.join(", ") : (val === undefined || val === null || val === "" ? "—" : String(val));
-                return (
-                  <Box key={f.id || f.field_key} pb={4} borderBottom="1px solid" borderColor="gray.50" _last={{ borderBottom: "none" }}>
-                     <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">{f.label}</Text>
-                     <Text fontSize="md" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall" wordBreak="break-word">
+          {sections.map((section, idx) => (
+            <Box key={idx}>
+              <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="widest" mb={3}>
+                {section.title || "Section"}
+              </Heading>
+              <VStack align="stretch" spacing={4}>
+                {(section.fields || []).map(f => {
+                  const val = values[f.field_key] ?? values[String(f.id)] ?? values[f.id];
+                  const display = Array.isArray(val) ? val.join(", ") : (val === undefined || val === null || val === "" ? "—" : String(val));
+                  return (
+                    <Box key={f.id || f.field_key}>
+                      <Text fontSize="xs" fontWeight="bold" color="teal.600" mb={1} textTransform="uppercase">{f.label}</Text>
+                      <Text fontSize="md" color="gray.800" whiteSpace="pre-wrap" lineHeight="tall" wordBreak="break-word">
                         {display}
-                     </Text>
-                  </Box>
-                );
-              })}
-           </SimpleGrid>
-        </Box>
-      ))}
+                      </Text>
+                    </Box>
+                  );
+                })}
+              </VStack>
+            </Box>
+          ))}
+        </VStack>
+      </Box>
       
       {/* Fallback for orphaned data points (data in values but not in current template) */}
       {unmappedEntries.length > 0 && (

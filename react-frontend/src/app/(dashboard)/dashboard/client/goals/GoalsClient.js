@@ -28,6 +28,7 @@ import {
   Flex,
   Badge,
   Collapse,
+  Stack,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { 

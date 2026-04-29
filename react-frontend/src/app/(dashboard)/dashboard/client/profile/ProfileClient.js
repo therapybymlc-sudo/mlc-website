@@ -40,6 +40,7 @@ export default function ProfileClient() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const fileInputRef = useRef(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -123,8 +124,6 @@ export default function ProfileClient() {
   }
 
   const isGhost = formData.name.startsWith("user_") || formData.email.includes("@example.invalid");
-
-  const fileInputRef = useRef(null);
   
   const handlePhotoClick = () => {
     fileInputRef.current?.click();

@@ -21,10 +21,11 @@ import {
   AccordionIcon,
   FormControl,
   FormLabel,
+  Stack,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { FiAlertTriangle, FiHeart, FiPhone, FiShield, FiSave, FiInfo } from "react-icons/fi";
-import { apiGet, apiPut } from "../../../../../api.js";
+import { apiGet, apiGetBlob, apiPut } from "../../../../../api.js";
 import { useAuth } from "../../../../../context/AuthContext";
 
 export default function SafetyClient() {
@@ -76,6 +77,22 @@ export default function SafetyClient() {
       toast({ title: "Failed to update safety plan", status: "error" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      const blob = await apiGetBlob("safety-plans/current/export-pdf/");
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "safety-plan.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast({ title: "Failed to export safety plan", status: "error" });
     }
   };
 
@@ -162,19 +179,32 @@ export default function SafetyClient() {
         </Box>
 
         <Box id="tour-safety-save" pt={6}>
-            <Button 
-                w="full" 
-                h="60px" 
-                bg="#56756D" 
-                color="white" 
-                borderRadius="2xl" 
-                leftIcon={<FiSave />}
-                isLoading={saving}
-                onClick={handleSave}
-                _hover={{ bg: '#3E5B54' }}
-            >
-                Save Safety Plan
-            </Button>
+            <Stack direction={{ base: "column", md: "row" }} spacing={3}>
+              <Button
+                  flex="1"
+                  h="60px"
+                  bg="#56756D"
+                  color="white"
+                  borderRadius="2xl"
+                  leftIcon={<FiSave />}
+                  isLoading={saving}
+                  onClick={handleSave}
+                  _hover={{ bg: '#3E5B54' }}
+              >
+                  Save Safety Plan
+              </Button>
+              <Button
+                flex="1"
+                h="60px"
+                variant="outline"
+                borderRadius="2xl"
+                borderColor="#56756D"
+                color="#56756D"
+                onClick={handleExportPdf}
+              >
+                Export as PDF
+              </Button>
+            </Stack>
             <Text textAlign="center" mt={4} fontSize="xs" color="gray.400">
                 Only you and your primary therapist can view this plan.
             </Text>
