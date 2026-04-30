@@ -357,8 +357,10 @@ def _resolve_therapist_from_request(request, allow_create=False):
     roles = _extract_roles_from_auth(request)
     is_admin = "admin" in roles
 
-    # Strict role separation: client identities cannot access therapist profile flows.
-    if not is_admin:
+    is_therapist_role = any(role in roles for role in ["therapist", "premium_therapist"])
+    
+    # Strict role separation: client identities cannot access therapist profile flows, UNLESS they hold a therapist role
+    if not is_admin and not is_therapist_role:
         has_client_profile = ClientProfile.objects.filter(user=user).exists()
         has_client_email_identity = bool(auth_email) and ClientProfile.objects.filter(email__iexact=auth_email).exists()
         if has_client_profile or has_client_email_identity:
