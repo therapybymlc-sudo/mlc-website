@@ -468,7 +468,12 @@ export default function Navbar() {
 
       {/* 📱 Mobile Drawer */}
       {isOpen && (
-        <Box display={{ lg: "none" }} pb={4}>
+        <Box 
+          display={{ lg: "none" }} 
+          pb={4}
+          maxH="calc(100vh - 75px)"
+          overflowY="auto"
+        >
           <VStack
             bg="#56756D"
             align="stretch"

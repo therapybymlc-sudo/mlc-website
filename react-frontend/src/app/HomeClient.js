@@ -123,7 +123,7 @@ export default function HomeClient() {
       <MotionBox
         position="relative"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
-        bgSize={{ base: "contain", md: "contain" }}
+        bgSize="cover"
         bgPosition="center"
         bgRepeat="no-repeat"
         bgColor="#FDFBFA" 
@@ -159,7 +159,7 @@ export default function HomeClient() {
             as="h1"
             fontFamily="'Playfair Display', var(--font-playfair), serif"
             fontWeight="600"
-            fontSize={{ base: "2.8rem", md: "4.5rem", lg: "5.5rem" }}
+            fontSize={{ base: "2.2rem", md: "4.5rem", lg: "5.5rem" }}
             color="#2E2E2E"
             letterSpacing="-0.01em"
             lineHeight="1.1"

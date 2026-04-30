@@ -2276,7 +2276,7 @@ class PublicTherapistDirectoryView(APIView):
                 "years_experience": profile.years_experience,
                 "gender": profile.gender,
                 "city": profile.city,
-                "modality": profile.modality,
+                "modality": profile.modalities,
                 "bio": profile.bio,
                 "is_verified": profile.is_verified,
                 "is_supervisor": profile.is_supervisor,

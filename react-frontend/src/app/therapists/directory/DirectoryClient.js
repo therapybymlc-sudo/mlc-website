@@ -164,7 +164,7 @@ const TherapistCardMini = ({ therapist }) => {
                     {therapist.years_experience}+ YRS EXP
                 </Badge>
                 <Badge bg="whiteAlpha.400" backdropFilter="blur(5px)" color="white" borderRadius="full" px={2} fontSize="2xs">
-                    {therapist.modality || "Integrative"}
+                    {Array.isArray(therapist.modality) ? therapist.modality[0] : (therapist.modality || "Integrative")}
                 </Badge>
             </HStack>
         </Box>
@@ -325,7 +325,8 @@ export default function DirectoryClient() {
 
       // Modality
       if (selectedModalities.length > 0) {
-          if (!selectedModalities.includes(t.modality)) return false;
+          const tMods = Array.isArray(t.modality) ? t.modality : (t.modality ? [t.modality] : []);
+          if (!selectedModalities.some(m => tMods.includes(m))) return false;
       }
 
       return true;

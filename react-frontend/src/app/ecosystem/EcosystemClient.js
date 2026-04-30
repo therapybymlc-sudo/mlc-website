@@ -314,7 +314,7 @@ export default function EcosystemClient() {
               India's Digital Home for Professional Therapy
             </Heading>
             <Text color="gray.600" fontSize="lg">
-              Whether you are looking for **Online Therapy in Mumbai**, **Clinical Supervision in Bangalore**, or **Workshops for Therapists in Delhi**, MLC Health and Wellness Centre provides a unified ecosystem for every major Indian city.
+              Whether you are looking for Online Therapy in Mumbai, Clinical Supervision in Bangalore, or Workshops for Therapists in Delhi, MLC Health and Wellness Centre provides a unified ecosystem for every major Indian city.
             </Text>
             <Button 
               as={NextLink} 

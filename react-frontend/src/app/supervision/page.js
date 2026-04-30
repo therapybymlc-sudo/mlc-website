@@ -177,7 +177,7 @@ export default function SupervisionPage() {
 
           <Box position="relative">
             <Image 
-              src="https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=800" 
+              src="/supervision_clinical_review.png" 
               borderRadius="3xl" 
               shadow="2xl" 
               alt="A therapist reviewing clinical materials, representing the commitment to depth and professional excellence at MLC"
