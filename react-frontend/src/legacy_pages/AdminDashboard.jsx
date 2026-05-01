@@ -915,6 +915,24 @@ const growthSectionBody = (sec) => {
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Briefcase} label="Services Cards" id="services_list" />
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Users} label="Team Members" id="team" />
         <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Globe} label="Other Pages" id="other_pages" />
+        <Link href="/admin/blog" passHref style={{ textDecoration: 'none' }}>
+          <HStack
+            spacing={3}
+            px={4}
+            py={3}
+            cursor="pointer"
+            bg="transparent"
+            color="gray.600"
+            borderRadius="xl"
+            transition="all 0.2s"
+            _hover={{ bg: "rgba(95, 160, 147, 0.05)", color: "mlc.green" }}
+          >
+            <Box as={FileCheck} size={18} />
+            <Text fontWeight="500" fontSize="md">
+              Blog CMS
+            </Text>
+          </HStack>
+        </Link>
       </VStack>
 
       <VStack align="stretch" spacing={1}>

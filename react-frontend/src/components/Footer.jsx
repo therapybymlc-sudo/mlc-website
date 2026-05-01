@@ -125,6 +125,7 @@ export default function Footer() {
             title="Discovery" 
             links={[
               { label: "Our Story", href: "/about" },
+              { label: "The MLC Blog", href: "/blog" },
               { label: "Therapeutic Services", href: "/services" },
               { label: "Meet the Team", href: "/meettheteam" },
               { label: "Therapist Directory", href: "/therapists/directory" },

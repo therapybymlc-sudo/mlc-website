@@ -20,9 +20,10 @@ import {
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import NextLink from "next/link";
 import { apiGet } from "../api.js";
+import BlogCarousel from '../components/blog/BlogCarousel';
 
 const MotionBox = motion(Box);
 
@@ -339,6 +340,8 @@ export default function HomeClient() {
           />
         </SimpleGrid>
       </Container>
+      
+      <BlogCarousel />
     </Box>
   );
 }

@@ -300,6 +300,7 @@ urlpatterns = [
     ),
 
     # REST API
+    path("api/blog/", include("blog.urls")),
     path("api/", include(router.urls)),
     path("api/payments/razorpay/create-order/", RazorpayCreateOrderView.as_view(), name="razorpay-create-order"),
     path("api/payments/razorpay/verify/", RazorpayVerifyPaymentView.as_view(), name="razorpay-verify"),

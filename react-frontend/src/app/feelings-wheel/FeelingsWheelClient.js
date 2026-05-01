@@ -11,10 +11,12 @@ import {
   Text,
   VStack,
   useToast,
+  Flex
 } from '@chakra-ui/react';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import RelatedBlogs from '../../components/blog/RelatedBlogs';
 
 /** Plain-language cues for self-reflection only — not diagnosis or treatment advice. */
 const FEELING_MEANINGS = {
@@ -390,122 +392,129 @@ export default function FeelingsWheelClient() {
 
   return (
     <Box bg="#F9FAFB" minH="100vh" py={{ base: 12, md: 20 }}>
-      <Container maxW="6xl">
-        <VStack spacing={8} align="stretch">
-          <VStack spacing={3} textAlign="center">
-            <Tag borderRadius="full" colorScheme="teal" px={4} py={2} fontWeight="700">
-              Emotional Check-In
-            </Tag>
-            <Heading color="mlc.greenDark" fontFamily="'Playfair Display', serif">
-              Feelings Wheel
-            </Heading>
-            <Text color="gray.600" maxW="2xl" mx="auto">
-              Hover a segment to read what that emotion often represents. Click to select; selected emotions show a
-              teal outline. Then continue to your journal with meanings and guided prompts.
-            </Text>
-          </VStack>
-
-          <Box
-            bg="white"
-            borderRadius="3xl"
-            p={{ base: 4, md: 8 }}
-            border="1px solid"
-            borderColor="gray.100"
-            boxShadow="0 20px 40px rgba(15, 118, 110, 0.06)"
-          >
-            <VStack spacing={6}>
-              <FeelingsWheelSvg
-                selectedFeelings={selectedFeelings}
-                onToggleFeeling={toggleFeeling}
-                hovered={hovered}
-                setHovered={setHovered}
-              />
-              <HStack spacing={3} justify="center" flexWrap="wrap">
-                {WHEEL_GROUPS.map((g) => (
-                  <HStack key={g.id} spacing={2}>
-                    <Center boxSize="8px" borderRadius="full" bg={g.color} />
-                    <Text fontSize="xs" fontWeight="600" color="gray.600">
-                      {g.label}
-                    </Text>
-                  </HStack>
-                ))}
-              </HStack>
-              {hovered ? (
-                <Box
-                  w="full"
-                  maxW="480px"
-                  mx="auto"
-                  bg="teal.50"
-                  borderRadius="xl"
-                  borderWidth="1px"
-                  borderColor="teal.100"
-                  px={5}
-                  py={4}
-                  textAlign="left"
-                >
-                  <Text fontSize="xs" fontWeight="800" color="teal.800" textTransform="uppercase" letterSpacing="wider">
-                    {hovered.group}
-                  </Text>
-                  <Text fontWeight="800" color="gray.800" fontSize="md" mt={1}>
-                    {hovered.feeling}
-                  </Text>
-                  <Text fontSize="sm" color="gray.700" mt={2} lineHeight="tall">
-                    {hovered.meaning}
-                  </Text>
-                  <Text fontSize="xs" color="gray.500" mt={3} fontStyle="italic">
-                    General meaning for reflection — not a diagnosis. Your context matters.
-                  </Text>
-                </Box>
-              ) : (
-                <Text fontSize="sm" color="gray.500" textAlign="center" maxW="md" mx="auto">
-                  Hover any slice to see what that feeling often signals.
+      <Container maxW="7xl">
+        <Flex direction={{ base: 'column', lg: 'row' }} gap={8}>
+          <Box flex="1">
+            <VStack spacing={8} align="stretch">
+              <VStack spacing={3} textAlign="center">
+                <Tag borderRadius="full" colorScheme="teal" px={4} py={2} fontWeight="700">
+                  Emotional Check-In
+                </Tag>
+                <Heading color="mlc.greenDark" fontFamily="'Playfair Display', serif">
+                  Feelings Wheel
+                </Heading>
+                <Text color="gray.600" maxW="2xl" mx="auto">
+                  Hover a segment to read what that emotion often represents. Click to select; selected emotions show a
+                  teal outline. Then continue to your journal with meanings and guided prompts.
                 </Text>
-              )}
-            </VStack>
-          </Box>
+              </VStack>
 
-          <Box bg="white" borderRadius="2xl" p={6} border="1px solid" borderColor="gray.100">
-            <VStack align="start" spacing={4}>
-              <Text fontWeight="700" color="gray.700">
-                Selected feelings ({selectedFeelings.length})
-              </Text>
-              {selectedFeelings.length ? (
-                <VStack align="stretch" spacing={3} w="full">
-                  {selectedFeelings.map((f) => (
-                    <Box
-                      key={f}
-                      borderWidth="1px"
-                      borderColor="gray.100"
-                      borderRadius="xl"
-                      p={4}
-                      bg="gray.50"
-                    >
-                      <HStack justify="space-between" align="start" mb={2}>
-                        <Tag borderRadius="full" colorScheme="teal" size="md">
-                          {f}
-                        </Tag>
-                        <Button size="xs" variant="ghost" colorScheme="red" onClick={() => toggleFeeling(f)}>
-                          Remove
-                        </Button>
+              <Box
+                bg="white"
+                borderRadius="3xl"
+                p={{ base: 4, md: 8 }}
+                border="1px solid"
+                borderColor="gray.100"
+                boxShadow="0 20px 40px rgba(15, 118, 110, 0.06)"
+              >
+                <VStack spacing={6}>
+                  <FeelingsWheelSvg
+                    selectedFeelings={selectedFeelings}
+                    onToggleFeeling={toggleFeeling}
+                    hovered={hovered}
+                    setHovered={setHovered}
+                  />
+                  <HStack spacing={3} justify="center" flexWrap="wrap">
+                    {WHEEL_GROUPS.map((g) => (
+                      <HStack key={g.id} spacing={2}>
+                        <Center boxSize="8px" borderRadius="full" bg={g.color} />
+                        <Text fontSize="xs" fontWeight="600" color="gray.600">
+                          {g.label}
+                        </Text>
                       </HStack>
-                      <Text fontSize="sm" color="gray.700" lineHeight="tall">
-                        {meaningFor(f)}
+                    ))}
+                  </HStack>
+                  {hovered ? (
+                    <Box
+                      w="full"
+                      maxW="480px"
+                      mx="auto"
+                      bg="teal.50"
+                      borderRadius="xl"
+                      borderWidth="1px"
+                      borderColor="teal.100"
+                      px={5}
+                      py={4}
+                      textAlign="left"
+                    >
+                      <Text fontSize="xs" fontWeight="800" color="teal.800" textTransform="uppercase" letterSpacing="wider">
+                        {hovered.group}
+                      </Text>
+                      <Text fontWeight="800" color="gray.800" fontSize="md" mt={1}>
+                        {hovered.feeling}
+                      </Text>
+                      <Text fontSize="sm" color="gray.700" mt={2} lineHeight="tall">
+                        {hovered.meaning}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={3} fontStyle="italic">
+                        General meaning for reflection — not a diagnosis. Your context matters.
                       </Text>
                     </Box>
-                  ))}
+                  ) : (
+                    <Text fontSize="sm" color="gray.500" textAlign="center" maxW="md" mx="auto">
+                      Hover any slice to see what that feeling often signals.
+                    </Text>
+                  )}
                 </VStack>
-              ) : (
-                <Text color="gray.500">No feelings selected yet.</Text>
-              )}
-              <Text fontSize="sm" color="gray.600" whiteSpace="pre-wrap">
-                {reflectionPrompt || 'Your guided journal prompt will appear here.'}
-              </Text>
-              <Button colorScheme="teal" borderRadius="full" onClick={continueToJournal}>
-                Continue to Journal
-              </Button>
+              </Box>
+
+              <Box bg="white" borderRadius="2xl" p={6} border="1px solid" borderColor="gray.100">
+                <VStack align="start" spacing={4}>
+                  <Text fontWeight="700" color="gray.700">
+                    Selected feelings ({selectedFeelings.length})
+                  </Text>
+                  {selectedFeelings.length ? (
+                    <VStack align="stretch" spacing={3} w="full">
+                      {selectedFeelings.map((f) => (
+                        <Box
+                          key={f}
+                          borderWidth="1px"
+                          borderColor="gray.100"
+                          borderRadius="xl"
+                          p={4}
+                          bg="gray.50"
+                        >
+                          <HStack justify="space-between" align="start" mb={2}>
+                            <Tag borderRadius="full" colorScheme="teal" size="md">
+                              {f}
+                            </Tag>
+                            <Button size="xs" variant="ghost" colorScheme="red" onClick={() => toggleFeeling(f)}>
+                              Remove
+                            </Button>
+                          </HStack>
+                          <Text fontSize="sm" color="gray.700" lineHeight="tall">
+                            {meaningFor(f)}
+                          </Text>
+                        </Box>
+                      ))}
+                    </VStack>
+                  ) : (
+                    <Text color="gray.500">No feelings selected yet.</Text>
+                  )}
+                  <Text fontSize="sm" color="gray.600" whiteSpace="pre-wrap">
+                    {reflectionPrompt || 'Your guided journal prompt will appear here.'}
+                  </Text>
+                  <Button colorScheme="teal" borderRadius="full" onClick={continueToJournal}>
+                    Continue to Journal
+                  </Button>
+                </VStack>
+              </Box>
             </VStack>
           </Box>
-        </VStack>
+          <Box w={{ base: 'full', lg: '320px' }}>
+            <RelatedBlogs keywords={selectedFeelings.length > 0 ? selectedFeelings : ['emotion', 'feeling', 'mental health']} />
+          </Box>
+        </Flex>
       </Container>
     </Box>
   );

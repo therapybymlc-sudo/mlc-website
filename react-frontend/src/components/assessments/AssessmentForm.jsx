@@ -2,9 +2,10 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  Box, VStack, HStack, Text, Heading, Button, Icon, Progress, RadioGroup, Radio, Stack, Divider, useColorModeValue, Center, Fade, ScaleFade, Circle
+  Box, VStack, HStack, Text, Heading, Button, Icon, Progress, RadioGroup, Radio, Stack, Divider, useColorModeValue, Center, Fade, ScaleFade, Circle, Flex
 } from "@chakra-ui/react";
 import { FiClock, FiFileText, FiArrowRight, FiCheckCircle, FiInfo, FiCalendar } from "react-icons/fi";
+import RelatedBlogs from "../blog/RelatedBlogs";
 
 export default function AssessmentForm({ form, onSubmit, isLoading }) {
   const [step, setStep] = useState("intro"); // "intro", "questions", "review"
@@ -47,7 +48,9 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
     onSubmit(finalResponses);
   };
 
-  // Intro Screen
+  const blogKeywords = [form.title.split(' ')[0], schema.abbreviation, "therapy", "health"].filter(Boolean);
+
+  const FormContent = () => {
   if (step === "intro") {
     return (
       <ScaleFade initialScale={0.95} in={true}>
@@ -298,5 +301,19 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
         </ScaleFade>
       )}
     </VStack>
+  );
+  };
+
+  return (
+    <Box>
+      <Flex direction={{ base: 'column', xl: 'row' }} gap={8} align="start">
+        <Box flex="1" w="full">
+          <FormContent />
+        </Box>
+        <Box w={{ base: 'full', xl: '350px' }} position={{ xl: 'sticky' }} top={{ xl: '100px' }}>
+          <RelatedBlogs keywords={blogKeywords} />
+        </Box>
+      </Flex>
+    </Box>
   );
 }
