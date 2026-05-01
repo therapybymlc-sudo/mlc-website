@@ -1,6 +1,4 @@
-import dynamic from 'next/dynamic'
-
-const DirectoryClient = dynamic(() => import('./DirectoryClient'), { ssr: false })
+import DirectoryPageClient from './DirectoryPageClient'
 
 export const metadata = {
   title: 'Our Therapists | MLC Collective',
@@ -8,5 +6,5 @@ export const metadata = {
 }
 
 export default function DirectoryPage() {
-  return <DirectoryClient />
+  return <DirectoryPageClient />
 }
