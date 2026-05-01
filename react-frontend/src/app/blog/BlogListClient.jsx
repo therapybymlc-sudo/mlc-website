@@ -1,12 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-    Box, Container, Grid, Flex, VStack, HStack, Heading, Text, Input, 
-    InputGroup, InputLeftElement, Tag, TagLabel, Image, LinkBox, LinkOverlay, 
-    Skeleton, Divider
+import {
+    Box,
+    Badge,
+    Button,
+    Center,
+    Container,
+    Grid,
+    Flex,
+    VStack,
+    HStack,
+    Heading,
+    Text,
+    Input,
+    InputGroup,
+    InputLeftElement,
+    Tag,
+    TagLabel,
+    Image,
+    LinkBox,
+    LinkOverlay,
+    Skeleton,
+    Divider,
 } from '@chakra-ui/react';
-import { FiSearch, FiFilter } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiImage } from 'react-icons/fi';
 import NextLink from 'next/link';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
