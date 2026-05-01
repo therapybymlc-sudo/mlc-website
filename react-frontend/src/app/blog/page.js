@@ -1,5 +1,6 @@
 import BlogListClient from './BlogListClient';
 import { Box } from '@chakra-ui/react';
+import { getPublicApiBase } from '../../lib/publicApiBase';
 
 // Revalidate every hour
 export const revalidate = 3600;
@@ -11,22 +12,18 @@ export const metadata = {
 
 async function fetchInitialData() {
     try {
-        // We use absolute URL for server-side fetch if possible, but since we are in Next.js app router
-        // and we might not know the exact domain, it's safer to fetch via the internal API or direct DB call if possible.
-        // However, standard Next.js approach is to use the full URL.
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-        
+        const apiBase = getPublicApiBase();
+
         const [postsRes, metaRes] = await Promise.all([
-            fetch(`${baseUrl}/api/blog/public/posts/`, { next: { revalidate: 3600 } }),
-            fetch(`${baseUrl}/api/blog/public/posts/meta_data/`, { next: { revalidate: 3600 } })
+            fetch(`${apiBase}/blog/public/posts/`, { next: { revalidate: 3600 } }),
+            fetch(`${apiBase}/blog/public/posts/meta_data/`, { next: { revalidate: 3600 } })
         ]);
         
         const posts = postsRes.ok ? await postsRes.json() : [];
         const meta = metaRes.ok ? await metaRes.json() : { categories: [], tags: [] };
         
         return { posts, categories: meta.categories, tags: meta.tags };
-    } catch (e) {
-        console.error("Server-side fetch error", e);
+    } catch (_e) {
         return { posts: [], categories: [], tags: [] };
     }
 }

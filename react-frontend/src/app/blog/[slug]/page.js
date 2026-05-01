@@ -2,17 +2,17 @@ import { Box, Container, Heading, Text, Flex, Image, Badge, HStack, Divider } fr
 import { format } from 'date-fns';
 import { FiClock } from 'react-icons/fi';
 import { notFound } from 'next/navigation';
+import { getPublicApiBase } from '../../../lib/publicApiBase';
 
 export const revalidate = 3600;
 
 async function getPost(slug) {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-        const res = await fetch(`${baseUrl}/api/blog/public/posts/${slug}/`, { next: { revalidate: 3600 } });
+        const apiBase = getPublicApiBase();
+        const res = await fetch(`${apiBase}/blog/public/posts/${slug}/`, { next: { revalidate: 3600 } });
         if (!res.ok) return null;
         return await res.json();
-    } catch (error) {
-        console.error("Error fetching post", error);
+    } catch (_error) {
         return null;
     }
 }
