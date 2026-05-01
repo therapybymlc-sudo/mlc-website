@@ -284,18 +284,18 @@ def _table(data: list[list[Any]], col_widths=None):
     tbl.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#56756D")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F9FAFB")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#6B7280")),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 8.5),
+                ("FONTSIZE", (0, 0), (-1, 0), 8),
                 ("FONTSIZE", (0, 1), (-1, -1), 8),
-                ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#D7DEDB")),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F7FAF9")]),
+                ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#E5E7EB")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.white]),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 6),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
                 ("WORDWRAP", (0, 0), (-1, -1), "LTR"),
             ]
         )
@@ -304,7 +304,10 @@ def _table(data: list[list[Any]], col_widths=None):
 
 
 def _section_title(text: str, styles):
-    return Paragraph(f"<font color='#2F3E3A'><b>{escape(str(text))}</b></font>", styles["Heading3"])
+    return Paragraph(
+        f"<font color='#2B6B56' size='10'><b>{escape(str(text).upper())}</b></font>",
+        styles["Heading3"],
+    )
 
 
 def _load_mlc_logo() -> BytesIO | None:
@@ -336,20 +339,27 @@ def _brand_header(styles):
         except Exception:
             logo_cell = ""
 
-    heading_html = (
-        "<font color='#56756D'><b>MLC Health &amp; Wellness Centre</b></font><br/>"
-        "<font size='12'><b>Assessment Report</b></font><br/>"
-        "<font size='9' color='#4A5568'>Clinical Outcome Summary</font>"
+    left_html = (
+        "<font color='#1A3636' size='9'><b>MLC Health &amp; Wellness Centre</b></font><br/>"
+        "<font size='8' color='#6B7280'>A space to feel, to heal, to become.</font>"
     )
-    heading = Paragraph(heading_html, styles["Normal"])
-    t = Table([[logo_cell, heading]], colWidths=[3 * cm, 13.5 * cm])
+    right_html = (
+        "<para align='right'>"
+        "<font color='#2B6B56' size='8'><b>OFFICIAL RECORD</b></font><br/>"
+        "<font size='16' color='#333333'><b>Patient Health Questionnaire-9 (PHQ-9)</b></font><br/>"
+        "<font size='8' color='#6B7280'><b>Depression Assessment Report</b></font>"
+        "</para>"
+    )
+    left_block = Paragraph(left_html, styles["Normal"])
+    right_block = Paragraph(right_html, styles["Normal"])
+    t = Table([[logo_cell, left_block, right_block]], colWidths=[3 * cm, 6.7 * cm, 6.8 * cm])
     t.setStyle(
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
             ]
         )
     )
@@ -537,10 +547,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         # PAGE 1 - Summary
         _brand_header(styles),
         Spacer(1, 0.2 * cm),
-        Table([[""]], colWidths=[16.5 * cm], style=TableStyle([("LINEBELOW", (0, 0), (-1, -1), 1.2, colors.HexColor("#C9A960"))])),
-        Spacer(1, 0.25 * cm),
-        _p(spec.get("name", "Patient Health Questionnaire-9 (PHQ-9)"), styles["Heading2"]),
-        _p("Depression Assessment Report", styles["Normal"]),
+        Table([[""]], colWidths=[16.5 * cm], style=TableStyle([("LINEBELOW", (0, 0), (-1, -1), 0.9, colors.HexColor("#E5E7EB"))])),
         Spacer(1, 0.25 * cm),
         _section_title("Client Information", styles),
     ]
@@ -570,9 +577,9 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         alert.setStyle(
             TableStyle(
                 [
-                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFE5E5")),
-                    ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#CC0000")),
-                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#900000")),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FEF2F2")),
+                    ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor("#EF4444")),
+                    ("TEXTCOLOR", (0, 0), (-1, -1), colors.HexColor("#B91C1C")),
                     ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 9),
                     ("LEFTPADDING", (0, 0), (-1, -1), 7),
@@ -648,7 +655,7 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         value = response.get("value")
         row = [str((idx or 0) + 1), question, "", "", "", ""]
         if isinstance(value, int) and 0 <= value <= 3:
-            row[2 + value] = "X"
+            row[2 + value] = "✓"
         response_rows.append(row)
     response_tbl = _table(response_rows, col_widths=[0.9 * cm, 8.6 * cm, 1.7 * cm, 1.7 * cm, 2.2 * cm, 1.9 * cm])
     response_style = TableStyle([])
@@ -656,10 +663,12 @@ def build_assessment_report_pdf_bytes(*, assignment, spec: dict[str, Any], scori
         idx = response.get("itemIndex")
         value = response.get("value")
         if idx == 8 and isinstance(value, int) and value > 0:
-            response_style.add("BACKGROUND", (0, r_i), (-1, r_i), colors.HexColor("#FFF4F4"))
+            response_style.add("BACKGROUND", (0, r_i), (-1, r_i), colors.HexColor("#FEF2F2"))
         if isinstance(value, int) and 0 <= value <= 3:
             col = 2 + value
-            response_style.add("BACKGROUND", (col, r_i), (col, r_i), colors.HexColor("#D4AF37"))
+            response_style.add("BACKGROUND", (col, r_i), (col, r_i), colors.HexColor("#D1FAE5"))
+            response_style.add("TEXTCOLOR", (col, r_i), (col, r_i), colors.HexColor("#059669"))
+            response_style.add("FONTNAME", (col, r_i), (col, r_i), "Helvetica-Bold")
     response_tbl.setStyle(response_style)
     story.append(response_tbl)
 

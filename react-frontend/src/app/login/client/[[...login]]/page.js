@@ -1,7 +1,13 @@
+'use client';
+
 import { SignIn } from "@clerk/nextjs";
 import { Box, Container, Heading, VStack, Text } from "@chakra-ui/react";
+import { useSearchParams } from "next/navigation";
 
 export default function ClientSignInPage() {
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect_url") || "/dashboard?role=client";
+
   return (
     <Box bg="rgba(169, 203, 183, 0.12)" minH="100vh" py={20}>
       <Container maxW="lg">
@@ -31,8 +37,8 @@ export default function ClientSignInPage() {
                 }
               }
             }}
-            forceRedirectUrl="/dashboard?role=client"
-            fallbackRedirectUrl="/dashboard?role=client"
+            forceRedirectUrl={redirectUrl}
+            fallbackRedirectUrl={redirectUrl}
           />
         </VStack>
       </Container>

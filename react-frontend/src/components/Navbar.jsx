@@ -52,6 +52,7 @@ const navLinks = [
       { label: "Adolescent Therapy", href: "/adolescent-therapy" },
     ]
   },
+  { label: "Feelings Wheel", href: "/feelings-wheel" },
   { label: "Find a Therapist", href: "/therapists/discovery" },
   { 
     label: "For Therapists", 

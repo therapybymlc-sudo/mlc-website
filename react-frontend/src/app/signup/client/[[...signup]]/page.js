@@ -2,10 +2,14 @@
 
 import { SignUp } from "@clerk/nextjs";
 import { Box, Container, Heading, VStack, Text } from "@chakra-ui/react";
+import { useSearchParams } from "next/navigation";
 
 const ROLE_META = { role: "client", roles: ["client"] };
 
 export default function ClientSignUpPage() {
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect_url") || "/dashboard?role=client";
+
   return (
     <Box bg="rgba(169, 203, 183, 0.12)" minH="100vh" py={20}>
       <Container maxW="lg">
@@ -36,7 +40,7 @@ export default function ClientSignUpPage() {
               }
             }}
             unsafeMetadata={ROLE_META}
-            fallbackRedirectUrl="/dashboard?role=client"
+            fallbackRedirectUrl={redirectUrl}
           />
         </VStack>
       </Container>

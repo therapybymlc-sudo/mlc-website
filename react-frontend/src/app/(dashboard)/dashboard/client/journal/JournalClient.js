@@ -70,6 +70,7 @@ export default function JournalClient() {
   const [moodLevel, setMoodLevel] = useState(3);
   const [selectedTags, setSelectedTags] = useState([]);
   const [selectedImpacts, setSelectedImpacts] = useState([]);
+  const [selectedFeelingPrompts, setSelectedFeelingPrompts] = useState([]);
   
   const [content, setContent] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
@@ -119,6 +120,7 @@ export default function JournalClient() {
     setContent("");
     setSelectedTags([]);
     setSelectedImpacts([]);
+    setSelectedFeelingPrompts([]);
     setMoodLevel(3);
   }
 
@@ -135,6 +137,39 @@ export default function JournalClient() {
       try {
         setEntries(JSON.parse(cached));
       } catch (e) {}
+    }
+
+    // Optional prefill from public feelings wheel experience.
+    const prefillRaw = localStorage.getItem("mlc_journal_prefill");
+    if (prefillRaw) {
+      try {
+        const prefill = JSON.parse(prefillRaw);
+        if (prefill?.source === "feelings-wheel") {
+          const mood = Number(prefill?.moodLevel || 3);
+          setMoodLevel(Number.isFinite(mood) ? Math.min(5, Math.max(1, mood)) : 3);
+          setSelectedTags(Array.isArray(prefill?.selectedFeelings) ? prefill.selectedFeelings : []);
+          setSelectedFeelingPrompts(
+            Array.isArray(prefill?.selectedFeelingPrompts)
+              ? prefill.selectedFeelingPrompts
+                  .filter((item) => item && typeof item.feeling === "string" && typeof item.prompt === "string")
+                  .map((item) => ({ feeling: item.feeling, prompt: item.prompt }))
+              : []
+          );
+          if (typeof prefill?.prompt === "string" && prefill.prompt.trim()) {
+            const htmlPrompt = prefill.prompt
+              .split("\n")
+              .map((line) => `<p>${line}</p>`)
+              .join("");
+            setContent(htmlPrompt);
+          }
+          setStep(3);
+        }
+      } catch (e) {
+        console.warn("Invalid journal prefill payload");
+      } finally {
+        // One-time hydration so stale prefill does not keep overriding drafts.
+        localStorage.removeItem("mlc_journal_prefill");
+      }
     }
   }, []);
 
@@ -298,6 +333,34 @@ export default function JournalClient() {
              </HStack>
              
              <Box w="full" bg={"white"} borderRadius="3xl" p={1} border="2px solid" borderColor="gray.50">
+                {selectedFeelingPrompts.length > 0 && (
+                  <Box
+                    mx={2}
+                    mt={2}
+                    mb={3}
+                    bg="teal.50"
+                    border="1px solid"
+                    borderColor="teal.100"
+                    borderRadius="2xl"
+                    p={4}
+                  >
+                    <Text fontSize="xs" fontWeight="800" color="teal.700" textTransform="uppercase" letterSpacing="widest">
+                      Reflection Prompts From Your Feelings
+                    </Text>
+                    <VStack align="start" spacing={2} mt={3}>
+                      {selectedFeelingPrompts.map(({ feeling, prompt }) => (
+                        <Box key={`${feeling}-${prompt}`} w="full">
+                          <Text as="span" fontWeight="700" color="gray.800" fontSize="sm">
+                            {feeling}:
+                          </Text>{" "}
+                          <Text as="span" color="gray.700" fontSize="sm">
+                            {prompt}
+                          </Text>
+                        </Box>
+                      ))}
+                    </VStack>
+                  </Box>
+                )}
                 <RichTextEditor 
                     value={content}
                     onChange={(val) => setContent(val.html)}
