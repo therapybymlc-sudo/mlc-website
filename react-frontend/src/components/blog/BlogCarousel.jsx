@@ -5,8 +5,15 @@ import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import NextLink from 'next/link';
 import api from '../../api';
 
+function normalizePostList(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.results)) return payload.results;
+    return [];
+}
+
 export default function BlogCarousel() {
     const [posts, setPosts] = useState([]);
+    const [fetchDone, setFetchDone] = useState(false);
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -15,11 +22,14 @@ export default function BlogCarousel() {
 
     const fetchTopPosts = async () => {
         try {
-            // Fetch top 6-7 published posts
             const res = await api.get('/blog/public/posts/');
-            setPosts(res.data.slice(0, 7));
+            const list = normalizePostList(res.data);
+            setPosts(list.slice(0, 7));
         } catch (error) {
             console.error("Failed to load blog carousel", error);
+            setPosts([]);
+        } finally {
+            setFetchDone(true);
         }
     };
 
@@ -33,7 +43,7 @@ export default function BlogCarousel() {
         }
     };
 
-    if (posts.length === 0) return null;
+    if (!fetchDone) return null;
 
     return (
         <Box py={20} bg="white" overflow="hidden">
@@ -47,6 +57,7 @@ export default function BlogCarousel() {
                             Explore the latest thoughts from the MLC clinical team.
                         </Text>
                     </Box>
+                    {posts.length > 0 && (
                     <Flex gap={2} display={{ base: 'none', md: 'flex' }}>
                         <IconButton 
                             icon={<FiChevronLeft />} 
@@ -64,6 +75,7 @@ export default function BlogCarousel() {
                             colorScheme="teal"
                         />
                     </Flex>
+                    )}
                 </Flex>
             </Container>
 
@@ -82,7 +94,32 @@ export default function BlogCarousel() {
                         scrollSnapType: 'x mandatory'
                     }}
                 >
-                    {posts.map((post) => (
+                    {posts.length === 0 ? (
+                        <LinkBox
+                            w={{ base: '100%', md: '400px' }}
+                            flexShrink={0}
+                            bg="teal.50"
+                            borderRadius="2xl"
+                            border="1px solid"
+                            borderColor="teal.100"
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            p={8}
+                            scrollSnapAlign="start"
+                        >
+                            <Heading size="md" color="teal.800" mb={3}>
+                                Visit the blog
+                            </Heading>
+                            <Text color="teal.700" fontSize="sm" mb={4}>
+                                New posts will appear here once they are published. You can always read the full blog.
+                            </Text>
+                            <LinkOverlay as={NextLink} href="/blog" color="teal.700" fontWeight="bold">
+                                View all posts →
+                            </LinkOverlay>
+                        </LinkBox>
+                    ) : (
+                    posts.map((post) => (
                         <LinkBox 
                             key={post.id}
                             w={{ base: '280px', md: '320px' }}
@@ -118,9 +155,11 @@ export default function BlogCarousel() {
                                 </Text>
                             </Box>
                         </LinkBox>
-                    ))}
+                    ))
+                    )}
                     
                     {/* View All Card */}
+                    {posts.length > 0 && (
                     <LinkBox 
                         w={{ base: '280px', md: '320px' }}
                         flexShrink={0}
@@ -141,6 +180,7 @@ export default function BlogCarousel() {
                             View All Posts <FiChevronRight />
                         </LinkOverlay>
                     </LinkBox>
+                    )}
                 </Box>
                 
                 {/* Fade effect on the right side */}
