@@ -19,6 +19,7 @@ import {
   MenuItem,
   MenuDivider,
   Icon,
+  SimpleGrid
 } from "@chakra-ui/react";
 import { HamburgerIcon, CloseIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { 
@@ -29,7 +30,8 @@ import {
   FiCreditCard,
   FiClock,
   FiBookOpen,
-  FiTarget
+  FiTarget,
+  FiArrowRight
 } from "react-icons/fi";
 import NextLink from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
@@ -39,47 +41,132 @@ import { useAuth } from "../context/AuthContext";
 
 const logoSrc = "/logo_tra.png";
 
+// Desktop Order: Home | About | Find a Therapist | ✦ MLC Ecosystem | For Therapists ˅ | Services ˅ | Resources ˅
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "The Ecosystem", href: "/ecosystem" },
-  { label: "About", href: "/about" },
-  { label: "Blog", href: "/blog" },
+  { label: "Home", href: "/", weight: "support" },
+  { label: "About", href: "/about", weight: "support" },
+  { label: "Find a Therapist", href: "/therapists/discovery", weight: "primary" },
+  { label: "✦ MLC Ecosystem", href: "/ecosystem", weight: "brand", isEcosystem: true },
+  { 
+    label: "For Therapists", 
+    href: "/therapists",
+    weight: "secondary",
+    subLinks: [
+      { label: "Join as a Therapist", href: "/signup/therapist" },
+      { label: "Therapist Directory", href: "/therapists/directory" },
+      { label: "Supervisor Directory / Find a Supervisor", href: "/therapists/supervisors/directory" },
+      { label: "MLC Pro", href: "/dashboard/therapist/subscription" },
+      { label: "Therapist Community", href: "/dashboard/therapist/community" },
+      { label: "Clinical Supervision", href: "/supervision" },
+      { label: "Workshops & Circles", href: "/workshops" },
+    ]
+  },
   { 
     label: "Services", 
     href: "/services",
+    weight: "support",
     subLinks: [
       { label: "Individual Therapy", href: "/individual-therapy" },
       { label: "Couples Therapy", href: "/couples-therapy" },
       { label: "Adolescent Therapy", href: "/adolescent-therapy" },
-    ]
-  },
-  { label: "Feelings Wheel", href: "/feelings-wheel" },
-  { label: "Find a Therapist", href: "/therapists/discovery" },
-  { 
-    label: "For Therapists", 
-    href: "/therapists",
-    subLinks: [
-      { label: "Therapist Community", href: "/dashboard/therapist/community" },
-      { label: "Clinical Supervision", href: "/supervision" },
-      { label: "Workshops & Circles", href: "/workshops" },
-      { label: "Join the Collective", href: "/signup/therapist" },
+      { label: "Assessments", href: "/dashboard/client/resources" },
+      { label: "Mindfulness Sessions", href: "/services" },
+      { label: "Book a Session", href: "/book" },
     ]
   },
   { 
-    label: "Meet the Team", 
-    href: "/meettheteam",
+    label: "Resources", 
+    href: "#",
+    weight: "support",
     subLinks: [
-      { label: "Our Therapists", href: "/therapists/directory" },
-      { label: "Our Supervisors", href: "/therapists/supervisors/directory" },
+      { label: "Blog", href: "/blog" },
+      { label: "Feelings Wheel", href: "/feelings-wheel" },
+      { label: "Therapy Quiz", href: "/quiz" },
+      { label: "Mental Health Guides", href: "/dashboard/client/resources" },
     ]
   },
-  { label: "Book Now", href: "/book" },
-  { label: "Contact Us", href: "/contactus" },
 ];
+
+const EcosystemHoverMenu = ({ link, pathname, isActive }) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  return (
+    <Box 
+      onMouseEnter={onOpen} 
+      onMouseLeave={onClose}
+      position="relative" 
+      display="inline-block"
+      pb={4}
+      mb="-16px"
+    >
+      <HStack spacing={1} cursor="pointer">
+        <ChakraLink
+          as={NextLink}
+          href={link.href}
+          fontWeight="700"
+          fontFamily="'Inter', var(--font-inter), sans-serif"
+          fontSize="15px"
+          letterSpacing="0.2px"
+          color="#56756D"
+          _hover={{ color: "#C9A960", textDecoration: "none" }}
+          transition="all 0.2s ease"
+          whiteSpace="nowrap"
+        >
+          {link.label}
+        </ChakraLink>
+      </HStack>
+      {isOpen && (
+        <Box
+          position="absolute"
+          top="100%"
+          left="50%"
+          transform="translateX(-50%)"
+          bg="white"
+          boxShadow="0 20px 40px rgba(0,0,0,0.12)"
+          border="1px solid"
+          borderColor="gray.100"
+          borderRadius="2xl"
+          p={6}
+          minW="450px"
+          zIndex={1001}
+          mt="-2px"
+        >
+          <VStack align="stretch" spacing={4}>
+            <Text color="gray.600" fontSize="sm" lineHeight="tall">
+              The first integrated therapy ecosystem in India — connecting clients, therapists, tools, supervision, and growth as a community in one place.
+            </Text>
+            <SimpleGrid columns={2} spacing={3} pl={2}>
+              <Text fontSize="sm" fontWeight="600" color="#56756D">• Client Platform</Text>
+              <Text fontSize="sm" fontWeight="600" color="#56756D">• Therapist Network</Text>
+              <Text fontSize="sm" fontWeight="600" color="#56756D">• Supervisor Network</Text>
+              <Text fontSize="sm" fontWeight="600" color="#56756D">• Tools & Resources</Text>
+              <Text fontSize="sm" fontWeight="600" color="#56756D">• MLC Community</Text>
+            </SimpleGrid>
+            <Button
+              as={NextLink}
+              href="/ecosystem"
+              bg="#56756D"
+              color="white"
+              size="sm"
+              mt={2}
+              borderRadius="full"
+              rightIcon={<FiArrowRight />}
+              _hover={{ bg: "#C9A960" }}
+            >
+              Explore the Ecosystem
+            </Button>
+          </VStack>
+        </Box>
+      )}
+    </Box>
+  );
+};
 
 const HoverMenu = ({ link, pathname, isActive }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   
+  const isSecondary = link.weight === "secondary";
+
   return (
     <Menu isOpen={isOpen} isLazy gutter={0} placement="bottom">
       <Box 
@@ -94,11 +181,11 @@ const HoverMenu = ({ link, pathname, isActive }) => {
           <ChakraLink
             as={NextLink}
             href={link.href}
-            fontWeight="500"
+            fontWeight={isSecondary ? "600" : "500"}
             fontFamily="'Inter', var(--font-inter), sans-serif"
             fontSize="15px"
             letterSpacing="0.2px"
-            color={isActive ? "#C9A960" : "#212121"}
+            color={isActive ? "#C9A960" : isSecondary ? "#2E2E2E" : "#555"}
             _hover={{ color: "#C9A960", textDecoration: "none" }}
             transition="all 0.2s ease"
             whiteSpace="nowrap"
@@ -133,7 +220,7 @@ const HoverMenu = ({ link, pathname, isActive }) => {
               href={sub.href}
               borderRadius="lg"
               fontSize="sm"
-              fontWeight="600"
+              fontWeight="500"
               py={2.5}
               _hover={{ bg: "gray.50", color: "#C9A960" }}
               onClick={onClose}
@@ -161,8 +248,8 @@ export default function Navbar() {
 
   return (
     <Box
-      bg="rgba(255, 255, 255, 0.85)"
-      backdropFilter="blur(6px)"
+      bg="rgba(255, 255, 255, 0.95)"
+      backdropFilter="blur(8px)"
       px={{ base: 4, md: 8, lg: 10 }}
       boxShadow="sm"
       position="sticky"
@@ -214,15 +301,19 @@ export default function Navbar() {
 
         {/* 🗺️ Middle Section: Desktop Nav Links */}
         <HStack
-          spacing={{ base: 4, xl: 8 }}
+          spacing={{ base: 4, xl: 6 }}
           display={{ base: "none", lg: "flex" }}
           justify="center"
+          align="center"
           flex="1"
           mx={4}
         >
           {navLinks.map((link) => {
-            const isDiscovery = link.href === "/therapists/discovery";
             const isActive = pathname === link.href;
+            
+            if (link.isEcosystem) {
+              return <EcosystemHoverMenu key={link.label} link={link} pathname={pathname} isActive={isActive} />;
+            }
             
             if (link.subLinks) {
               return (
@@ -230,25 +321,41 @@ export default function Navbar() {
               );
             }
 
+            if (link.weight === "primary") {
+              return (
+                <Button
+                  as={NextLink}
+                  key={link.label}
+                  href={link.href}
+                  bg="#56756D"
+                  color="white"
+                  fontWeight="600"
+                  fontFamily="'Inter', var(--font-inter), sans-serif"
+                  fontSize="15px"
+                  borderRadius="full"
+                  px={5}
+                  py={2}
+                  _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "sm" }}
+                  transition="all 0.2s ease"
+                  whiteSpace="nowrap"
+                  height="auto"
+                >
+                  {link.label}
+                </Button>
+              )
+            }
+
             return (
               <ChakraLink
                 as={NextLink}
                 key={link.label}
                 href={link.href}
-                fontWeight={isDiscovery ? "700" : "500"}
+                fontWeight="500"
                 fontFamily="'Inter', var(--font-inter), sans-serif"
                 fontSize="15px"
                 letterSpacing="0.2px"
-                color={isDiscovery ? "#56756D" : isActive ? "#C9A960" : "#212121"}
-                bg={isDiscovery ? "rgba(86, 117, 109, 0.08)" : "transparent"}
-                px={isDiscovery ? 4 : 0}
-                py={isDiscovery ? 2 : 0}
-                borderRadius={isDiscovery ? "full" : "none"}
-                _hover={{ 
-                  color: "#C9A960", 
-                  textDecoration: "none",
-                  bg: isDiscovery ? "rgba(86, 117, 109, 0.15)" : "transparent"
-                }}
+                color={isActive ? "#C9A960" : "#555"}
+                _hover={{ color: "#C9A960", textDecoration: "none" }}
                 transition="all 0.2s ease"
                 whiteSpace="nowrap"
               >
@@ -322,7 +429,7 @@ export default function Navbar() {
                       <>
                   <MenuItem
                     as={NextLink}
-                    href="/dashboard"
+                    href={dashboardBase}
                     borderRadius="lg"
                     icon={<Icon as={FiLayout} boxSize={4} color="#56756D" />}
                     _hover={{ bg: "gray.50", color: "#C9A960" }}
@@ -330,7 +437,7 @@ export default function Navbar() {
                     fontWeight="600"
                     py={3}
                   >
-                    My Dashboard
+                    Dashboard
                   </MenuItem>
                   
                   <MenuItem
@@ -343,35 +450,34 @@ export default function Navbar() {
                     fontWeight="600"
                     py={3}
                   >
-                    My Appointments
+                    My Sessions
                   </MenuItem>
 
                   <MenuItem
                     as={NextLink}
-                    href={`${dashboardBase}/resources`}
+                    href={`${dashboardBase}/profile`}
                     borderRadius="lg"
-                    icon={<Icon as={FiBookOpen} boxSize={4} color="#56756D" />}
+                    icon={<Icon as={FiUser} boxSize={4} color="#56756D" />}
                     _hover={{ bg: "gray.50", color: "#C9A960" }}
                     fontSize="sm"
                     fontWeight="600"
                     py={3}
                   >
-                    Resources & Tools
+                    Profile
                   </MenuItem>
-                  {(isTherapist || isAdmin) && (
-                    <MenuItem
-                      as={NextLink}
-                      href="/dashboard/therapist/subscription"
-                      borderRadius="lg"
-                      icon={<Icon as={FiTarget} boxSize={4} color="#56756D" />}
-                      _hover={{ bg: "gray.50", color: "#C9A960" }}
-                      fontSize="sm"
-                      fontWeight="600"
-                      py={3}
-                    >
-                      Subscription
-                    </MenuItem>
-                  )}
+
+                  <MenuItem
+                    as={NextLink}
+                    href={`${dashboardBase}/settings`}
+                    borderRadius="lg"
+                    icon={<Icon as={FiSettings} boxSize={4} color="#56756D" />}
+                    _hover={{ bg: "gray.50", color: "#C9A960" }}
+                    fontSize="sm"
+                    fontWeight="600"
+                    py={3}
+                  >
+                    Settings
+                  </MenuItem>
                   </>
                   )
                 })()}
@@ -388,7 +494,7 @@ export default function Navbar() {
                     fontWeight="600"
                     py={2.5}
                   >
-                    Sign Out
+                    Log Out
                   </MenuItem>
                 </MenuList>
               </Menu>
@@ -404,53 +510,22 @@ export default function Navbar() {
                   borderRadius="full"
                   _hover={{ bg: "gray.50" }}
                 >
-                  Sign In
+                  Login
                 </Button>
-                <Menu gutter={10} placement="bottom-end">
-                  <MenuButton
-                    as={Button}
-                    bg="#56756D"
-                    color="white"
-                    fontWeight="600"
-                    fontSize="sm"
-                    borderRadius="full"
-                    px={6}
-                    rightIcon={<ChevronDownIcon />}
-                    _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
-                    transition="all 0.2s"
-                  >
-                    Join MLC
-                  </MenuButton>
-                  <MenuList
-                    boxShadow="0 10px 30px rgba(0,0,0,0.1)"
-                    border="1px solid"
-                    borderColor="gray.100"
-                    borderRadius="xl"
-                    p={2}
-                    minW="220px"
-                  >
-                    <MenuItem
-                      as={NextLink}
-                      href="/signup/therapist"
-                      borderRadius="lg"
-                      fontSize="sm"
-                      fontWeight="600"
-                      py={3}
-                    >
-                      Sign up as Therapist
-                    </MenuItem>
-                    <MenuItem
-                      as={NextLink}
-                      href="/signup/client"
-                      borderRadius="lg"
-                      fontSize="sm"
-                      fontWeight="600"
-                      py={3}
-                    >
-                      Sign up as Client
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
+                <Button
+                  as={NextLink}
+                  href="/signup/client"
+                  bg="#56756D"
+                  color="white"
+                  fontWeight="600"
+                  fontSize="sm"
+                  borderRadius="full"
+                  px={6}
+                  _hover={{ bg: "#C9A960", transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(86, 117, 109, 0.2)" }}
+                  transition="all 0.2s"
+                >
+                  Sign Up
+                </Button>
               </HStack>
             )
           ) : (
@@ -477,28 +552,48 @@ export default function Navbar() {
           overflowY="auto"
         >
           <VStack
-            bg="#56756D"
+            bg="white"
             align="stretch"
             spacing={0}
             px={4}
-            py={2}
+            py={4}
             borderRadius="xl"
-            boxShadow="xl"
+            boxShadow="0 10px 40px rgba(0,0,0,0.1)"
+            border="1px solid"
+            borderColor="gray.100"
+            mt={2}
           >
-            {navLinks.map((link) => (
+            {/* MLC Ecosystem Mobile Card */}
+            <Box 
+              as={NextLink}
+              href="/ecosystem"
+              bg="rgba(86, 117, 109, 0.05)"
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)"
+              borderRadius="xl"
+              p={4}
+              mb={4}
+              onClick={onClose}
+              _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+            >
+              <Text fontWeight="700" color="#56756D" fontSize="lg" mb={1}>✦ MLC Ecosystem</Text>
+              <Text fontSize="xs" color="gray.600">The first integrated therapy ecosystem in India.</Text>
+            </Box>
+
+            {navLinks.filter(l => !l.isEcosystem).map((link) => (
               <Box key={link.label}>
                 <ChakraLink
                   as={NextLink}
                   href={link.href}
-                  fontWeight="medium"
+                  fontWeight={link.weight === "primary" ? "700" : "600"}
                   fontFamily="'Inter', var(--font-inter), sans-serif"
-                  color="white"
+                  color={link.weight === "primary" ? "#56756D" : "#2E2E2E"}
                   py={3.5}
                   px={4}
                   display="block"
                   borderRadius="lg"
-                  _hover={{ bg: "rgba(255,255,255,0.1)", color: "#C9A960" }}
-                  onClick={onClose}
+                  _hover={{ bg: "gray.50", color: "#C9A960" }}
+                  onClick={link.subLinks ? undefined : onClose}
                 >
                   {link.label}
                 </ChakraLink>
@@ -509,12 +604,12 @@ export default function Navbar() {
                         as={NextLink}
                         key={sub.label}
                         href={sub.href}
-                        color="whiteAlpha.800"
+                        color="gray.600"
                         fontSize="sm"
                         py={2}
                         px={4}
                         borderRadius="md"
-                        _hover={{ bg: "rgba(255,255,255,0.05)", color: "white" }}
+                        _hover={{ bg: "gray.50", color: "#2E2E2E" }}
                         onClick={onClose}
                       >
                         {sub.label}
@@ -527,40 +622,31 @@ export default function Navbar() {
             
             {!isSignedIn && (
               <>
-                <Divider borderColor="whiteAlpha.300" my={2} />
+                <Divider borderColor="gray.200" my={4} />
                 <Button
                   as={NextLink}
                   href="/login"
-                  variant="ghost"
-                  color="white"
-                  justifyContent="flex-start"
+                  variant="outline"
+                  colorScheme="teal"
                   py={6}
-                  _active={{ bg: "whiteAlpha.100" }}
+                  mb={2}
                   onClick={onClose}
+                  borderRadius="full"
                 >
-                  Sign In
-                </Button>
-                <Button
-                  as={NextLink}
-                  href="/signup/therapist"
-                  bg="#C9A960"
-                  color="#2E2E2E"
-                  py={6}
-                  mt={2}
-                  onClick={onClose}
-                >
-                  Sign up as Therapist
+                  Login
                 </Button>
                 <Button
                   as={NextLink}
                   href="/signup/client"
-                  bg="white"
-                  color="#2E2E2E"
+                  bg="#56756D"
+                  color="white"
                   py={6}
                   mb={4}
                   onClick={onClose}
+                  borderRadius="full"
+                  _hover={{ bg: "#C9A960" }}
                 >
-                  Sign up as Client
+                  Sign Up
                 </Button>
               </>
             )}
