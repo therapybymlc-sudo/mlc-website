@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Center, Spinner, Box, Heading, Text, Button, VStack, useToast } from "@chakra-ui/react";
 import { useAuth } from "../../context/AuthContext";
-import { apiPost } from "../../api.js";
+import { apiPost, parseOnboardRoleDashboardMismatch } from "../../api.js";
 
 export default function DashboardRouter() {
   const { loading, isAuthenticated, isTherapist, roles, user } = useAuth();
@@ -22,7 +22,18 @@ export default function DashboardRouter() {
       window.location.reload();
     } catch (e) {
       console.error(e);
-      toast({ status: "error", title: "Couldn't set role." });
+      const mismatch = parseOnboardRoleDashboardMismatch(e);
+      if (mismatch) {
+        toast({
+          status: "warning",
+          title: mismatch.title,
+          description: mismatch.description,
+          duration: 12000,
+          isClosable: true,
+        });
+      } else {
+        toast({ status: "error", title: "Couldn't set role." });
+      }
       setOnboarding(false);
     }
   };

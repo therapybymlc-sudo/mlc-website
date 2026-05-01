@@ -263,9 +263,6 @@ export default function DirectoryClient() {
   const [selectedExpLevel, setSelectedExpLevel] = useState("all");
   const [costRange, setCostRange] = useState([0, 5000]);
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => { setIsMounted(true); }, []);
-
   useEffect(() => {
     async function fetchTherapists() {
       try {
@@ -345,8 +342,6 @@ export default function DirectoryClient() {
       setCostRange([0, 5000]);
       setSearchTerm("");
   };
-
-  if (!isMounted) return null;
 
   return (
     <Box bg="#FDFBFA" minH="100vh" pb={20}>

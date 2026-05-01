@@ -17,7 +17,11 @@ import {
   Center,
   Button,
   Heading,
-  VStack
+  VStack,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from '@chakra-ui/react'
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons'
 import { 
@@ -54,7 +58,15 @@ import OnboardingModal from './client/OnboardingModal';
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const { therapistProfile, clientProfile, isAdmin, isTherapist, isClient } = useAuth();
+  const {
+    therapistProfile,
+    clientProfile,
+    isAdmin,
+    isTherapist,
+    isClient,
+    roleDashboardMismatch,
+    clearRoleDashboardMismatch,
+  } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -253,6 +265,45 @@ export default function DashboardLayout({ children }) {
 
         {/* Dash Page Content */}
         <Box p={{ base: 4, md: 8, lg: 10 }} key={pathname}>
+          {roleDashboardMismatch ? (
+            <Alert
+              status="warning"
+              variant="subtle"
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="orange.200"
+              mb={6}
+              flexDirection="column"
+              alignItems="stretch"
+            >
+              <HStack align="flex-start" spacing={3}>
+                <AlertIcon boxSize="24px" mt={0.5} />
+                <Box flex="1">
+                  <AlertTitle fontSize="md" color="gray.800">
+                    {roleDashboardMismatch.title}
+                  </AlertTitle>
+                  <AlertDescription mt={2} color="gray.700" display="block">
+                    {roleDashboardMismatch.description}
+                  </AlertDescription>
+                  <HStack mt={4} flexWrap="wrap" spacing={3}>
+                    <Button
+                      as={NextLink}
+                      href={roleDashboardMismatch.correctHref}
+                      colorScheme="teal"
+                      size="sm"
+                      borderRadius="full"
+                      onClick={clearRoleDashboardMismatch}
+                    >
+                      Open the correct dashboard
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={clearRoleDashboardMismatch}>
+                      Dismiss
+                    </Button>
+                  </HStack>
+                </Box>
+              </HStack>
+            </Alert>
+          ) : null}
           {isTherapistPendingVerification ? (
             <Center minH="calc(100vh - 180px)">
               <Box

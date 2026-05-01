@@ -234,7 +234,6 @@ export default function DirectoryClient() {
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isMounted, setIsMounted] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
@@ -245,8 +244,6 @@ export default function DirectoryClient() {
   const [selectedCities, setSelectedCities] = useState([]);
   const [selectedExpLevel, setSelectedExpLevel] = useState("all");
   const [costRange, setCostRange] = useState([0, 10000]);
-
-  useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
     async function fetchSupervisors() {
@@ -321,8 +318,6 @@ export default function DirectoryClient() {
       setCostRange([0, 10000]);
       setSearchTerm("");
   };
-
-  if (!isMounted) return null;
 
   return (
     <Box bg="#FDFBFA" minH="100vh" pb={20}>

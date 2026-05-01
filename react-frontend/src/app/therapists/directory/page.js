@@ -1,4 +1,6 @@
-import DirectoryClient from './DirectoryClient'
+import dynamic from 'next/dynamic'
+
+const DirectoryClient = dynamic(() => import('./DirectoryClient'), { ssr: false })
 
 export const metadata = {
   title: 'Our Therapists | MLC Collective',

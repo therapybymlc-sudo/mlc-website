@@ -1,10 +1,10 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs";
-import { apiGet, apiPost, setTokenGetter } from "../api.js";
+import { apiGet, apiPost, parseOnboardRoleDashboardMismatch, setTokenGetter } from "../api.js";
 
 const AuthContext = createContext(null);
 
@@ -39,6 +39,14 @@ export const AuthProvider = ({ children }) => {
   const [therapistProfile, setTherapistProfile] = useState(null);
   const [clientProfile, setClientProfile] = useState(null);
   const [whoami, setWhoami] = useState(null);
+  /** Set when API rejects onboard because this account is locked to the other role. */
+  const [roleDashboardMismatch, setRoleDashboardMismatch] = useState(null);
+  const clearRoleDashboardMismatch = useCallback(() => setRoleDashboardMismatch(null), []);
+  const reportRoleDashboardMismatchFromError = useCallback((err) => {
+    const parsed = parseOnboardRoleDashboardMismatch(err);
+    if (parsed) setRoleDashboardMismatch(parsed);
+    return parsed;
+  }, []);
   const isLikelyJwt = (token) => typeof token === "string" && token.split(".").length === 3;
 
   const getApiToken = async () => {
@@ -59,6 +67,7 @@ export const AuthProvider = ({ children }) => {
           setWhoami(null);
           setTherapistProfile(null);
           setClientProfile(null);
+          setRoleDashboardMismatch(null);
         }
         return;
       }
@@ -90,7 +99,11 @@ export const AuthProvider = ({ children }) => {
               try {
                 await apiPost("onboard/", { role: "therapist" });
                 return await apiGet("therapists/me/").catch(() => null);
-              } catch (_onboardErr) {
+              } catch (onboardErr) {
+                if (mounted) {
+                  const parsed = parseOnboardRoleDashboardMismatch(onboardErr);
+                  if (parsed) setRoleDashboardMismatch(parsed);
+                }
                 return null;
               }
             }
@@ -187,6 +200,9 @@ export const AuthProvider = ({ children }) => {
         previewRole: null,
         whoami,
         clerk,
+        roleDashboardMismatch,
+        clearRoleDashboardMismatch,
+        reportRoleDashboardMismatchFromError,
       }}
     >
       {children}

@@ -159,6 +159,41 @@ export async function apiPost(path, body) {
   }
 }
 
+/**
+ * When POST onboard returns 403 because the account is locked to the other role
+ * (client vs practitioner). Used to show a dashboard notice instead of a silent failure.
+ */
+export function parseOnboardRoleDashboardMismatch(err) {
+  if (err?.response?.status !== 403) return null;
+  const data = err.response?.data || {};
+  const code = data.code;
+  const detail = String(data.detail || "");
+  const isTherapistLocked =
+    code === "onboard_blocked_has_therapist" ||
+    detail.includes("cannot onboard as client");
+  const isClientLocked =
+    code === "onboard_blocked_has_client" ||
+    detail.includes("cannot onboard as therapist");
+  if (!isTherapistLocked && !isClientLocked) return null;
+
+  if (isClientLocked) {
+    return {
+      code: code || "onboard_blocked_has_client",
+      correctHref: "/dashboard/client",
+      title: "You're signed in with a client account",
+      description:
+        "This login is linked to the client portal. Practitioner tools use a separate practitioner account. Use the client dashboard below, or sign out and sign in with the email you used when you joined as a practitioner.",
+    };
+  }
+  return {
+    code: code || "onboard_blocked_has_therapist",
+    correctHref: "/dashboard/therapist",
+    title: "You're signed in with a practitioner account",
+    description:
+      "This login is linked to the practitioner portal. Client bookings and care tools use a separate client account. Open the practitioner dashboard below, or sign out and sign in with the email you used as a client.",
+  };
+}
+
 export async function apiPut(path, body) {
   try {
     const res = await api.put(preparePath(path), body);

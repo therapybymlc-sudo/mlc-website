@@ -6,12 +6,19 @@ import { Center, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
 import { useUser, useAuth as useClerkAuth } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
-import { apiPost } from "../../../api.js";
+import { apiPost, parseOnboardRoleDashboardMismatch } from "../../../api.js";
 
 export default function DashboardPage() {
   const { user, isLoaded, isSignedIn } = useUser();
   const { getToken } = useClerkAuth();
-  const { roles = [], isTherapist, isClient, isAdmin, metadataRoles = [] } = useAuth();
+  const {
+    roles = [],
+    isTherapist,
+    isClient,
+    isAdmin,
+    metadataRoles = [],
+    reportRoleDashboardMismatchFromError,
+  } = useAuth();
   const router = useRouter();
   const [resolvingRole, setResolvingRole] = useState(false);
   const attemptedRoleRef = useRef("");
@@ -98,14 +105,24 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error(e);
-      toast({
-        status: "error",
-        title: "Could not finalize account setup.",
-        description: e?.message || "Please sign in again.",
-      });
-      // Avoid redirecting to role-specific sign-in when already signed in,
-      // which can trigger repeated fallback redirects and loops.
-      router.replace("/login");
+      const mismatch = reportRoleDashboardMismatchFromError?.(e) || parseOnboardRoleDashboardMismatch(e);
+      if (mismatch) {
+        toast({
+          status: "warning",
+          title: mismatch.title,
+          description: "Use the button below or open the correct dashboard from the banner.",
+          duration: 9000,
+          isClosable: true,
+        });
+        router.replace(mismatch.correctHref);
+      } else {
+        toast({
+          status: "error",
+          title: "Could not finalize account setup.",
+          description: e?.message || "Please sign in again.",
+        });
+        router.replace("/login");
+      }
     } finally {
       setResolvingRole(false);
     }

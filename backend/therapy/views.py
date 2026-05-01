@@ -2266,19 +2266,21 @@ class PublicTherapistDirectoryView(APIView):
 
         payload = []
         for profile in profiles:
+            title = (profile.highest_qualification or "").strip() or "Therapist"
+            rate = profile.hourly_rate
             payload.append({
                 "id": profile.id,
                 "name": profile.name,
-                "title": profile.title or "Therapist",
+                "title": title,
                 "photo_url": profile.profile_image_url,
                 "profile_image_url": profile.profile_image_url,
-                "specialties": profile.specialties,
-                "languages": profile.languages,
-                "hourly_rate": profile.hourly_rate,
+                "specialties": profile.specialties or [],
+                "languages": profile.languages or [],
+                "hourly_rate": float(rate) if rate is not None else None,
                 "years_experience": profile.years_experience,
                 "gender": profile.gender,
                 "city": profile.city,
-                "modality": profile.modalities,
+                "modality": profile.modalities or [],
                 "bio": profile.bio,
                 "is_verified": profile.is_verified,
                 "is_supervisor": profile.is_supervisor,
@@ -3463,7 +3465,10 @@ class OnboardUserRoleView(APIView):
             therapist_by_email = bool(email) and TherapistProfile.objects.filter(email__iexact=email).exists()
             if existing_therapist or therapist_by_email:
                 return Response(
-                    {"detail": "This account is already linked to a therapist identity and cannot onboard as client."},
+                    {
+                        "detail": "This account is already linked to a therapist identity and cannot onboard as client.",
+                        "code": "onboard_blocked_has_therapist",
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
             if not getattr(user, "client_profile", None):
@@ -3489,7 +3494,10 @@ class OnboardUserRoleView(APIView):
             client_by_email = bool(email) and ClientProfile.objects.filter(email__iexact=email).exists()
             if existing_client or client_by_email:
                 return Response(
-                    {"detail": "This account is already linked to a client identity and cannot onboard as therapist."},
+                    {
+                        "detail": "This account is already linked to a client identity and cannot onboard as therapist.",
+                        "code": "onboard_blocked_has_client",
+                    },
                     status=status.HTTP_403_FORBIDDEN,
                 )
             therapist = _resolve_therapist_from_request(request, allow_create=True)
