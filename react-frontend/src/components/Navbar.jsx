@@ -28,7 +28,8 @@ import {
   FiLogOut, 
   FiLayout, 
   FiClock,
-  FiArrowRight
+  FiArrowRight,
+  FiTarget
 } from "react-icons/fi";
 import NextLink from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
@@ -94,17 +95,17 @@ const EcosystemHoverMenu = ({ link, pathname, isActive }) => {
       display="inline-block"
       pb={4}
       mb="-16px"
-      mx={{ lg: 7, xl: 8 }} // Critical: Center stage spacing
+      mx={{ lg: 7, xl: 8 }}
     >
       <HStack spacing={1} cursor="pointer">
         <ChakraLink
           as={NextLink}
           href={link.href}
-          fontWeight="600" // Semi-bold
+          fontWeight="600"
           fontFamily="'Inter', var(--font-inter), sans-serif"
           fontSize="15px"
           letterSpacing="0.2px"
-          color="#56756D" // Brand green
+          color="#56756D"
           _hover={{ color: "#C9A960", textDecoration: "none" }}
           transition="all 0.3s ease"
           whiteSpace="nowrap"
@@ -186,11 +187,11 @@ const HoverMenu = ({ link, pathname, isActive }) => {
           <MenuButton
             as={Button}
             variant="ghost"
-            bg="rgba(86, 117, 109, 0.12)" // Soft tinted fill
+            bg="rgba(86, 117, 109, 0.12)"
             color="#56756D"
             fontWeight="600"
             fontSize="15px"
-            borderRadius="xl" // Slightly less rounded than pill
+            borderRadius="xl"
             px={6}
             height="44px"
             _hover={{ bg: "rgba(86, 117, 109, 0.2)" }}
@@ -243,6 +244,10 @@ export default function Navbar() {
     setIsMounted(true);
   }, []);
 
+  // Determine dashboard paths
+  const therapistContext = isTherapist || isAdmin || pathname.startsWith("/dashboard/therapist");
+  const dashboardBase = therapistContext ? "/dashboard/therapist" : "/dashboard/client";
+
   return (
     <Box bg="rgba(255, 255, 255, 0.98)" backdropFilter="blur(10px)" px={{ base: 4, md: 8, lg: 10 }} boxShadow="sm" position="sticky" top="0" zIndex="1000" w="100%">
       <Flex alignItems="center" justifyContent="space-between" flexWrap="nowrap" py={3}>
@@ -268,28 +273,10 @@ export default function Navbar() {
 
         {/* 🗺️ Center Section: The Core Trio */}
         <HStack spacing={0} display={{ base: "none", lg: "flex" }} flex="2" justify="center">
-          {/* Primary CTA */}
-          <Button
-            as={NextLink}
-            href="/therapists/discovery"
-            bg="#56756D"
-            color="white"
-            fontWeight="700"
-            fontSize="15px"
-            borderRadius="full" // Pill
-            px={7}
-            py="12px"
-            height="44px"
-            _hover={{ bg: "#4a645d", transform: "translateY(-1px)", boxShadow: "lg" }}
-            transition="all 0.2s"
-          >
+          <Button as={NextLink} href="/therapists/discovery" bg="#56756D" color="white" fontWeight="700" fontSize="15px" borderRadius="full" px={7} height="44px" _hover={{ bg: "#4a645d", transform: "translateY(-1px)", boxShadow: "lg" }} transition="all 0.2s">
             Find a Therapist
           </Button>
-
-          {/* Ecosystem Center Stage */}
           <EcosystemHoverMenu link={navLinks.find(l => l.isEcosystem)} pathname={pathname} />
-
-          {/* Secondary CTA */}
           <HoverMenu link={navLinks.find(l => l.weight === "secondary")} pathname={pathname} />
         </HStack>
 
@@ -307,11 +294,16 @@ export default function Navbar() {
                 <MenuButton as={Button} variant="ghost" borderRadius="full" p={1}>
                   <Avatar size="sm" name={user?.fullName} src={user?.imageUrl} border="2px solid" borderColor="#A9CBB7" />
                 </MenuButton>
-                <MenuList boxShadow="xl" borderRadius="xl" p={2} minW="240px">
+                <MenuList boxShadow="xl" borderRadius="xl" p={2} minW="260px">
                   <Box px={4} py={3}><Text fontWeight="700" fontSize="sm">{user?.fullName}</Text><Text fontSize="xs" color="gray.500">{user?.primaryEmailAddress?.emailAddress}</Text></Box>
                   <MenuDivider />
-                  <MenuItem as={NextLink} href="/dashboard" fontWeight="600" icon={<Icon as={FiLayout} />}>Dashboard</MenuItem>
-                  <MenuItem as={NextLink} href="/dashboard/appointments" fontWeight="600" icon={<Icon as={FiClock} />}>My Sessions</MenuItem>
+                  <MenuItem as={NextLink} href="/dashboard" fontWeight="600" icon={<Icon as={FiLayout} color="#56756D" />}>Dashboard</MenuItem>
+                  <MenuItem as={NextLink} href={`${dashboardBase}/appointments`} fontWeight="600" icon={<Icon as={FiClock} color="#56756D" />}>My Sessions</MenuItem>
+                  <MenuItem as={NextLink} href={`${dashboardBase}/profile`} fontWeight="600" icon={<Icon as={FiUser} color="#56756D" />}>Profile</MenuItem>
+                  <MenuItem as={NextLink} href={`${dashboardBase}/settings`} fontWeight="600" icon={<Icon as={FiSettings} color="#56756D" />}>Settings</MenuItem>
+                  {(isAdmin || isTherapist) && (
+                    <MenuItem as={NextLink} href="/dashboard/therapist/subscription" fontWeight="600" icon={<Icon as={FiTarget} color="#56756D" />}>MLC Pro / Subscription</MenuItem>
+                  )}
                   <MenuDivider />
                   <MenuItem onClick={() => signOut()} color="red.500" fontWeight="600" icon={<Icon as={FiLogOut} />}>Log Out</MenuItem>
                 </MenuList>
@@ -330,19 +322,46 @@ export default function Navbar() {
 
       {/* 📱 Mobile Drawer */}
       {isOpen && (
-        <Box display={{ lg: "none" }} pb={4}>
+        <Box display={{ lg: "none" }} pb={6} maxH="85vh" overflowY="auto">
           <VStack bg="white" align="stretch" spacing={0} px={4} py={4} borderRadius="xl" boxShadow="xl" border="1px solid" borderColor="gray.100" mt={2}>
-            <Box as={NextLink} href="/ecosystem" bg="rgba(86, 117, 109, 0.05)" p={4} mb={4} borderRadius="xl" onClick={onClose}>
+            {/* Featured Ecosystem Mobile Card */}
+            <Box as={NextLink} href="/ecosystem" bg="rgba(86, 117, 109, 0.05)" p={5} mb={4} borderRadius="xl" onClick={onClose} border="1px solid" borderColor="rgba(86, 117, 109, 0.1)">
               <Text fontWeight="700" color="#56756D" fontSize="lg">✦ MLC Ecosystem</Text>
-              <Text fontSize="xs" color="gray.600">The first integrated therapy ecosystem in India.</Text>
+              <Text fontSize="xs" color="gray.600" mt={1}>The first integrated therapy ecosystem in India — tools, community, and care.</Text>
             </Box>
+
+            {/* Auth Section for Mobile */}
+            {isMounted && isLoaded && (
+              isSignedIn ? (
+                <Box mb={4} p={4} bg="gray.50" borderRadius="xl">
+                   <HStack mb={3}>
+                      <Avatar size="sm" name={user?.fullName} src={user?.imageUrl} />
+                      <VStack align="start" spacing={0}>
+                         <Text fontWeight="700" fontSize="sm">{user?.fullName}</Text>
+                         <Text fontSize="xs" color="gray.500">Log out below</Text>
+                      </VStack>
+                   </HStack>
+                   <SimpleGrid columns={2} spacing={2}>
+                      <Button as={NextLink} href="/dashboard" size="sm" variant="outline" onClick={onClose}>Dashboard</Button>
+                      <Button as={NextLink} href={`${dashboardBase}/profile`} size="sm" variant="outline" onClick={onClose}>Profile</Button>
+                      <Button onClick={() => signOut()} size="sm" colorScheme="red" variant="ghost">Log Out</Button>
+                   </SimpleGrid>
+                </Box>
+              ) : (
+                <HStack spacing={3} mb={4}>
+                   <Button as={NextLink} href="/login" flex="1" size="md" variant="outline" borderRadius="full" onClick={onClose}>Login</Button>
+                   <Button as={NextLink} href="/signup/client" flex="1" size="md" bg="#56756D" color="white" borderRadius="full" onClick={onClose}>Sign Up</Button>
+                </HStack>
+              )
+            )}
+
             {navLinks.filter(l => !l.isEcosystem).map((link) => (
               <Box key={link.label}>
-                <ChakraLink as={NextLink} href={link.href} fontWeight="600" py={3.5} px={4} display="block" onClick={onClose}>{link.label}</ChakraLink>
+                <ChakraLink as={NextLink} href={link.href} fontWeight="600" py={3.5} px={4} display="block" color={link.weight === "primary" ? "#56756D" : "gray.800"} onClick={link.subLinks ? undefined : onClose}>{link.label}</ChakraLink>
                 {link.subLinks && (
                   <VStack align="stretch" spacing={0} pl={6} mb={2}>
                     {link.subLinks.map((sub) => (
-                      <ChakraLink as={NextLink} key={sub.label} href={sub.href} color="gray.500" fontSize="sm" py={2} px={4} onClick={onClose}>{sub.label}</ChakraLink>
+                      <ChakraLink as={NextLink} key={sub.label} href={sub.href} color="gray.500" fontSize="sm" py={2.5} px={4} borderRadius="md" _hover={{ bg: "gray.50" }} onClick={onClose}>{sub.label}</ChakraLink>
                     ))}
                   </VStack>
                 )}
