@@ -53,7 +53,7 @@ export default function BlogListClient({ initialPosts, categories, tags }) {
             if (selectedCategory) params.append('category', selectedCategory);
             selectedTags.forEach(tag => params.append('tags', tag));
 
-            const res = await api.get(`/api/blog/public/posts/?${params.toString()}`);
+            const res = await api.get(`/blog/public/posts/?${params.toString()}`);
             setPosts(res.data);
         } catch (error) {
             console.error("Failed to fetch posts", error);

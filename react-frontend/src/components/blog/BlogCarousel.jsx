@@ -16,7 +16,7 @@ export default function BlogCarousel() {
     const fetchTopPosts = async () => {
         try {
             // Fetch top 6-7 published posts
-            const res = await api.get('/api/blog/public/posts/');
+            const res = await api.get('/blog/public/posts/');
             setPosts(res.data.slice(0, 7));
         } catch (error) {
             console.error("Failed to load blog carousel", error);

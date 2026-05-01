@@ -43,8 +43,8 @@ export default function BlogEditor({ initialData = null, isEdit = false }) {
     const fetchMetadata = async () => {
         try {
             const [catRes, tagRes] = await Promise.all([
-                api.get('/api/blog/admin/categories/'),
-                api.get('/api/blog/admin/tags/')
+                api.get('/blog/admin/categories/'),
+                api.get('/blog/admin/tags/')
             ]);
             setCategories(catRes.data);
             setTags(tagRes.data);
@@ -68,10 +68,10 @@ export default function BlogEditor({ initialData = null, isEdit = false }) {
         setLoading(true);
         try {
             if (isEdit) {
-                await api.patch(`/api/blog/admin/posts/${initialData.slug}/`, formData);
+                await api.patch(`/blog/admin/posts/${initialData.slug}/`, formData);
                 toast({ title: 'Post updated', status: 'success' });
             } else {
-                await api.post('/api/blog/admin/posts/', formData);
+                await api.post('/blog/admin/posts/', formData);
                 toast({ title: 'Post created', status: 'success' });
                 router.push('/admin/blog');
             }

@@ -20,7 +20,7 @@ export default function RelatedBlogs({ keywords = [] }) {
         try {
             const params = new URLSearchParams();
             keywords.forEach(kw => params.append('search', kw));
-            const res = await api.get(`/api/blog/public/posts/?${params.toString()}`);
+            const res = await api.get(`/blog/public/posts/?${params.toString()}`);
             setPosts(res.data.slice(0, 3)); // Show top 3
         } catch (error) {
             console.error("Failed to load related blogs", error);

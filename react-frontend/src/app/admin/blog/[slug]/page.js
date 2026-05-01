@@ -17,7 +17,7 @@ export default function EditBlogPage() {
 
     const fetchPost = async () => {
         try {
-            const res = await api.get(`/api/blog/admin/posts/${params.slug}/`);
+            const res = await api.get(`/blog/admin/posts/${params.slug}/`);
             setPost(res.data);
         } catch (error) {
             toast({ title: 'Failed to load post', status: 'error' });

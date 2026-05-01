@@ -20,7 +20,7 @@ export default function AdminBlogList() {
 
     const fetchPosts = async () => {
         try {
-            const res = await api.get('/api/blog/admin/posts/');
+            const res = await api.get('/blog/admin/posts/');
             setPosts(res.data);
         } catch (error) {
             toast({ title: 'Failed to load posts', status: 'error' });
@@ -32,7 +32,7 @@ export default function AdminBlogList() {
     const handleDelete = async (slug) => {
         if (!window.confirm("Are you sure you want to delete this post?")) return;
         try {
-            await api.delete(`/api/blog/admin/posts/${slug}/`);
+            await api.delete(`/blog/admin/posts/${slug}/`);
             toast({ title: 'Post deleted', status: 'success' });
             setPosts(posts.filter(p => p.slug !== slug));
         } catch (error) {
