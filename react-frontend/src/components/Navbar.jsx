@@ -95,7 +95,7 @@ const EcosystemHoverMenu = ({ link, pathname, isActive }) => {
       display="inline-block"
       pb={4}
       mb="-16px"
-      mx={{ lg: 7, xl: 8 }}
+      mx={{ lg: 5, xl: 7 }}
     >
       <HStack spacing={1} cursor="pointer">
         <ChakraLink
@@ -103,7 +103,7 @@ const EcosystemHoverMenu = ({ link, pathname, isActive }) => {
           href={link.href}
           fontWeight="600"
           fontFamily="'Inter', var(--font-inter), sans-serif"
-          fontSize="15px"
+          fontSize="14px"
           letterSpacing="0.2px"
           color="#56756D"
           _hover={{ color: "#C9A960", textDecoration: "none" }}
@@ -141,7 +141,7 @@ const EcosystemHoverMenu = ({ link, pathname, isActive }) => {
           borderColor="gray.100"
           borderRadius="2xl"
           p={6}
-          minW="450px"
+          minW="400px"
           zIndex={1001}
           mt="-2px"
         >
@@ -183,17 +183,18 @@ const HoverMenu = ({ link, pathname, isActive }) => {
   if (isSecondary) {
     return (
       <Menu isOpen={isOpen} isLazy gutter={0} placement="bottom">
-        <Box onMouseEnter={onOpen} onMouseLeave={onClose} position="relative" display="inline-block" pb={4} mb="-16px">
+        <Box onMouseEnter={onOpen} onMouseLeave={onClose} position="relative" display="inline-block" pb={4} mb="-16px" mx={2}>
           <MenuButton
             as={Button}
             variant="ghost"
-            bg="rgba(86, 117, 109, 0.12)"
+            bg="rgba(86, 117, 109, 0.1)"
             color="#56756D"
             fontWeight="600"
-            fontSize="15px"
+            fontSize="14px"
             borderRadius="xl"
-            px={6}
-            height="44px"
+            px={5}
+            height="40px"
+            whiteSpace="nowrap"
             _hover={{ bg: "rgba(86, 117, 109, 0.2)" }}
             rightIcon={<ChevronDownIcon />}
           >
@@ -213,9 +214,9 @@ const HoverMenu = ({ link, pathname, isActive }) => {
 
   return (
     <Menu isOpen={isOpen} isLazy gutter={0} placement="bottom">
-      <Box onMouseEnter={onOpen} onMouseLeave={onClose} position="relative" display="inline-block" pb={4} mb="-16px">
+      <Box onMouseEnter={onOpen} onMouseLeave={onClose} position="relative" display="inline-block" pb={4} mb="-16px" mx={2}>
         <HStack spacing={1} cursor="pointer">
-          <ChakraLink as={NextLink} href={link.href} fontWeight="500" fontFamily="'Inter', sans-serif" fontSize="15px" color={isActive ? "#C9A960" : "gray.600"} _hover={{ color: "#C9A960", textDecoration: "none" }} transition="all 0.2s" whiteSpace="nowrap">
+          <ChakraLink as={NextLink} href={link.href} fontWeight="500" fontFamily="'Inter', sans-serif" fontSize="14px" color={isActive ? "#C9A960" : "gray.600"} _hover={{ color: "#C9A960", textDecoration: "none" }} transition="all 0.2s" whiteSpace="nowrap">
             {link.label}
           </ChakraLink>
           <ChevronDownIcon color="gray.400" />
@@ -244,57 +245,72 @@ export default function Navbar() {
     setIsMounted(true);
   }, []);
 
-  // Determine dashboard paths
   const therapistContext = isTherapist || isAdmin || pathname.startsWith("/dashboard/therapist");
   const dashboardBase = therapistContext ? "/dashboard/therapist" : "/dashboard/client";
 
   return (
     <Box bg="rgba(255, 255, 255, 0.98)" backdropFilter="blur(10px)" px={{ base: 4, md: 8, lg: 10 }} boxShadow="sm" position="sticky" top="0" zIndex="1000" w="100%">
-      <Flex alignItems="center" justifyContent="space-between" flexWrap="nowrap" py={3}>
+      <Flex alignItems="center" justifyContent="space-between" flexWrap="nowrap" py={2} maxW="1600px" mx="auto">
         
-        {/* 🌿 Left Section: Logo, Home, About */}
-        <HStack spacing={10} flex="1">
-          <HStack as={NextLink} href="/" spacing={3} _hover={{ textDecoration: "none" }} flexShrink={0}>
-            <Image src={logoSrc} alt="MLC Centre" boxSize={{ base: "40px", md: "50px" }} />
-            <Box lineHeight="1.1" display={{ base: "none", sm: "block" }}>
-              <Text fontFamily="'Forum', serif" fontWeight="400" fontSize="18px" color="#2E2E2E">MLC Health and Wellness Centre</Text>
-              <Text fontFamily="'Forum', serif" fontSize="12px" color="#56756D">a place to feel, to heal, to become</Text>
-            </Box>
-          </HStack>
-
-          <HStack spacing={8} display={{ base: "none", lg: "flex" }}>
-            {navLinks.filter(l => l.weight === "support" && !l.subLinks).map((link) => (
-              <ChakraLink key={link.label} as={NextLink} href={link.href} fontWeight="400" fontSize="15px" color={pathname === link.href ? "#C9A960" : "gray.400"} _hover={{ color: "#C9A960", textDecoration: "none" }}>
-                {link.label}
-              </ChakraLink>
-            ))}
-          </HStack>
+        {/* 🌿 Left Section: Logo Only */}
+        <HStack as={NextLink} href="/" spacing={3} _hover={{ textDecoration: "none" }} flexShrink={0} mr={4}>
+          <Image src={logoSrc} alt="MLC Centre" boxSize={{ base: "40px", md: "50px" }} />
+          <Box lineHeight="1.1" display={{ base: "none", xl: "block" }}>
+            <Text fontFamily="'Forum', serif" fontWeight="400" fontSize="16px" color="#2E2E2E">MLC Health and Wellness Centre</Text>
+            <Text fontFamily="'Forum', serif" fontSize="11px" color="#56756D">a place to feel, to heal, to become</Text>
+          </Box>
         </HStack>
 
-        {/* 🗺️ Center Section: The Core Trio */}
-        <HStack spacing={0} display={{ base: "none", lg: "flex" }} flex="2" justify="center">
-          <Button as={NextLink} href="/therapists/discovery" bg="#56756D" color="white" fontWeight="700" fontSize="15px" borderRadius="full" px={7} height="44px" _hover={{ bg: "#4a645d", transform: "translateY(-1px)", boxShadow: "lg" }} transition="all 0.2s">
+        {/* 🗺️ Center Section: ALL LINKS - Optimized for non-warping */}
+        <HStack 
+          display={{ base: "none", lg: "flex" }} 
+          flex="1" 
+          justify="center" 
+          spacing={{ lg: 2, xl: 4 }}
+          px={2}
+        >
+          {/* Home & About - Styled like Services/Resources */}
+          <ChakraLink as={NextLink} href="/" fontWeight="500" fontSize="14px" color={pathname === "/" ? "#C9A960" : "gray.600"} _hover={{ color: "#C9A960", textDecoration: "none" }} whiteSpace="nowrap" px={2}>Home</ChakraLink>
+          <ChakraLink as={NextLink} href="/about" fontWeight="500" fontSize="14px" color={pathname === "/about" ? "#C9A960" : "gray.600"} _hover={{ color: "#C9A960", textDecoration: "none" }} whiteSpace="nowrap" px={2}>About</ChakraLink>
+
+          {/* Primary CTA */}
+          <Button
+            as={NextLink}
+            href="/therapists/discovery"
+            bg="#56756D"
+            color="white"
+            fontWeight="700"
+            fontSize="14px"
+            borderRadius="full"
+            px={5}
+            height="40px"
+            whiteSpace="nowrap"
+            _hover={{ bg: "#4a645d", transform: "translateY(-1px)" }}
+            transition="all 0.2s"
+          >
             Find a Therapist
           </Button>
+
+          {/* Ecosystem */}
           <EcosystemHoverMenu link={navLinks.find(l => l.isEcosystem)} pathname={pathname} />
+
+          {/* Secondary CTA */}
           <HoverMenu link={navLinks.find(l => l.weight === "secondary")} pathname={pathname} />
+
+          {/* Services & Resources */}
+          <HoverMenu link={navLinks.find(l => l.label === "Services")} pathname={pathname} />
+          <HoverMenu link={navLinks.find(l => l.label === "Resources")} pathname={pathname} />
         </HStack>
 
-        {/* 👤 Right Section: Services, Resources, Auth */}
-        <HStack spacing={8} flex="1" justify="flex-end">
-          <HStack spacing={6} display={{ base: "none", lg: "flex" }}>
-            {navLinks.filter(l => l.weight === "support" && l.subLinks).map((link) => (
-              <HoverMenu key={link.label} link={link} pathname={pathname} />
-            ))}
-          </HStack>
-
+        {/* 👤 Right Section: Auth */}
+        <HStack spacing={4} flexShrink={0} ml={4}>
           {isMounted && isLoaded && (
             isSignedIn ? (
               <Menu gutter={12} placement="bottom-end">
                 <MenuButton as={Button} variant="ghost" borderRadius="full" p={1}>
                   <Avatar size="sm" name={user?.fullName} src={user?.imageUrl} border="2px solid" borderColor="#A9CBB7" />
                 </MenuButton>
-                <MenuList boxShadow="xl" borderRadius="xl" p={2} minW="260px">
+                <MenuList boxShadow="xl" borderRadius="xl" p={2} minW="240px">
                   <Box px={4} py={3}><Text fontWeight="700" fontSize="sm">{user?.fullName}</Text><Text fontSize="xs" color="gray.500">{user?.primaryEmailAddress?.emailAddress}</Text></Box>
                   <MenuDivider />
                   <MenuItem as={NextLink} href="/dashboard" fontWeight="600" icon={<Icon as={FiLayout} color="#56756D" />}>Dashboard</MenuItem>
@@ -309,9 +325,9 @@ export default function Navbar() {
                 </MenuList>
               </Menu>
             ) : (
-              <HStack spacing={4} display={{ base: "none", md: "flex" }}>
-                <ChakraLink as={NextLink} href="/login" fontSize="sm" fontWeight="600" color="gray.600">Login</ChakraLink>
-                <Button as={NextLink} href="/signup/client" bg="#56756D" color="white" size="sm" borderRadius="full" px={5} _hover={{ bg: "#C9A960" }}>Sign Up</Button>
+              <HStack spacing={3} display={{ base: "none", md: "flex" }}>
+                <ChakraLink as={NextLink} href="/login" fontSize="sm" fontWeight="600" color="gray.600" whiteSpace="nowrap">Login</ChakraLink>
+                <Button as={NextLink} href="/signup/client" bg="#56756D" color="white" size="sm" borderRadius="full" px={5} _hover={{ bg: "#C9A960" }} whiteSpace="nowrap">Sign Up</Button>
               </HStack>
             )
           )}
@@ -324,28 +340,23 @@ export default function Navbar() {
       {isOpen && (
         <Box display={{ lg: "none" }} pb={6} maxH="85vh" overflowY="auto">
           <VStack bg="white" align="stretch" spacing={0} px={4} py={4} borderRadius="xl" boxShadow="xl" border="1px solid" borderColor="gray.100" mt={2}>
-            {/* Featured Ecosystem Mobile Card */}
             <Box as={NextLink} href="/ecosystem" bg="rgba(86, 117, 109, 0.05)" p={5} mb={4} borderRadius="xl" onClick={onClose} border="1px solid" borderColor="rgba(86, 117, 109, 0.1)">
               <Text fontWeight="700" color="#56756D" fontSize="lg">✦ MLC Ecosystem</Text>
               <Text fontSize="xs" color="gray.600" mt={1}>The first integrated therapy ecosystem in India — tools, community, and care.</Text>
             </Box>
 
-            {/* Auth Section for Mobile */}
             {isMounted && isLoaded && (
               isSignedIn ? (
                 <Box mb={4} p={4} bg="gray.50" borderRadius="xl">
                    <HStack mb={3}>
                       <Avatar size="sm" name={user?.fullName} src={user?.imageUrl} />
-                      <VStack align="start" spacing={0}>
-                         <Text fontWeight="700" fontSize="sm">{user?.fullName}</Text>
-                         <Text fontSize="xs" color="gray.500">Log out below</Text>
-                      </VStack>
+                      <VStack align="start" spacing={0}><Text fontWeight="700" fontSize="sm">{user?.fullName}</Text><Text fontSize="xs" color="gray.500">Log out below</Text></VStack>
                    </HStack>
                    <SimpleGrid columns={2} spacing={2}>
                       <Button as={NextLink} href="/dashboard" size="sm" variant="outline" onClick={onClose}>Dashboard</Button>
                       <Button as={NextLink} href={`${dashboardBase}/profile`} size="sm" variant="outline" onClick={onClose}>Profile</Button>
-                      <Button onClick={() => signOut()} size="sm" colorScheme="red" variant="ghost">Log Out</Button>
                    </SimpleGrid>
+                   <Button onClick={() => signOut()} w="full" mt={2} size="sm" colorScheme="red" variant="ghost">Log Out</Button>
                 </Box>
               ) : (
                 <HStack spacing={3} mb={4}>
