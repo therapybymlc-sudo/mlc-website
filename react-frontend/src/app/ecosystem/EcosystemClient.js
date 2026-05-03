@@ -326,7 +326,7 @@ export default function EcosystemClient() {
                   { label: "View Our Services", href: "/services" },
                   { label: "Take the PHQ-9 Assessment", href: "/dashboard/client/resources" }
                 ]}
-                image="/images/client_portal_ui.png"
+                image="/images/client_line.png"
                 fallbackIcon={FiHeart}
                 color="teal.500"
               />
@@ -344,7 +344,7 @@ export default function EcosystemClient() {
                   { label: "Read Mental Health Guides", href: "/blog" },
                   { label: "Access the Journal (Client Portal)", href: "/login" }
                 ]}
-                image="/images/clinical_tools_ui.png"
+                image="/images/tools_line.png"
                 fallbackIcon={FiActivity}
                 color="mlc.gold"
               />
@@ -362,7 +362,7 @@ export default function EcosystemClient() {
                   { label: "Therapist Community", href: "/dashboard/therapist/community" },
                   { label: "Discover MLC Pro", href: "/dashboard/therapist/subscription" }
                 ]}
-                image="/images/therapist_dashboard_ui.png"
+                image="/images/practitioner_line.png"
                 fallbackIcon={FiLayers}
                 color="blue.500"
               />
@@ -380,7 +380,7 @@ export default function EcosystemClient() {
                   { label: "Learn about Clinical Supervision", href: "/supervision" },
                   { label: "Join Workshops & Circles", href: "/workshops" }
                 ]}
-                image="/images/supervision_network.png"
+                image="/images/supervision_line.png"
                 fallbackIcon={FiShield}
                 color="purple.500"
               />
@@ -405,11 +405,12 @@ export default function EcosystemClient() {
               <Box position="relative" borderRadius="3xl" overflow="hidden" shadow="2xl" border="1px solid" borderColor="whiteAlpha.200">
                 <Box position="absolute" inset={0} bg="teal.900" opacity="0.4" mixBlendMode="multiply" />
                 <Image 
-                  src="/images/tech_infrastructure.png" 
+                  src="/images/tech_line.png" 
                   alt="Technology for health"
                   w="100%"
                   h={{ base: "300px", md: "500px" }}
-                  objectFit="cover"
+                  objectFit="contain"
+                  p={10}
                 />
                 <Box position="absolute" bottom="0" left="0" w="100%" p={8} bgGradient="linear(to-t, teal.900, transparent)">
                   <HStack spacing={4}>
@@ -612,7 +613,16 @@ function EcosystemFeatureRow({ direction, badge, title, description, links, imag
             <Circle position="absolute" bottom="-10%" left="-10%" size="200px" bg={`${color}10`} filter="blur(40px)" />
             
             {image ? (
-              <Image src={image} alt={title} w="100%" h="100%" objectFit="cover" zIndex={1} />
+              <Image 
+                src={image} 
+                alt={title} 
+                w="100%" 
+                h="100%" 
+                objectFit="contain" 
+                zIndex={1} 
+                p={8}
+                mixBlendMode="multiply"
+              />
             ) : (
               <Circle size="120px" bg="white" shadow="xl" border="2px solid" borderColor={`${color}30`} zIndex={1}>
                 <Icon as={fallbackIcon} boxSize={12} color={color} />
