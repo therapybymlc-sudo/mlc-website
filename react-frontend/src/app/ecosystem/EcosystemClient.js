@@ -326,7 +326,7 @@ export default function EcosystemClient() {
                   { label: "View Our Services", href: "/services" },
                   { label: "Take the PHQ-9 Assessment", href: "/dashboard/client/resources" }
                 ]}
-                image="/client_portal_mockup.png" // Placeholder or actual image if exists
+                image="/images/client_portal_ui.png"
                 fallbackIcon={FiHeart}
                 color="teal.500"
               />
@@ -344,6 +344,7 @@ export default function EcosystemClient() {
                   { label: "Read Mental Health Guides", href: "/blog" },
                   { label: "Access the Journal (Client Portal)", href: "/login" }
                 ]}
+                image="/images/clinical_tools_ui.png"
                 fallbackIcon={FiActivity}
                 color="mlc.gold"
               />
@@ -361,6 +362,7 @@ export default function EcosystemClient() {
                   { label: "Therapist Community", href: "/dashboard/therapist/community" },
                   { label: "Discover MLC Pro", href: "/dashboard/therapist/subscription" }
                 ]}
+                image="/images/therapist_dashboard_ui.png"
                 fallbackIcon={FiLayers}
                 color="blue.500"
               />
@@ -378,6 +380,7 @@ export default function EcosystemClient() {
                   { label: "Learn about Clinical Supervision", href: "/supervision" },
                   { label: "Join Workshops & Circles", href: "/workshops" }
                 ]}
+                image="/images/supervision_network.png"
                 fallbackIcon={FiShield}
                 color="purple.500"
               />
@@ -402,7 +405,7 @@ export default function EcosystemClient() {
               <Box position="relative" borderRadius="3xl" overflow="hidden" shadow="2xl" border="1px solid" borderColor="whiteAlpha.200">
                 <Box position="absolute" inset={0} bg="teal.900" opacity="0.4" mixBlendMode="multiply" />
                 <Image 
-                  src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1000" 
+                  src="/images/tech_infrastructure.png" 
                   alt="Technology for health"
                   w="100%"
                   h={{ base: "300px", md: "500px" }}
@@ -513,31 +516,34 @@ function EcosystemNode({ icon, label, angle, color, delay }) {
   const y = Math.sin(rad) * radius;
 
   return (
-    <MotionBox
+    <Box
       position="absolute"
       top="50%"
       left="50%"
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: delay + 1, duration: 0.8, type: "spring" }}
       style={{
         transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`
       }}
       zIndex={10}
     >
-      <VStack spacing={3}>
-        <Circle size="70px" bg="white" shadow="xl" border="2px solid" borderColor={color}>
-          <Icon as={icon} color={color} boxSize={7} />
-        </Circle>
-        <Box bg="rgba(20, 54, 48, 0.9)" px={3} py={1} borderRadius="md" border="1px solid" borderColor="whiteAlpha.300">
-          <Text color="white" fontSize="xs" fontWeight="700" letterSpacing="1px" textTransform="uppercase">{label}</Text>
-        </Box>
-      </VStack>
-    </MotionBox>
+      <MotionBox
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: delay + 1, duration: 0.8, type: "spring" }}
+      >
+        <VStack spacing={3}>
+          <Circle size="70px" bg="white" shadow="xl" border="2px solid" borderColor={color}>
+            <Icon as={icon} color={color} boxSize={7} />
+          </Circle>
+          <Box bg="rgba(20, 54, 48, 0.9)" px={3} py={1} borderRadius="md" border="1px solid" borderColor="whiteAlpha.300">
+            <Text color="white" fontSize="xs" fontWeight="700" letterSpacing="1px" textTransform="uppercase">{label}</Text>
+          </Box>
+        </VStack>
+      </MotionBox>
+    </Box>
   );
 }
 
-function EcosystemFeatureRow({ direction, badge, title, description, links, fallbackIcon, color }) {
+function EcosystemFeatureRow({ direction, badge, title, description, links, image, fallbackIcon, color }) {
   return (
     <MotionBox
       initial="hidden"
@@ -589,7 +595,7 @@ function EcosystemFeatureRow({ direction, badge, title, description, links, fall
           <Box 
             w="full" 
             maxW="500px" 
-            h="400px" 
+            h={{ base: "300px", lg: "400px" }}
             bg={`${color}05`} 
             borderRadius="3xl" 
             border="1px solid" 
@@ -599,14 +605,19 @@ function EcosystemFeatureRow({ direction, badge, title, description, links, fall
             justifyContent="center"
             position="relative"
             overflow="hidden"
+            shadow="xl"
           >
             {/* Abstract Decorative Elements inside the box */}
             <Circle position="absolute" top="-10%" right="-10%" size="250px" bg={`${color}10`} filter="blur(40px)" />
             <Circle position="absolute" bottom="-10%" left="-10%" size="200px" bg={`${color}10`} filter="blur(40px)" />
             
-            <Circle size="120px" bg="white" shadow="xl" border="2px solid" borderColor={`${color}30`}>
-              <Icon as={fallbackIcon} boxSize={12} color={color} />
-            </Circle>
+            {image ? (
+              <Image src={image} alt={title} w="100%" h="100%" objectFit="cover" zIndex={1} />
+            ) : (
+              <Circle size="120px" bg="white" shadow="xl" border="2px solid" borderColor={`${color}30`} zIndex={1}>
+                <Icon as={fallbackIcon} boxSize={12} color={color} />
+              </Circle>
+            )}
           </Box>
         </Box>
       </Stack>
