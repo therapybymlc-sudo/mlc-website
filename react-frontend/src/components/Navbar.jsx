@@ -24,7 +24,6 @@ import {
 import { HamburgerIcon, CloseIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { 
   FiUser, 
-  FiSettings, 
   FiLogOut, 
   FiLayout, 
   FiClock,
@@ -316,7 +315,6 @@ export default function Navbar() {
                   <MenuItem as={NextLink} href="/dashboard" fontWeight="600" icon={<Icon as={FiLayout} color="#56756D" />}>Dashboard</MenuItem>
                   <MenuItem as={NextLink} href={`${dashboardBase}/appointments`} fontWeight="600" icon={<Icon as={FiClock} color="#56756D" />}>My Sessions</MenuItem>
                   <MenuItem as={NextLink} href={`${dashboardBase}/profile`} fontWeight="600" icon={<Icon as={FiUser} color="#56756D" />}>Profile</MenuItem>
-                  <MenuItem as={NextLink} href={`${dashboardBase}/settings`} fontWeight="600" icon={<Icon as={FiSettings} color="#56756D" />}>Settings</MenuItem>
                   {(isAdmin || isTherapist) && (
                     <MenuItem as={NextLink} href="/dashboard/therapist/subscription" fontWeight="600" icon={<Icon as={FiTarget} color="#56756D" />}>MLC Pro / Subscription</MenuItem>
                   )}

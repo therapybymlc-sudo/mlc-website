@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import re
 import sys
 from dotenv import load_dotenv
 import dj_database_url
@@ -52,12 +53,15 @@ MIDDLEWARE = [
 ROOT_URLCONF = "core.urls"
 
 # ==========================
-# Templates (serve React dist/)
+# Templates (optional: monorepo React dist when present; Docker image is backend-only)
 # ==========================
+_REACT_DIST_DIR = os.path.join(BASE_DIR.parent, "react-frontend", "dist")
+_TEMPLATES_DIRS = [_REACT_DIST_DIR] if os.path.isdir(_REACT_DIST_DIR) else []
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR.parent, "react-frontend", "dist")],
+        "DIRS": _TEMPLATES_DIRS,
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -74,20 +78,43 @@ WSGI_APPLICATION = "core.wsgi.application"
 # ==========================
 # Database (PostgreSQL)
 # ==========================
+def _normalize_render_postgres_host(host: str) -> str:
+    """
+    Render internal URLs use short hostnames (e.g. dpg-abc123-a) that are not
+    always resolvable from Docker web services. Expand to the public DNS name.
+    """
+    if not host or "." in host:
+        return host
+    if re.fullmatch(r"dpg-[a-z0-9]+-a", host):
+        region = os.getenv("RENDER_REGION", os.getenv("DB_REGION", "singapore"))
+        return f"{host}.{region}-postgres.render.com"
+    return host
+
+
+def _database_from_url(url: str, *, conn_max_age: int = 600) -> dict:
+    db = dj_database_url.parse(url, conn_max_age=conn_max_age, ssl_require=not DEBUG)
+    if db.get("HOST"):
+        db["HOST"] = _normalize_render_postgres_host(db["HOST"])
+    return db
+
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+    DATABASES = {"default": _database_from_url(DATABASE_URL)}
 else:
+    _host = _normalize_render_postgres_host(os.getenv("DB_HOST", "localhost"))
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.getenv("DB_NAME", "mlc_db"),
             "USER": os.getenv("DB_USER", "mlc_user"),
             "PASSWORD": os.getenv("DB_PASSWORD", "mlc_pass"),
-            "HOST": os.getenv("DB_HOST", "localhost"),
+            "HOST": _host,
             "PORT": os.getenv("DB_PORT", "5432"),
         }
     }
+    if not DEBUG and _host.endswith(".postgres.render.com"):
+        DATABASES["default"]["OPTIONS"] = {"sslmode": "require"}
 
 # ==========================
 # Test DB overrides (env-driven)
@@ -105,7 +132,7 @@ if IS_TESTING and USE_SQLITE_TESTS:
 elif IS_TESTING:
     test_url = os.getenv("DATABASE_URL_TEST")
     if test_url:
-        DATABASES = {"default": dj_database_url.parse(test_url, conn_max_age=0)}
+        DATABASES = {"default": _database_from_url(test_url, conn_max_age=0)}
     else:
         overrides = {
             "NAME": os.getenv("DB_NAME_TEST"),
@@ -142,7 +169,8 @@ USE_TZ = True
 # Static Files
 # ==========================
 STATIC_URL = "static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR.parent, "react-frontend", "dist", "assets")]
+_REACT_ASSETS_DIR = os.path.join(BASE_DIR.parent, "react-frontend", "dist", "assets")
+STATICFILES_DIRS = [_REACT_ASSETS_DIR] if os.path.isdir(_REACT_ASSETS_DIR) else []
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
