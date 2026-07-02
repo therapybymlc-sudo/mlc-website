@@ -18,9 +18,11 @@ import {
   Divider,
   Container,
   Circle,
-  Badge
+  Badge,
+  Link
 } from "@chakra-ui/react";
 import { useState } from "react";
+import { FaWhatsapp } from "react-icons/fa";
 import { 
   FiMail, 
   FiPhone, 
@@ -165,13 +167,20 @@ export default function ClientSupportClient() {
                       </VStack>
                     </HStack>
 
-                    <HStack spacing={4} w="full" p={4} borderRadius="2xl" bg="gray.50" opacity={0.6}>
+                    <HStack spacing={4} w="full" p={4} borderRadius="2xl" bg="rgba(86, 117, 109, 0.08)" transition="0.2s" _hover={{ bg: 'rgba(86, 117, 109, 0.15)' }}>
                       <Circle size="40px" bg="white" shadow="sm">
-                        <Icon as={FiPhone} color="gray.400" />
+                        <Icon as={FiPhone} color="#56756D" />
                       </Circle>
                       <VStack align="start" spacing={0}>
-                        <Text fontSize="xs" fontWeight="700" color="gray.400">PHONE SUPPORT</Text>
-                        <Text fontSize="sm" fontWeight="600" color="gray.400">Coming Soon</Text>
+                        <Text fontSize="xs" fontWeight="700" color="#56756D">PHONE & WHATSAPP</Text>
+                        <HStack spacing={2}>
+                          <Link href="tel:+919901619968" fontSize="sm" fontWeight="600" color="black" _hover={{ color: '#56756D' }}>
+                            +91 99016 19968
+                          </Link>
+                          <Link href="https://wa.me/919901619968" isExternal color="#25D366" display="inline-flex" alignItems="center">
+                            <Icon as={FaWhatsapp} boxSize={4} />
+                          </Link>
+                        </HStack>
                       </VStack>
                     </HStack>
                   </VStack>

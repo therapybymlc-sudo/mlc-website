@@ -22,7 +22,7 @@ import {
   EMAIL_TEMPLATE_ID,
   EMAIL_PUBLIC_KEY,
 } from "../emailConfig";
-import { FaClock, FaEnvelope, FaGlobe } from "react-icons/fa";
+import { FaClock, FaEnvelope, FaGlobe, FaWhatsapp } from "react-icons/fa";
 import { Helmet } from "react-helmet-async";
 import { apiGet } from "../api.js";
 
@@ -161,6 +161,25 @@ export default function ContactUs() {
                 fontWeight="500"
               >
                 📧 {content.hero.email_label}: <strong>{content.hero.email}</strong>
+              </Text>
+              <Text
+                fontFamily="'Inter', sans-serif"
+                color="#2E2E2E"
+                fontWeight="500"
+              >
+                📞 Phone: <strong>+91 9901619968</strong>
+              </Text>
+              <Text
+                fontFamily="'Inter', sans-serif"
+                color="#2E2E2E"
+                fontWeight="500"
+                display="flex"
+                alignItems="center"
+              >
+                💬 WhatsApp:&nbsp;
+                <Link href="https://wa.me/919901619968" isExternal color="#25D366" fontWeight="bold" display="inline-flex" alignItems="center" _hover={{ textDecoration: 'underline' }}>
+                  <Icon as={FaWhatsapp} mr={1} /> Start Chat
+                </Link>
               </Text>
               <Box
                 fontFamily="'Inter', sans-serif"

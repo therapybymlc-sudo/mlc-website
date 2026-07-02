@@ -17,8 +17,8 @@ import {
   Stack,
   Center
 } from "@chakra-ui/react";
-import { FaInstagram, FaLinkedin, FaFacebook, FaTwitter } from "react-icons/fa";
-import { FiMail, FiMapPin, FiArrowRight } from "react-icons/fi";
+import { FaInstagram, FaLinkedin, FaFacebook, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import { FiMail, FiMapPin, FiArrowRight, FiPhone } from "react-icons/fi";
 import NextLink from 'next/link'
 
 const logoSrc = "/logo_tra.png";
@@ -114,9 +114,7 @@ export default function Footer() {
             <HStack spacing={3}>
               <SocialIcon icon={FaInstagram} href="https://www.instagram.com/mlc_healthandwellness/" label="Instagram" />
               <SocialIcon icon={FaLinkedin} href="https://www.linkedin.com/in/mlc-health-and-wellness-centre-9b35b6394/" label="LinkedIn" />
-              {/* Optional extras */}
-              <SocialIcon icon={FaFacebook} href="#" label="Facebook" />
-              <SocialIcon icon={FaTwitter} href="#" label="Twitter" />
+              <SocialIcon icon={FaWhatsapp} href="https://wa.me/919901619968" label="WhatsApp" />
             </HStack>
           </Stack>
 
@@ -175,6 +173,23 @@ export default function Footer() {
                 <Link href="mailto:therapy@mlchealth.in" fontSize="lg" fontWeight="600" color="#C9A960" _hover={{ color: "white" }}>
                   therapy@mlchealth.in
                 </Link>
+              </VStack>
+            </HStack>
+
+            <HStack spacing={6}>
+              <Center bg="whiteAlpha.100" p={3} borderRadius="xl">
+                <Icon as={FiPhone} boxSize={6} color="#A9CBB7" />
+              </Center>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="xs" fontWeight="bold" color="whiteAlpha.500">PHONE & WHATSAPP</Text>
+                <HStack spacing={2}>
+                  <Link href="tel:+919901619968" fontSize="lg" fontWeight="600" color="#C9A960" _hover={{ color: "white" }}>
+                    +91 99016 19968
+                  </Link>
+                  <Link href="https://wa.me/919901619968" isExternal color="#25D366" display="inline-flex" alignItems="center" _hover={{ color: "white" }}>
+                    <Icon as={FaWhatsapp} boxSize={5} />
+                  </Link>
+                </HStack>
               </VStack>
             </HStack>
             

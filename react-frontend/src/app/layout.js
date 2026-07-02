@@ -38,7 +38,8 @@ export default function RootLayout({ children }) {
       "Indore", "Bhopal", "Patna", "Vadodara", "Nagpur", "Kochi", "Coimbatore"
     ],
     "sameAs": [
-      "https://www.instagram.com/mlchealth"
+      "https://www.instagram.com/mlc_healthandwellness/",
+      "https://www.linkedin.com/in/mlc-health-and-wellness-centre-9b35b6394/"
     ]
   };
 

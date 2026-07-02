@@ -17,9 +17,16 @@ import {
   AccordionIcon,
   Icon,
   Link as ChakraLink,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  Badge,
 } from "@chakra-ui/react";
-import { motion } from "framer-motion";
-import { FiUsers, FiCompass, FiCheckCircle, FiFeather } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiUsers, FiCompass, FiCheckCircle, FiFeather, FiArrowRight, FiCalendar } from "react-icons/fi";
 import React, { useEffect, useState, useRef } from "react";
 import NextLink from "next/link";
 import { apiGet } from "../api.js";
@@ -98,6 +105,7 @@ const iconMap = {
 
 export default function HomeClient() {
   const [homeContent, setHomeContent] = useState(fallbackHome);
+  const [isCohortModalOpen, setCohortModalOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -115,6 +123,17 @@ export default function HomeClient() {
         setHomeContent(fallbackHome);
       }
     })();
+
+    // ⏱ Premium announcement popup trigger
+    const timer = setTimeout(() => {
+      // Only show if user hasn't dismissed it in current session
+      const dismissed = sessionStorage.getItem("mlc_supervision_modal_dismissed");
+      if (!dismissed) {
+        setCohortModalOpen(true);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -342,6 +361,73 @@ export default function HomeClient() {
       </Container>
       
       <BlogCarousel />
+
+      <Modal isOpen={isCohortModalOpen} onClose={() => { sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); setCohortModalOpen(false); }} isCentered size="lg">
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(5px)" />
+        <ModalContent borderRadius="3xl" overflow="hidden" border="1px solid" borderColor="teal.100" p={2}>
+          <ModalCloseButton borderRadius="full" m={2} />
+          <ModalBody p={8}>
+            <VStack align="start" spacing={6}>
+              <HStack spacing={2}>
+                <Badge colorScheme="teal" borderRadius="full" px={3} py={1} fontSize="2xs" fontWeight="800">
+                  NEW PROGRAMME
+                </Badge>
+                <Badge colorScheme="purple" borderRadius="full" px={3} py={1} fontSize="2xs" fontWeight="800">
+                  MID-JULY 2026
+                </Badge>
+              </HStack>
+              
+              <VStack align="start" spacing={2}>
+                <Heading size="lg" fontFamily="'Playfair Display', serif" color="teal.900">
+                  MLC Clinical Supervision Cohort
+                </Heading>
+                <Text color="mlc.gold" fontWeight="700" fontSize="sm" letterSpacing="0.5px">
+                  12-Week Reflective Clinical Supervision Programme
+                </Text>
+              </VStack>
+
+              <Text color="gray.600" fontSize="sm" lineHeight="relaxed">
+                An intensive, structured learning journey designed for early-career psychologists to build confidence, sharpen clinical thinking, and discover their authentic clinical voice. Led by Ahmed Asif, M.Sc.
+              </Text>
+
+              <HStack spacing={4} w="full" bg="teal.50" p={4} borderRadius="2xl" border="1px solid" borderColor="teal.100">
+                <Icon as={FiCalendar} color="teal.600" boxSize={5} />
+                <Box>
+                  <Text fontWeight="800" fontSize="xs" color="teal.800" letterSpacing="0.5px">FOUNDING COHORT SIZE</Text>
+                  <Text fontSize="xs" color="gray.700">Intentionally limited to 6 selected therapists.</Text>
+                </Box>
+              </HStack>
+
+              <Stack direction={{ base: "column", sm: "row" }} spacing={4} w="full" pt={2}>
+                <Button
+                  as={NextLink}
+                  href="/supervision"
+                  onClick={() => { sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); setCohortModalOpen(false); }}
+                  flex="1.2"
+                  bg="teal.800"
+                  color="white"
+                  borderRadius="full"
+                  h="48px"
+                  _hover={{ bg: "teal.900" }}
+                  rightIcon={<FiArrowRight />}
+                >
+                  Learn More & Apply
+                </Button>
+                <Button
+                  onClick={() => { sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); setCohortModalOpen(false); }}
+                  flex="0.8"
+                  variant="ghost"
+                  borderRadius="full"
+                  h="48px"
+                  color="gray.500"
+                >
+                  Maybe Later
+                </Button>
+              </Stack>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }
