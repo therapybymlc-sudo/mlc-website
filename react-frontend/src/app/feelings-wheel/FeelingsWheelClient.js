@@ -485,13 +485,13 @@ export default function FeelingsWheelClient() {
 
   const CX = 400;
   const CY = 400;
-  const R1 = 120; // Hub to Core
-  const R2 = 240; // Core to Middle
-  const R3 = 360; // Middle to Outer
+  const R1 = 145; // Hub to Core (increased from 120 to give Core layer 95px radial width)
+  const R2 = 255; // Core to Middle (adjusted to keep Middle layer 110px radial width)
+  const R3 = 370; // Middle to Outer (adjusted to keep Outer layer 115px radial width)
 
   return (
-    <Box bg="#F9FAFB" minH="100vh" py={{ base: 8, md: 16 }}>
-      <Container maxW="7xl">
+    <Box bg="#F9FAFB" minH="100vh" py={{ base: 6, md: 16 }}>
+      <Container maxW="7xl" px={{ base: 4, md: 8 }}>
         <VStack spacing={4} textAlign="center" mb={10}>
           <Tag borderRadius="full" colorScheme="teal" px={4} py={2} fontWeight="700">
             Emotional Check-In
@@ -510,11 +510,11 @@ export default function FeelingsWheelClient() {
           
           {/* LEFT: THE WHEEL */}
           <Box 
-            flex="1" 
+            flex="1.2" 
             w="full"
             bg="white" 
             borderRadius="3xl" 
-            p={{ base: 4, md: 8 }} 
+            p={{ base: 2, md: 8 }} 
             border="1px solid" 
             borderColor="gray.100" 
             boxShadow="0 20px 40px rgba(15, 118, 110, 0.05)"
@@ -537,7 +537,7 @@ export default function FeelingsWheelClient() {
               </Button>
             )}
 
-            <Center w="full" position="relative" mt={{ base: 10, md: 0 }}>
+            <Center w="full" position="relative" mt={{ base: 14, md: 0 }}>
               <svg
                 viewBox="0 0 800 800"
                 width="100%"
@@ -547,9 +547,6 @@ export default function FeelingsWheelClient() {
                 {WHEEL_NODES.map((node) => {
                   let rInner = node.level === 1 ? 50 : node.level === 2 ? R1 : R2;
                   let rOuter = node.level === 1 ? R1 : node.level === 2 ? R2 : R3;
-                  
-                  // Make unselected rings slightly thinner to emphasize selected ones conceptually, 
-                  // but for the SVG wheel it's better to just use opacity to gray them out.
                   
                   const isHovered = hovered?.id === node.id;
                   const isSelectedTertiary = node.level === 3 && selectedFeelings.includes(node.id);
@@ -562,9 +559,9 @@ export default function FeelingsWheelClient() {
                   const flip = deg > 90 && deg < 270;
                   const rotateStr = flip ? `rotate(180)` : ``;
 
-                  // Determine font size and weight based on layer and state
-                  const fontSize = node.level === 1 ? '16px' : node.level === 2 ? '14px' : '12px';
-                  const fontWeight = (node.level === 1 || isHovered || isSelectedTertiary) ? '700' : '500';
+                  // Slightly reduced font sizes to prevent overflow on narrow slices
+                  const fontSize = node.level === 1 ? '14px' : node.level === 2 ? '12px' : '10px';
+                  const fontWeight = (node.level === 1 || isHovered || isSelectedTertiary) ? '700' : '600';
 
                   return (
                     <g 
@@ -590,7 +587,7 @@ export default function FeelingsWheelClient() {
                         fontSize={fontSize}
                         fontWeight={fontWeight}
                         opacity={opacity > 0.15 ? 1 : (opacity > 0 ? 0.3 : 0)}
-                        style={{ transition: 'opacity 0.4s ease', pointerEvents: 'none', fontFamily: 'Inter, system-ui, sans-serif' }}
+                        style={{ transition: 'opacity 0.4s ease', pointerEvents: 'none', fontFamily: 'Inter, system-ui, sans-serif', letterSpacing: '0.5px' }}
                       >
                         {node.name}
                       </text>
@@ -606,7 +603,7 @@ export default function FeelingsWheelClient() {
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="#374151"
-                  fontSize="14"
+                  fontSize="13"
                   fontWeight="700"
                   style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                 >
