@@ -1,9 +1,8 @@
-import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from './providers'
 import { Inter, Playfair_Display, Forum } from 'next/font/google'
 import ClientWrapper from '../components/ClientWrapper'
 import CookieConsent from '../components/CookieConsent'
-import { getClerkProviderProps } from '../lib/clerk-config'
+import ClerkProviderWrapper from '../components/ClerkProviderWrapper'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
@@ -58,8 +57,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body suppressHydrationWarning>
-        <ClerkProvider
-          {...getClerkProviderProps()}
+        <ClerkProviderWrapper
           appearance={{
             layout: {
               logoPlacement: 'inside',
@@ -88,7 +86,7 @@ export default function RootLayout({ children }) {
               <CookieConsent />
             </ClientWrapper>
           </Providers>
-        </ClerkProvider>
+        </ClerkProviderWrapper>
       </body>
     </html>
   )

@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Clerk SSR breaks if NEXT_PUBLIC_CLERK_PROXY_URL is set at build time.
+  // Preview proxy is handled by src/proxy.js + ClerkProviderWrapper instead.
+  env: {
+    NEXT_PUBLIC_CLERK_PROXY_URL: '',
+  },
   images: {
     remotePatterns: [
       {
