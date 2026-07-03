@@ -301,10 +301,9 @@ export default function Navbar() {
           <HoverMenu link={navLinks.find(l => l.label === "Resources")} pathname={pathname} />
         </HStack>
 
-        {/* 👤 Right Section: Auth */}
+        {/* 👤 Right Section: Auth — always show Login/Sign Up unless signed in */}
         <HStack spacing={4} flexShrink={0} ml={4}>
-          {isMounted && isLoaded && (
-            isSignedIn ? (
+          {isMounted && isLoaded && isSignedIn ? (
               <Menu gutter={12} placement="bottom-end">
                 <MenuButton as={Button} variant="ghost" borderRadius="full" p={1}>
                   <Avatar size="sm" name={user?.fullName} src={user?.imageUrl} border="2px solid" borderColor="#A9CBB7" />
@@ -328,7 +327,7 @@ export default function Navbar() {
                 <Button as={NextLink} href="/signup/client" bg="#56756D" color="white" size="sm" borderRadius="full" px={5} _hover={{ bg: "#C9A960" }} whiteSpace="nowrap">Sign Up</Button>
               </HStack>
             )
-          )}
+          }
 
           <IconButton display={{ base: "flex", lg: "none" }} onClick={isOpen ? onClose : onOpen} icon={isOpen ? <CloseIcon /> : <HamburgerIcon />} variant="ghost" borderRadius="full" />
         </HStack>
@@ -343,8 +342,7 @@ export default function Navbar() {
               <Text fontSize="xs" color="gray.600" mt={1}>The first integrated therapy ecosystem in India — tools, community, and care.</Text>
             </Box>
 
-            {isMounted && isLoaded && (
-              isSignedIn ? (
+            {isMounted && isLoaded && isSignedIn ? (
                 <Box mb={4} p={4} bg="gray.50" borderRadius="xl">
                    <HStack mb={3}>
                       <Avatar size="sm" name={user?.fullName} src={user?.imageUrl} />
@@ -362,7 +360,7 @@ export default function Navbar() {
                    <Button as={NextLink} href="/signup/client" flex="1" size="md" bg="#56756D" color="white" borderRadius="full" onClick={onClose}>Sign Up</Button>
                 </HStack>
               )
-            )}
+            }
 
             {navLinks.filter(l => !l.isEcosystem).map((link) => (
               <Box key={link.label}>
