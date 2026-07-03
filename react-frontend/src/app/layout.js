@@ -1,14 +1,12 @@
+import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from './providers'
 import { Inter, Playfair_Display, Forum } from 'next/font/google'
 import ClientWrapper from '../components/ClientWrapper'
 import CookieConsent from '../components/CookieConsent'
-import ClerkProviderWrapper from '../components/ClerkProviderWrapper'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
 const forum = Forum({ weight: '400', subsets: ['latin'], variable: '--font-forum' })
-
-export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: {
@@ -59,7 +57,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body suppressHydrationWarning>
-        <ClerkProviderWrapper
+        <ClerkProvider
           appearance={{
             layout: {
               logoPlacement: 'inside',
@@ -88,7 +86,7 @@ export default function RootLayout({ children }) {
               <CookieConsent />
             </ClientWrapper>
           </Providers>
-        </ClerkProviderWrapper>
+        </ClerkProvider>
       </body>
     </html>
   )

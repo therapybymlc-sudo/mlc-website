@@ -1,7 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-const PRODUCTION_HOSTS = new Set(["mlchealth.in", "www.mlchealth.in"]);
-
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/admin(.*)",
@@ -9,23 +7,11 @@ const isProtectedRoute = createRouteMatcher([
   "/book/checkout(.*)",
 ]);
 
-function shouldProxyClerkFrontendApi(url) {
-  return !PRODUCTION_HOSTS.has(url.hostname);
-}
-
-export default clerkMiddleware(
-  async (auth, req) => {
-    if (isProtectedRoute(req)) {
-      await auth.protect();
-    }
-  },
-  {
-    frontendApiProxy: {
-      enabled: shouldProxyClerkFrontendApi,
-      path: "/__clerk",
-    },
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
   }
-);
+});
 
 export const config = {
   matcher: [
