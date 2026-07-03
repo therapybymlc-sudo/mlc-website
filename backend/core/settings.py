@@ -3,6 +3,7 @@ import os
 import re
 import sys
 from dotenv import load_dotenv
+import dj_database_url
 from core.storage_settings import configure_file_storage
 
 # ==========================
