@@ -59,6 +59,18 @@ import {
   ContactEditor 
 } from "./AdminEditors";
 
+const apiErrorDetail = (error, fallback = "Please try again.") => {
+  const data = error?.response?.data;
+  if (!data) return fallback;
+  if (typeof data.detail === "string") return data.detail;
+  if (typeof data === "string") return data;
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return fallback;
+  }
+};
+
 const emptyMember = {
   name: "",
   title: "",
@@ -2591,7 +2603,7 @@ export default function AdminDashboard() {
                                       fetchTherapistApplications();
                                       fetchAllTherapists();
                                       toast({ status: "info", title: "Changes requested" });
-                                    } catch { toast({ status: "error", title: "Action failed" }); }
+                                    } catch (err) { toast({ status: "error", title: "Action failed", description: apiErrorDetail(err) }); }
                                   }}
                                 >
                                   Request Changes
@@ -2614,8 +2626,8 @@ export default function AdminDashboard() {
                                       fetchTherapistApplications();
                                       fetchAllTherapists();
                                       fetchUnverifiedTherapists();
-                                    } catch {
-                                      toast({ status: "error", title: "Approval failed", description: "Please check required profile fields and try again." });
+                                    } catch (err) {
+                                      toast({ status: "error", title: "Approval failed", description: apiErrorDetail(err, "Please check required profile fields and try again.") });
                                     }
                                   }}
                                 >
@@ -2641,8 +2653,8 @@ export default function AdminDashboard() {
                                   fetchTherapistApplications();
                                   fetchAllTherapists();
                                   fetchUnverifiedTherapists();
-                                } catch {
-                                  toast({ status: "error", title: "Publish failed", description: "Please try again." });
+                                } catch (err) {
+                                  toast({ status: "error", title: "Publish failed", description: apiErrorDetail(err) });
                                 }
                               }}
                             >
@@ -2715,16 +2727,20 @@ export default function AdminDashboard() {
                               try {
                                 await apiPost(`therapists/verify/${t.id}/`, {});
                                 toast({ status: "success", title: "Therapist verified" });
-                                fetchUnverifiedTherapists();
+                                await Promise.all([
+                                  fetchUnverifiedTherapists(),
+                                  fetchAllTherapists(),
+                                  fetchTherapistApplications(),
+                                ]);
                               } catch (error) {
                                 if (error.response?.status === 403) {
                                   toast({ 
                                     status: "error", 
                                     title: "Access Denied", 
-                                    description: "You need administrator privileges to verify therapists." 
+                                    description: apiErrorDetail(error, "You need administrator privileges to verify therapists.") 
                                   });
                                 } else {
-                                  toast({ status: "error", title: "Verification failed" });
+                                  toast({ status: "error", title: "Verification failed", description: apiErrorDetail(error) });
                                 }
                               }
                             }}

@@ -354,6 +354,13 @@ def _resolve_therapist_from_request(request, allow_create=False):
     payload = getattr(request, "auth", {})
     payload_email = (payload.get("email") or payload.get("email_address") if isinstance(payload, dict) else None)
     auth_email = (getattr(user, "email", None) or payload_email or "").strip().lower() or None
+    if not auth_email and isinstance(payload, dict) and payload.get("sub"):
+        from auth.clerk_auth import _fetch_clerk_primary_email
+
+        auth_email = (_fetch_clerk_primary_email(payload.get("sub")) or "").strip().lower() or None
+        if auth_email and getattr(user, "email", None) != auth_email:
+            user.email = auth_email
+            user.save(update_fields=["email"])
     roles = _extract_roles_from_auth(request)
     is_admin = "admin" in roles
 
@@ -754,9 +761,27 @@ def _is_premium_request(request):
     return any(role in roles for role in ["admin", "premium", "premium_client", "premium_therapist"])
 
 
-def _require_admin(request):
+def _is_request_admin(request) -> bool:
+    """Match admin checks used across vetting, reports, and therapist management."""
     roles = _extract_roles_from_auth(request)
-    if "admin" not in roles:
+    if "admin" in roles:
+        return True
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    admin_emails = [
+        e.strip().lower()
+        for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
+        if e.strip()
+    ] + ["therapybymlc@gmail.com", "therapy@mlchealth.in"]
+    email = (getattr(user, "email", None) or "").strip().lower()
+    return bool(email and email in admin_emails)
+
+
+def _require_admin(request):
+    if not _is_request_admin(request):
         raise exceptions.PermissionDenied("Admin access required.")
 
 
@@ -777,7 +802,7 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         
         # 1. Admins see everything (with filtering support)
         # 1. Admins see everything by default, but respect filtering if provided
-        if "admin" in roles or self.request.user.is_staff:
+        if _is_request_admin(self.request):
             queryset = TherapistProfile.objects.all()
             
             is_supervisor = self.request.query_params.get("is_supervisor")
@@ -868,6 +893,10 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         # Fallback: resolve via email linkage
         if not instance:
             instance = _resolve_therapist_from_request(request, allow_create=False)
+
+        # Admin fallback: allow vetting/profile repair by explicit profile id
+        if not instance and pk and _is_request_admin(request):
+            instance = TherapistProfile.objects.filter(pk=pk).first()
         
         if not instance:
             return Response({"detail": "Profile not found or access denied."}, status=status.HTTP_404_NOT_FOUND)
@@ -3534,8 +3563,7 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
-        roles = _extract_roles_from_auth(request)
-        if "admin" not in roles and not request.user.is_staff:
+        if not _is_request_admin(request):
             return Response({"detail": "Admin permissions required."}, status=status.HTTP_403_FORBIDDEN)
             
         app = self.get_object()
@@ -3591,13 +3619,15 @@ class VerifyTherapistView(APIView):
         try:
             profile = TherapistProfile.objects.get(pk=pk)
             profile.is_verified = True
+            profile.profile_status = TherapistProfile.ProfileStatus.APPROVED
+            profile.is_initially_published = True
             # Attach to canonical user on manual verify as well.
             matched_user = User.objects.filter(email__iexact=profile.email).first()
             if matched_user and profile.user_id != matched_user.id:
                 profile.user = matched_user
-                profile.save(update_fields=["is_verified", "user"])
+                profile.save(update_fields=["is_verified", "profile_status", "is_initially_published", "user"])
             else:
-                profile.save(update_fields=["is_verified"])
+                profile.save(update_fields=["is_verified", "profile_status", "is_initially_published"])
 
             # Ensure the canonical row for this identity reflects verification too.
             TherapistProfile.objects.filter(email__iexact=profile.email).update(is_verified=True)

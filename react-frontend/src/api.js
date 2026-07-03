@@ -257,10 +257,21 @@ export async function apiPatchForm(path, formData) {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
-  if (!res.ok) {
-    throw new Error(await res.text());
+  const raw = await res.text();
+  let data = null;
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = raw;
+    }
   }
-  return res.json();
+  if (!res.ok) {
+    const err = new Error(typeof data === "object" && data?.detail ? data.detail : raw || "Upload failed");
+    err.response = { status: res.status, data };
+    throw err;
+  }
+  return data;
 }
 
 // ==============================

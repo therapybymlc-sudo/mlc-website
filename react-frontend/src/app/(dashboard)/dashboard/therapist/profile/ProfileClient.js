@@ -9,7 +9,7 @@ import {
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
   FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX
 } from "react-icons/fi";
-import { apiGet, apiPut, apiPost, apiPatch, apiPatchForm } from "../../../../../api.js";
+import { apiGet, apiPut, apiPost, apiPatchForm } from "../../../../../api.js";
 import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
@@ -176,46 +176,96 @@ export default function ProfileClient() {
 
   const [tabIndex, setTabIndex] = useState(0);
 
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const clerkName = user?.fullName || user?.firstName || "Therapist";
+
+  const THERAPIST_FILE_FIELDS = new Set([
+    "resume_file",
+    "highest_qualification_proof",
+    "profile_image",
+  ]);
+
+  const buildProfilePayload = (sourceProfile) => {
+    const payload = { ...sourceProfile, email: sourceProfile.email || clerkEmail, name: sourceProfile.name || clerkName };
+    for (const key of THERAPIST_FILE_FIELDS) {
+      delete payload[key];
+    }
+    delete payload.user;
+    return payload;
+  };
+
+  const syncTherapistProfile = async () => {
+    try {
+      const data = await apiGet("therapists/me/");
+      if (data?.id) {
+        setProfile((prev) => ({ ...prev, ...data }));
+        return data;
+      }
+    } catch (error) {
+      if (error.response?.status !== 404) {
+        throw error;
+      }
+    }
+
+    if (!clerkEmail) {
+      throw new Error("Add your primary email in Clerk account settings, then refresh.");
+    }
+
+    try {
+      await apiPost("onboard/", { role: "therapist" });
+    } catch (onboardErr) {
+      const status = onboardErr?.response?.status;
+      if (status !== 400 && status !== 403) {
+        throw onboardErr;
+      }
+    }
+
+    try {
+      const created = await apiGet("therapists/me/");
+      if (created?.id) {
+        setProfile((prev) => ({ ...prev, ...created }));
+        return created;
+      }
+    } catch (_) {
+      /* fall through to explicit create */
+    }
+
+    const created = await apiPost("therapists/", buildProfilePayload(profile));
+    setProfile((prev) => ({ ...prev, ...created }));
+    return created;
+  };
+
   useEffect(() => {
     if (!isMounted || !isUserLoaded) return;
     
     const fetchProfile = async () => {
       try {
-        const data = await apiGet("therapists/me/");
-        if (data && data.id) {
-          setProfile(prev => ({ ...prev, ...data }));
-        }
+        await syncTherapistProfile();
       } catch (error) {
         if (error.response?.status === 404) {
-          // Profile doesn't exist yet — will be created on first save
-          const clerkEmail = user?.primaryEmailAddress?.emailAddress || "";
-          if (clerkEmail) setProfile(prev => ({ ...prev, email: clerkEmail }));
+          if (clerkEmail) setProfile((prev) => ({ ...prev, email: clerkEmail }));
         } else {
           console.error("Profile sync error:", error);
         }
       }
     };
     fetchProfile();
-  }, [isMounted, isUserLoaded]);
+  }, [isMounted, isUserLoaded, clerkEmail]);
 
   const handleSave = async (showToast = true) => {
     setLoading(true);
-    // Always ensure email from Clerk is in the payload — this is the linkage key
-    const clerkEmail = user?.primaryEmailAddress?.emailAddress || "";
-    const payload = { ...profile, email: profile.email || clerkEmail };
-    const name = payload.name || user?.fullName || user?.firstName || "Therapist";
     try {
-      if (profile.id) {
-        await apiPut(`therapists/${profile.id}/`, { ...payload, name });
-        if (showToast) toast({ title: "Profile Synced ✓", status: "success", duration: 2000 });
-      } else {
-        const created = await apiPost("therapists/", { ...payload, name });
-        setProfile(prev => ({ ...prev, ...created }));
-        if (showToast) toast({ title: "Profile Initialized ✓", status: "success", duration: 2000 });
+      let activeProfile = profile;
+      if (!activeProfile.id) {
+        activeProfile = await syncTherapistProfile();
       }
+      const payload = buildProfilePayload(activeProfile);
+      const updated = await apiPut(`therapists/${activeProfile.id}/`, payload);
+      setProfile((prev) => ({ ...prev, ...updated }));
+      if (showToast) toast({ title: "Profile Synced ✓", status: "success", duration: 2000 });
       return true;
     } catch (error) {
-      const detail = error?.response?.data?.email?.[0] || error?.response?.data?.detail || "Please try again.";
+      const detail = error?.response?.data?.email?.[0] || error?.response?.data?.detail || error?.message || "Please try again.";
       toast({ title: "Sync failed", description: detail, status: "error" });
       return false;
     } finally {
@@ -282,29 +332,31 @@ export default function ProfileClient() {
     
     setLoading(true);
     try {
-      // For therapists, the field might be named differently or need a specific endpoint
-      // Assuming apiPatch to therapists/me/ or similar
-      await apiPatch(`therapists/${profile.id}/`, formDataUpload);
+      await syncTherapistProfile();
+      const updated = await apiPatchForm("therapists/me/", formDataUpload);
+      setProfile((prev) => ({ ...prev, ...updated }));
       toast({ title: "Photo updated", status: "success" });
-      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
-      toast({ title: "Upload failed", status: "error" });
+      const detail = err?.response?.data?.detail || err?.message || "Upload failed";
+      toast({ title: "Upload failed", description: detail, status: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   const handleProfileFileUpload = async (fieldName, file) => {
-    if (!profile.id || !file) return;
+    if (!file) return;
     const formDataUpload = new FormData();
     formDataUpload.append(fieldName, file);
     setLoading(true);
     try {
-      const updated = await apiPatchForm(`therapists/${profile.id}/`, formDataUpload);
+      await syncTherapistProfile();
+      const updated = await apiPatchForm("therapists/me/", formDataUpload);
       setProfile((prev) => ({ ...prev, ...updated }));
       toast({ title: "File uploaded", status: "success", duration: 2000 });
     } catch (err) {
-      toast({ title: "Upload failed", description: "Please try again.", status: "error" });
+      const detail = err?.response?.data?.detail || err?.message || "Please try again.";
+      toast({ title: "Upload failed", description: detail, status: "error" });
     } finally {
       setLoading(false);
     }

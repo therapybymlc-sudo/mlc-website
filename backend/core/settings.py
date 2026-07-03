@@ -195,6 +195,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "MLC Reports <noreply@mlc-t
 # ==========================
 CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL", "")
 CLERK_ISSUER = os.getenv("CLERK_ISSUER", "")
+CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in")
 ADMIN_USER_IDS = os.getenv("ADMIN_USER_IDS", "user_3CalFf5iOUKgTEq1efJUXni3y98")
 
