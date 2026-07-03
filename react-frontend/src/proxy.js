@@ -14,15 +14,15 @@ function shouldProxyClerkFrontendApi(url) {
 }
 
 export default clerkMiddleware(
-  {
-    frontendApiProxy: {
-      enabled: shouldProxyClerkFrontendApi,
-    },
-  },
   async (auth, req) => {
     if (isProtectedRoute(req)) {
       await auth.protect();
     }
+  },
+  {
+    frontendApiProxy: {
+      enabled: shouldProxyClerkFrontendApi,
+    },
   }
 );
 
