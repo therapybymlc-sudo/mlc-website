@@ -8,6 +8,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
 const forum = Forum({ weight: '400', subsets: ['latin'], variable: '--font-forum' })
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: {
     default: 'MLC Health | India\'s First Integrated Therapy Ecosystem',

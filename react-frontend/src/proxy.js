@@ -22,6 +22,7 @@ export default clerkMiddleware(
   {
     frontendApiProxy: {
       enabled: shouldProxyClerkFrontendApi,
+      path: "/__clerk",
     },
   }
 );

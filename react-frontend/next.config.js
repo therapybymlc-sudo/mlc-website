@@ -6,6 +6,14 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_CLERK_PROXY_URL: '',
   },
+  async rewrites() {
+    return [
+      {
+        source: '/__clerk/:path*',
+        destination: '/api/clerk/:path*',
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
