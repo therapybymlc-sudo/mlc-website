@@ -332,12 +332,12 @@ urlpatterns = [
     path("api/config/", get_config, name="get-config"),
 ]
 
-# Serve uploaded media files (client reports, vault uploads).
-# `django.conf.urls.static.static()` only adds routes when DEBUG=True, so we add
-# an explicit fallback route for deployed environments as well.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-if not settings.DEBUG and settings.MEDIA_URL:
-    media_prefix = settings.MEDIA_URL.lstrip("/")
-    urlpatterns += [
-        re_path(rf"^{media_prefix}(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
-    ]
+# Serve uploaded media files only when using local filesystem storage.
+# Cloud/R2 URLs (https://...) are served directly from the bucket CDN.
+if settings.MEDIA_URL.startswith("/"):
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    if not settings.DEBUG:
+        media_prefix = settings.MEDIA_URL.lstrip("/")
+        urlpatterns += [
+            re_path(rf"^{media_prefix}(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+        ]
