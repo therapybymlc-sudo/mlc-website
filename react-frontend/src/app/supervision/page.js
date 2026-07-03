@@ -469,7 +469,7 @@ export default function SupervisionPage() {
               <Box position="relative">
                 <Box position="absolute" inset="10px" border="2px solid" borderColor="mlc.gold" borderRadius="3xl" transform="rotate(3deg)" zIndex={0} />
                 <Image 
-                  src="/founder_portrait_new.jpg" 
+                  src="/founder_portrait_new.png" 
                   borderRadius="3xl" 
                   shadow="xl" 
                   alt="Ahmed Asif - Clinical Supervisor"
