@@ -24,6 +24,14 @@ services:
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false
+      - key: FILE_STORAGE_BACKEND
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: mlc-postgres

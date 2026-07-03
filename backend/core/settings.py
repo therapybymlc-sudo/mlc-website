@@ -3,7 +3,7 @@ import os
 import re
 import sys
 from dotenv import load_dotenv
-import dj_database_url
+from core.storage_settings import configure_file_storage
 
 # ==========================
 # Base Setup
@@ -171,8 +171,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 _REACT_ASSETS_DIR = os.path.join(BASE_DIR.parent, "react-frontend", "dist", "assets")
 STATICFILES_DIRS = [_REACT_ASSETS_DIR] if os.path.isdir(_REACT_ASSETS_DIR) else []
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+_storage = configure_file_storage(base_dir=BASE_DIR, installed_apps=INSTALLED_APPS)
+globals().update(_storage)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

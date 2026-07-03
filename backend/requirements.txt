@@ -8,3 +8,7 @@ cryptography
 dj-database-url
 gunicorn
 reportlab>=4.0
+django-storages[s3]>=1.14.2
+boto3>=1.34.0
+django-cloudinary-storage>=0.3.0
+cloudinary>=1.41.0
