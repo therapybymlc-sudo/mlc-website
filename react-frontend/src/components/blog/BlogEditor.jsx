@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Box, Flex, VStack, HStack, FormControl, FormLabel, Input, Button, 
-    Textarea, Select, useToast, Heading, IconButton, Text, Image, Badge, Divider
+    Textarea, Select, useToast, Heading, IconButton, Text, Badge, Divider
 } from '@chakra-ui/react';
 import { FiArrowLeft, FiSave, FiPlus, FiGlobe } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
@@ -328,13 +328,15 @@ export default function BlogEditor({ initialData = null, isEdit = false }) {
                                 </Text>
                                 {coverPreviewUrl && !coverPreviewError && (
                                     <Box mt={3} borderRadius="md" overflow="hidden" h="150px" border="1px solid" borderColor="gray.200" bg="gray.50">
-                                        <Image
+                                        <Box
+                                            as="img"
                                             src={coverPreviewUrl}
                                             alt="Cover preview"
                                             w="100%"
                                             h="100%"
                                             objectFit="cover"
                                             referrerPolicy="no-referrer"
+                                            display="block"
                                             onError={() => setCoverPreviewError(true)}
                                         />
                                     </Box>

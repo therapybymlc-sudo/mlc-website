@@ -20,11 +20,23 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'www.mlchealth.in',
+      },
+      {
+        protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
       {
         protocol: 'https',
         hostname: 'img.clerk.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'kommodo.ai',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
       },
     ],
   },

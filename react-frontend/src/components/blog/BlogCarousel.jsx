@@ -146,7 +146,7 @@ export default function BlogCarousel() {
                             </Box>
                             <Box p={6}>
                                 <Heading size="md" mb={3} lineHeight="1.4" color="teal.900" fontFamily="Playfair Display, serif" noOfLines={2}>
-                                    <LinkOverlay as={NextLink} href={`/blog/${post.slug}`}>
+                                    <LinkOverlay as={NextLink} href={`/blog/${post.slug}/`}>
                                         {post.title}
                                     </LinkOverlay>
                                 </Heading>

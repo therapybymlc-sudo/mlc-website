@@ -182,7 +182,14 @@ export default function BlogListClient({ initialPosts, categories, tags }) {
                                         >
                                             <Box h="200px" overflow="hidden" bg="gray.100" position="relative">
                                                 {post.cover_image_url ? (
-                                                    <Image src={post.cover_image_url} alt={post.title} w="full" h="full" objectFit="cover" />
+                                                    <Image
+                                                        src={post.cover_image_url}
+                                                        alt={post.title}
+                                                        w="full"
+                                                        h="full"
+                                                        objectFit="cover"
+                                                        referrerPolicy="no-referrer"
+                                                    />
                                                 ) : (
                                                     <Center h="full" bg="teal.50" color="teal.200">
                                                         <FiImage size="48px" />
@@ -196,7 +203,7 @@ export default function BlogListClient({ initialPosts, categories, tags }) {
                                             </Box>
                                             <Box p={6}>
                                                 <Heading size="md" mb={3} lineHeight="1.4" color="gray.800" fontFamily="Playfair Display, serif">
-                                                    <LinkOverlay as={NextLink} href={`/blog/${post.slug}`}>
+                                                    <LinkOverlay as={NextLink} href={`/blog/${post.slug}/`}>
                                                         {post.title}
                                                     </LinkOverlay>
                                                 </Heading>

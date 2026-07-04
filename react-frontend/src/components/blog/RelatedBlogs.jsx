@@ -70,7 +70,7 @@ export default function RelatedBlogs({ keywords = [] }) {
                         </Box>
                         <Box flex="1">
                             <Heading size="sm" color="teal.800" mb={1} noOfLines={2} lineHeight="1.3">
-                                <LinkOverlay as={NextLink} href={`/blog/${post.slug}`}>
+                                <LinkOverlay as={NextLink} href={`/blog/${post.slug}/`}>
                                     {post.title}
                                 </LinkOverlay>
                             </Heading>
