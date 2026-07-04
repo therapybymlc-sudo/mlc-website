@@ -1,3 +1,4 @@
+import { useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -76,7 +77,7 @@ const MenuBar = ({ editor }) => {
     );
 };
 
-export default function RichTextEditor({ content, onChange }) {
+const RichTextEditor = forwardRef(function RichTextEditor({ content, onChange }, ref) {
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -87,10 +88,23 @@ export default function RichTextEditor({ content, onChange }) {
             Placeholder.configure({ placeholder: 'Start writing your blog post...' }),
         ],
         content: content || '',
-        onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
+        onUpdate: ({ editor: activeEditor }) => {
+            onChange(activeEditor.getHTML());
         },
     });
+
+    useImperativeHandle(ref, () => ({
+        getHTML: () => editor?.getHTML() || '',
+    }), [editor]);
+
+    useEffect(() => {
+        if (!editor) return;
+        const next = content || '';
+        const current = editor.getHTML();
+        if (next !== current) {
+            editor.commands.setContent(next, false);
+        }
+    }, [editor, content]);
 
     return (
         <Box border="1px solid" borderColor="gray.300" borderRadius="md" overflow="hidden" bg="white">
@@ -111,4 +125,6 @@ export default function RichTextEditor({ content, onChange }) {
             </Box>
         </Box>
     );
-}
+});
+
+export default RichTextEditor;
