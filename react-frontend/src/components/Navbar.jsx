@@ -77,7 +77,7 @@ const navLinks = [
     subLinks: [
       { label: "Blog", href: "/blog" },
       { label: "Feelings Wheel", href: "/feelings-wheel" },
-      { label: "Therapy Quiz", href: "/quiz" },
+      { label: "Therapy Quiz", href: "/therapists/discovery" },
       { label: "Mental Health Guides", href: "/dashboard/client/resources" },
     ]
   },

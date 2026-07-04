@@ -45,49 +45,49 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <ClerkProvider
-      appearance={{
-        layout: {
-          logoPlacement: 'inside',
-          logoImageUrl: '/logo_tra.png',
-          showOptionalFields: false,
-        },
-        variables: {
-          colorPrimary: '#56756D',
-          colorText: '#2E2E2E',
-          fontFamily: "'Inter', sans-serif",
-        },
-        elements: {
-          card: {
-            borderRadius: '24px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
-          },
-          footer: {
-            display: 'none',
-          }
-        }
-      }}
+    <html
+      lang="en"
+      className={`${inter.variable} ${playfair.variable} ${forum.variable}`}
+      suppressHydrationWarning
     >
-      <html
-        lang="en"
-        className={`${inter.variable} ${playfair.variable} ${forum.variable}`}
-        suppressHydrationWarning
-      >
-        <head>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-          />
-        </head>
-        <body suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
+      <body suppressHydrationWarning>
+        <ClerkProvider
+          appearance={{
+            layout: {
+              logoPlacement: 'inside',
+              logoImageUrl: '/logo_tra.png',
+              showOptionalFields: false,
+            },
+            variables: {
+              colorPrimary: '#56756D',
+              colorText: '#2E2E2E',
+              fontFamily: "'Inter', sans-serif",
+            },
+            elements: {
+              card: {
+                borderRadius: '24px',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
+              },
+              footer: {
+                display: 'none',
+              }
+            }
+          }}
+        >
           <Providers>
             <ClientWrapper>
               {children}
               <CookieConsent />
             </ClientWrapper>
           </Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   )
 }

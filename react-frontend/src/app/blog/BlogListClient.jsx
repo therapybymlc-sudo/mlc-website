@@ -205,11 +205,21 @@ export default function BlogListClient({ initialPosts, categories, tags }) {
                                                 </Text>
                                                 <HStack justify="space-between" align="center" mt="auto">
                                                     <HStack>
-                                                        <Image src={post.author_avatar} boxSize="24px" borderRadius="full" fallbackSrc="https://via.placeholder.com/24" />
-                                                        <Text fontSize="xs" fontWeight="600" color="gray.700">{post.author_name}</Text>
+                                                        {post.author_avatar ? (
+                                                            <Image
+                                                                src={post.author_avatar}
+                                                                boxSize="24px"
+                                                                borderRadius="full"
+                                                                fallbackSrc="/logo_tra.png"
+                                                                referrerPolicy="no-referrer"
+                                                            />
+                                                        ) : (
+                                                            <Box boxSize="24px" borderRadius="full" bg="teal.100" />
+                                                        )}
+                                                        <Text fontSize="xs" fontWeight="600" color="gray.700">{post.author_name || 'MLC'}</Text>
                                                     </HStack>
-                                                    <Text fontSize="xs" color="gray.400">
-                                                        {format(new Date(post.published_at), 'MMM dd')}
+                                                    <Text fontSize="xs" color="gray.400" suppressHydrationWarning>
+                                                        {post.published_at ? format(new Date(post.published_at), 'MMM dd') : ''}
                                                     </Text>
                                                 </HStack>
                                             </Box>

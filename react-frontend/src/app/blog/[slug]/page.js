@@ -54,13 +54,25 @@ export default async function BlogPostPage({ params }) {
                     
                     <Flex justify="center" align="center" gap={6} color="gray.600" fontSize="sm">
                         <HStack>
-                            <Image src={post.author_avatar} boxSize="32px" borderRadius="full" fallbackSrc="https://via.placeholder.com/32" />
-                            <Text fontWeight="600" color="gray.800">{post.author_name}</Text>
+                            {post.author_avatar ? (
+                                <Image
+                                    src={post.author_avatar}
+                                    boxSize="32px"
+                                    borderRadius="full"
+                                    fallbackSrc="/logo_tra.png"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <Box boxSize="32px" borderRadius="full" bg="teal.100" />
+                            )}
+                            <Text fontWeight="600" color="gray.800">{post.author_name || 'MLC Health'}</Text>
                         </HStack>
                         <Divider orientation="vertical" h="20px" borderColor="gray.300" />
                         <HStack>
                             <FiClock />
-                            <Text>{format(new Date(post.published_at), 'MMMM dd, yyyy')}</Text>
+                            <Text suppressHydrationWarning>
+                                {post.published_at ? format(new Date(post.published_at), 'MMMM dd, yyyy') : ''}
+                            </Text>
                         </HStack>
                     </Flex>
                 </Box>

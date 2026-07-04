@@ -2869,7 +2869,7 @@ export default function AdminDashboard() {
                   {members.map(m => (
                     <HStack key={m.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" justify="space-between">
                        <HStack spacing={4}>
-                          <Image src={m.photo_url} w="50px" h="50px" borderRadius="full" objectFit="cover" fallbackSrc="https://via.placeholder.com/50" />
+                          <Image src={m.photo_url} w="50px" h="50px" borderRadius="full" objectFit="cover" fallbackSrc="/logo_tra.png" />
                           <VStack align="flex-start" spacing={0}>
                              <Text fontWeight="600">{m.name}</Text>
                              <Text fontSize="xs" color="gray.500">{m.title}</Text>

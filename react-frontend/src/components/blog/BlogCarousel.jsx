@@ -22,7 +22,7 @@ export default function BlogCarousel() {
 
     const fetchTopPosts = async () => {
         try {
-            const res = await api.get('/blog/public/posts/');
+            const res = await api.get('blog/public/posts/');
             const list = normalizePostList(res.data);
             setPosts(list.slice(0, 7));
         } catch (error) {
