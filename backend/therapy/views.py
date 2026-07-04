@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.views.generic import TemplateView
+from django.contrib.auth import get_user_model
 from django.db import transaction, models, IntegrityError
 from django.core.exceptions import ValidationError
 from django.db.models import F, Q
@@ -169,7 +170,7 @@ from therapy.serializers import (
     PlatformFeedbackSerializer,
 )
 
-# ... existing code ...
+User = get_user_model()
 
 class SupportTicketViewSet(viewsets.ModelViewSet):
     queryset = SupportTicket.objects.all()
