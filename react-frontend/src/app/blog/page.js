@@ -2,8 +2,8 @@ import BlogListClient from './BlogListClient';
 import { Box } from '@chakra-ui/react';
 import { getPublicApiBase } from '../../lib/publicApiBase';
 
-// Revalidate every hour
-export const revalidate = 3600;
+// Revalidate every minute so new publishes appear quickly on the public blog
+export const revalidate = 60;
 
 export const metadata = {
     title: 'Blog | MLC Health & Wellness Centre',
@@ -15,8 +15,8 @@ async function fetchInitialData() {
         const apiBase = getPublicApiBase();
 
         const [postsRes, metaRes] = await Promise.all([
-            fetch(`${apiBase}/blog/public/posts/`, { next: { revalidate: 3600 } }),
-            fetch(`${apiBase}/blog/public/posts/meta_data/`, { next: { revalidate: 3600 } })
+            fetch(`${apiBase}/blog/public/posts/`, { next: { revalidate: 60 } }),
+            fetch(`${apiBase}/blog/public/posts/meta_data/`, { next: { revalidate: 60 } })
         ]);
         
         const posts = postsRes.ok ? await postsRes.json() : [];

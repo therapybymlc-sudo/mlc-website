@@ -82,11 +82,10 @@ class AdminBlogViewSet(viewsets.ModelViewSet):
         serializer.save(author=author, published_at=published_at)
 
     def perform_update(self, serializer):
-        # Update published_at if status changes to published
         instance = self.get_object()
         new_status = serializer.validated_data.get('status', instance.status)
-        
-        if new_status == 'published' and instance.status != 'published':
+
+        if new_status == 'published' and (instance.status != 'published' or not instance.published_at):
             serializer.save(published_at=timezone.now())
         else:
             serializer.save()

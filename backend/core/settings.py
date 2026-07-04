@@ -191,6 +191,7 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "MLC Reports <noreply@mlc-therapy.local>")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.mlchealth.in")
 
 # ==========================
 # Clerk Configuration

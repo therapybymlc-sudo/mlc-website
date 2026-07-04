@@ -44,8 +44,12 @@ async function resolveClerkTokenFallback() {
   }
 }
 
-// Attach token automatically
+// Attach token automatically; normalize paths so leading "/" does not drop API_BASE (/api)
 api.interceptors.request.use(async (config) => {
+  if (typeof config.url === "string" && config.url.startsWith("/")) {
+    config.url = config.url.replace(/^\/+/, "");
+  }
+
   let resolvedToken = null;
 
   // 🔄 Priority 1: Use the tokenGetter (linked to useAuth().getToken() in AuthContext)

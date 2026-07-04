@@ -1,3 +1,4 @@
+from django.utils.text import slugify
 from rest_framework import serializers
 from .models import BlogCategory, BlogTag, BlogPost
 from therapy.serializers import TherapistProfileSerializer
@@ -6,11 +7,56 @@ class BlogCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogCategory
         fields = ['id', 'name', 'slug', 'description']
+        extra_kwargs = {
+            'slug': {'required': False, 'allow_blank': True},
+            'description': {'required': False, 'allow_blank': True},
+        }
+
+    def validate(self, attrs):
+        name = (attrs.get('name') or '').strip()
+        if not name:
+            raise serializers.ValidationError({'name': 'Category name is required.'})
+        attrs['name'] = name
+
+        slug = (attrs.get('slug') or '').strip()
+        if not slug:
+            base = slugify(name) or 'category'
+            slug = base
+            counter = 2
+            while BlogCategory.objects.filter(slug=slug).exclude(
+                pk=getattr(self.instance, 'pk', None)
+            ).exists():
+                slug = f'{base}-{counter}'
+                counter += 1
+            attrs['slug'] = slug
+        return attrs
 
 class BlogTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogTag
         fields = ['id', 'name', 'slug']
+        extra_kwargs = {
+            'slug': {'required': False, 'allow_blank': True},
+        }
+
+    def validate(self, attrs):
+        name = (attrs.get('name') or '').strip()
+        if not name:
+            raise serializers.ValidationError({'name': 'Tag name is required.'})
+        attrs['name'] = name
+
+        slug = (attrs.get('slug') or '').strip()
+        if not slug:
+            base = slugify(name) or 'tag'
+            slug = base
+            counter = 2
+            while BlogTag.objects.filter(slug=slug).exclude(
+                pk=getattr(self.instance, 'pk', None)
+            ).exists():
+                slug = f'{base}-{counter}'
+                counter += 1
+            attrs['slug'] = slug
+        return attrs
 
 class BlogPostListSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.name', read_only=True)

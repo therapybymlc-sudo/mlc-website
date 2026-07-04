@@ -104,6 +104,10 @@ from therapy.services.admin_reports import (
     build_report,
     get_period_bounds,
 )
+from therapy.services.vetting_email import (
+    send_therapist_contract_email,
+    send_therapist_published_email,
+)
 from therapy.services.rocket_chat import (
     RocketChatError,
     ensure_dm_room,
@@ -171,6 +175,22 @@ from therapy.serializers import (
 )
 
 User = get_user_model()
+
+
+def _sync_application_review_notes(email: str, review_notes: str = "") -> None:
+    if not review_notes:
+        return
+    TherapistApplication.objects.filter(email__iexact=email).update(review_notes=review_notes)
+
+
+def _mark_application_approved_for_email(email: str) -> None:
+    now = timezone.now()
+    for app in TherapistApplication.objects.filter(email__iexact=email, status="pending"):
+        app.status = "approved"
+        if not app.approved_at:
+            app.approved_at = now
+        app.save(update_fields=["status", "approved_at"])
+
 
 class SupportTicketViewSet(viewsets.ModelViewSet):
     queryset = SupportTicket.objects.all()
@@ -1003,12 +1023,24 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         if feedback:
             therapist.admin_feedback = feedback
         therapist.save(update_fields=["profile_status", "admin_feedback"])
-        return Response(
-            {
-                "detail": "Profile content approved. Contract email should be sent to therapist's registered email.",
-                "email": therapist.email,
-            }
+        _sync_application_review_notes(therapist.email, feedback)
+
+        email_sent, email_error = send_therapist_contract_email(
+            therapist=therapist,
+            admin_feedback=feedback,
         )
+
+        payload = {
+            "detail": "Profile content approved. Contract notification sent to therapist email."
+            if email_sent
+            else "Profile content approved, but contract email could not be sent.",
+            "email": therapist.email,
+            "profile_status": therapist.profile_status,
+            "email_sent": email_sent,
+        }
+        if email_error:
+            payload["email_error"] = email_error
+        return Response(payload)
 
     @action(detail=True, methods=["post"], url_path="verify-contract-approve-profile")
     def verify_contract_approve_profile(self, request, pk=None):
@@ -1021,7 +1053,18 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         if final_comment:
             therapist.admin_feedback = final_comment
         therapist.save(update_fields=["profile_status", "is_verified", "is_initially_published", "admin_feedback"])
-        return Response({"detail": "Contract verified and profile approved."})
+        _mark_application_approved_for_email(therapist.email)
+
+        email_sent, email_error = send_therapist_published_email(therapist=therapist)
+        payload = {
+            "detail": "Contract verified and profile approved.",
+            "profile_status": therapist.profile_status,
+            "is_verified": therapist.is_verified,
+            "email_sent": email_sent,
+        }
+        if email_error:
+            payload["email_error"] = email_error
+        return Response(payload)
 
     @action(detail=False, methods=["post"], url_path="submit-supervision-application")
     def submit_supervision_application(self, request):
@@ -3570,8 +3613,55 @@ class TherapistApplicationViewSet(viewsets.ModelViewSet):
         app = self.get_object()
             
         review_notes = request.data.get("review_notes", "")
+        send_contract = str(request.data.get("send_contract", "")).lower() in {"1", "true", "yes"}
         
         with transaction.atomic():
+            if send_contract:
+                profile, created = TherapistProfile.objects.get_or_create(
+                    email=app.email,
+                    defaults={
+                        "name": f"{app.first_name} {app.last_name}".strip(),
+                        "bio": app.relevant_experience or "Approved Therapist",
+                        "languages": app.languages,
+                        "concerns": app.therapeutic_stance or "",
+                        "is_verified": False,
+                        "profile_status": TherapistProfile.ProfileStatus.AWAITING_CONTRACT,
+                    },
+                )
+
+                if not created:
+                    profile.name = f"{app.first_name} {app.last_name}".strip()
+                    profile.is_verified = False
+                    profile.profile_status = TherapistProfile.ProfileStatus.AWAITING_CONTRACT
+                    profile.save(update_fields=["name", "is_verified", "profile_status"])
+
+                matched_user = User.objects.filter(email__iexact=app.email).first()
+                if matched_user and profile.user_id != matched_user.id:
+                    profile.user = matched_user
+                    profile.save(update_fields=["user"])
+
+                if review_notes:
+                    app.review_notes = review_notes
+                    app.save(update_fields=["review_notes"])
+                    profile.admin_feedback = review_notes
+                    profile.save(update_fields=["admin_feedback"])
+
+                email_sent, email_error = send_therapist_contract_email(
+                    therapist=profile,
+                    admin_feedback=review_notes or "",
+                )
+                payload = {
+                    "detail": "Application content approved. Contract notification sent."
+                    if email_sent
+                    else "Application content approved, but contract email could not be sent.",
+                    "profile_id": profile.id,
+                    "profile_status": profile.profile_status,
+                    "email_sent": email_sent,
+                }
+                if email_error:
+                    payload["email_error"] = email_error
+                return Response(payload)
+
             app.status = "approved"
             if not app.approved_at:
                 app.approved_at = timezone.now()

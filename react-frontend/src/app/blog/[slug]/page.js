@@ -4,12 +4,12 @@ import { FiClock } from 'react-icons/fi';
 import { notFound } from 'next/navigation';
 import { getPublicApiBase } from '../../../lib/publicApiBase';
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 async function getPost(slug) {
     try {
         const apiBase = getPublicApiBase();
-        const res = await fetch(`${apiBase}/blog/public/posts/${slug}/`, { next: { revalidate: 3600 } });
+        const res = await fetch(`${apiBase}/blog/public/posts/${slug}/`, { next: { revalidate: 60 } });
         if (!res.ok) return null;
         return await res.json();
     } catch (_error) {

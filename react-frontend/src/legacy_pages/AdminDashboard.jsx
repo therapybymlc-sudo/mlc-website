@@ -1481,6 +1481,23 @@ export default function AdminDashboard() {
     return allTherapists.find((t) => (t.email || "").trim().toLowerCase() === normalized) || null;
   };
 
+  const getVettingStage = (app) => {
+    const profile = getTherapistByEmail(app.email);
+    if (profile?.profile_status === "approved" && profile?.is_verified) return "published";
+    if (profile?.profile_status === "awaiting_contract") return "awaiting_contract";
+    if (profile?.profile_status === "changes_requested") return "changes_requested";
+    if (app.status === "rejected") return "rejected";
+    return "review";
+  };
+
+  const VETTING_STAGE_META = {
+    review: { label: "PENDING REVIEW", color: "orange" },
+    awaiting_contract: { label: "AWAITING CONTRACT", color: "purple" },
+    changes_requested: { label: "CHANGES REQUESTED", color: "red" },
+    published: { label: "PUBLISHED", color: "green" },
+    rejected: { label: "REJECTED", color: "red" },
+  };
+
   const fetchTherapistApplications = async () => {
     try {
       const data = await apiGet("manage-therapist-applications/");
@@ -2508,7 +2525,7 @@ export default function AdminDashboard() {
               {/* THE VETTING PORTAL UI FROM BEFORE */}
               <Box>
                 <Heading size="sm" mb={4} color="mlc.greenDark">
-                  Therapist Applications ({therapistApplications.filter(a => a.status === 'pending').length} Pending)
+                  Therapist Applications ({therapistApplications.filter(a => ["review", "awaiting_contract"].includes(getVettingStage(a))).length} In Progress)
                 </Heading>
                 <Text fontSize="xs" color="gray.500" mb={4}>
                   Review order: 1) Request changes or approve profile content, 2) send contract, 3) verify contract to publish profile live.
@@ -2517,17 +2534,26 @@ export default function AdminDashboard() {
                   <Text color="gray.500" fontSize="sm">No applications found.</Text>
                 ) : (
                   <VStack align="stretch" spacing={6}>
-                    {therapistApplications.map(app => (
-                      <Box key={app.id} p={6} border="1px solid" borderColor="gray.200" borderRadius="2xl" boxShadow="sm" bg={app.status === 'approved' ? "gray.50" : "white"}>
+                    {therapistApplications.map(app => {
+                      const vettingStage = getVettingStage(app);
+                      const stageMeta = VETTING_STAGE_META[vettingStage] || VETTING_STAGE_META.review;
+                      const matchingProfile = getTherapistByEmail(app.email);
+                      return (
+                      <Box key={app.id} p={6} border="1px solid" borderColor="gray.200" borderRadius="2xl" boxShadow="sm" bg={vettingStage === "published" ? "gray.50" : "white"}>
                         <HStack justify="space-between" mb={4}>
                           <VStack align="flex-start" spacing={1}>
                             <HStack>
                               <Text fontWeight="700" fontSize="lg">{app.first_name} {app.last_name}</Text>
-                              <Tag colorScheme={app.status === 'approved' ? "green" : "orange"} size="sm" variant="subtle">
-                                {app.status.toUpperCase()}
+                              <Tag colorScheme={stageMeta.color} size="sm" variant="subtle">
+                                {stageMeta.label}
                               </Tag>
                             </HStack>
                             <Text fontSize="sm" color="gray.600">{app.email} • {app.phone}</Text>
+                            {matchingProfile?.profile_status && (
+                              <Text fontSize="xs" color="gray.500">
+                                Profile stage: {matchingProfile.profile_status.replace(/_/g, " ")}
+                              </Text>
+                            )}
                           </VStack>
                           <HStack spacing={3}>
                              <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.resume), "_blank")}>CV</Button>
@@ -2574,7 +2600,7 @@ export default function AdminDashboard() {
                            </Box>
                         </VStack>
 
-                        {app.status === 'pending' && (
+                        {vettingStage === 'review' && (
                           <VStack align="stretch" spacing={4} borderTop="1px dashed" borderColor="gray.200" pt={4}>
                              <FormControl>
                                 <FormLabel fontSize="xs" fontWeight="bold">Internal Review Notes</FormLabel>
@@ -2616,13 +2642,21 @@ export default function AdminDashboard() {
                                   onClick={async () => {
                                     const notes = document.getElementById(`notes-${app.id}`)?.value;
                                     try {
-                                      const matchingProfile = getTherapistByEmail(app.email);
-                                      if (matchingProfile?.id) {
-                                        await apiPost(`therapists/${matchingProfile.id}/approve-content-send-contract/`, { feedback: notes || "" });
+                                      const profile = getTherapistByEmail(app.email);
+                                      let response;
+                                      if (profile?.id) {
+                                        response = await apiPost(`therapists/${profile.id}/approve-content-send-contract/`, { feedback: notes || "" });
                                       } else {
-                                        await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes });
+                                        response = await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes, send_contract: true });
                                       }
-                                      toast({ status: "success", title: "Content approved", description: "Contract stage initiated." });
+                                      const emailSent = response?.email_sent;
+                                      toast({
+                                        status: emailSent === false ? "warning" : "success",
+                                        title: emailSent === false ? "Approved, email not sent" : "Content approved",
+                                        description: emailSent === false
+                                          ? (response?.email_error || "Configure EMAIL_* env vars on Render to send contract emails.")
+                                          : "Contract notification sent. Waiting for therapist signature.",
+                                      });
                                       fetchTherapistApplications();
                                       fetchAllTherapists();
                                       fetchUnverifiedTherapists();
@@ -2636,20 +2670,30 @@ export default function AdminDashboard() {
                              </HStack>
                           </VStack>
                         )}
-                        {app.status === 'approved' && (
-                          <HStack justify="flex-end" borderTop="1px dashed" borderColor="gray.200" pt={4}>
+                        {vettingStage === 'awaiting_contract' && (
+                          <VStack align="stretch" spacing={3} borderTop="1px dashed" borderColor="gray.200" pt={4}>
+                            <Text fontSize="sm" color="gray.600">
+                              Contract notification was sent to {app.email}. After the therapist signs, use the button below to publish their profile live.
+                            </Text>
+                            <HStack justify="flex-end">
                             <Button
                               size="sm"
                               colorScheme="green"
                               onClick={async () => {
                                 try {
-                                  const matchingProfile = getTherapistByEmail(app.email);
-                                  if (!matchingProfile?.id) {
+                                  const profile = getTherapistByEmail(app.email);
+                                  if (!profile?.id) {
                                     toast({ status: "warning", title: "Profile not found", description: "Run Re-verify / Repair first." });
                                     return;
                                   }
-                                  await apiPost(`therapists/${matchingProfile.id}/verify-contract-approve-profile/`, {});
-                                  toast({ status: "success", title: "Contract verified", description: "Profile is now published live." });
+                                  const response = await apiPost(`therapists/${profile.id}/verify-contract-approve-profile/`, {});
+                                  toast({
+                                    status: "success",
+                                    title: "Contract verified",
+                                    description: response?.email_sent === false
+                                      ? "Profile is live. Published email could not be sent — check Render email settings."
+                                      : "Profile is now published live.",
+                                  });
                                   fetchTherapistApplications();
                                   fetchAllTherapists();
                                   fetchUnverifiedTherapists();
@@ -2678,10 +2722,18 @@ export default function AdminDashboard() {
                             >
                               Re-verify / Repair
                             </Button>
-                          </HStack>
+                            </HStack>
+                          </VStack>
+                        )}
+                        {vettingStage === 'published' && (
+                          <Box borderTop="1px dashed" borderColor="gray.200" pt={4}>
+                            <Text fontSize="sm" color="green.700" fontWeight="600">
+                              Profile is live on the public directory.
+                            </Text>
+                          </Box>
                         )}
                       </Box>
-                    ))}
+                    );})}
                   </VStack>
                 )}
               </Box>
