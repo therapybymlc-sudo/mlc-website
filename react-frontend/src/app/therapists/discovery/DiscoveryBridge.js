@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
 
@@ -23,9 +23,27 @@ const DiscoveryIntakeClient = dynamic(() => import('./DiscoveryIntakeClient'), {
   ),
 })
 
+function DiscoveryLoading() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#666' }}>Loading...</p>
+    </div>
+  )
+}
+
 function DiscoveryBridgeInner() {
   const searchParams = useSearchParams()
   const { isAdmin } = useAuth()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return <DiscoveryLoading />
+  }
+
   const mode = process.env.NEXT_PUBLIC_THERAPIST_MATCHING_MODE || 'manual'
   const adminFullQuiz = searchParams.get('full') === '1' && isAdmin
 
@@ -38,7 +56,7 @@ function DiscoveryBridgeInner() {
 
 export default function DiscoveryBridge() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<DiscoveryLoading />}>
       <DiscoveryBridgeInner />
     </Suspense>
   )
