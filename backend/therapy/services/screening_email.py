@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -65,3 +66,23 @@ def send_manual_intake_notification(*, screening, contact_name: str, email: str,
     except Exception as exc:
         logger.exception("Failed to send manual intake notification for screening %s", screening.id)
         return False, str(exc)
+
+
+def queue_manual_intake_notification(*, screening_id: int, contact_name: str, email: str, phone: str = "") -> None:
+    """Send intake alert in a background thread so the HTTP response is not blocked by SMTP."""
+
+    def _run() -> None:
+        from therapy.models import TherapistScreening
+
+        try:
+            screening = TherapistScreening.objects.get(id=screening_id)
+            send_manual_intake_notification(
+                screening=screening,
+                contact_name=contact_name,
+                email=email,
+                phone=phone,
+            )
+        except Exception:
+            logger.exception("Background intake email failed for screening %s", screening_id)
+
+    threading.Thread(target=_run, daemon=True).start()

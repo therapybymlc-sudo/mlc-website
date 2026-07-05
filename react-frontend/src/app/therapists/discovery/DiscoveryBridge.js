@@ -44,7 +44,10 @@ function DiscoveryBridgeInner() {
     return <DiscoveryLoading />
   }
 
-  const mode = process.env.NEXT_PUBLIC_THERAPIST_MATCHING_MODE || 'manual'
+  const mode =
+    process.env.NEXT_PUBLIC_THERAPIST_MATCHING_MODE ||
+    process.env.NEXT_PUBLIC_TH_MATCHING_MODE ||
+    'manual'
   const adminFullQuiz = searchParams.get('full') === '1' && isAdmin
 
   if (adminFullQuiz || mode === 'auto') {

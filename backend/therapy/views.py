@@ -108,7 +108,7 @@ from therapy.services.vetting_email import (
     send_therapist_contract_email,
     send_therapist_published_email,
 )
-from therapy.services.screening_email import send_manual_intake_notification
+from therapy.services.screening_email import queue_manual_intake_notification
 from therapy.services.rocket_chat import (
     RocketChatError,
     ensure_dm_room,
@@ -3760,9 +3760,18 @@ class TherapistMatchView(APIView):
             return Response({"detail": "Please describe what you are seeking support for."}, status=status.HTTP_400_BAD_REQUEST)
 
         client = _resolve_client_from_request(request)
+
+        age_raw = data.get("age")
+        age = None
+        if age_raw not in (None, ""):
+            try:
+                age = int(age_raw)
+            except (TypeError, ValueError):
+                age = None
+
         screening = TherapistScreening.objects.create(
             client=client,
-            age=data.get("age") or None,
+            age=age,
             gender=data.get("gender") or "",
             location=data.get("location") or {},
             languages=data.get("languages") or [],
@@ -3794,8 +3803,8 @@ class TherapistMatchView(APIView):
             message=enquiry_message,
         )
 
-        email_sent, email_error = send_manual_intake_notification(
-            screening=screening,
+        queue_manual_intake_notification(
+            screening_id=screening.id,
             contact_name=full_name,
             email=email,
             phone=phone,
@@ -3809,11 +3818,9 @@ class TherapistMatchView(APIView):
                 "Thank you. Our clinical team will review your needs and reach out with a "
                 "personalized therapist recommendation."
             ),
-            "email_sent": email_sent,
+            "email_queued": True,
             "matches": [],
         }
-        if email_error:
-            payload["email_error"] = email_error
         return Response(payload, status=status.HTTP_201_CREATED)
 
     def get(self, request):
