@@ -202,6 +202,14 @@ CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in")
 ADMIN_USER_IDS = os.getenv("ADMIN_USER_IDS", "user_3CalFf5iOUKgTEq1efJUXni3y98")
 
+# Therapist matching: "manual" = intake-only (team follows up); "auto" = full algorithm
+THERAPIST_MATCHING_MODE = os.getenv("THERAPIST_MATCHING_MODE", "manual")
+THERAPIST_INTAKE_NOTIFY_EMAILS = os.getenv(
+    "THERAPIST_INTAKE_NOTIFY_EMAILS",
+    os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in"),
+)
+THERAPIST_INTAKE_NOTIFY_PHONE = os.getenv("THERAPIST_INTAKE_NOTIFY_PHONE", "+91 9741672947")
+
 # ==========================
 # Django REST Framework
 # ==========================

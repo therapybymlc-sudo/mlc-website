@@ -1,8 +1,8 @@
 import DiscoveryBridge from './DiscoveryBridge'
 
 export const metadata = {
-  title: 'Find Your Specialist | MLC Health & Wellness Centre',
-  description: 'Take our matching quiz to find the therapist best suited for your journey. We match you based on your preferences, concerns, and language needs.',
+  title: 'Find Your Therapist | MLC Health & Wellness Centre',
+  description: 'Tell us about your needs and our clinical team will reach out with a personalized therapist recommendation.',
 }
 
 export default function DiscoveryPage() {

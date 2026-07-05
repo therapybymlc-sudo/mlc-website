@@ -108,6 +108,7 @@ from therapy.services.vetting_email import (
     send_therapist_contract_email,
     send_therapist_published_email,
 )
+from therapy.services.screening_email import send_manual_intake_notification
 from therapy.services.rocket_chat import (
     RocketChatError,
     ensure_dm_room,
@@ -3735,6 +3736,86 @@ class VerifyTherapistView(APIView):
 class TherapistMatchView(APIView):
     permission_classes = [AllowAny]
 
+    def _is_manual_intake_request(self, data):
+        if data.get("intake_mode") == "auto" or data.get("force_auto_match"):
+            return False
+        if data.get("intake_mode") == "manual":
+            return True
+        mode = getattr(settings, "THERAPIST_MATCHING_MODE", "manual")
+        return mode == "manual"
+
+    def _handle_manual_intake(self, request, data):
+        problem = (data.get("problem_description") or data.get("health_factors") or "").strip()
+        first_name = (data.get("first_name") or "").strip()
+        last_name = (data.get("last_name") or "").strip()
+        full_name = (data.get("name") or f"{first_name} {last_name}".strip()).strip()
+        email = (data.get("email") or "").strip()
+        phone = (data.get("phone") or "").strip()
+
+        if not full_name:
+            return Response({"detail": "Name is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not email:
+            return Response({"detail": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not problem:
+            return Response({"detail": "Please describe what you are seeking support for."}, status=status.HTTP_400_BAD_REQUEST)
+
+        client = _resolve_client_from_request(request)
+        screening = TherapistScreening.objects.create(
+            client=client,
+            age=data.get("age") or None,
+            gender=data.get("gender") or "",
+            location=data.get("location") or {},
+            languages=data.get("languages") or [],
+            session_type_pref=data.get("session_type_pref") or "",
+            service_type="manual_intake",
+            therapist_gender_pref=data.get("therapist_gender_pref") or "",
+            therapy_style_pref=data.get("therapy_style_pref") or "",
+            urgency=data.get("urgency") or "",
+            presenting_concerns=data.get("presenting_concerns") or [],
+            primary_concern=data.get("primary_concern") or "",
+            health_factors=problem,
+            summary_paragraph=f"Manual therapist matching intake — {full_name}",
+            marketing_email_consent=data.get("email_marketing_consent", False),
+            marketing_whatsapp_consent=data.get("whatsapp_marketing_consent", False),
+        )
+
+        enquiry_message = (
+            f"Therapist matching intake (screening #{screening.id})\n\n"
+            f"Problem description:\n{problem}\n\n"
+            f"Session preference: {screening.session_type_pref or '—'}\n"
+            f"Therapist gender preference: {screening.therapist_gender_pref or '—'}\n"
+            f"Urgency: {screening.urgency or '—'}\n"
+            f"Presenting concerns: {', '.join(screening.presenting_concerns or []) or '—'}"
+        )
+        ContactMessage.objects.create(
+            full_name=full_name,
+            email=email,
+            phone=phone or None,
+            message=enquiry_message,
+        )
+
+        email_sent, email_error = send_manual_intake_notification(
+            screening=screening,
+            contact_name=full_name,
+            email=email,
+            phone=phone,
+        )
+
+        payload = {
+            "intake_mode": "manual",
+            "status": "submitted",
+            "screening_id": screening.id,
+            "message": (
+                "Thank you. Our clinical team will review your needs and reach out with a "
+                "personalized therapist recommendation."
+            ),
+            "email_sent": email_sent,
+            "matches": [],
+        }
+        if email_error:
+            payload["email_error"] = email_error
+        return Response(payload, status=status.HTTP_201_CREATED)
+
     def get(self, request):
         """Return the latest screening for the authenticated client."""
         client = _resolve_client_from_request(request)
@@ -3744,6 +3825,21 @@ class TherapistMatchView(APIView):
         latest = client.screenings.order_by("-created_at").first()
         if not latest:
             return Response({"matches": []})
+
+        if latest.service_type == "manual_intake":
+            return Response({
+                "intake_mode": "manual",
+                "intake_pending": True,
+                "status": "submitted",
+                "screening_id": latest.id,
+                "submitted_at": latest.created_at,
+                "problem_description": latest.health_factors or "",
+                "message": (
+                    "Our clinical team is reviewing your needs and will reach out with a "
+                    "personalized therapist recommendation."
+                ),
+                "matches": [],
+            })
             
         matches = []
         for t in latest.recommended_therapists.all():
@@ -3787,6 +3883,10 @@ class TherapistMatchView(APIView):
 
     def post(self, request):
         data = request.data
+
+        # Manual intake — team follows up instead of instant matching
+        if self._is_manual_intake_request(data) and data.get("discovery_type") != "supervision":
+            return self._handle_manual_intake(request, data)
         
         # 1. Branch: Supervision Matching
         if data.get("discovery_type") == "supervision" or data.get("role") == "supervisee_prospect":

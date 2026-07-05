@@ -945,6 +945,24 @@ const growthSectionBody = (sec) => {
             </Text>
           </HStack>
         </Link>
+        <Link href="/admin/therapist-matching" passHref style={{ textDecoration: 'none' }}>
+          <HStack
+            spacing={3}
+            px={4}
+            py={3}
+            cursor="pointer"
+            bg="transparent"
+            color="gray.600"
+            borderRadius="xl"
+            transition="all 0.2s"
+            _hover={{ bg: "rgba(95, 160, 147, 0.05)", color: "mlc.green" }}
+          >
+            <Box as={HelpCircle} size={18} />
+            <Text fontWeight="500" fontSize="md">
+              Therapist Matching (Full Quiz)
+            </Text>
+          </HStack>
+        </Link>
       </VStack>
 
       <VStack align="stretch" spacing={1}>

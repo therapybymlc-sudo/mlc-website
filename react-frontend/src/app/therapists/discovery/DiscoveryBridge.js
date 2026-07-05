@@ -1,41 +1,45 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useAuth } from '../../../context/AuthContext'
 
-/**
- * DiscoveryBridge handles the dynamic loading of the DiscoveryClient with SSR disabled.
- * This prevents Server vs Client component conflicts (Hydration Error #418) 
- * during the build process and initial page load.
- */
-const DiscoveryClient = dynamic(() => import('./DiscoveryClient'), { 
+const DiscoveryClient = dynamic(() => import('./DiscoveryClient'), {
   ssr: false,
   loading: () => (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      backgroundColor: '#FAFAFA',
-      fontFamily: 'serif'
-    }}>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        border: '4px solid #f3f3f3',
-        borderTop: '4px solid #56756D',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-        marginBottom: '1rem'
-      }} />
-      <p style={{ color: '#666' }}>Finding your recommended specialists...</p>
-      <style>{`
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-      `}</style>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#666' }}>Loading therapist matching...</p>
     </div>
-  )
-});
+  ),
+})
+
+const DiscoveryIntakeClient = dynamic(() => import('./DiscoveryIntakeClient'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#666' }}>Loading...</p>
+    </div>
+  ),
+})
+
+function DiscoveryBridgeInner() {
+  const searchParams = useSearchParams()
+  const { isAdmin } = useAuth()
+  const mode = process.env.NEXT_PUBLIC_THERAPIST_MATCHING_MODE || 'manual'
+  const adminFullQuiz = searchParams.get('full') === '1' && isAdmin
+
+  if (adminFullQuiz || mode === 'auto') {
+    return <DiscoveryClient />
+  }
+
+  return <DiscoveryIntakeClient />
+}
 
 export default function DiscoveryBridge() {
-  return <DiscoveryClient />;
+  return (
+    <Suspense fallback={null}>
+      <DiscoveryBridgeInner />
+    </Suspense>
+  )
 }

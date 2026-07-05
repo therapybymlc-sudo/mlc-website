@@ -451,7 +451,9 @@ export default function DiscoveryClient() {
       name: `${quizData.first_name} ${quizData.last_name}`.trim(),
       dass_scores: { depression: d_score, anxiety: a_score, stress: s_score },
       dass_interpretations: interpretations,
-      summary: `DASS Results: D:${d_score}, A:${a_score}, S:${s_score}`
+      summary: `DASS Results: D:${d_score}, A:${a_score}, S:${s_score}`,
+      force_auto_match: typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/therapist-matching'),
+      intake_mode: typeof window !== 'undefined' && window.location.pathname.startsWith('/admin/therapist-matching') ? 'auto' : undefined,
     };
 
     try {
