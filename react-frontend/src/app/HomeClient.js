@@ -415,14 +415,20 @@ export default function HomeClient() {
                   Learn More & Apply
                 </Button>
                 <Button
-                  onClick={() => { sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); setCohortModalOpen(false); }}
-                  flex="0.8"
-                  variant="ghost"
+                  onClick={() => { 
+                    sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); 
+                    setCohortModalOpen(false); 
+                    window.open("/supervision_cohort_brochure.pdf", "_blank");
+                  }}
+                  flex="0.9"
+                  variant="outline"
+                  borderColor="teal.200"
+                  color="teal.800"
                   borderRadius="full"
                   h="48px"
-                  color="gray.500"
+                  _hover={{ bg: "teal.50" }}
                 >
-                  Maybe Later
+                  Download Brochure
                 </Button>
               </Stack>
             </VStack>

@@ -49,11 +49,11 @@ const navLinks = [
     weight: "secondary",
     subLinks: [
       { label: "Join as a Therapist", href: "/signup/therapist" },
+      { label: "Clinical Supervision", href: "/supervision" },
       { label: "Therapist Directory", href: "/therapists/directory" },
       { label: "Supervisor Directory / Find a Supervisor", href: "/therapists/supervisors/directory" },
       { label: "MLC Pro", href: "/dashboard/therapist/subscription" },
       { label: "Therapist Community", href: "/dashboard/therapist/community" },
-      { label: "Clinical Supervision", href: "/supervision" },
       { label: "Workshops & Circles", href: "/workshops" },
     ]
   },
