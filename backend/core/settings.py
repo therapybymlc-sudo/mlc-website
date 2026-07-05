@@ -211,6 +211,10 @@ THERAPIST_INTAKE_NOTIFY_EMAILS = os.getenv(
 )
 THERAPIST_INTAKE_NOTIFY_PHONE = os.getenv("THERAPIST_INTAKE_NOTIFY_PHONE", "+91 9741672947")
 
+# Brevo HTTP API (recommended on Render — faster and more reliable than SMTP)
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+INTAKE_EMAIL_FROM = os.getenv("INTAKE_EMAIL_FROM", "MLC Health <therapy@mlchealth.in>")
+
 # ==========================
 # Django REST Framework
 # ==========================

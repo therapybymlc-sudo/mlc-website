@@ -108,7 +108,7 @@ from therapy.services.vetting_email import (
     send_therapist_contract_email,
     send_therapist_published_email,
 )
-from therapy.services.screening_email import queue_manual_intake_notification
+from therapy.services.screening_email import send_manual_intake_notification
 from therapy.services.rocket_chat import (
     RocketChatError,
     ensure_dm_room,
@@ -3803,8 +3803,8 @@ class TherapistMatchView(APIView):
             message=enquiry_message,
         )
 
-        queue_manual_intake_notification(
-            screening_id=screening.id,
+        email_sent, email_error = send_manual_intake_notification(
+            screening=screening,
             contact_name=full_name,
             email=email,
             phone=phone,
@@ -3818,9 +3818,11 @@ class TherapistMatchView(APIView):
                 "Thank you. Our clinical team will review your needs and reach out with a "
                 "personalized therapist recommendation."
             ),
-            "email_queued": True,
+            "email_sent": email_sent,
             "matches": [],
         }
+        if email_error:
+            payload["email_error"] = email_error
         return Response(payload, status=status.HTTP_201_CREATED)
 
     def get(self, request):
