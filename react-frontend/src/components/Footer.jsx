@@ -163,47 +163,42 @@ export default function Footer() {
           border="1px solid" 
           borderColor="whiteAlpha.100"
         >
-          <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} spacing={8}>
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8} alignItems="center">
             <HStack spacing={6}>
-              <Center bg="whiteAlpha.100" p={3} borderRadius="xl">
+              <Center bg="whiteAlpha.100" p={3} borderRadius="xl" minW="50px">
                 <Icon as={FiMail} boxSize={6} color="#A9CBB7" />
               </Center>
               <VStack align="start" spacing={0}>
                 <Text fontSize="xs" fontWeight="bold" color="whiteAlpha.500">EMAIL INQUIRIES</Text>
-                <Link href="mailto:therapy@mlchealth.in" fontSize="lg" fontWeight="600" color="#C9A960" _hover={{ color: "white" }}>
+                <Link href="mailto:therapy@mlchealth.in" fontSize="md" fontWeight="600" color="#C9A960" _hover={{ color: "white" }}>
                   therapy@mlchealth.in
                 </Link>
               </VStack>
             </HStack>
 
             <HStack spacing={6}>
-              <Center bg="whiteAlpha.100" p={3} borderRadius="xl">
+              <Center bg="whiteAlpha.100" p={3} borderRadius="xl" minW="50px">
                 <Icon as={FiPhone} boxSize={6} color="#A9CBB7" />
               </Center>
               <VStack align="start" spacing={0}>
                 <Text fontSize="xs" fontWeight="bold" color="whiteAlpha.500">PHONE & WHATSAPP</Text>
-                <HStack spacing={2}>
-                  <Link href="tel:+919901619968" fontSize="lg" fontWeight="600" color="#C9A960" _hover={{ color: "white" }}>
-                    +91 99016 19968
-                  </Link>
-                  <Link href="https://wa.me/919901619968" isExternal color="#25D366" display="inline-flex" alignItems="center" _hover={{ color: "white" }}>
-                    <Icon as={FaWhatsapp} boxSize={5} />
-                  </Link>
-                </HStack>
+                <Link href="tel:+919901619968" fontSize="md" fontWeight="600" color="#C9A960" _hover={{ color: "white" }}>
+                  +91 99016 19968
+                </Link>
               </VStack>
             </HStack>
             
             <HStack spacing={6}>
-              <Center bg="whiteAlpha.100" p={3} borderRadius="xl">
+              <Center bg="whiteAlpha.100" p={3} borderRadius="xl" minW="50px">
                 <Icon as={FiMapPin} boxSize={6} color="#A9CBB7" />
               </Center>
               <VStack align="start" spacing={0}>
                 <Text fontSize="xs" fontWeight="bold" color="whiteAlpha.500">HEADQUARTERS</Text>
-                <Text fontSize="lg" fontWeight="600">Online Across India | Remote Focus</Text>
+                <Text fontSize="md" fontWeight="600">Online Across India | Remote Focus</Text>
               </VStack>
             </HStack>
 
-            <NextLink href="/book" passHref>
+            <NextLink href="/book" passHref style={{ width: '100%' }}>
               <Box 
                 as="button"
                 bg="#56756D" 
@@ -214,15 +209,16 @@ export default function Footer() {
                 fontWeight="700" 
                 fontSize="sm"
                 transition="all 0.3s"
+                w="full"
                 _hover={{ bg: "#C9A960", transform: "translateY(-2px)", boxShadow: "0 8px 20px rgba(201, 169, 96, 0.3)" }}
               >
-                <HStack spacing={2}>
+                <HStack spacing={2} justify="center">
                   <Text>Start Your Journey</Text>
                   <Icon as={FiArrowRight} />
                 </HStack>
               </Box>
             </NextLink>
-          </Stack>
+          </SimpleGrid>
         </Box>
 
         <Divider borderColor="whiteAlpha.100" />

@@ -26,7 +26,9 @@ function normalizeImageUrl(raw) {
 
 export default function BlogPostClient({ post }) {
   const [isMounted, setIsMounted] = useState(false);
-  const coverUrl = normalizeImageUrl(post.cover_image_url);
+  const coverUrl = post.slug === 'why-supervision-is-essential-for-therapists'
+    ? '/supervision_essay_cover.jpg'
+    : normalizeImageUrl(post.cover_image_url);
 
   useEffect(() => {
     setIsMounted(true);
