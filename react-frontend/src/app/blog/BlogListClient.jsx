@@ -30,6 +30,28 @@ import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api';
 
+function getPostCoverImage(post) {
+    if (post.slug === 'why-supervision-is-essential-for-therapists') {
+        return '/supervision_essay_cover.jpg';
+    }
+    const raw = post.cover_image_url || '';
+    const value = raw.trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value)) return value;
+    
+    const API_BASE = (
+      (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+      (typeof window !== 'undefined' && window.__ENV__?.NEXT_PUBLIC_API_BASE) ||
+      "https://api.mlchealth.in/api"
+    ).replace(/\/+$/, "");
+    const backendHost = API_BASE.replace(/\/api$/, "");
+
+    if (value.startsWith('/')) {
+      return `${backendHost}${value}`;
+    }
+    return `${backendHost}/${value}`;
+}
+
 export default function BlogListClient({ initialPosts, categories, tags }) {
     const [posts, setPosts] = useState(initialPosts || []);
     const [searchQuery, setSearchQuery] = useState('');
@@ -181,9 +203,9 @@ export default function BlogListClient({ initialPosts, categories, tags }) {
                                             transition="all 0.3s"
                                         >
                                             <Box h="200px" overflow="hidden" bg="gray.100" position="relative">
-                                                {post.cover_image_url ? (
+                                                {getPostCoverImage(post) ? (
                                                     <Image
-                                                        src={post.cover_image_url}
+                                                        src={getPostCoverImage(post)}
                                                         alt={post.title}
                                                         w="full"
                                                         h="full"

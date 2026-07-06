@@ -11,6 +11,28 @@ function normalizePostList(payload) {
     return [];
 }
 
+function getPostCoverImage(post) {
+    if (post.slug === 'why-supervision-is-essential-for-therapists') {
+        return '/supervision_essay_cover.jpg';
+    }
+    const raw = post.cover_image_url || '';
+    const value = raw.trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value)) return value;
+    
+    const API_BASE = (
+      (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+      (typeof window !== 'undefined' && window.__ENV__?.NEXT_PUBLIC_API_BASE) ||
+      "https://api.mlchealth.in/api"
+    ).replace(/\/+$/, "");
+    const backendHost = API_BASE.replace(/\/api$/, "");
+
+    if (value.startsWith('/')) {
+      return `${backendHost}${value}`;
+    }
+    return `${backendHost}/${value}`;
+}
+
 export default function BlogCarousel() {
     const [posts, setPosts] = useState([]);
     const [fetchDone, setFetchDone] = useState(false);
@@ -135,8 +157,8 @@ export default function BlogCarousel() {
                             scrollSnapAlign="start"
                         >
                             <Box h="200px" bg="gray.100" position="relative" overflow="hidden">
-                                {post.cover_image_url && (
-                                    <Image src={post.cover_image_url} alt={post.title} w="full" h="full" objectFit="cover" transition="transform 0.5s" _hover={{ transform: 'scale(1.05)' }} />
+                                {getPostCoverImage(post) && (
+                                    <Image src={getPostCoverImage(post)} alt={post.title} w="full" h="full" objectFit="cover" transition="transform 0.5s" _hover={{ transform: 'scale(1.05)' }} />
                                 )}
                                 {post.category && (
                                     <Badge position="absolute" top={4} left={4} colorScheme="teal" bg="white" px={3} py={1} borderRadius="full">
