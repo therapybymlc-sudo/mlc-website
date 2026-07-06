@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Badge,
   Box,
@@ -14,131 +15,67 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import TherapistSubscriptionGateway from '../../../../../components/TherapistSubscriptionGateway';
+import { useTherapistRazorpayCheckout } from '../../../../../hooks/useTherapistRazorpayCheckout';
+import { normalizePlanType } from '../../../../../utils/subscriptionPlans';
 import { apiGet, apiPost } from '../../../../../api.js';
 import { useAuth } from '../../../../../context/AuthContext';
 
 export default function TherapistSubscriptionClient() {
   const toast = useToast();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isTherapist } = useAuth();
-  const [loadingPlan, setLoadingPlan] = useState('');
   const [subscription, setSubscription] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.Razorpay) return;
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      if (script.parentNode) script.parentNode.removeChild(script);
-    };
-  }, []);
+  const autoStartedRef = useRef(false);
 
   const loadStatus = async (sync = false) => {
-    if (!isAuthenticated || !isTherapist) return;
+    if (!isAuthenticated || !isTherapist) return null;
     try {
       setIsRefreshing(true);
       const res = await apiGet(`payments/therapist/subscription/status${sync ? '?sync=1' : ''}`);
       setSubscription(res);
+      return res;
     } catch (error) {
       toast({
         title: 'Unable to fetch subscription status',
         description: error?.response?.data?.detail || 'Please refresh.',
         status: 'warning',
       });
+      return null;
     } finally {
       setIsRefreshing(false);
     }
   };
+
+  const { startSubscription, loadingPlan } = useTherapistRazorpayCheckout({
+    onActivated: async () => {
+      await loadStatus(true);
+      setTimeout(() => {
+        window.location.href = '/dashboard/therapist';
+      }, 800);
+    },
+  });
 
   useEffect(() => {
     loadStatus(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isTherapist]);
 
-  const startSubscription = async (planType) => {
-    if (!isAuthenticated) {
-      toast({ title: 'Please sign in to continue.', status: 'info' });
-      window.location.href = '/login/therapist?redirect_url=/dashboard/therapist/subscription';
-      return;
-    }
-    if (!isTherapist) {
-      toast({ title: 'Therapist account required.', status: 'warning' });
-      return;
-    }
-    if (!window.Razorpay) {
-      toast({ title: 'Payment system loading...', status: 'info' });
-      return;
-    }
+  useEffect(() => {
+    const rawPlan = searchParams.get('plan');
+    const plan = normalizePlanType(rawPlan);
+    if (!plan || autoStartedRef.current || loadingPlan) return;
+    if (!isAuthenticated || !isTherapist) return;
 
-    try {
-      setLoadingPlan(planType);
-      const payload = await apiPost('payments/razorpay/subscriptions/create', {
-        plan_type: planType,
-      });
-
-      const options = {
-        key: payload.key_id,
-        subscription_id: payload.subscription_id,
-        name: 'MLC Health',
-        description:
-          planType === 'annual'
-            ? 'MLC Therapist Basic Plan (Annual)'
-            : 'MLC Therapist Basic Plan (Monthly)',
-        image: 'https://www.mlchealth.in/logo.png',
-        handler: async (response) => {
-          try {
-            await apiPost('payments/razorpay/subscriptions/verify', {
-              razorpay_subscription_id: response.razorpay_subscription_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            toast({
-              title: 'Subscription activated!',
-              description: 'Your basic therapist access is now active.',
-              status: 'success',
-              duration: 5000,
-            });
-            await loadStatus(true);
-            setTimeout(() => {
-              window.location.href = '/dashboard/therapist';
-            }, 800);
-          } catch (error) {
-            toast({
-              title: 'Verification pending',
-              description:
-                error?.response?.data?.detail ||
-                'Payment received but verification is pending. Please refresh in a moment.',
-              status: 'warning',
-              duration: 8000,
-            });
-          } finally {
-            setLoadingPlan('');
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setLoadingPlan('');
-          },
-        },
-        theme: { color: '#56756D' },
-      };
-
-      const checkout = new window.Razorpay(options);
-      checkout.open();
-    } catch (error) {
-      toast({
-        title: 'Unable to start subscription',
-        description: error?.response?.data?.detail || 'Please try again.',
-        status: 'error',
-        duration: 7000,
-      });
-      setLoadingPlan('');
-    }
-  };
+    autoStartedRef.current = true;
+    void (async () => {
+      const status = subscription || (await loadStatus(false));
+      if (status?.is_basic_subscribed && plan !== 'premium') return;
+      if (status?.is_premium && plan === 'premium') return;
+      startSubscription(plan);
+    })();
+  }, [searchParams, isAuthenticated, isTherapist, subscription, loadingPlan, startSubscription]);
 
   const cancelSubscription = async () => {
     if (!subscription?.razorpay_subscription_id) return;
@@ -179,7 +116,7 @@ export default function TherapistSubscriptionClient() {
             Subscription
           </Heading>
           <Text color="gray.600" fontSize="md" maxW="2xl">
-            Prices and plan comparison first—then review billing status and controls below.
+            Choose a plan below to unlock MLC Pro (Basic) or Premium therapist tools.
           </Text>
         </VStack>
 
@@ -197,6 +134,7 @@ export default function TherapistSubscriptionClient() {
             mode="inline"
             subscription={subscription}
             onSelectPlan={startSubscription}
+            onSelectPremium={startSubscription}
             loadingPlan={loadingPlan}
           />
         </Box>
@@ -254,7 +192,10 @@ export default function TherapistSubscriptionClient() {
               Plan: {subscription?.basic_plan || 'none'}
             </Badge>
             <Badge colorScheme={subscription?.is_basic_subscribed ? 'green' : 'gray'} px={2.5} py={1} borderRadius="full">
-              Access: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
+              Basic: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
+            </Badge>
+            <Badge colorScheme={subscription?.is_premium ? 'purple' : 'gray'} px={2.5} py={1} borderRadius="full">
+              Premium: {subscription?.is_premium ? 'Unlocked' : 'Locked'}
             </Badge>
           </HStack>
 

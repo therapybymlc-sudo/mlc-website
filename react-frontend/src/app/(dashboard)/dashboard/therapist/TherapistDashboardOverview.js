@@ -38,7 +38,7 @@ import {
 import { useUser } from "@clerk/nextjs";
 import NextLink from 'next/link';
 import { apiGet } from "../../../../api.js";
-import TherapistSubscriptionGateway from "../../../../components/TherapistSubscriptionGateway";
+import TherapistGatedGateway from "../../../../components/TherapistGatedGateway";
 import { useTherapistSubscriptionGate } from "../../../../hooks/useTherapistSubscriptionGate";
 import { motion } from "framer-motion";
 import FeedbackWidget from "../../../../components/FeedbackWidget";
@@ -426,7 +426,7 @@ export default function TherapistDashboardOverview() {
         </SimpleGrid>
       </Container>
       
-      <TherapistSubscriptionGateway 
+      <TherapistGatedGateway 
         isOpen={gateModal.isOpen} 
         onClose={gateModal.onClose} 
         contextLabel="Unlock the full clinical ecosystem for your practice."

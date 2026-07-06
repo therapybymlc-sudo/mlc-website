@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import TherapistSubscriptionClient from './TherapistSubscriptionClient';
 
 export const metadata = {
@@ -6,6 +7,10 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <TherapistSubscriptionClient />;
+  return (
+    <Suspense fallback={null}>
+      <TherapistSubscriptionClient />
+    </Suspense>
+  );
 }
 

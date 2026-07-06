@@ -11,13 +11,22 @@ import {
   Tag,
   Icon,
   Center,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { FiStar, FiCloud, FiActivity, FiBook, FiTrendingUp, FiLock } from "react-icons/fi";
 import { useAuth } from "../../../../../context/AuthContext";
+import { getClientPremiumUrl, isExternalPaymentLink } from "../../../../../utils/subscriptionPlans";
 
 export default function PremiumClient() {
   const { isPremium } = useAuth();
+
+  const openClientPremium = () => {
+    const url = getClientPremiumUrl();
+    if (isExternalPaymentLink(url)) {
+      window.location.href = url;
+      return;
+    }
+    window.location.href = '/dashboard/client/premium';
+  };
 
   return (
     <Box maxW="1100px" mx="auto">
@@ -88,6 +97,7 @@ export default function PremiumClient() {
                         px={10} 
                         h={14}
                         _hover={{ bg: "#E3C77B", transform: 'scale(1.05)' }}
+                        onClick={openClientPremium}
                     >
                       Upgrade Your Journey
                     </Button>

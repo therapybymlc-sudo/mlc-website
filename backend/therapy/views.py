@@ -2071,9 +2071,13 @@ class RazorpayWebhookView(APIView):
             if sub_id:
                 therapist = TherapistProfile.objects.filter(razorpay_subscription_id=sub_id).first()
                 if therapist:
+                    notes = entity.get("notes") or {}
+                    plan_type = str(notes.get("plan_type") or "").lower()
                     therapist.is_basic_subscribed = True
                     therapist.subscription_status = "active"
-                    therapist.save(update_fields=["is_basic_subscribed", "subscription_status"])
+                    if plan_type == "premium":
+                        therapist.is_premium = True
+                    therapist.save(update_fields=["is_basic_subscribed", "subscription_status", "is_premium"])
 
             # Persist charge records for true subscription revenue analytics.
             payment_entity = ((payload.get("payment") or {}).get("entity") or {})
@@ -2127,8 +2131,8 @@ class RazorpayCreateTherapistSubscriptionView(APIView):
             return _profile_required_response("therapist")
 
         plan_type = str(request.data.get("plan_type") or "").lower()
-        if plan_type not in {"monthly", "annual"}:
-            return Response({"detail": "plan_type must be monthly or annual."}, status=status.HTTP_400_BAD_REQUEST)
+        if plan_type not in {"monthly", "annual", "premium"}:
+            return Response({"detail": "plan_type must be monthly, annual, or premium."}, status=status.HTTP_400_BAD_REQUEST)
 
         monthly_plan_id = (
             getattr(settings, "RAZORPAY_BASIC_MONTHLY_PLAN_ID", None)
@@ -2138,7 +2142,16 @@ class RazorpayCreateTherapistSubscriptionView(APIView):
             getattr(settings, "RAZORPAY_BASIC_ANNUAL_PLAN_ID", None)
             or os.getenv("RAZORPAY_BASIC_ANNUAL_PLAN_ID")
         )
-        plan_id = monthly_plan_id if plan_type == "monthly" else annual_plan_id
+        premium_plan_id = (
+            getattr(settings, "RAZORPAY_PREMIUM_ANNUAL_PLAN_ID", None)
+            or os.getenv("RAZORPAY_PREMIUM_ANNUAL_PLAN_ID")
+        )
+        if plan_type == "monthly":
+            plan_id = monthly_plan_id
+        elif plan_type == "annual":
+            plan_id = annual_plan_id
+        else:
+            plan_id = premium_plan_id
         if not plan_id:
             return Response({"detail": f"Razorpay {plan_type} plan is not configured."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2162,7 +2175,10 @@ class RazorpayCreateTherapistSubscriptionView(APIView):
 
         therapist.razorpay_subscription_id = sub_id
         therapist.subscription_status = "pending"
-        therapist.basic_plan = plan_type
+        if plan_type == "premium":
+            therapist.basic_plan = "annual"
+        else:
+            therapist.basic_plan = plan_type
         therapist.save(update_fields=["razorpay_subscription_id", "subscription_status", "basic_plan"])
 
         return Response(
@@ -2212,7 +2228,11 @@ class RazorpayVerifyTherapistSubscriptionView(APIView):
         # Preserve selected plan type if present in notes
         notes = sub_details.get("notes") or {}
         plan_type = str(notes.get("plan_type") or therapist.basic_plan or "none").lower()
-        if plan_type in {"monthly", "annual"}:
+        if plan_type == "premium":
+            therapist.is_premium = bool(is_active)
+            therapist.is_basic_subscribed = bool(is_active)
+            therapist.basic_plan = "annual"
+        elif plan_type in {"monthly", "annual"}:
             therapist.basic_plan = plan_type
         therapist.save(
             update_fields=[
@@ -2220,6 +2240,7 @@ class RazorpayVerifyTherapistSubscriptionView(APIView):
                 "subscription_status",
                 "is_basic_subscribed",
                 "basic_plan",
+                "is_premium",
             ]
         )
 
@@ -2282,6 +2303,7 @@ class TherapistSubscriptionStatusView(APIView):
         return Response(
             {
                 "is_basic_subscribed": therapist.is_basic_subscribed,
+                "is_premium": therapist.is_premium,
                 "basic_plan": therapist.basic_plan,
                 "subscription_status": therapist.subscription_status,
                 "razorpay_subscription_id": therapist.razorpay_subscription_id,

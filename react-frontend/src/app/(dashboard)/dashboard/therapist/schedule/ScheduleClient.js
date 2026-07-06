@@ -45,7 +45,8 @@ import { useUser } from "@clerk/nextjs";
 import { useAuth } from "../../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
-import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
+import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
+import SubscriptionWall from "../../../../../components/SubscriptionWall";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 // Dynamic import for FullCalendar to avoid SSR hydration issues
@@ -965,14 +966,13 @@ export default function ScheduleClient() {
       </VStack>
 
       {!hasBasicAccess && (
-        <Box p={4} borderRadius="xl" border="1px solid" borderColor="orange.200" bg="orange.50">
-          <Text fontSize="sm" color="orange.800" fontWeight="600">
-            Basic subscription required to create/manage events and availability.
-          </Text>
-          <Button as={NextLink} href="/dashboard/therapist/subscription" size="sm" mt={3} colorScheme="orange" borderRadius="full">
-            Activate plan
-          </Button>
-        </Box>
+        <SubscriptionWall
+          tier="basic"
+          featureName="Calendar & scheduling"
+          hasAccess={false}
+          onUpgrade={() => requireBasicAccess()}
+          compact
+        />
       )}
 
       <Box 
@@ -1286,7 +1286,7 @@ export default function ScheduleClient() {
           </ModalBody>
         </ModalContent>
       </Modal>
-      <TherapistSubscriptionGateway
+      <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}
         contextLabel="Activate your Basic plan to create events, manage availability, and run your calendar on MLC."

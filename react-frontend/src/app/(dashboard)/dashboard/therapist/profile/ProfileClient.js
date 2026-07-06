@@ -10,7 +10,7 @@ import {
   FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX
 } from "react-icons/fi";
 import { apiGet, apiPut, apiPost, apiPatchForm } from "../../../../../api.js";
-import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
+import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 // ===========================
@@ -1384,7 +1384,7 @@ export default function ProfileClient() {
             <Button size="lg" bg="white" color="mlc.greenDark" borderRadius="full" px={12} onClick={handleSave} isLoading={loading} w={{ base: "full", md: "auto" }} flexShrink={0}>Sync Now</Button>
          </Flex>
       </Box>
-      <TherapistSubscriptionGateway
+      <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}
         contextLabel="Activate Basic to make your profile visible, sync updates, and start receiving matched clients."

@@ -17,6 +17,9 @@ import {
 import NextLink from "next/link";
 import { schedulingApi } from "../../../../../api/scheduling";
 import { getSchedulingErrorMessage } from "../../../../../utils/schedulingErrors";
+import SubscriptionWall from "../../../../../components/SubscriptionWall";
+import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
+import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 function normalizeList(data) {
   if (Array.isArray(data)) return data;
@@ -30,6 +33,7 @@ export default function BookingRequestsClient() {
   const [error, setError] = useState("");
   const [noteDrafts, setNoteDrafts] = useState({});
   const toast = useToast();
+  const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
 
   const loadRequests = useCallback(async () => {
     try {
@@ -49,6 +53,7 @@ export default function BookingRequestsClient() {
   }, [loadRequests]);
 
   const handleConfirm = async (id) => {
+    if (!requireBasicAccess()) return;
     try {
       await schedulingApi.confirmBookingRequest(id);
       toast({ title: "Request confirmed", status: "success" });
@@ -63,6 +68,7 @@ export default function BookingRequestsClient() {
   };
 
   const handleDecline = async (id) => {
+    if (!requireBasicAccess()) return;
     try {
       const note = noteDrafts[id] || "";
       await schedulingApi.declineBookingRequest(id, note);
@@ -78,6 +84,7 @@ export default function BookingRequestsClient() {
   };
 
   const handleCancel = async (id) => {
+    if (!requireBasicAccess()) return;
     if (!window.confirm("Cancel this booking request? The slot will be released for other clients.")) return;
     try {
       await schedulingApi.cancelTherapistBookingRequest(
@@ -126,6 +133,16 @@ export default function BookingRequestsClient() {
           appear under recent updates.
         </Text>
       </VStack>
+
+      {!hasBasicAccess && (
+        <SubscriptionWall
+          tier="basic"
+          featureName="Booking request management"
+          hasAccess={false}
+          onUpgrade={() => requireBasicAccess()}
+          compact
+        />
+      )}
 
       <Box>
         <Text fontWeight="700" color="gray.600" fontSize="sm" mb={3} textTransform="uppercase" letterSpacing="wider">
@@ -273,6 +290,12 @@ export default function BookingRequestsClient() {
           </VStack>
         )}
       </Box>
+
+      <TherapistGatedGateway
+        isOpen={gateModal.isOpen}
+        onClose={gateModal.onClose}
+        contextLabel="Activate MLC Pro to confirm, decline, and manage client booking requests."
+      />
     </VStack>
   );
 }

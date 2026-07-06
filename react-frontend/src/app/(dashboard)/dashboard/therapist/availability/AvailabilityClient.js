@@ -12,9 +12,11 @@ import {
   Icon,
   Badge,
 } from "@chakra-ui/react";
-import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { FiClock, FiShield } from "react-icons/fi";
+import SubscriptionWall from "../../../../../components/SubscriptionWall";
+import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
+import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 
 const TherapistAvailabilityComponent = dynamic(() => import("./TherapistAvailabilityWrapper"), {
   ssr: false,
@@ -26,9 +28,10 @@ const TherapistAvailabilityComponent = dynamic(() => import("./TherapistAvailabi
 });
 
 export default function AvailabilityClient() {
+  const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
+
   return (
     <Box>
-      {/* 📚 Clinical Stewardship & Pro-Tips */}
       <Box bg="teal.50" p={{ base: 6, md: 8 }} borderRadius="3xl" border="1px solid" borderColor="teal.100" mb={10}>
          <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 4, md: 6 }} align="start">
             <Icon as={FiShield} color="teal.500" boxSize={8} mt={1} />
@@ -46,6 +49,16 @@ export default function AvailabilityClient() {
          </Stack>
       </Box>
 
+      {!hasBasicAccess && (
+        <SubscriptionWall
+          tier="basic"
+          featureName="Clinical availability"
+          hasAccess={false}
+          onUpgrade={() => requireBasicAccess()}
+          compact
+        />
+      )}
+
       <VStack align="start" spacing={1} mb={8}>
         <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
           Clinical Availability
@@ -53,7 +66,15 @@ export default function AvailabilityClient() {
         <Text color="gray.500">Configure your standard weekly hours and manage live calendar slots.</Text>
       </VStack>
 
-      <TherapistAvailabilityComponent />
+      <Box opacity={hasBasicAccess ? 1 : 0.45} pointerEvents={hasBasicAccess ? 'auto' : 'none'}>
+        <TherapistAvailabilityComponent />
+      </Box>
+
+      <TherapistGatedGateway
+        isOpen={gateModal.isOpen}
+        onClose={gateModal.onClose}
+        contextLabel="Activate MLC Pro to publish availability and receive booking requests."
+      />
     </Box>
   );
 }

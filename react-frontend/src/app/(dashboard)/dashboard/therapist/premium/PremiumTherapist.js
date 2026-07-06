@@ -14,9 +14,15 @@ import {
 } from "@chakra-ui/react";
 import { FiTarget, FiZap, FiBook, FiActivity, FiLock, FiRepeat } from "react-icons/fi";
 import { useAuth } from "../../../../../context/AuthContext";
+import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
+import { useTherapistRazorpayCheckout } from "../../../../../hooks/useTherapistRazorpayCheckout";
+import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
 
 export default function PremiumTherapist() {
-  const { isPremium } = useAuth();
+  const { isPremium, isTherapistPremium } = useAuth();
+  const { hasPremiumAccess, premiumGateModal } = useTherapistSubscriptionGate();
+  const { startSubscription, loadingPlan } = useTherapistRazorpayCheckout();
+  const unlocked = isPremium || isTherapistPremium || hasPremiumAccess;
 
   return (
     <Box maxW="1100px" mx="auto">
@@ -68,7 +74,7 @@ export default function PremiumTherapist() {
             </Box>
             
             <Box textAlign={{ base: "left", md: "right" }}>
-              {isPremium ? (
+              {unlocked ? (
                 <Button 
                     bg="white" 
                     color="black" 
@@ -88,6 +94,8 @@ export default function PremiumTherapist() {
                         px={10} 
                         h={14}
                         _hover={{ bg: "#E3C77B", transform: 'scale(1.05)' }}
+                        onClick={() => startSubscription('premium')}
+                        isLoading={loadingPlan === 'premium'}
                     >
                       Unlock Practitioner Suite
                     </Button>
@@ -128,14 +136,29 @@ export default function PremiumTherapist() {
         </VStack>
       </Box>
 
-      {!isPremium && (
+      {!unlocked && (
         <Center mt={12} p={10} bg="gray.50" borderRadius="3xl" border="2px dashed" borderColor="gray.200">
             <VStack spacing={4}>
                 <Icon as={FiLock} boxSize={8} color="gray.300" />
                 <Text color="gray.500" fontWeight="500">Upgrade to Premium to unlock the full Therapist OS suite.</Text>
+                <Button
+                  bg="#56756D"
+                  color="white"
+                  borderRadius="full"
+                  onClick={() => startSubscription('premium')}
+                  isLoading={loadingPlan === 'premium'}
+                >
+                  Subscribe — INR 1799/year
+                </Button>
             </VStack>
         </Center>
       )}
+
+      <TherapistGatedGateway
+        isOpen={premiumGateModal.isOpen}
+        onClose={premiumGateModal.onClose}
+        contextLabel="Premium unlocks advanced analytics, priority listing, and Therapist OS tools."
+      />
     </Box>
   );
 }

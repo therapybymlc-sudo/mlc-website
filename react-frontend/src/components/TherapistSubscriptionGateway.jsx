@@ -70,6 +70,7 @@ function PlanCard({
   emphasized,
   featureLines,
   ctaLabel,
+  onSelectPremium,
 }) {
   const bg = isRecommended ? 'linear-gradient(180deg, #FFFCF5 0%, #FFFFFF 40%)' : 'white';
 
@@ -144,9 +145,9 @@ function PlanCard({
         </VStack>
 
         <Button
-          as={onSelectPlan ? 'button' : NextLink}
+          as={onSelectPlan || onSelectPremium ? 'button' : NextLink}
           href={
-            onSelectPlan
+            onSelectPlan || onSelectPremium
               ? undefined
               : planKey === 'monthly'
               ? monthlyUrl
@@ -174,7 +175,9 @@ function PlanCard({
           }
           rightIcon={isCurrent ? undefined : <Icon as={FiArrowRight} />}
           onClick={
-            onSelectPlan && !isCurrent && (planKey === 'monthly' || planKey === 'annual')
+            !isCurrent && planKey === 'premium' && onSelectPremium
+              ? () => onSelectPremium('premium')
+              : onSelectPlan && !isCurrent && (planKey === 'monthly' || planKey === 'annual')
               ? () => onSelectPlan(planKey)
               : undefined
           }
@@ -210,16 +213,21 @@ export default function TherapistSubscriptionGateway({
   mode = 'modal',
   variant = 'default',
   onSelectPlan,
+  onSelectPremium,
   loadingPlan = '',
   subscription = null,
 }) {
   const [billingFocus, setBillingFocus] = useState('annual');
 
   const monthlyUrl =
-    process.env.NEXT_PUBLIC_THERAPIST_BASIC_MONTHLY_URL || '/dashboard/therapist/subscription?plan=basic_monthly';
+    process.env.NEXT_PUBLIC_THERAPIST_BASIC_MONTHLY_URL || '/dashboard/therapist/subscription?plan=monthly';
   const annualUrl =
-    process.env.NEXT_PUBLIC_THERAPIST_BASIC_ANNUAL_URL || '/dashboard/therapist/subscription?plan=basic_annual';
-  const premiumUrl = process.env.NEXT_PUBLIC_THERAPIST_PREMIUM_URL || '/dashboard/therapist/premium';
+    process.env.NEXT_PUBLIC_THERAPIST_BASIC_ANNUAL_URL || '/dashboard/therapist/subscription?plan=annual';
+  const premiumUrl =
+    process.env.NEXT_PUBLIC_THERAPIST_PREMIUM_ANNUAL_URL ||
+    process.env.NEXT_PUBLIC_RAZORPAY_THERAPIST_PREMIUM_ANNUAL_LINK ||
+    process.env.NEXT_PUBLIC_THERAPIST_PREMIUM_URL ||
+    '/dashboard/therapist/subscription?plan=premium';
 
   const planNorm = (subscription?.basic_plan || '').toLowerCase();
   const statusNorm = (subscription?.subscription_status || '').toLowerCase();
@@ -305,6 +313,7 @@ export default function TherapistSubscriptionGateway({
           isRecommended={false}
           badgeLabel={isCurrentMonthly ? 'Current plan' : billingFocus === 'monthly' ? 'Popular for trying MLC' : null}
           onSelectPlan={onSelectPlan}
+          onSelectPremium={onSelectPremium}
           loadingPlan={loadingPlan}
           monthlyUrl={monthlyUrl}
           annualUrl={annualUrl}
@@ -326,6 +335,7 @@ export default function TherapistSubscriptionGateway({
           isRecommended
           badgeLabel={isCurrentAnnual ? 'Current plan' : 'Recommended'}
           onSelectPlan={onSelectPlan}
+          onSelectPremium={onSelectPremium}
           loadingPlan={loadingPlan}
           monthlyUrl={monthlyUrl}
           annualUrl={annualUrl}
@@ -346,7 +356,8 @@ export default function TherapistSubscriptionGateway({
           subline={`Includes Basic access plus premium capabilities at ~INR ${Math.round(PREMIUM_ANNUAL_INR / 12)} / month.`}
           isRecommended={false}
           badgeLabel="Premium tier"
-          onSelectPlan={null}
+          onSelectPlan={onSelectPlan}
+          onSelectPremium={onSelectPremium}
           loadingPlan={loadingPlan}
           monthlyUrl={monthlyUrl}
           annualUrl={annualUrl}

@@ -3,7 +3,8 @@
 import { Box, Heading, Text, VStack, SimpleGrid, Icon, Button, Badge, HStack, Spinner } from "@chakra-ui/react";
 import { FiBook, FiExternalLink, FiShare2, FiClipboard } from "react-icons/fi";
 import { useEffect, useState } from "react";
-import TherapistSubscriptionGateway from "../../../../../components/TherapistSubscriptionGateway";
+import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
+import SubscriptionWall from "../../../../../components/SubscriptionWall";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
 import { resourcesApi } from "../../../../../api/resources";
 import { useRouter } from "next/navigation";
@@ -153,7 +154,7 @@ export default function TherapistResourcesClient() {
           <Text fontWeight="600" color="gray.400">Upload New Resource</Text>
         </VStack>
       </SimpleGrid>
-      <TherapistSubscriptionGateway
+      <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}
         contextLabel="Activate Basic to use the therapist resource library and go fully paperless."
