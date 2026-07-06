@@ -13,7 +13,6 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { FiLock } from 'react-icons/fi';
-import { getTherapistPlanUrl } from '../utils/subscriptionPlans';
 
 const COPY = {
   basic: {
@@ -24,11 +23,11 @@ const COPY = {
     href: '/dashboard/therapist/subscription',
   },
   premium: {
-    title: 'Premium tier required',
+    title: 'Premium — coming soon',
     description:
-      'Upgrade to Premium (The Therapist OS) for advanced analytics, priority listing, and premium automation tools.',
-    cta: 'Unlock Premium',
-    href: getTherapistPlanUrl('premium'),
+      'Therapist OS / Lux Studio is launching soon. Join the pre-release list on the Premium page for a major discount at launch.',
+    cta: 'Join pre-release list',
+    href: '/dashboard/therapist/premium#premium-pre-release',
   },
 };
 

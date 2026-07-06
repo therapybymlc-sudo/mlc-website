@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   getTherapistPlanUrl,
   isExternalPaymentLink,
+  isPremiumComingSoon,
   normalizePlanType,
   THERAPIST_PLANS,
 } from '../utils/subscriptionPlans';
@@ -44,6 +45,17 @@ export function useTherapistRazorpayCheckout({ onActivated } = {}) {
       const planKey = normalizePlanType(planTypeRaw);
       if (!planKey) {
         toast({ title: 'Unknown plan selected.', status: 'warning' });
+        return;
+      }
+
+      if (planKey === 'premium' && isPremiumComingSoon()) {
+        toast({
+          title: 'Premium is coming soon',
+          description: 'Join the pre-release list on the Premium page for a major launch discount.',
+          status: 'info',
+          duration: 6000,
+        });
+        window.location.href = '/dashboard/therapist/premium#premium-pre-release';
         return;
       }
 

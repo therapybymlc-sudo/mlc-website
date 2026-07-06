@@ -2134,6 +2134,13 @@ class RazorpayCreateTherapistSubscriptionView(APIView):
         if plan_type not in {"monthly", "annual", "premium"}:
             return Response({"detail": "plan_type must be monthly, annual, or premium."}, status=status.HTTP_400_BAD_REQUEST)
 
+        premium_enabled = getattr(settings, "PREMIUM_SUBSCRIPTION_ENABLED", False)
+        if plan_type == "premium" and not premium_enabled:
+            return Response(
+                {"detail": "Premium is coming soon. Join the pre-release list for early-access pricing."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         monthly_plan_id = (
             getattr(settings, "RAZORPAY_BASIC_MONTHLY_PLAN_ID", None)
             or os.getenv("RAZORPAY_BASIC_MONTHLY_PLAN_ID")

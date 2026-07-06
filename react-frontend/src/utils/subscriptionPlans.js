@@ -27,6 +27,11 @@ export function normalizePlanType(raw) {
   return null;
 }
 
+/** Premium checkout disabled until launch (set NEXT_PUBLIC_PREMIUM_COMING_SOON=false to enable). */
+export function isPremiumComingSoon() {
+  return process.env.NEXT_PUBLIC_PREMIUM_COMING_SOON !== 'false';
+}
+
 export function isExternalPaymentLink(url) {
   if (!url || typeof url !== 'string') return false;
   if (!/^https?:\/\//i.test(url)) return false;

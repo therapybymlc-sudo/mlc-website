@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react';
 import TherapistSubscriptionGateway from '../../../../../components/TherapistSubscriptionGateway';
 import { useTherapistRazorpayCheckout } from '../../../../../hooks/useTherapistRazorpayCheckout';
-import { normalizePlanType } from '../../../../../utils/subscriptionPlans';
+import { normalizePlanType, isPremiumComingSoon } from '../../../../../utils/subscriptionPlans';
 import { apiGet, apiPost } from '../../../../../api.js';
 import { useAuth } from '../../../../../context/AuthContext';
 
@@ -66,6 +66,7 @@ export default function TherapistSubscriptionClient() {
     const rawPlan = searchParams.get('plan');
     const plan = normalizePlanType(rawPlan);
     if (!plan || autoStartedRef.current || loadingPlan) return;
+    if (plan === 'premium' && isPremiumComingSoon()) return;
     if (!isAuthenticated || !isTherapist) return;
 
     autoStartedRef.current = true;
@@ -134,7 +135,7 @@ export default function TherapistSubscriptionClient() {
             mode="inline"
             subscription={subscription}
             onSelectPlan={startSubscription}
-            onSelectPremium={startSubscription}
+            onSelectPremium={isPremiumComingSoon() ? undefined : startSubscription}
             loadingPlan={loadingPlan}
           />
         </Box>

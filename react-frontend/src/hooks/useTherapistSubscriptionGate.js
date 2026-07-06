@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useDisclosure } from '@chakra-ui/react';
 import { useAuth } from '../context/AuthContext';
+import { isPremiumComingSoon } from '../utils/subscriptionPlans';
 
 export function useTherapistSubscriptionGate() {
   const { isAdmin, roles = [], therapistProfile, isTherapistPremium } = useAuth();
@@ -38,6 +39,12 @@ export function useTherapistSubscriptionGate() {
     if (hasPremiumAccess) {
       if (typeof onAllowed === 'function') onAllowed();
       return true;
+    }
+    if (isPremiumComingSoon()) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/dashboard/therapist/premium#premium-pre-release';
+      }
+      return false;
     }
     premiumGate.onOpen();
     return false;

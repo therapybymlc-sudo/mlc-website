@@ -25,6 +25,7 @@ import {
 } from '@chakra-ui/react';
 import { CheckCircleIcon } from '@chakra-ui/icons';
 import { FiArrowRight } from 'react-icons/fi';
+import { isPremiumComingSoon } from '../utils/subscriptionPlans';
 
 const MONTHLY_INR = 99;
 const ANNUAL_INR = 999;
@@ -41,13 +42,14 @@ const BASIC_PLAN_FEATURES = [
 ];
 
 const PREMIUM_EXTRA_FEATURES = [
-  'Everything in Basic, plus premium therapist growth suite',
+  'Everything in Basic, plus the full Therapist OS suite',
+  'Over 25 screening assessments with automated scoring & tracking',
+  'Over 200 therapist resources, worksheets & clinical tools',
+  'Therapist self-care checks & burnout-aware wellness prompts',
+  'Complete in-platform chat — full privacy; never share your number with a client again',
   'Advanced practice analytics with conversion insights',
   'Priority listing boosts in therapist discovery surfaces',
   'Premium automation workflows for follow-ups and retention',
-  'Priority support with faster issue turnaround',
-  'Early access to new therapist OS tools and launches',
-  'Expanded branding/profile customization for premium positioning',
 ];
 
 function PlanCard({
@@ -71,6 +73,7 @@ function PlanCard({
   featureLines,
   ctaLabel,
   onSelectPremium,
+  comingSoon = false,
 }) {
   const bg = isRecommended ? 'linear-gradient(180deg, #FFFCF5 0%, #FFFFFF 40%)' : 'white';
 
@@ -145,9 +148,11 @@ function PlanCard({
         </VStack>
 
         <Button
-          as={onSelectPlan || onSelectPremium ? 'button' : NextLink}
+          as={comingSoon ? NextLink : onSelectPlan || onSelectPremium ? 'button' : NextLink}
           href={
-            onSelectPlan || onSelectPremium
+            comingSoon
+              ? '/dashboard/therapist/premium#premium-pre-release'
+              : onSelectPlan || onSelectPremium
               ? undefined
               : planKey === 'monthly'
               ? monthlyUrl
@@ -164,27 +169,31 @@ function PlanCard({
           whiteSpace="normal"
           textAlign="center"
           isDisabled={isCurrent}
-          variant={isRecommended ? 'solid' : 'outline'}
-          bg={isRecommended ? '#56756D' : undefined}
-          color={isRecommended ? 'white' : '#56756D'}
-          borderColor="#56756D"
+          variant={comingSoon ? 'outline' : isRecommended ? 'solid' : 'outline'}
+          bg={comingSoon ? undefined : isRecommended ? '#56756D' : undefined}
+          color={comingSoon ? 'gray.600' : isRecommended ? 'white' : '#56756D'}
+          borderColor={comingSoon ? 'gray.300' : '#56756D'}
           _hover={
-            isRecommended
+            comingSoon
+              ? { bg: 'gray.50' }
+              : isRecommended
               ? { bg: '#3E5B54' }
               : { bg: 'rgba(86, 117, 109, 0.06)' }
           }
-          rightIcon={isCurrent ? undefined : <Icon as={FiArrowRight} />}
+          rightIcon={isCurrent || comingSoon ? undefined : <Icon as={FiArrowRight} />}
           onClick={
-            !isCurrent && planKey === 'premium' && onSelectPremium
+            comingSoon
+              ? undefined
+              : !isCurrent && planKey === 'premium' && onSelectPremium
               ? () => onSelectPremium('premium')
               : onSelectPlan && !isCurrent && (planKey === 'monthly' || planKey === 'annual')
               ? () => onSelectPlan(planKey)
               : undefined
           }
-          isLoading={loadingPlan === planKey}
+          isLoading={!comingSoon && loadingPlan === planKey}
           loadingText="Starting…"
         >
-          {isCurrent ? 'Current plan' : ctaLabel || 'Continue'}
+          {isCurrent ? 'Current plan' : comingSoon ? 'Coming soon — join waitlist' : ctaLabel || 'Continue'}
         </Button>
 
         <Divider my={8} borderColor="gray.100" />
@@ -236,6 +245,7 @@ export default function TherapistSubscriptionGateway({
     (statusNorm === 'active' || statusNorm === 'pending' || statusNorm === 'created');
   const isCurrentMonthly = isActiveish && planNorm === 'monthly';
   const isCurrentAnnual = isActiveish && planNorm === 'annual';
+  const premiumSoon = isPremiumComingSoon();
 
   const showHeader = variant !== 'embedded';
 
@@ -348,16 +358,21 @@ export default function TherapistSubscriptionGateway({
         <PlanCard
           planKey="premium"
           name="Premium Annual"
-          billingLabel="Advanced growth · one payment per year"
+          billingLabel="Advanced growth · launching soon"
           priceMain={PREMIUM_ANNUAL_INR}
           priceUnit="/ year"
           compareAt={null}
           compareLabel={null}
-          subline={`Includes Basic access plus premium capabilities at ~INR ${Math.round(PREMIUM_ANNUAL_INR / 12)} / month.`}
+          subline={
+            premiumSoon
+              ? 'Register for pre-release access and a major launch discount.'
+              : `Includes Basic access plus premium capabilities at ~INR ${Math.round(PREMIUM_ANNUAL_INR / 12)} / month.`
+          }
           isRecommended={false}
-          badgeLabel="Premium tier"
+          badgeLabel={premiumSoon ? 'Coming soon' : 'Premium tier'}
           onSelectPlan={onSelectPlan}
-          onSelectPremium={onSelectPremium}
+          onSelectPremium={premiumSoon ? undefined : onSelectPremium}
+          comingSoon={premiumSoon}
           loadingPlan={loadingPlan}
           monthlyUrl={monthlyUrl}
           annualUrl={annualUrl}
@@ -365,7 +380,7 @@ export default function TherapistSubscriptionGateway({
           isCurrent={false}
           emphasized={false}
           featureLines={PREMIUM_EXTRA_FEATURES}
-          ctaLabel="Unlock premium"
+          ctaLabel={premiumSoon ? 'Coming soon — join waitlist' : 'Unlock premium'}
         />
       </SimpleGrid>
 
@@ -379,10 +394,12 @@ export default function TherapistSubscriptionGateway({
         borderColor="gray.100"
       >
         <Text fontSize="sm" color="gray.500" maxW="lg">
-          Premium tier unlocks advanced growth, priority support, and therapist OS capabilities for INR 1799/year.
+          {premiumSoon
+            ? 'Premium (Therapist OS) is coming soon — join the pre-release list for a major discount at launch.'
+            : 'Premium tier unlocks advanced growth, priority support, and therapist OS capabilities for INR 1799/year.'}
         </Text>
-        <Button as={NextLink} href={premiumUrl} variant="outline" colorScheme="purple" size="sm" borderRadius="lg">
-          Explore Premium Gateway
+        <Button as={NextLink} href="/dashboard/therapist/premium#premium-pre-release" variant="outline" colorScheme="purple" size="sm" borderRadius="lg">
+          {premiumSoon ? 'Join pre-release list' : 'Explore Premium Gateway'}
         </Button>
       </Flex>
     </VStack>
