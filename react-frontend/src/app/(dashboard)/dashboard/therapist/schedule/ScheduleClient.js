@@ -1289,7 +1289,7 @@ export default function ScheduleClient() {
       <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}
-        contextLabel="Activate your Basic plan to create events, manage availability, and run your calendar on MLC."
+        contextLabel="Activate MLC Pro to create events, manage availability, and run your calendar on MLC."
       />
     </VStack>
   );

@@ -41,8 +41,10 @@ const BASIC_PLAN_FEATURES = [
   'Billing, invoicing & payment link automation',
 ];
 
+/** MLC Pro = live subscription tier (monthly/annual). Therapist OS Premium is separate and coming soon. */
+
 const PREMIUM_EXTRA_FEATURES = [
-  'Everything in Basic, plus the full Therapist OS suite',
+  'Everything in MLC Pro, plus the full Therapist OS suite',
   'Over 25 screening assessments with automated scoring & tracking',
   'Over 200 therapist resources, worksheets & clinical tools',
   'Therapist self-care checks & burnout-aware wellness prompts',
@@ -217,8 +219,8 @@ function PlanCard({
 export default function TherapistSubscriptionGateway({
   isOpen = false,
   onClose,
-  title = 'Unlock MLC Therapist Platform',
-  contextLabel = 'Compare plans and activate your therapist operating system.',
+  title = 'Activate MLC Pro',
+  contextLabel = 'MLC Pro is live now — subscribe to unlock your calendar, bookings, profile publishing, and client workflows. Therapist OS Premium is coming later.',
   mode = 'modal',
   variant = 'default',
   onSelectPlan,
@@ -254,7 +256,7 @@ export default function TherapistSubscriptionGateway({
       {showHeader ? (
         <VStack spacing={2} align={{ base: 'center', md: 'start' }} textAlign={{ base: 'center', md: 'left' }}>
           <Text fontSize="xs" fontWeight="700" letterSpacing="0.14em" color="#56756D" textTransform="uppercase">
-            MLC therapist access
+            MLC Pro · available now
           </Text>
           <Heading size="lg" color="#1a202c" fontWeight="700" letterSpacing="-0.02em">
             {title}
@@ -313,15 +315,15 @@ export default function TherapistSubscriptionGateway({
       <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={{ base: 6, lg: 8 }} alignItems="stretch">
         <PlanCard
           planKey="monthly"
-          name="Basic Monthly"
-          billingLabel="Flexible · cancel anytime"
+          name="MLC Pro Monthly"
+          billingLabel="Flexible · cancel anytime · live now"
           priceMain={MONTHLY_INR}
           priceUnit="/ month"
           compareAt={null}
           compareLabel={null}
-          subline="Full platform access, billed each month."
+          subline="Full MLC Pro platform access, billed each month."
           isRecommended={false}
-          badgeLabel={isCurrentMonthly ? 'Current plan' : billingFocus === 'monthly' ? 'Popular for trying MLC' : null}
+          badgeLabel={isCurrentMonthly ? 'Current plan' : billingFocus === 'monthly' ? 'Available now' : null}
           onSelectPlan={onSelectPlan}
           onSelectPremium={onSelectPremium}
           loadingPlan={loadingPlan}
@@ -331,19 +333,19 @@ export default function TherapistSubscriptionGateway({
           isCurrent={isCurrentMonthly}
           emphasized={billingFocus === 'monthly'}
           featureLines={BASIC_PLAN_FEATURES}
-          ctaLabel="Start monthly"
+          ctaLabel="Start MLC Pro monthly"
         />
         <PlanCard
           planKey="annual"
-          name="Basic Annual"
-          billingLabel="Best value · one payment per year"
+          name="MLC Pro Annual"
+          billingLabel="Best value · one payment per year · live now"
           priceMain={ANNUAL_INR}
           priceUnit="/ year"
           compareAt={MONTHLY_IF_PAID_MONTHLY_YEAR}
           compareLabel={`Save INR ${MONTHLY_IF_PAID_MONTHLY_YEAR - ANNUAL_INR}`}
-          subline={`Equivalent to ~INR ${Math.round(ANNUAL_INR / 12)} / month when billed annually.`}
+          subline={`Full MLC Pro access — ~INR ${Math.round(ANNUAL_INR / 12)} / month when billed annually.`}
           isRecommended
-          badgeLabel={isCurrentAnnual ? 'Current plan' : 'Recommended'}
+          badgeLabel={isCurrentAnnual ? 'Current plan' : 'Recommended · live now'}
           onSelectPlan={onSelectPlan}
           onSelectPremium={onSelectPremium}
           loadingPlan={loadingPlan}
@@ -353,12 +355,12 @@ export default function TherapistSubscriptionGateway({
           isCurrent={isCurrentAnnual}
           emphasized={billingFocus === 'annual'}
           featureLines={BASIC_PLAN_FEATURES}
-          ctaLabel="Start annual"
+          ctaLabel="Start MLC Pro annual"
         />
         <PlanCard
           planKey="premium"
-          name="Premium Annual"
-          billingLabel="Advanced growth · launching soon"
+          name="Therapist OS Premium"
+          billingLabel="Advanced tier · not available yet"
           priceMain={PREMIUM_ANNUAL_INR}
           priceUnit="/ year"
           compareAt={null}

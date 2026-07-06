@@ -2,8 +2,8 @@ import { Suspense } from 'react';
 import TherapistSubscriptionClient from './TherapistSubscriptionClient';
 
 export const metadata = {
-  title: 'Therapist Subscription',
-  description: 'Choose your MLC therapist subscription plan.',
+  title: 'MLC Pro Subscription',
+  description: 'Activate MLC Pro — live monthly and annual plans for therapist platform access.',
 };
 
 export default function Page() {

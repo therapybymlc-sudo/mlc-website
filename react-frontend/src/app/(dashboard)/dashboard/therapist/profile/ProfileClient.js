@@ -528,7 +528,7 @@ export default function ProfileClient() {
             <Box>
               <AlertTitle fontSize="sm">Subscription needed to publish profile</AlertTitle>
               <AlertDescription fontSize="sm">
-                Activate Basic to sync your profile publicly and receive client matches.
+                Activate MLC Pro to sync your profile publicly and receive client matches.
               </AlertDescription>
             </Box>
           </Alert>
@@ -1387,7 +1387,7 @@ export default function ProfileClient() {
       <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}
-        contextLabel="Activate Basic to make your profile visible, sync updates, and start receiving matched clients."
+        contextLabel="Activate MLC Pro to make your profile visible, sync updates, and start receiving matched clients."
       />
     </Box>
   );

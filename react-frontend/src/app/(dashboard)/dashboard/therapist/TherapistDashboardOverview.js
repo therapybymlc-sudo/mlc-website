@@ -194,7 +194,11 @@ export default function TherapistDashboardOverview() {
             </Box>
             <VStack align="start" spacing={0}>
               <Badge variant="subtle" colorScheme="teal" borderRadius="full" px={3} mb={2} fontSize="2xs" fontWeight="800">
-                {profile?.is_premium ? "PREMIUM CLINICIAN" : "BASIC PORTAL"}
+                {profile?.is_premium
+                  ? 'THERAPIST OS'
+                  : hasBasicAccess
+                  ? 'MLC PRO'
+                  : 'ACTIVATE MLC PRO'}
               </Badge>
               <Heading as="h1" size="xl" color="#2E2E2E" fontFamily="'Playfair Display', serif">
                 Hello, {user?.firstName || 'Practitioner'}
@@ -396,19 +400,41 @@ export default function TherapistDashboardOverview() {
                 </Button>
               </Box>
 
-              {/* 🚀 Pro Upgrade Upsell */}
-              <Box p={6} bg="gray.900" borderRadius="3xl" shadow="xl" color="white">
-                <HStack spacing={3} mb={4}>
-                  <Icon as={FiStar} color="mlc.gold" />
-                  <Text fontSize="xs" fontWeight="900" letterSpacing="0.1em">THE THERAPIST OS</Text>
-                </HStack>
-                <Text fontSize="xs" color="whiteAlpha.800" mb={4}>
-                  Unlock the full power of the ecosystem: Note Templates, Advanced Billing, and more.
-                </Text>
-                <Button size="xs" w="full" colorScheme="yellow" borderRadius="full" as={NextLink} href="/dashboard/therapist/subscription">
-                  Upgrade to Pro
-                </Button>
-              </Box>
+              {/* MLC Pro (live) or Therapist OS waitlist */}
+              {!hasBasicAccess ? (
+                <Box p={6} bg="#56756D" borderRadius="3xl" shadow="xl" color="white">
+                  <HStack spacing={3} mb={4}>
+                    <Icon as={FiStar} color="mlc.gold" />
+                    <Text fontSize="xs" fontWeight="900" letterSpacing="0.1em">MLC PRO · LIVE NOW</Text>
+                  </HStack>
+                  <Text fontSize="xs" color="whiteAlpha.900" mb={4}>
+                    Activate MLC Pro to publish your profile, manage bookings, and run your clinical calendar.
+                  </Text>
+                  <Button
+                    size="xs"
+                    w="full"
+                    bg="white"
+                    color="#56756D"
+                    borderRadius="full"
+                    onClick={() => requireBasicAccess()}
+                  >
+                    Activate MLC Pro
+                  </Button>
+                </Box>
+              ) : (
+                <Box p={6} bg="gray.900" borderRadius="3xl" shadow="xl" color="white">
+                  <HStack spacing={3} mb={4}>
+                    <Icon as={FiStar} color="mlc.gold" />
+                    <Text fontSize="xs" fontWeight="900" letterSpacing="0.1em">THERAPIST OS · COMING SOON</Text>
+                  </HStack>
+                  <Text fontSize="xs" color="whiteAlpha.800" mb={4}>
+                    Advanced assessments, 200+ resources, and private chat — join the pre-release waitlist for launch pricing.
+                  </Text>
+                  <Button size="xs" w="full" colorScheme="yellow" borderRadius="full" as={NextLink} href="/dashboard/therapist/premium#premium-pre-release">
+                    Join Therapist OS waitlist
+                  </Button>
+                </Box>
+              )}
 
               {/* 💡 Feedback Nudge Card */}
               <Box p={6} bg="teal.50" borderRadius="3xl" border="1px dashed" borderColor="teal.200">
@@ -429,7 +455,8 @@ export default function TherapistDashboardOverview() {
       <TherapistGatedGateway 
         isOpen={gateModal.isOpen} 
         onClose={gateModal.onClose} 
-        contextLabel="Unlock the full clinical ecosystem for your practice."
+        title="Activate MLC Pro"
+        contextLabel="MLC Pro is live now. Subscribe to unlock scheduling, bookings, and your public therapist profile."
       />
     </Box>
   );

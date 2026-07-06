@@ -5,7 +5,7 @@ import { useTherapistRazorpayCheckout } from '../hooks/useTherapistRazorpayCheck
 import { isPremiumComingSoon } from '../utils/subscriptionPlans';
 
 /**
- * Subscription gateway modal wired to live Razorpay checkout for Basic plans only.
+ * Subscription gateway modal wired to live MLC Pro Razorpay checkout (monthly/annual).
  * Premium is coming soon — waitlist link only.
  */
 export default function TherapistGatedGateway(props) {

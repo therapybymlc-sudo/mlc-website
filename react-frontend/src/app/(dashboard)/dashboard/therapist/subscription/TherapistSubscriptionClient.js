@@ -114,10 +114,11 @@ export default function TherapistSubscriptionClient() {
       <VStack align="stretch" spacing={{ base: 8, md: 10 }}>
         <VStack align="start" spacing={2}>
           <Heading size="lg" color="#1a202c" fontWeight="700" letterSpacing="-0.02em">
-            Subscription
+            MLC Pro Subscription
           </Heading>
           <Text color="gray.600" fontSize="md" maxW="2xl">
-            Choose a plan below to unlock MLC Pro (Basic) or Premium therapist tools.
+            MLC Pro is live — activate monthly or annual access below. Therapist OS Premium is on the back burner;
+            join the waitlist from The Therapist OS page when it launches.
           </Text>
         </VStack>
 
@@ -193,10 +194,10 @@ export default function TherapistSubscriptionClient() {
               Plan: {subscription?.basic_plan || 'none'}
             </Badge>
             <Badge colorScheme={subscription?.is_basic_subscribed ? 'green' : 'gray'} px={2.5} py={1} borderRadius="full">
-              Basic: {subscription?.is_basic_subscribed ? 'Unlocked' : 'Locked'}
+              MLC Pro: {subscription?.is_basic_subscribed ? 'Active' : 'Not active'}
             </Badge>
             <Badge colorScheme={subscription?.is_premium ? 'purple' : 'gray'} px={2.5} py={1} borderRadius="full">
-              Premium: {subscription?.is_premium ? 'Unlocked' : 'Locked'}
+              Therapist OS: {subscription?.is_premium ? 'Active' : 'Coming soon'}
             </Badge>
           </HStack>
 

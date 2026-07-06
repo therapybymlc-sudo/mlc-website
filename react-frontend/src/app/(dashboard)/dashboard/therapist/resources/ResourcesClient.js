@@ -53,7 +53,7 @@ export default function TherapistResourcesClient() {
       {!hasBasicAccess && (
         <Box mb={6} p={4} borderRadius="xl" border="1px solid" borderColor="orange.200" bg="orange.50">
           <Text fontSize="sm" color="orange.800" fontWeight="600">
-            Resource library is visible in preview mode. Activate Basic to download and upload resources.
+            Resource library is visible in preview mode. Activate MLC Pro to download and upload resources.
           </Text>
           <Button size="sm" mt={3} colorScheme="orange" borderRadius="full" onClick={() => requireBasicAccess()}>
             Activate to unlock
@@ -157,7 +157,7 @@ export default function TherapistResourcesClient() {
       <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}
-        contextLabel="Activate Basic to use the therapist resource library and go fully paperless."
+        contextLabel="Activate MLC Pro to use the therapist resource library and go fully paperless."
       />
     </Box>
   );

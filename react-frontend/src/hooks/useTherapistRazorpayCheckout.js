@@ -123,11 +123,11 @@ export function useTherapistRazorpayCheckout({ onActivated } = {}) {
                 razorpay_signature: response.razorpay_signature,
               });
               toast({
-                title: planKey === 'premium' ? 'Premium activated!' : 'Subscription activated!',
+                title: planKey === 'premium' ? 'Premium activated!' : 'MLC Pro activated!',
                 description:
                   planKey === 'premium'
-                    ? 'Your premium therapist access is now active.'
-                    : 'Your basic therapist access is now active.',
+                    ? 'Your Therapist OS Premium access is now active.'
+                    : 'Your MLC Pro access is now active.',
                 status: 'success',
                 duration: 5000,
               });

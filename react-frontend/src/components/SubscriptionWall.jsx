@@ -16,16 +16,16 @@ import { FiLock } from 'react-icons/fi';
 
 const COPY = {
   basic: {
-    title: 'MLC Pro subscription required',
+    title: 'MLC Pro required',
     description:
-      'Activate Basic (MLC Pro) to use this feature — calendar, bookings, profile publishing, and client workflows.',
-    cta: 'View plans & subscribe',
+      'Activate MLC Pro to use this feature — calendar, bookings, profile publishing, and client workflows. Plans are live now.',
+    cta: 'Activate MLC Pro',
     href: '/dashboard/therapist/subscription',
   },
   premium: {
-    title: 'Premium — coming soon',
+    title: 'Therapist OS — coming soon',
     description:
-      'Therapist OS / Lux Studio is launching soon. Join the pre-release list on the Premium page for a major discount at launch.',
+      'Therapist OS Premium is on the back burner. MLC Pro is live today. Join the pre-release waitlist for Therapist OS launch pricing.',
     cta: 'Join pre-release list',
     href: '/dashboard/therapist/premium#premium-pre-release',
   },

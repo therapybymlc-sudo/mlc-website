@@ -3,17 +3,17 @@
 export const THERAPIST_PLANS = {
   monthly: {
     key: 'monthly',
-    label: 'Basic Monthly',
+    label: 'MLC Pro Monthly',
     checkoutPlanType: 'monthly',
   },
   annual: {
     key: 'annual',
-    label: 'Basic Annual',
+    label: 'MLC Pro Annual',
     checkoutPlanType: 'annual',
   },
   premium: {
     key: 'premium',
-    label: 'Premium Annual',
+    label: 'Therapist OS Premium',
     checkoutPlanType: 'premium',
   },
 };
