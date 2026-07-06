@@ -35,6 +35,7 @@ export default function CookieConsent() {
 
   const handleAccept = () => {
     localStorage.setItem('mlc_cookie_consent', 'accepted');
+    window.dispatchEvent(new Event('mlc-cookie-consent-accepted'));
     setIsVisible(false);
   };
 

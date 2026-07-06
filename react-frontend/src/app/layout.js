@@ -3,6 +3,7 @@ import { Providers } from './providers'
 import { Inter, Playfair_Display, Forum } from 'next/font/google'
 import ClientWrapper from '../components/ClientWrapper'
 import CookieConsent from '../components/CookieConsent'
+import GoogleAnalytics from '../components/GoogleAnalytics'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
@@ -84,6 +85,7 @@ export default function RootLayout({ children }) {
             <ClientWrapper>
               {children}
               <CookieConsent />
+              <GoogleAnalytics />
             </ClientWrapper>
           </Providers>
         </ClerkProvider>
