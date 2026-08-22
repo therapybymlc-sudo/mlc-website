@@ -1,5 +1,6 @@
 from django.conf import settings
-from .models import TherapistProfile, ClientProfile
+from django.utils import timezone
+from .models import TherapistProfile, ClientProfile, TherapeuticRelationship
 
 
 def is_placeholder_client_label(value) -> bool:
@@ -7,11 +8,229 @@ def is_placeholder_client_label(value) -> bool:
         return True
     t = str(value).strip()
     lo = t.lower()
-    if lo in {"user", "new client", "unknown", "client", "patient"}:
+    if lo in {"user", "new client", "unknown", "client", "patient", "unnamed client"}:
         return True
     if lo.startswith("user_"):
         return True
     return False
+
+
+def _name_parts_from_auth_payload(auth_payload) -> tuple[str, str]:
+    if not isinstance(auth_payload, dict):
+        return "", ""
+    first = (
+        auth_payload.get("given_name")
+        or auth_payload.get("first_name")
+        or auth_payload.get("firstName")
+        or ""
+    )
+    last = (
+        auth_payload.get("family_name")
+        or auth_payload.get("last_name")
+        or auth_payload.get("lastName")
+        or ""
+    )
+    return str(first).strip(), str(last).strip()
+
+
+def resolve_user_display_name(user, auth_payload=None, fallback="Client") -> str:
+    """
+    Human-readable label for profile creation. Never returns Clerk-style user IDs.
+    """
+    if not user:
+        return fallback
+
+    first = (getattr(user, "first_name", None) or "").strip()
+    last = (getattr(user, "last_name", None) or "").strip()
+    if auth_payload is not None and not first and not last:
+        payload_first, payload_last = _name_parts_from_auth_payload(auth_payload)
+        first = payload_first
+        last = payload_last
+
+    full_name = f"{first} {last}".strip()
+    if full_name and not is_placeholder_client_label(full_name):
+        return full_name[:100]
+
+    raw_full = (getattr(user, "get_full_name", lambda: "")() or "").strip()
+    if raw_full and not is_placeholder_client_label(raw_full):
+        return raw_full[:100]
+
+    username = (getattr(user, "username", None) or "").strip()
+    if username and not is_placeholder_client_label(username):
+        return username[:100]
+
+    email = (getattr(user, "email", None) or "").strip().lower()
+    if email and "@" in email and not email.endswith("@local") and not email.endswith("@example.invalid"):
+        local = email.split("@", 1)[0]
+        if local and not is_placeholder_client_label(local):
+            return local[:100]
+
+    return fallback
+
+
+def sync_client_profile_identity(client, user, auth_payload=None) -> bool:
+    """
+    Repair placeholder client names/emails when real identity data becomes available.
+    Returns True when the profile was updated.
+    """
+    if not client or not user:
+        return False
+
+    save_needed = False
+    update_fields = []
+
+    first = (getattr(user, "first_name", None) or "").strip()
+    last = (getattr(user, "last_name", None) or "").strip()
+    if auth_payload is not None and not first and not last:
+        payload_first, payload_last = _name_parts_from_auth_payload(auth_payload)
+        first = payload_first
+        last = payload_last
+
+    full_name = f"{first} {last}".strip()
+    current_name = (client.name or "").strip()
+    if is_placeholder_client_label(current_name):
+        candidate = full_name
+        if not candidate or is_placeholder_client_label(candidate):
+            candidate = resolve_user_display_name(user, auth_payload=auth_payload, fallback="")
+        if candidate and not is_placeholder_client_label(candidate):
+            client.name = candidate[:100]
+            save_needed = True
+            update_fields.append("name")
+
+    email = (getattr(user, "email", None) or "").strip().lower()
+    if auth_payload and not email:
+        email = (
+            auth_payload.get("email")
+            or auth_payload.get("email_address")
+            or auth_payload.get("primary_email_address")
+            or auth_payload.get("primaryEmailAddress")
+            or ""
+        )
+        if isinstance(email, str):
+            email = email.strip().lower()
+
+    if email and not email.endswith("@example.invalid") and not email.endswith("@local"):
+        current_email = (client.email or "").strip().lower()
+        email_placeholder = (
+            not current_email
+            or "@example.invalid" in current_email
+            or current_email.endswith("@local")
+        )
+        if email_placeholder:
+            client.email = email
+            save_needed = True
+            update_fields.append("email")
+
+    if save_needed:
+        client.save(update_fields=list(dict.fromkeys(update_fields)))
+    return save_needed
+
+
+def caseload_client_ids_for_therapist(therapist, *, active_only=False) -> list[int]:
+    """
+    Clients that belong on a therapist's caseload via an explicit therapeutic
+    relationship (booking, calendar session, or manual link/add).
+    """
+    if not therapist:
+        return []
+    qs = TherapeuticRelationship.objects.filter(therapist=therapist)
+    if active_only:
+        qs = qs.filter(status=TherapeuticRelationship.Status.ACTIVE)
+    return list(qs.values_list("client_id", flat=True).distinct())
+
+
+def ensure_therapeutic_relationship(therapist, client, *, make_primary=False):
+    """
+    Create or reactivate a therapist↔client relationship. Never links a client
+    to therapists they have not explicitly booked with or been added by.
+    """
+    if not therapist or not client:
+        return None
+
+    active = (
+        TherapeuticRelationship.objects.filter(
+            therapist=therapist,
+            client=client,
+            status=TherapeuticRelationship.Status.ACTIVE,
+        )
+        .order_by("-started_at")
+        .first()
+    )
+    if active:
+        if make_primary and not active.is_primary:
+            TherapeuticRelationship.objects.filter(
+                client=client,
+                status=TherapeuticRelationship.Status.ACTIVE,
+                is_primary=True,
+            ).exclude(pk=active.pk).update(is_primary=False)
+            active.is_primary = True
+            active.save(update_fields=["is_primary", "updated_at"])
+        return active
+
+    paused = (
+        TherapeuticRelationship.objects.filter(
+            therapist=therapist,
+            client=client,
+            status=TherapeuticRelationship.Status.PAUSED,
+        )
+        .order_by("-updated_at")
+        .first()
+    )
+    if paused:
+        paused.status = TherapeuticRelationship.Status.ACTIVE
+        paused.ended_at = None
+        if make_primary:
+            paused.is_primary = True
+        paused.save(update_fields=["status", "ended_at", "is_primary", "updated_at"])
+        return paused
+
+    ended = (
+        TherapeuticRelationship.objects.filter(
+            therapist=therapist,
+            client=client,
+            status=TherapeuticRelationship.Status.ENDED,
+        )
+        .order_by("-updated_at")
+        .first()
+    )
+    if ended:
+        ended.status = TherapeuticRelationship.Status.ACTIVE
+        ended.ended_at = None
+        if make_primary:
+            ended.is_primary = True
+        ended.save(update_fields=["status", "ended_at", "is_primary", "updated_at"])
+        return ended
+
+    relationship = TherapeuticRelationship.objects.create(
+        therapist=therapist,
+        client=client,
+        status=TherapeuticRelationship.Status.ACTIVE,
+        is_primary=bool(make_primary),
+        started_at=timezone.now(),
+    )
+    if make_primary:
+        TherapeuticRelationship.objects.filter(
+            client=client,
+            status=TherapeuticRelationship.Status.ACTIVE,
+            is_primary=True,
+        ).exclude(pk=relationship.pk).update(is_primary=False)
+    return relationship
+
+
+def link_client_to_therapist_caseload(therapist, client, *, make_primary=False):
+    """
+    Connect an existing client profile to a therapist's caseload by email match or
+    explicit add. Optionally sets the legacy primary therapist FK when unset.
+    """
+    if not therapist or not client:
+        return None
+    relationship = ensure_therapeutic_relationship(
+        therapist, client, make_primary=make_primary
+    )
+    if not client.therapist_id and make_primary:
+        client.therapist = therapist
+        client.save(update_fields=["therapist"])
+    return relationship
 
 
 def client_preferred_display_name(client) -> str:
@@ -71,9 +290,7 @@ def _resolve_therapist_from_request(request, allow_create=False):
         if not email or email.endswith("@example.invalid"):
             return None
 
-        display_name = (getattr(auth_user, "get_full_name", lambda: "")() or "")
-        if not display_name.strip():
-            display_name = username if username and not str(username).startswith("user_") else "Therapist"
+        display_name = resolve_user_display_name(auth_user, fallback="Therapist")
         safe_email = email
         therapist = TherapistProfile.objects.create(
             user=auth_user,
@@ -112,10 +329,7 @@ def _resolve_client_from_request(request):
         if email.endswith("@example.invalid"):
             return None
 
-        display_name = getattr(auth_user, "get_full_name", lambda: "")() or ""
-        if not str(display_name).strip():
-            username = getattr(auth_user, "username", "") or ""
-            display_name = username if username and not str(username).startswith("user_") else "Client"
+        display_name = resolve_user_display_name(auth_user, fallback="Client")
         safe_email = email
         client = ClientProfile.objects.create(
             user=auth_user,

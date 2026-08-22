@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /dashboard/
-Disallow: /login/therapist
-
-Sitemap: https://mlchealth.in/sitemap.xml

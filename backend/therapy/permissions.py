@@ -1,5 +1,6 @@
 from rest_framework.permissions import BasePermission
 from rest_framework import exceptions
+from django.db import IntegrityError
 
 from .models import (
     TherapistProfile,
@@ -11,6 +12,7 @@ from .models import (
     Resource,
     SharedResourceAssignment,
 )
+from .utils import resolve_user_display_name, sync_client_profile_identity
 
 
 def get_current_therapist_profile(user):
@@ -41,6 +43,7 @@ def get_current_client_profile(user):
     # 1. Direct relationship check (fastest)
     try:
         if hasattr(user, "client_profile"):
+            sync_client_profile_identity(user.client_profile, user)
             return user.client_profile
     except Exception:
         pass
@@ -53,27 +56,31 @@ def get_current_client_profile(user):
             if client.user_id != user.id:
                 client.user = user
                 client.save(update_fields=["user"])
+            sync_client_profile_identity(client, user)
             return client
             
-    # 3. Create if missing
-    display_name = getattr(user, "get_full_name", lambda: "")() or getattr(user, "username", "Unknown")
-    safe_email = email or f"client_{user.pk or 'nouser'}@local"
-    
-    # Use get_or_create to prevent race conditions or unique constraint crashes
-    client, created = ClientProfile.objects.get_or_create(
-        email__iexact=safe_email,
-        defaults={
-            "user": user,
-            "name": display_name,
-            "email": safe_email, # Original case or safe_email
-        }
-    )
-    
-    if not created and client.user_id != user.id:
-        client.user = user
-        client.save(update_fields=["user"])
-        
-    return client
+    # 3. Create only when we have a real email — never use Clerk user IDs as names.
+    normalized_email = (email or "").strip().lower()
+    if not normalized_email or normalized_email.endswith("@example.invalid"):
+        return None
+
+    display_name = resolve_user_display_name(user, fallback="Client")
+    try:
+        client = ClientProfile.objects.create(
+            user=user,
+            name=display_name,
+            email=normalized_email,
+        )
+        return client
+    except IntegrityError:
+        client = ClientProfile.objects.filter(email__iexact=normalized_email).first()
+        if client:
+            if client.user_id != user.id:
+                client.user = user
+                client.save(update_fields=["user"])
+            sync_client_profile_identity(client, user)
+            return client
+        return None
 
 
 def is_request_owned_by_therapist(user, booking_request: BookingRequest):

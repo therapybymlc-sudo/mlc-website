@@ -21,17 +21,18 @@ def _b64url_decode_json(segment: str) -> dict:
     return json.loads(base64.urlsafe_b64decode(segment.encode("ascii")))
 
 
-def _fetch_clerk_primary_email(clerk_user_id: str) -> str | None:
+def _fetch_clerk_user_identity(clerk_user_id: str) -> dict:
     """
-    Resolve the user's real primary email via Clerk Backend API when JWT claims
-    don't include email fields.
+    Resolve primary email and legal name via Clerk Backend API when JWT claims
+    are incomplete.
     """
+    empty = {"email": None, "first_name": "", "last_name": ""}
     if not clerk_user_id:
-        return None
+        return empty
 
     secret_key = (getattr(settings, "CLERK_SECRET_KEY", "") or "").strip()
     if not secret_key:
-        return None
+        return empty
 
     api_base = (getattr(settings, "CLERK_API_BASE", "https://api.clerk.com") or "https://api.clerk.com").rstrip("/")
     url = f"{api_base}/v1/users/{clerk_user_id}"
@@ -49,11 +50,15 @@ def _fetch_clerk_primary_email(clerk_user_id: str) -> str | None:
             body = resp.read().decode("utf-8")
         data = json.loads(body or "{}")
     except (HTTPError, URLError, TimeoutError, ValueError) as exc:
-        logger.warning("Clerk email lookup failed for %s: %s", clerk_user_id, exc)
-        return None
+        logger.warning("Clerk identity lookup failed for %s: %s", clerk_user_id, exc)
+        return empty
+
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
 
     primary_id = data.get("primary_email_address_id")
     email_addresses = data.get("email_addresses") or []
+    email = None
     if isinstance(email_addresses, list):
         for item in email_addresses:
             if not isinstance(item, dict):
@@ -62,14 +67,21 @@ def _fetch_clerk_primary_email(clerk_user_id: str) -> str | None:
                 continue
             email_value = (item.get("email_address") or "").strip().lower()
             if email_value:
-                return email_value
-        # Fallback to first valid email if primary id is missing.
-        for item in email_addresses:
-            if isinstance(item, dict):
-                email_value = (item.get("email_address") or "").strip().lower()
-                if email_value:
-                    return email_value
-    return None
+                email = email_value
+                break
+        if not email:
+            for item in email_addresses:
+                if isinstance(item, dict):
+                    email_value = (item.get("email_address") or "").strip().lower()
+                    if email_value:
+                        email = email_value
+                        break
+
+    return {"email": email, "first_name": first_name, "last_name": last_name}
+
+
+def _fetch_clerk_primary_email(clerk_user_id: str) -> str | None:
+    return _fetch_clerk_user_identity(clerk_user_id).get("email")
 
 
 class ClerkAuthentication(authentication.BaseAuthentication):
@@ -223,9 +235,18 @@ class ClerkAuthentication(authentication.BaseAuthentication):
                 raise exceptions.AuthenticationFailed("Token missing subject")
 
             # Permanent identity fix:
-            # If JWT lacks email, resolve primary email directly from Clerk API.
-            if not email:
-                email = _fetch_clerk_primary_email(payload.get("sub"))
+            # If JWT lacks email or legal name, resolve from Clerk Backend API.
+            clerk_sub = payload.get("sub")
+            first_name = payload.get("given_name") or payload.get("first_name") or payload.get("firstName") or ""
+            last_name = payload.get("family_name") or payload.get("last_name") or payload.get("lastName") or ""
+            if clerk_sub and (not email or (not str(first_name).strip() and not str(last_name).strip())):
+                identity = _fetch_clerk_user_identity(clerk_sub)
+                if not email:
+                    email = identity.get("email")
+                if not str(first_name).strip():
+                    first_name = identity.get("first_name") or ""
+                if not str(last_name).strip():
+                    last_name = identity.get("last_name") or ""
 
             # Check if this email is in our ironclad admin list
             admin_emails = [
@@ -249,8 +270,8 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             
             # Sync names, staff status and email if they changed
             save_needed = False
-            first_name = payload.get("given_name") or payload.get("first_name") or payload.get("firstName") or ""
-            last_name = payload.get("family_name") or payload.get("last_name") or payload.get("lastName") or ""
+            first_name = str(first_name or "").strip()
+            last_name = str(last_name or "").strip()
             
             if first_name and user.first_name != first_name:
                 user.first_name = first_name

@@ -96,6 +96,11 @@ from therapy.utils import (
     calculate_dass_scores,
     get_dass_severity,
     generate_dass_summary,
+    resolve_user_display_name,
+    sync_client_profile_identity,
+    caseload_client_ids_for_therapist,
+    ensure_therapeutic_relationship,
+    link_client_to_therapist_caseload,
 )
 from therapy.services.appointments import cancel_appointment
 from therapy.services.admin_reports import (
@@ -508,38 +513,7 @@ def _resolve_client_from_request(request):
     # 1. Check direct relationship
     client_profile = getattr(user, "client_profile", None)
     if client_profile:
-        # 🔄 Sync Check: Update name from User object ONLY if it's a real name
-        save_needed = False
-        first = user.first_name.strip()
-        last = user.last_name.strip()
-        full_name = f"{first} {last}".strip()
-        
-        # NEVER use "user_..." as a name
-        if full_name and not full_name.startswith("user_"):
-            current_name = (client_profile.name or "").strip()
-            name_placeholder = (
-                not current_name
-                or current_name.startswith("user_")
-                or current_name in {"Unknown", "New Client", "Client", "Unnamed Client"}
-            )
-            if name_placeholder:
-                client_profile.name = full_name
-                save_needed = True
-        
-        email = (getattr(user, "email", None) or payload_email or "").strip().lower() or None
-        if email and not email.endswith("@example.invalid"):
-            current_email = (client_profile.email or "").strip().lower()
-            email_placeholder = (
-                not current_email
-                or "@example.invalid" in current_email
-                or current_email.endswith("@local")
-            )
-            if email_placeholder:
-                client_profile.email = email
-                save_needed = True
-            
-        if save_needed:
-            client_profile.save(update_fields=["name", "email"])
+        sync_client_profile_identity(client_profile, user, auth_payload=payload if isinstance(payload, dict) else None)
         return client_profile
 
     # 2. Aggressive Email Search (Before creating anything new)
@@ -550,6 +524,11 @@ def _resolve_client_from_request(request):
             print(f"DEBUG: Claiming profile {client_profile.id} for user {user.id} via email {email}")
             client_profile.user = user
             client_profile.save(update_fields=["user"])
+            sync_client_profile_identity(
+                client_profile,
+                user,
+                auth_payload=payload if isinstance(payload, dict) else None,
+            )
             return client_profile
 
     # 3. Guard: Strictly separate roles
@@ -562,16 +541,11 @@ def _resolve_client_from_request(request):
     if not email or email.endswith("@example.invalid"):
         return None
 
-    first = user.first_name.strip()
-    last = user.last_name.strip()
-    display_name = f"{first} {last}".strip()
-    
-    if not display_name or display_name.startswith("user_"):
-        username = (getattr(user, "username", None) or "").strip()
-        if username and not username.startswith("user_"):
-            display_name = username
-        else:
-            display_name = "Client"
+    display_name = resolve_user_display_name(
+        user,
+        auth_payload=payload if isinstance(payload, dict) else None,
+        fallback="Client",
+    )
         
     safe_email = email
     
@@ -595,36 +569,12 @@ def _resolve_client_from_request(request):
 
 
 def _active_client_ids_for_therapist(therapist):
-    if not therapist:
-        return ClientProfile.objects.none().values_list("id", flat=True)
-    
-    # Get all clients where therapist has ANY relationship
-    rels = TherapeuticRelationship.objects.filter(
-        therapist=therapist
-    ).values_list("client_id", flat=True)
-    
-    # Also include clients where therapist is the primary therapist
-    primaries = ClientProfile.objects.filter(therapist=therapist).values_list("id", flat=True)
-    
-    # Combine (union)
-    return list(set(list(rels) + list(primaries)))
+    """Active caseload only (bookings, calendar sessions, manual links)."""
+    return caseload_client_ids_for_therapist(therapist, active_only=True)
 
 
 def _ensure_relationship(therapist, client, make_primary=False):
-    if not therapist or not client:
-        return None
-    relationship, created = TherapeuticRelationship.objects.get_or_create(
-        therapist=therapist,
-        client=client,
-        defaults={
-            "status": TherapeuticRelationship.Status.ACTIVE,
-            "is_primary": bool(make_primary),
-        },
-    )
-    if not created and make_primary and not relationship.is_primary:
-        relationship.is_primary = True
-        relationship.save(update_fields=["is_primary", "updated_at"])
-    return relationship
+    return ensure_therapeutic_relationship(therapist, client, make_primary=make_primary)
 
 
 def _client_has_active_booking_with_other_therapist(client, therapist):
@@ -1208,17 +1158,15 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # 1. Start with profiles where the user is the owner
-        queryset = ClientProfile.objects.filter(user=user)
-        
-        # 2. Add profiles managed by this user if they are a therapist
         therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+
         if therapist:
-            client_ids = _active_client_ids_for_therapist(therapist)
-            queryset = queryset | ClientProfile.objects.filter(id__in=client_ids)
-            
-        return queryset.distinct().order_by("name")
+            # Therapists only see clients explicitly linked via therapeutic relationship.
+            client_ids = caseload_client_ids_for_therapist(therapist, active_only=False)
+            return ClientProfile.objects.filter(id__in=client_ids).distinct().order_by("name")
+
+        # Clients see only their own profile(s).
+        return ClientProfile.objects.filter(user=user).distinct().order_by("name")
 
     @action(detail=False, methods=["get"], url_path="me")
     def me(self, request):
@@ -1314,10 +1262,39 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
 
         return super().update(request, *args, **kwargs)
 
+    def create(self, request, *args, **kwargs):
+        therapist = _resolve_therapist_from_request(request, allow_create=True)
+        if not therapist:
+            return Response(
+                {"detail": "Therapist profile required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        email = (request.data.get("email") or "").strip()
+        if email:
+            existing = ClientProfile.objects.filter(email__iexact=email).first()
+            if existing:
+                link_client_to_therapist_caseload(
+                    therapist,
+                    existing,
+                    make_primary=not existing.therapist_id,
+                )
+                serializer = self.get_serializer(existing)
+                return Response(
+                    {
+                        **serializer.data,
+                        "linked_existing_profile": True,
+                        "detail": "Existing client profile matched by email and linked to your caseload.",
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         therapist = _resolve_therapist_from_request(self.request, allow_create=True)
         client = serializer.save(therapist=therapist)
-        _ensure_relationship(therapist, client, make_primary=True)
+        link_client_to_therapist_caseload(therapist, client, make_primary=True)
 
     @action(detail=True, methods=["post"], url_path="terminate-relationship")
     def terminate_relationship(self, request, pk=None):
@@ -1381,20 +1358,44 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="link_by_email")
     def link_by_email(self, request):
-        email = request.data.get("email")
+        email = (request.data.get("email") or "").strip()
         if not email:
             return Response({"detail": "Email required."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         therapist = _resolve_therapist_from_request(request, allow_create=True)
+        if not therapist:
+            return Response(
+                {"detail": "Therapist profile required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         client = ClientProfile.objects.filter(email__iexact=email).first()
-        
         if not client:
-            return Response({"detail": "No record found with this email."}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Build the bridge
-        _ensure_relationship(therapist, client, make_primary=False)
-        
-        return Response({"detail": "Client successfully linked to your caseload.", "client_id": client.id})
+            return Response(
+                {"detail": "No client profile found with this email. Add them as a new client first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        link_client_to_therapist_caseload(
+            therapist,
+            client,
+            make_primary=not client.therapist_id,
+        )
+
+        if client.terminated_patient:
+            client.terminated_patient = False
+            client.save(update_fields=["terminated_patient"])
+
+        serializer = self.get_serializer(client)
+        return Response(
+            {
+                **serializer.data,
+                "detail": "Client successfully linked to your caseload.",
+                "client_id": client.id,
+                "linked_existing_profile": True,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
     @action(detail=False, methods=["post"], url_path="repair-account")

@@ -1,4 +1,4 @@
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://mlchealth.in').replace(/\/+$/, '');
+import { SITE_URL } from '../lib/sitemapConfig';
 
 export default function robots() {
   return {
@@ -12,9 +12,11 @@ export default function robots() {
           '/login',
           '/signup',
           '/conference',
+          '/book/checkout',
         ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

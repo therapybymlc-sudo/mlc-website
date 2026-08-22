@@ -27,7 +27,7 @@ import {
   Stack,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiUsers, FiCompass, FiCheckCircle, FiFeather, FiArrowRight, FiCalendar } from "react-icons/fi";
+import { FiUsers, FiCompass, FiCheckCircle, FiFeather, FiArrowRight, FiCalendar, FiLayout, FiClock, FiTarget, FiSliders } from "react-icons/fi";
 import React, { useEffect, useState, useRef } from "react";
 import NextLink from "next/link";
 import { apiGet } from "../api.js";
@@ -302,6 +302,89 @@ export default function HomeClient() {
             >
               Start the Discovery Quiz
             </Button>
+          </VStack>
+        </Container>
+      </Box>
+
+      {/* 🌿 FOR CLINICIANS / THERAPISTS SECTION */}
+      <Box py={24} bg="#F4F7F5" borderY="1px solid" borderColor="gray.100">
+        <Container maxW="6xl">
+          <VStack spacing={16}>
+            <VStack spacing={4} textAlign="center" maxW="3xl">
+              <Badge colorScheme="teal" borderRadius="full" px={3} py={1} fontSize="xs" fontWeight="800">
+                FOR PRACTITIONERS
+              </Badge>
+              <Heading fontFamily="'Playfair Display', var(--font-playfair), serif" size="xl" color="teal.900" mt={2}>
+                Bring Your Entire Practice Into One Unified Workspace
+              </Heading>
+              <Text fontSize="lg" color="gray.600">
+                MLC is more than a therapist directory. It is a complete digital ecosystem built by therapists, for therapists—designed to streamline client matching, case notes, billing, and peer supervision.
+              </Text>
+            </VStack>
+
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8} w="full">
+              {[
+                {
+                  icon: FiLayout,
+                  title: "Practice Management",
+                  desc: "Streamlined client booking, flexible scheduling availability, and secure clinical records tailored for Indian practitioners.",
+                },
+                {
+                  icon: FiTarget,
+                  title: "Client Workspace",
+                  desc: "Interactive toolsets for goals, progress trackers, and secure document sharing directly with your matched clients.",
+                },
+                {
+                  icon: FiClock,
+                  title: "Reflective Supervision",
+                  desc: "Connect with licensed supervisors, participate in small cohorts, and strengthen your clinical reasoning skills.",
+                },
+                {
+                  icon: FiSliders,
+                  title: "Accredited Workshops",
+                  desc: "Continuously refine your expertise through structured peer consults and accredited continuing education sessions.",
+                },
+              ].map((item, idx) => (
+                <VStack key={idx} align="flex-start" spacing={5} p={8} bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" shadow="sm" _hover={{ shadow: 'lg', transform: 'translateY(-4px)' }} transition="all 0.3s">
+                  <Center bg="teal.50" color="teal.700" p={4} borderRadius="xl">
+                    <Icon as={item.icon} boxSize={6} />
+                  </Center>
+                  <Heading size="md" color="teal.900" fontFamily="'Playfair Display', serif">{item.title}</Heading>
+                  <Text color="gray.600" fontSize="sm" lineHeight="relaxed">{item.desc}</Text>
+                </VStack>
+              ))}
+            </SimpleGrid>
+
+            <Stack direction={{ base: "column", sm: "row" }} spacing={4} justify="center" w="full">
+              <Button
+                as={NextLink}
+                href="/therapist-apply"
+                size="lg"
+                bg="teal.700"
+                color="white"
+                px={10}
+                py={7}
+                borderRadius="full"
+                _hover={{ bg: "teal.800", transform: "translateY(-2px)" }}
+                transition="all 0.2s"
+              >
+                Apply as a Therapist
+              </Button>
+              <Button
+                as={NextLink}
+                href="/therapists"
+                size="lg"
+                variant="outline"
+                colorScheme="teal"
+                px={10}
+                py={7}
+                borderRadius="full"
+                _hover={{ bg: "teal.50", transform: "translateY(-2px)" }}
+                transition="all 0.2s"
+              >
+                Learn More
+              </Button>
+            </Stack>
           </VStack>
         </Container>
       </Box>
