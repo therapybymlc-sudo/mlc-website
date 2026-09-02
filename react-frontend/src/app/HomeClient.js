@@ -25,6 +25,7 @@ import {
   ModalCloseButton,
   Badge,
   Stack,
+  Center,
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUsers, FiCompass, FiCheckCircle, FiFeather, FiArrowRight, FiCalendar, FiLayout, FiClock, FiTarget, FiSliders } from "react-icons/fi";
