@@ -251,7 +251,7 @@ class ClerkAuthentication(authentication.BaseAuthentication):
             # Check if this email is in our ironclad admin list
             admin_emails = [
                 e.strip().lower()
-                for e in getattr(settings, "ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in").split(",")
+                for e in getattr(settings, "ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in,therapy.aditya@gmail.com").split(",")
                 if e.strip()
             ]
             # Must be bool: `email and ...` is None when email is missing (e.g. some

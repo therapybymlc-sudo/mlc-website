@@ -183,7 +183,7 @@ def whoami(request):
     if isinstance(roles, str):
         roles = [roles]
     MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98"]
-    MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in"]
+    MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in", "therapy.aditya@gmail.com"]
     admin_emails = [
         e.strip().lower()
         for e in getattr(settings, "ADMIN_EMAILS", "").split(",")

@@ -200,14 +200,14 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.mlchealth.in")
 CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL", "")
 CLERK_ISSUER = os.getenv("CLERK_ISSUER", "")
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
-ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in")
+ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in,therapy.aditya@gmail.com")
 ADMIN_USER_IDS = os.getenv("ADMIN_USER_IDS", "user_3CalFf5iOUKgTEq1efJUXni3y98")
 
 # Therapist matching: "manual" = intake-only (team follows up); "auto" = full algorithm
 THERAPIST_MATCHING_MODE = os.getenv("THERAPIST_MATCHING_MODE", "manual")
 THERAPIST_INTAKE_NOTIFY_EMAILS = os.getenv(
     "THERAPIST_INTAKE_NOTIFY_EMAILS",
-    os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in"),
+    os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in,therapy.aditya@gmail.com"),
 )
 THERAPIST_INTAKE_NOTIFY_PHONE = os.getenv("THERAPIST_INTAKE_NOTIFY_PHONE", "+91 9741672947")
 

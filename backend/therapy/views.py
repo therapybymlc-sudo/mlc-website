@@ -680,7 +680,7 @@ def _extract_roles_from_auth(request):
     # Fallback: allow explicit admin emails via env
     # Hard-coded Master Unlocks (Absolute Bypass)
     MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98"]
-    MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in"]
+    MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in", "therapy.aditya@gmail.com"]
 
     admin_emails = [
         e.strip().lower()
@@ -747,7 +747,7 @@ def _is_request_admin(request) -> bool:
         e.strip().lower()
         for e in getattr(settings, "ADMIN_EMAILS", "").split(",")
         if e.strip()
-    ] + ["therapybymlc@gmail.com", "therapy@mlchealth.in"]
+    ] + ["therapybymlc@gmail.com", "therapy@mlchealth.in", "therapy.aditya@gmail.com"]
     email = (getattr(user, "email", None) or "").strip().lower()
     return bool(email and email in admin_emails)
 
