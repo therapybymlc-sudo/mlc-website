@@ -9,8 +9,10 @@ export default function ClientWrapper({ children }) {
   const pathname = usePathname()
 
   const isDashboard = pathname?.startsWith('/dashboard')
+  const isAdmin = pathname?.startsWith('/admin')
+  const isConference = pathname?.startsWith('/conference')
   const isLoginOrSignup = pathname?.startsWith('/login') || pathname?.startsWith('/signup')
-  const hideFurniture = isDashboard || isLoginOrSignup
+  const hideFurniture = isDashboard || isAdmin || isConference || isLoginOrSignup
 
   return (
     <>

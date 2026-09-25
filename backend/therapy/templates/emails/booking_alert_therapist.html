@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #F8F9F8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding: 32px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #E8ECE8; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+        <tr>
+          <td style="background: #56756D; padding: 28px 32px; text-align: left;">
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #C9A960; font-weight: 700;">CALENDAR UPDATE</span>
+            <h1 style="color: #ffffff; font-size: 22px; margin: 6px 0 0; font-weight: 600;">New Appointment Confirmed</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 32px;">
+            <p style="color: #2E2E2E; font-size: 15px; font-weight: 600; margin: 0 0 10px;">Hello {{ therapist_name }},</p>
+            <p style="color: #4A5568; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
+              A new appointment has been scheduled and confirmed on your MLC calendar.
+            </p>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="background: #F8FAF9; border-radius: 12px; padding: 20px; border: 1px solid #E6ECE8; margin-bottom: 24px;">
+              <tr>
+                <td style="padding: 6px 0; color: #718096; font-size: 13px; width: 130px;">Client</td>
+                <td style="padding: 6px 0; color: #2E2E2E; font-size: 14px; font-weight: 600;">{{ client_name }}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #718096; font-size: 13px;">Date &amp; Time</td>
+                <td style="padding: 6px 0; color: #56756D; font-size: 14px; font-weight: 700;">{{ scheduled_time }}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #718096; font-size: 13px;">Session Type</td>
+                <td style="padding: 6px 0; color: #2E2E2E; font-size: 14px;">Individual Therapy ({{ duration_minutes }} mins)</td>
+              </tr>
+              {% if message_from_client %}
+              <tr>
+                <td style="padding: 6px 0; color: #718096; font-size: 13px;">Client Note</td>
+                <td style="padding: 6px 0; color: #2E2E2E; font-size: 14px; font-style: italic;">“{{ message_from_client }}”</td>
+              </tr>
+              {% endif %}
+            </table>
+
+            <table width="100%"><tr><td align="center">
+              <a href="{{ schedule_url }}" style="display: inline-block; background: #56756D; color: #ffffff; padding: 14px 32px; border-radius: 50px; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 12px rgba(86,117,109,0.25);">
+                View on My Schedule 📅
+              </a>
+            </td></tr></table>
+
+            <p style="color: #718096; font-size: 12px; line-height: 1.5; margin: 20px 0 0; text-align: center;">
+              You can access client intake data, clinical documentation, and the session room in your <a href="{{ workspace_url }}" style="color: #56756D; font-weight: 600;">Practitioner Workspace</a>.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #F4F6F4; padding: 18px; text-align: center; border-top: 1px solid #E8ECE8;">
+            <p style="color: #718096; font-size: 12px; margin: 0;">MLC Health · Practitioner Operations</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

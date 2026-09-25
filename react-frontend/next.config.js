@@ -38,9 +38,20 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'pub-44fb3c70deda4bc5957a44e78b993b98.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.r2.dev',
+      },
     ],
   },
   trailingSlash: true,
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 module.exports = nextConfig;

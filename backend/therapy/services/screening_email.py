@@ -134,6 +134,39 @@ def send_manual_intake_notification(*, screening, contact_name: str, email: str,
     )
     reply_to = email or None
 
+    # 🚀 Priority 1: Resend HTTP API with Beautiful HTML Template
+    if getattr(settings, "RESEND_API_KEY", "").strip():
+        from therapy.services.resend_email import send_templated_email
+        location = getattr(screening, "location", None) or {}
+        city = location.get("city") or "Not specified"
+        concerns = getattr(screening, "presenting_concerns", None) or []
+        presenting_concerns = ", ".join(concerns) if concerns else "None provided"
+        problem = (getattr(screening, "health_factors", None) or "").strip()
+
+        context = {
+            "contact_name": contact_name,
+            "email": email,
+            "phone": phone or "Not provided",
+            "city": city,
+            "session_type_pref": getattr(screening, "session_type_pref", None) or "Online",
+            "urgency": getattr(screening, "urgency", None) or "Standard",
+            "presenting_concerns": presenting_concerns,
+            "health_factors": problem,
+            "screening_id": getattr(screening, "id", ""),
+            "admin_match_url": f"{getattr(settings, 'FRONTEND_URL', 'https://www.mlchealth.in')}/admin?tab=therapist-matching",
+        }
+        sent, err = send_templated_email(
+            template_name="emails/intake_admin_alert.html",
+            context=context,
+            to=recipients,
+            subject=subject,
+            reply_to=reply_to,
+        )
+        if sent:
+            logger.info("Sent manual intake HTML notification via Resend for screening %s", screening.id)
+            return True, None
+        logger.warning("Resend HTML failed for screening %s, falling back: %s", screening.id, err)
+
     if getattr(settings, "BREVO_API_KEY", "").strip():
         sent, err = _send_via_brevo_api(
             subject=subject,

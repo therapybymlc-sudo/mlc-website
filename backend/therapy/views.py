@@ -679,7 +679,7 @@ def _extract_roles_from_auth(request):
             roles = [unsafe_meta.get("role")]
     # Fallback: allow explicit admin emails via env
     # Hard-coded Master Unlocks (Absolute Bypass)
-    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98"]
+    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98", "user_3JDy2VmoFniB2Hl0YR34pLlmkNw"]
     MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in", "therapy.aditya@gmail.com"]
 
     admin_emails = [
@@ -1842,8 +1842,8 @@ class RazorpayCreateOrderView(APIView):
             if isinstance(slot_id, str) and slot_id.startswith("dyn-"):
                 try:
                     ts = float(slot_id.replace("dyn-", ""))
-                    # Convert timestamp to datetime
-                    slot_start = timezone.make_aware(datetime.fromtimestamp(ts))
+                    # Convert timestamp to aware datetime in active timezone
+                    slot_start = datetime.fromtimestamp(ts, tz=timezone.get_current_timezone())
                     slot_end = slot_start + timedelta(hours=1) 
 
                     # Try to find if this slot was already created
@@ -4200,6 +4200,51 @@ class ContactMessageViewSet(viewsets.ModelViewSet):
             _require_admin(self.request)
         return super().get_queryset()
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        try:
+            from therapy.services.resend_email import send_templated_email
+            from django.conf import settings
+
+            frontend_url = getattr(settings, "FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
+            admin_url = f"{frontend_url}/dashboard/admin/messages"
+
+            # 1. Admin Alert
+            admin_recipients = [
+                e.strip() for e in str(
+                    getattr(settings, "THERAPIST_INTAKE_NOTIFY_EMAILS", "therapybymlc@gmail.com")
+                ).split(",") if e.strip()
+            ]
+            send_templated_email(
+                template_name="emails/contact_inquiry_admin.html",
+                context={
+                    "name": instance.full_name,
+                    "email": instance.email,
+                    "phone": instance.phone or "Not provided",
+                    "message": instance.message,
+                    "admin_messages_url": admin_url,
+                },
+                to=admin_recipients,
+                subject=f"New Website Message: {instance.full_name} — MLC Health",
+                reply_to=instance.email,
+            )
+
+            # 2. Client Confirmation
+            if instance.email:
+                send_templated_email(
+                    template_name="emails/contact_inquiry_client.html",
+                    context={
+                        "name": instance.full_name,
+                    },
+                    to=instance.email,
+                    subject="We've Received Your Message 🌿 — MLC Health",
+                    reply_to="therapy@mlchealth.in",
+                )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Failed to send contact inquiry emails: %s", exc)
+
+
 class QuickBookingViewSet(viewsets.ModelViewSet):
     queryset = QuickBooking.objects.all().order_by("-created_at")
     serializer_class = QuickBookingSerializer
@@ -4213,6 +4258,57 @@ class QuickBookingViewSet(viewsets.ModelViewSet):
         if self.action != 'create':
             _require_admin(self.request)
         return super().get_queryset()
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        try:
+            from therapy.services.resend_email import send_templated_email
+            from django.conf import settings
+
+            frontend_url = getattr(settings, "FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
+            admin_url = f"{frontend_url}/dashboard/admin/quick-bookings"
+
+            details = f"Service: {instance.service_type}"
+            if instance.preferred_date:
+                details += f"\nPreferred Date: {instance.preferred_date}"
+            if instance.preferred_time:
+                details += f" at {instance.preferred_time}"
+            if instance.notes:
+                details += f"\nClient Notes: {instance.notes}"
+
+            admin_recipients = [
+                e.strip() for e in str(
+                    getattr(settings, "THERAPIST_INTAKE_NOTIFY_EMAILS", "therapybymlc@gmail.com")
+                ).split(",") if e.strip()
+            ]
+            send_templated_email(
+                template_name="emails/contact_inquiry_admin.html",
+                context={
+                    "name": instance.full_name,
+                    "email": instance.email,
+                    "phone": instance.phone or "Not provided",
+                    "message": details,
+                    "admin_messages_url": admin_url,
+                },
+                to=admin_recipients,
+                subject=f"New Quick Booking Request: {instance.full_name} — MLC Health",
+                reply_to=instance.email,
+            )
+
+            if instance.email:
+                send_templated_email(
+                    template_name="emails/contact_inquiry_client.html",
+                    context={
+                        "name": instance.full_name,
+                    },
+                    to=instance.email,
+                    subject="We've Received Your Booking Request 🌿 — MLC Health",
+                    reply_to="therapy@mlchealth.in",
+                )
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Failed to send quick booking inquiry emails: %s", exc)
+
 
 class SafetyPlanViewSet(viewsets.ModelViewSet):
     serializer_class = SafetyPlanSerializer

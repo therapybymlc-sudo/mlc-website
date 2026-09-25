@@ -47,6 +47,25 @@ def send_therapist_contract_email(*, therapist, admin_feedback: str = "") -> tup
         "therapybymlc@gmail.com\n"
     )
 
+    if getattr(settings, "RESEND_API_KEY", "").strip():
+        from therapy.services.resend_email import send_templated_email
+        context = {
+            "name": name,
+            "profile_url": profile_url,
+            "admin_feedback": admin_feedback,
+        }
+        sent, err = send_templated_email(
+            template_name="emails/therapist_contract_ready.html",
+            context=context,
+            to=recipient,
+            subject=subject,
+            reply_to="therapybymlc@gmail.com",
+        )
+        if sent:
+            logger.info("Sent therapist contract HTML email via Resend to %s", recipient)
+            return True, None
+        logger.warning("Resend HTML failed for %s, trying SMTP: %s", recipient, err)
+
     try:
         msg = EmailMessage(
             subject=subject,
@@ -84,6 +103,25 @@ def send_therapist_published_email(*, therapist) -> tuple[bool, str | None]:
         "Warm regards,\n"
         "MLC Health Clinical Team\n"
     )
+
+    if getattr(settings, "RESEND_API_KEY", "").strip():
+        from therapy.services.resend_email import send_templated_email
+        context = {
+            "name": name,
+            "directory_url": directory_url,
+            "workspace_url": profile_url,
+        }
+        sent, err = send_templated_email(
+            template_name="emails/therapist_published_live.html",
+            context=context,
+            to=recipient,
+            subject=subject,
+            reply_to="therapybymlc@gmail.com",
+        )
+        if sent:
+            logger.info("Sent therapist published HTML email via Resend to %s", recipient)
+            return True, None
+        logger.warning("Resend HTML failed for %s, trying SMTP: %s", recipient, err)
 
     try:
         msg = EmailMessage(

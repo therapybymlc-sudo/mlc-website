@@ -1,3 +1,4 @@
+import logging
 from django.db import models, transaction
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -6,6 +7,9 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q, F, Case, When, Value, IntegerField
 from django.utils import timezone
 from .notifications import get_scheduling_action_url
+
+logger = logging.getLogger(__name__)
+
 
 # ===========================
 # 🔹 Therapist & Client Models
@@ -927,7 +931,22 @@ class BookingRequest(models.Model):
             ),
         )
 
+        # Dispatch branded confirmation emails via Resend
+        try:
+            from therapy.services.booking_email import send_booking_confirmation_emails
+
+            def _send_confirmation_emails():
+                try:
+                    send_booking_confirmation_emails(self)
+                except Exception as _mail_exc:
+                    logger.warning("Failed to dispatch booking confirmation emails for request %s: %s", self.id, _mail_exc)
+
+            transaction.on_commit(_send_confirmation_emails)
+        except Exception as _exc:
+            logger.warning("Could not register booking email on_commit handler: %s", _exc)
+
         return self
+
 
     def decline(self, therapist_note=""):
         if not self.can_be_declined:

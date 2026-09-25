@@ -162,7 +162,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Localization
 # ==========================
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Asia/Kuwait"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -201,7 +201,7 @@ CLERK_JWKS_URL = os.getenv("CLERK_JWKS_URL", "")
 CLERK_ISSUER = os.getenv("CLERK_ISSUER", "")
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
 ADMIN_EMAILS = os.getenv("ADMIN_EMAILS", "therapybymlc@gmail.com,therapy@mlchealth.in,therapy.aditya@gmail.com")
-ADMIN_USER_IDS = os.getenv("ADMIN_USER_IDS", "user_3CalFf5iOUKgTEq1efJUXni3y98")
+ADMIN_USER_IDS = os.getenv("ADMIN_USER_IDS", "user_3CalFf5iOUKgTEq1efJUXni3y98,user_3JDy2VmoFniB2Hl0YR34pLlmkNw")
 
 # Therapist matching: "manual" = intake-only (team follows up); "auto" = full algorithm
 THERAPIST_MATCHING_MODE = os.getenv("THERAPIST_MATCHING_MODE", "manual")
@@ -220,6 +220,10 @@ PREMIUM_SUBSCRIPTION_ENABLED = os.getenv("PREMIUM_SUBSCRIPTION_ENABLED", "false"
 # Brevo HTTP API (recommended on Render — faster and more reliable than SMTP)
 BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 INTAKE_EMAIL_FROM = os.getenv("INTAKE_EMAIL_FROM", "MLC Health <therapy@mlchealth.in>")
+
+# Resend Email API (primary transactional email service)
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "MLC Health <therapy@mlchealth.in>")
 
 # ==========================
 # Django REST Framework

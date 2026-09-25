@@ -1010,6 +1010,16 @@ export default function AdminDashboard() {
   }, []);
 
   const [activeTab, setActiveTab] = useState("overview");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab");
+      if (urlTab) {
+        setActiveTab(urlTab);
+      }
+    }
+  }, []);
   const [supportTickets, setSupportTickets] = useState([]);
   const [localLoading, setLocalLoading] = useState(true);
   const { isAuthenticated, isAdmin, login, loading: authLoading } = useAuth();

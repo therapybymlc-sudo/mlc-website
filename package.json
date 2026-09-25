@@ -1,0 +1,10 @@
+{
+  "name": "mlc-website-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix react-frontend run dev",
+    "build": "npm --prefix react-frontend run build",
+    "start": "npm --prefix react-frontend run start",
+    "lint": "npm --prefix react-frontend run lint"
+  }
+}

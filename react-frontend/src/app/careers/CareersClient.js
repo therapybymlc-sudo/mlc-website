@@ -19,12 +19,6 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
-import emailjs from "@emailjs/browser";
-import {
-  EMAIL_SERVICE_ID,
-  EMAIL_TEMPLATE_ID,
-  EMAIL_PUBLIC_KEY,
-} from "../../emailConfig";
 import { apiGet } from "../../api.js";
 
 const defaultCareersContent = {
@@ -163,29 +157,47 @@ export default function CareersClient() {
     })();
   }, []);
 
-  const sendEmail = (e) => {
+  const sendEmail = async (e) => {
     e.preventDefault();
-    emailjs
-      .sendForm(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, form.current, EMAIL_PUBLIC_KEY)
-      .then(() => {
-        toast({
-          title: content.form.success_title || "Application Sent!",
-          description: content.form.success_body || "Thank you for applying, we’ll get back to you soon 🌿",
-          status: "success",
-          duration: 5000,
-          isClosable: true,
-        });
-        form.current.reset();
-      })
-      .catch(() => {
-        toast({
-          title: "Error",
-          description: "Something went wrong, please try again.",
-          status: "error",
-          duration: 4000,
-          isClosable: true,
-        });
+    const formData = new FormData(form.current);
+    const payload = {
+      type: "careers",
+      name: formData.get("full_name"),
+      email: formData.get("email"),
+      role: formData.get("position"),
+      phone: formData.get("phone"),
+      resumeUrl: formData.get("link"),
+      message: `${formData.get("message") || ""}\n\nComfortable via phone: ${formData.get("comfortable") || "Yes"}`,
+    };
+
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      toast({
+        title: content.form.success_title || "Application Sent!",
+        description: content.form.success_body || "Thank you for applying, we’ll get back to you soon 🌿",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      form.current.reset();
+    } catch {
+      toast({
+        title: "Error",
+        description: "Something went wrong, please try again.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
   const scrollToApply = () => {

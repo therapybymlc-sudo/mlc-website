@@ -236,14 +236,28 @@ export async function apiUpload(path, formData) {
   if (!token) {
     token = await resolveClerkTokenFallback();
   }
-  const url = `${API_BASE}/${path.replace(/^\/+/, "")}`;
+  const cleanPath = preparePath(path).replace(/^\/+/, "");
+  const url = `${API_BASE}/${cleanPath}`;
   const res = await fetch(url, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  const raw = await res.text();
+  let data = null;
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = raw;
+    }
+  }
+  if (!res.ok) {
+    const err = new Error(typeof data === "object" && data?.detail ? data.detail : raw || "Upload failed");
+    err.response = { status: res.status, data };
+    throw err;
+  }
+  return data;
 }
 
 export async function apiPatchForm(path, formData) {

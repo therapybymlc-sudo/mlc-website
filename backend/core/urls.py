@@ -182,7 +182,7 @@ def whoami(request):
         roles = [public_meta.get("role")]
     if isinstance(roles, str):
         roles = [roles]
-    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98"]
+    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98", "user_3JDy2VmoFniB2Hl0YR34pLlmkNw"]
     MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in", "therapy.aditya@gmail.com"]
     admin_emails = [
         e.strip().lower()
