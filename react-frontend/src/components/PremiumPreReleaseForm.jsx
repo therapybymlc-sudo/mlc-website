@@ -111,7 +111,7 @@ export default function PremiumPreReleaseForm({ audience = 'therapist', id = 'pr
           <Text fontWeight="700" fontSize="lg" color="gray.800" mt={1}>
             Get a major discount at launch
           </Text>
-          <Text fontSize="sm" color="gray.600" mt={2}>
+          <Text fontSize="sm" color="rgba(46,46,46,0.75)" mt={2}>
             Premium is coming soon. Register now as a {audience === 'client' ? 'client' : 'therapist'} and we will
             email you exclusive early-access pricing when {audience === 'client' ? 'Lux Studio' : 'Therapist OS'} goes live.
           </Text>

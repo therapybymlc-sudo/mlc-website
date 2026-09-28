@@ -1,13 +1,17 @@
 'use client'
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { 
   Box, Container, VStack, HStack, Heading, Text, Button, 
-  Image, Badge, Divider, Icon, Spinner, Center, SimpleGrid,
-  Link as ChakraLink, useToast
+  Avatar, Badge, Divider, Icon, Spinner, Center, SimpleGrid,
+  useToast, Circle
 } from "@chakra-ui/react";
-import { FiCheckCircle, FiClock, FiCalendar, FiShield, FiLock, FiArrowLeft } from "react-icons/fi";
+import { 
+  FiCheckCircle, FiClock, FiCalendar, FiShield, FiLock, 
+  FiArrowLeft, FiVideo, FiUser, FiInfo, FiCheck
+} from "react-icons/fi";
 import Link from 'next/link';
 import { useUser } from "@clerk/nextjs";
 import { apiPost } from "../../../api.js";
@@ -71,7 +75,6 @@ export default function CheckoutClient() {
             );
           } else {
             const slotsData = await slotRes.json();
-            // Find our specific slot from the list
             const foundSlot = (slotsData.results || slotsData).find((s) => String(s.id).includes(slotId) || s.id == slotId);
             setSlot(foundSlot);
           }
@@ -150,7 +153,6 @@ export default function CheckoutClient() {
         },
         modal: {
           ondismiss: async () => {
-            // Release held slot if the user cancels payment.
             try {
               if (order.booking_request_id) {
                 await apiPost(`booking-requests/${order.booking_request_id}/cancel`, {
@@ -188,129 +190,377 @@ export default function CheckoutClient() {
     }
   };
 
-  if (!isMounted) return <Box h="100vh" bg="#F9FBFA" />;
+  if (!isMounted) return <Box h="100vh" bg="#FDFBFA" />;
 
-  if (isLoading) return <Center h="80vh"><VStack pb={10}><Spinner size="xl" color="mlc.green" /><Text>Preparing your secure checkout...</Text></VStack></Center>;
+  if (isLoading) {
+    return (
+      <Center h="80vh" bg="#FDFBFA">
+        <VStack spacing={4}>
+          <Spinner size="xl" color="#56756D" thickness="3.5px" />
+          <Text fontSize="14.5px" color="#263A33" fontWeight="600">
+            Preparing your secure checkout...
+          </Text>
+        </VStack>
+      </Center>
+    );
+  }
 
-  if (!profile || !slot) return (
-    <Container maxW="md" py={20} textAlign="center">
-      <VStack spacing={6}>
-        <Icon as={FiCalendar} boxSize={12} color="gray.300" />
-        <Heading size="md">Session Information Expired</Heading>
-        <Text color="gray.500">The selected time slot is no longer available or the link has expired.</Text>
-        <Button as={Link} href="/therapists/discovery" w="full" bg="mlc.green" color="white" borderRadius="full">Return to Discovery</Button>
-      </VStack>
-    </Container>
-  );
+  if (!profile || !slot) {
+    return (
+      <Box minH="100vh" bg="#FDFBFA" py={24}>
+        <Container maxW="md" textAlign="center">
+          <VStack spacing={6} p={8} bg="white" borderRadius="3xl" border="1px solid" borderColor="gray.200" shadow="sm">
+            <Circle size="60px" bg="#FFF5F5" color="#C53030">
+              <Icon as={FiCalendar} boxSize={7} />
+            </Circle>
+            <VStack spacing={2}>
+              <Heading size="md" fontFamily="'Playfair Display', serif" color="#263A33">
+                Session Slot Unavailable
+              </Heading>
+              <Text color="rgba(46,46,46,0.68)" fontSize="14px" lineHeight="1.6">
+                The selected time slot is no longer available or your reservation window has expired.
+              </Text>
+            </VStack>
+            <Button as={Link} href="/therapists/discovery" w="full" bg="#56756D" color="white" borderRadius="full" _hover={{ bg: "#425C55" }}>
+              Return to Therapist Discovery
+            </Button>
+          </VStack>
+        </Container>
+      </Box>
+    );
+  }
 
   const slotDate = new Date(slot.start_time);
   const dateStr = slotDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   const timeStr = slotDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const slotEndDate = slot.end_time ? new Date(slot.end_time) : new Date(slotDate.getTime() + 50 * 60 * 1000);
+  const endTimeStr = slotEndDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  // Robust currency calculation without decimal duplication bugs
+  const rateNumber = parseFloat(profile.hourly_rate || 1200);
+  const formattedAmount = isNaN(rateNumber) ? "₹1,200" : `₹${rateNumber.toLocaleString('en-IN')}`;
+
+  const clientName = user?.fullName || [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Registered Client";
+  const clientEmail = user?.primaryEmailAddress?.emailAddress || "";
 
   return (
-    <Box bg="#F9FBFA" minH="100vh" py={{ base: 10, md: 20 }}>
+    <Box bg="#FDFBFA" minH="100vh" py={{ base: 8, md: 14 }}>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       
-      <Container maxW="4xl">
-        <HStack mb={8} spacing={4}>
-           <ChakraLink as={Link} href={`/therapists/${profile.id}`}>
-              <Button leftIcon={<FiArrowLeft />} variant="ghost" size="sm" borderRadius="full" color="gray.500">Back to Profile</Button>
-           </ChakraLink>
+      <Container maxW="5xl">
+        {/* Navigation & Security Banner */}
+        <HStack justify="space-between" align="center" mb={{ base: 6, md: 8 }} flexWrap="wrap" gap={3}>
+          <Button
+            as={Link}
+            href={`/therapists/${profile.id}`}
+            leftIcon={<FiArrowLeft />}
+            variant="ghost"
+            size="sm"
+            borderRadius="full"
+            color="#56756D"
+            fontWeight="600"
+            fontSize="13px"
+            _hover={{ bg: "#EAF2EE", color: "#263A33" }}
+          >
+            Back to {profile.name}'s Profile
+          </Button>
+          
+          <HStack spacing={2} bg="#EAF2EE" px={3.5} py={1.5} borderRadius="full">
+            <Icon as={FiShield} color="#56756D" boxSize={3.5} />
+            <Text fontSize="11.5px" fontWeight="700" color="#56756D" letterSpacing="0.04em" textTransform="uppercase">
+              256-Bit Encrypted Clinical Gateway
+            </Text>
+          </HStack>
         </HStack>
 
-        <SimpleGrid columns={{ base: 1, md: 5 }} spacing={12}>
-           {/* Left: Summary */}
-           <Box gridColumn={{ md: "span 3" }}>
-              <VStack align="stretch" spacing={8}>
-                 <VStack align="start" spacing={2}>
-                    <Badge colorScheme="teal" borderRadius="full" px={3}>CONFIRMATION</Badge>
-                    <Heading size="xl" color="mlc.greenDark" fontFamily="'Playfair Display', serif">Secure Your Session</Heading>
-                    <Text color="gray.500">Review your appointment details before proceeding to payment.</Text>
-                 </VStack>
+        <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={{ base: 8, lg: 10 }} alignItems="start">
+          {/* ═══════════════ LEFT: APPOINTMENT DETAILS (7 COLS) ═══════════════ */}
+          <Box gridColumn={{ lg: "span 7" }}>
+            <VStack align="stretch" spacing={6}>
+              {/* Header Titles */}
+              <VStack align="start" spacing={2}>
+                <Badge
+                  bg="rgba(86, 117, 109, 0.12)"
+                  color="#56756D"
+                  border="1px solid rgba(86, 117, 109, 0.25)"
+                  px={3}
+                  py={0.8}
+                  borderRadius="full"
+                  fontSize="11px"
+                  fontWeight="800"
+                  letterSpacing="0.08em"
+                  textTransform="uppercase"
+                >
+                  Step 2 of 2 • Appointment Confirmation
+                </Badge>
+                <Heading
+                  fontSize={{ base: "24px", md: "32px" }}
+                  color="#263A33"
+                  fontFamily="'Playfair Display', var(--font-playfair), serif"
+                  fontWeight="600"
+                  lineHeight="1.2"
+                >
+                  Secure Your Clinical Session
+                </Heading>
+                <Text color="rgba(46,46,46,0.72)" fontSize="14px" lineHeight="1.6">
+                  Review your consultation details before proceeding to the secure payment portal.
+                </Text>
+              </VStack>
 
-                 <Box bg="white" p={8} borderRadius="3xl" shadow="xl" border="1px solid" borderColor="gray.100">
-                    <VStack align="stretch" spacing={6}>
-                       <HStack spacing={6}>
-                          <Image src={profile.profile_image_url} boxSize="80px" borderRadius="2xl" objectFit="cover" />
+              {/* Main Appointment Card */}
+              <Box
+                bg="white"
+                p={{ base: 6, md: 8 }}
+                borderRadius="3xl"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.14)"
+                boxShadow="0 4px 25px rgba(38, 58, 51, 0.04)"
+              >
+                <VStack align="stretch" spacing={6}>
+                  {/* Practitioner Overview */}
+                  <HStack spacing={4} align="center">
+                    <Avatar
+                      size="lg"
+                      name={profile.name}
+                      src={profile.profile_image_url}
+                      borderRadius="2xl"
+                      border="2px solid"
+                      borderColor="#A9CBB7"
+                      bg="#EAF2EE"
+                      color="#56756D"
+                      boxShadow="0 2px 10px rgba(86, 117, 109, 0.12)"
+                    />
+                    <VStack align="start" spacing={0.5}>
+                      <HStack spacing={2}>
+                        <Text fontWeight="700" fontSize="17.5px" color="#263A33">
+                          {profile.name}
+                        </Text>
+                        <Circle size="18px" bg="#EAF2EE" color="#56756D">
+                          <Icon as={FiCheck} boxSize="11px" />
+                        </Circle>
+                      </HStack>
+                      <Text color="#56756D" fontSize="13px" fontWeight="600">
+                        {profile.title || "Licensed Mental Health Practitioner"}
+                      </Text>
+                      {profile.qualifications && (
+                        <Text color="rgba(46,46,46,0.55)" fontSize="12px">
+                          {profile.qualifications}
+                        </Text>
+                      )}
+                    </VStack>
+                  </HStack>
+
+                  <Divider borderColor="rgba(86, 117, 109, 0.12)" />
+
+                  {/* Booking Specifics Matrix */}
+                  <VStack align="stretch" spacing={3.5}>
+                    {/* Date & Time */}
+                    <Box p={3.5} bg="#FAF8F5" borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.08)">
+                      <HStack spacing={3.5}>
+                        <Circle size="38px" bg="white" color="#56756D" shadow="xs" flexShrink={0}>
+                          <Icon as={FiCalendar} boxSize={4.5} />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em">
+                            Session Date & Time
+                          </Text>
+                          <Text fontSize="13.5px" fontWeight="700" color="#263A33">
+                            {dateStr}
+                          </Text>
+                          <Text fontSize="12.5px" color="rgba(46,46,46,0.65)" fontWeight="500">
+                            {timeStr} – {endTimeStr} (50 Mins)
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </Box>
+
+                    {/* Format & Mode */}
+                    <Box p={3.5} bg="#FAF8F5" borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.08)">
+                      <HStack spacing={3.5}>
+                        <Circle size="38px" bg="white" color="#56756D" shadow="xs" flexShrink={0}>
+                          <Icon as={FiVideo} boxSize={4.5} />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em">
+                            Modality & Privacy
+                          </Text>
+                          <Text fontSize="13.5px" fontWeight="700" color="#263A33">
+                            Online 1-on-1 Video Consultation
+                          </Text>
+                          <Text fontSize="12px" color="rgba(46,46,46,0.65)">
+                            Private, peer-to-peer encrypted room (No software download required)
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </Box>
+
+                    {/* Client Information */}
+                    {isSignedIn && (
+                      <Box p={3.5} bg="#FAF8F5" borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.08)">
+                        <HStack spacing={3.5}>
+                          <Circle size="38px" bg="white" color="#56756D" shadow="xs" flexShrink={0}>
+                            <Icon as={FiUser} boxSize={4.5} />
+                          </Circle>
                           <VStack align="start" spacing={0}>
-                             <Text fontWeight="800" fontSize="lg">{profile.name}</Text>
-                             <Text color="gray.500" fontSize="sm">{profile.title}</Text>
+                            <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em">
+                              Client Account
+                            </Text>
+                            <Text fontSize="13.5px" fontWeight="700" color="#263A33">
+                              {clientName}
+                            </Text>
+                            {clientEmail && (
+                              <Text fontSize="12px" color="rgba(46,46,46,0.65)">
+                                Confirmation & link will be sent to: {clientEmail}
+                              </Text>
+                            )}
                           </VStack>
-                       </HStack>
+                        </HStack>
+                      </Box>
+                    )}
+                  </VStack>
 
-                       <Divider />
-
-                       <VStack align="stretch" spacing={4}>
-                          <HStack spacing={4}>
-                             <Center bg="teal.50" boxSize={10} borderRadius="full" color="mlc.green"><Icon as={FiCalendar} /></Center>
-                             <Text fontWeight="600">{dateStr}</Text>
-                          </HStack>
-                          <HStack spacing={4}>
-                             <Center bg="teal.50" boxSize={10} borderRadius="full" color="mlc.green"><Icon as={FiClock} /></Center>
-                             <Text fontWeight="600">{timeStr}</Text>
-                          </HStack>
-                          <HStack spacing={4}>
-                             <Center bg="teal.50" boxSize={10} borderRadius="full" color="mlc.green"><Icon as={FiShield} /></Center>
-                             <Text fontWeight="600">Therapy Session</Text>
-                          </HStack>
-                       </VStack>
+                  {/* Reassurance Checkpoints */}
+                  <Box pt={2}>
+                    <VStack align="start" spacing={2} fontSize="12.5px" color="rgba(46, 46, 46, 0.8)">
+                      <HStack align="center" spacing={2}>
+                        <Icon as={FiCheckCircle} color="#56756D" />
+                        <Text><Text as="span" fontWeight="600">Instant Access:</Text> Video room credentials appear in your dashboard upon payment.</Text>
+                      </HStack>
+                      <HStack align="center" spacing={2}>
+                        <Icon as={FiCheckCircle} color="#56756D" />
+                        <Text><Text as="span" fontWeight="600">24-Hour Reschedule:</Text> Easily modify session time up to 24 hours in advance.</Text>
+                      </HStack>
                     </VStack>
-                 </Box>
-              </VStack>
-           </Box>
+                  </Box>
+                </VStack>
+              </Box>
+            </VStack>
+          </Box>
 
-           {/* Right: Payment */}
-           <Box gridColumn={{ md: "span 2" }}>
-              <VStack align="stretch" spacing={6} position="sticky" top="40px">
-                 <Box bg="mlc.greenDark" color="white" p={8} borderRadius="3xl" shadow="2xl">
-                    <VStack align="stretch" spacing={6}>
-                       <Heading size="md" fontFamily="'Playfair Display', serif">Order Summary</Heading>
-                       
-                       <VStack align="stretch" spacing={3}>
-                          <HStack justify="space-between" fontSize="sm" opacity={0.8}>
-                             <Text>Clinical Consultation</Text>
-                             <Text>INR {profile.hourly_rate || "45"}.00</Text>
-                          </HStack>
-                          <HStack justify="space-between" fontSize="sm" opacity={0.8}>
-                             <Text>Administrative Fee</Text>
-                             <Text>INR 0.00</Text>
-                          </HStack>
-                          <Divider borderColor="whiteAlpha.300" py={1} />
-                          <HStack justify="space-between" fontSize="xl" fontWeight="800">
-                             <Text>Total Payable</Text>
-                             <Text>INR {profile.hourly_rate || "45"}.00</Text>
-                          </HStack>
-                       </VStack>
+          {/* ═══════════════ RIGHT: PAYMENT & ORDER SUMMARY (5 COLS) ═══════════════ */}
+          <Box gridColumn={{ lg: "span 5" }} position={{ lg: "sticky" }} top="100px">
+            <VStack align="stretch" spacing={5}>
+              {/* Order Card */}
+              <Box
+                bg="linear-gradient(145deg, #1C2B26 0%, #263A33 60%, #1F302A 100%)"
+                color="white"
+                p={{ base: 6, md: 8 }}
+                borderRadius="3xl"
+                border="1px solid rgba(255, 255, 255, 0.12)"
+                boxShadow="0 16px 40px rgba(20, 36, 32, 0.25)"
+              >
+                <VStack align="stretch" spacing={5}>
+                  {/* Top Title & Badge */}
+                  <HStack justify="space-between" align="center">
+                    <Heading fontSize="20px" fontFamily="'Playfair Display', serif" color="white" fontWeight="600">
+                      Order Summary
+                    </Heading>
+                    <Badge
+                      bg="rgba(201, 169, 96, 0.2)"
+                      color="#F0D591"
+                      border="1px solid rgba(201, 169, 96, 0.35)"
+                      px={2.5}
+                      py={0.5}
+                      borderRadius="full"
+                      fontSize="10.5px"
+                      fontWeight="700"
+                    >
+                      MLC Direct
+                    </Badge>
+                  </HStack>
 
-                       <Button 
-                         w="full" h={16} bg="mlc.gold" color="white" borderRadius="full" fontSize="md" fontWeight="800"
-                         leftIcon={<FiLock />}
-                         isLoading={isProcessing}
-                         loadingText="Connecting..."
-                         _hover={{ bg: '#D4AF37', transform: 'scale(1.02)' }}
-                         onClick={handlePayment}
-                       >
-                         Confirm & Pay
-                       </Button>
-
-                       <VStack spacing={2} pt={4}>
-                          <HStack fontSize="2xs" opacity={0.6}>
-                             <Icon as={FiShield} />
-                             <Text>SECURE 256-BIT ENCRYPTION</Text>
-                          </HStack>
-                          <Text fontSize="2xs" opacity={0.5} textAlign="center">By paying, you agree to the MLC Clinical Terms & Cancellation Policy.</Text>
-                       </VStack>
-                    </VStack>
-                 </Box>
-                 
-                 <Box p={6} borderRadius="2xl" border="1px dashed" borderColor="gray.300">
-                    <HStack spacing={4}>
-                       <Icon as={FiCheckCircle} color="mlc.green" boxSize={5} />
-                       <Text fontSize="xs" color="gray.500">Your secure session invitation will be sent instantly after payment.</Text>
+                  {/* Breakdown Table */}
+                  <VStack align="stretch" spacing={3} pt={1}>
+                    <HStack justify="space-between" fontSize="13.5px" color="whiteAlpha.850">
+                      <Text>Clinical Consultation (50m)</Text>
+                      <Text fontWeight="600" color="white">{formattedAmount}</Text>
                     </HStack>
-                 </Box>
-              </VStack>
-           </Box>
+
+                    <HStack justify="space-between" fontSize="13px" color="whiteAlpha.700">
+                      <Text>Telehealth & Encryption Fee</Text>
+                      <Badge bg="whiteAlpha.200" color="#A9CBB7" px={2} py={0.5} borderRadius="full" fontSize="10.5px">
+                        Waived
+                      </Badge>
+                    </HStack>
+
+                    <HStack justify="space-between" fontSize="13px" color="whiteAlpha.700">
+                      <Text>Applicable Taxes (GST)</Text>
+                      <Text fontSize="12px" color="whiteAlpha.700">Included</Text>
+                    </HStack>
+
+                    <Divider borderColor="rgba(255, 255, 255, 0.15)" my={1} />
+
+                    {/* Total Row */}
+                    <HStack justify="space-between" align="baseline" pt={1}>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="14px" fontWeight="700" color="white">
+                          Total Payable
+                        </Text>
+                        <Text fontSize="11px" color="whiteAlpha.600">
+                          One-time session payment
+                        </Text>
+                      </VStack>
+                      <Text fontSize="24px" fontWeight="800" color="#F0D591" letterSpacing="-0.02em">
+                        {formattedAmount}
+                      </Text>
+                    </HStack>
+                  </VStack>
+
+                  {/* Payment Button */}
+                  <Button
+                    w="full"
+                    h="52px"
+                    bg="#C9A960"
+                    color="#141918"
+                    borderRadius="full"
+                    fontSize="15px"
+                    fontWeight="800"
+                    leftIcon={<FiLock />}
+                    isLoading={isProcessing}
+                    loadingText="Connecting to Bank..."
+                    _hover={{
+                      bg: "#E0BF73",
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 6px 20px rgba(201, 169, 96, 0.35)",
+                    }}
+                    transition="all 0.2s ease"
+                    onClick={handlePayment}
+                  >
+                    Confirm & Pay {formattedAmount}
+                  </Button>
+
+                  {/* Security Footnote */}
+                  <VStack spacing={2} pt={2} textAlign="center">
+                    <HStack fontSize="11px" color="whiteAlpha.700" spacing={1.5} justify="center">
+                      <Icon as={FiShield} color="#F0D591" />
+                      <Text fontWeight="600">Razorpay 256-Bit SSL Encryption</Text>
+                    </HStack>
+                    <Text fontSize="11px" color="whiteAlpha.500" lineHeight="1.5">
+                      Supports UPI (GPay, PhonePe, Paytm), Cards, and NetBanking.
+                    </Text>
+                    <Text fontSize="10.5px" color="whiteAlpha.450" lineHeight="1.4" pt={1}>
+                      By continuing, you agree to the MLC Clinical Terms & 24-hr Cancellation Policy.
+                    </Text>
+                  </VStack>
+                </VStack>
+              </Box>
+
+              {/* Guarantees Box */}
+              <Box p={4} borderRadius="2xl" bg="white" border="1px solid" borderColor="rgba(86, 117, 109, 0.15)">
+                <HStack spacing={3} align="start">
+                  <Icon as={FiCheckCircle} color="#56756D" boxSize={4.5} mt={0.5} flexShrink={0} />
+                  <VStack align="start" spacing={0.5}>
+                    <Text fontSize="12.5px" fontWeight="700" color="#263A33">
+                      Safe & Confidential Session
+                    </Text>
+                    <Text fontSize="11.5px" color="rgba(46, 46, 46, 0.65)" lineHeight="1.5">
+                      Your video consultation takes place in a HIPAA-compliant, number-free private room with full clinical isolation.
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Box>
+            </VStack>
+          </Box>
         </SimpleGrid>
       </Container>
     </Box>

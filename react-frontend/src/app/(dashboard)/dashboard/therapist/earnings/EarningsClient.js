@@ -27,13 +27,13 @@ import {
 import { useState, useEffect, useMemo } from "react";
 import { 
   FiTrendingUp, 
-  FiDollarSign, 
   FiCalendar, 
   FiArrowUpRight, 
   FiPieChart,
   FiFileText,
   FiDownload
 } from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
 import { apiGet } from "../../../../../api.js";
 import { 
   ResponsiveContainer, 
@@ -139,7 +139,7 @@ export default function EarningsClient() {
             label="Total Revenue" 
             value={`INR ${totalRevenue.toLocaleString()}`} 
             help="+12.5% from last period" 
-            icon={FiDollarSign} 
+            icon={FaRupeeSign} 
             color="teal.500" 
             isIncrease 
           />

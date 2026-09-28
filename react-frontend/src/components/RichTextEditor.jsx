@@ -32,6 +32,7 @@ export default function RichTextEditor({
 }) {
   const fileInputRef = useRef(null);
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Image.configure({ allowBase64: true }),

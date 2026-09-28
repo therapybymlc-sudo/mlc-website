@@ -2,6 +2,7 @@
 import { usePathname } from 'next/navigation'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import ScrollToTop from './ScrollToTop'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import { FaWhatsapp } from 'react-icons/fa'
 
@@ -16,6 +17,7 @@ export default function ClientWrapper({ children }) {
 
   return (
     <>
+      <ScrollToTop />
       {!hideFurniture && <Navbar />}
       <main style={{ minHeight: '100vh' }}>
         {children}

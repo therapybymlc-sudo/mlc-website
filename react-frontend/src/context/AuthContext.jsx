@@ -59,6 +59,8 @@ export const AuthProvider = ({ children }) => {
     return null;
   };
 
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
+
   useEffect(() => {
     let mounted = true;
     const loadProfiles = async () => {
@@ -68,9 +70,11 @@ export const AuthProvider = ({ children }) => {
           setTherapistProfile(null);
           setClientProfile(null);
           setRoleDashboardMismatch(null);
+          setIsProfileLoading(false);
         }
         return;
       }
+      if (mounted) setIsProfileLoading(true);
       try {
         // DB-backed canonical role context (source of truth).
         const who = await apiGet("whoami/").catch(() => null);
@@ -83,10 +87,17 @@ export const AuthProvider = ({ children }) => {
         const metadataIsClient = metadataRoles.includes("client");
         const metadataIsAdmin = metadataRoles.includes("admin");
 
+        const userEmail = (
+          user?.primaryEmailAddress?.emailAddress || 
+          user?.emailAddresses?.[0]?.emailAddress || 
+          ""
+        ).toLowerCase().trim();
+        const isPureAdminEmail = userEmail === "therapybymlc@gmail.com" || userEmail === "therapy@mlchealth.in";
+
         // Avoid noisy 404s on client pages by preferring canonical role signals
         // and current route intent over stale metadata.
         const shouldFetchTherapist =
-          hasAdminCanonical || wantsTherapistOnly || (hasTherapistCanonical && !onClientRoute);
+          !isPureAdminEmail && (wantsTherapistOnly || (hasTherapistCanonical && !onClientRoute) || (hasAdminCanonical && userEmail === "therapy.aditya@gmail.com"));
         const shouldFetchClient = !wantsTherapistOnly && (hasClientCanonical || metadataIsClient);
         const fetchTherapistProfile = async () => {
           if (!shouldFetchTherapist) return null;
@@ -94,8 +105,8 @@ export const AuthProvider = ({ children }) => {
             return await apiGet("therapists/me/");
           } catch (err) {
             const status = err?.response?.status;
-            // Self-heal canonical therapist profile on first-login race conditions.
-            if (status === 404 && (metadataIsTherapist || metadataIsAdmin || wantsTherapistOnly)) {
+            // Self-heal canonical therapist profile on first-login race conditions (clinicians only, never admins).
+            if (status === 404 && !hasAdminCanonical && !metadataIsAdmin && (metadataIsTherapist || wantsTherapistOnly)) {
               try {
                 await apiPost("onboard/", { role: "therapist" });
                 return await apiGet("therapists/me/").catch(() => null);
@@ -123,6 +134,10 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.warn("Profile load failed", err);
+      } finally {
+        if (mounted) {
+          setIsProfileLoading(false);
+        }
       }
     };
     loadProfiles();
@@ -141,10 +156,48 @@ export const AuthProvider = ({ children }) => {
 
   const canonicalRoles = useMemo(() => {
     const fromWhoami = Array.isArray(whoami?.canonical_roles) ? whoami.canonical_roles : [];
-    const normalized = fromWhoami.map((r) => String(r).toLowerCase());
+    let normalized = fromWhoami.map((r) => String(r).toLowerCase());
+
+    // Instant client-side fallback check for master administrative identities
+    const userEmail = (
+      user?.primaryEmailAddress?.emailAddress || 
+      user?.emailAddresses?.[0]?.emailAddress || 
+      ""
+    ).toLowerCase().trim();
+    const adminEmails = [
+      "therapybymlc@gmail.com", 
+      "therapy@mlchealth.in", 
+      "therapy.aditya@gmail.com"
+    ];
+    if (userEmail && adminEmails.includes(userEmail)) {
+      if (!normalized.includes("admin")) normalized.push("admin");
+      if (userEmail === "therapy.aditya@gmail.com") {
+        if (!normalized.includes("therapist")) normalized.push("therapist");
+      } else {
+        // MLC official account is strictly Admin only
+        normalized = normalized.filter((r) => r !== "therapist");
+      }
+    }
+    const asmaEmails = [
+      "asma@mlchealth.in",
+      "asma.ausa02@gmail.com",
+      "asmadata02@gmail.com"
+    ];
+    if (userEmail && asmaEmails.includes(userEmail)) {
+      if (!normalized.includes("therapist")) normalized.push("therapist");
+      // Asma accounts are strictly Therapist only
+      normalized = normalized.filter((r) => r !== "admin");
+    }
+
     if (normalized.length > 0) return Array.from(new Set(normalized));
-    return metadataRoles.map((r) => String(r).toLowerCase());
-  }, [whoami, metadataRoles]);
+    let fallback = metadataRoles.map((r) => String(r).toLowerCase());
+    if (userEmail && (userEmail === "therapybymlc@gmail.com" || userEmail === "therapy@mlchealth.in")) {
+      fallback = ["admin"];
+    } else if (userEmail && asmaEmails.includes(userEmail)) {
+      fallback = ["therapist"];
+    }
+    return fallback;
+  }, [whoami, metadataRoles, user]);
 
   const isAdmin = canonicalRoles.includes("admin");
   const isTherapist = canonicalRoles.includes("therapist");
@@ -183,6 +236,8 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!isSignedIn,
         user,
         loading: !isLoaded,
+        isProfileLoading,
+        authReady: isLoaded && (!isSignedIn || !isProfileLoading),
         login,
         logout,
         roles: canonicalRoles,

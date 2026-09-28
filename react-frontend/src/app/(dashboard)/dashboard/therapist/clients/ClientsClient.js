@@ -397,19 +397,27 @@ export default function ClientsClient() {
   const archivedFiles = clientFiles.filter((f) => !!f.is_archived);
 
   const renderClientHeader = () => (
-    <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'center' }} mb={8} gap={4}>
+    <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'center' }} mb={6} gap={4}>
       <HStack spacing={4} align="start">
         {viewMode === "detail" && (
-          <Button variant="ghost" onClick={() => setViewMode("list")} leftIcon={<FiArrowLeft />}>Back</Button>
+          <Button variant="ghost" onClick={() => setViewMode("list")} leftIcon={<FiArrowLeft />} borderRadius="full" h="38px" fontSize="13px">Back</Button>
         )}
-        <VStack align="start" spacing={0} minW={0}>
-          <Heading size={{ base: "md", md: "lg" }} color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif" whiteSpace="normal" wordBreak="break-word" lineHeight="1.1">
+        <VStack align="start" spacing={0.5} minW={0}>
+          <Heading 
+            fontSize={{ base: "22px", md: "26px" }} 
+            fontWeight="600"
+            color="#263A33" 
+            fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
+            whiteSpace="normal" 
+            wordBreak="break-word" 
+            lineHeight="1.2"
+          >
             {viewMode === "detail"
               ? `${selectedClient?.name || ""}${selectedClient?.terminated_patient ? " [TERMINATED]" : ""}`
               : "Clinical Caseload"}
           </Heading>
-          <Text color="gray.500" fontSize={{ base: "xs", md: "sm" }} wordBreak="break-word">
-            {viewMode === "detail" ? selectedClient?.email : "Manage patient documentation and clinical history."}
+          <Text color="#5A6E65" fontSize="13px" wordBreak="break-word">
+            {viewMode === "detail" ? selectedClient?.email : "Manage patient documentation, treatment blueprints, and clinical history."}
           </Text>
         </VStack>
       </HStack>
@@ -420,31 +428,73 @@ export default function ClientsClient() {
             <Button 
               leftIcon={<FiDownload />} 
               variant="outline" 
-              borderColor="teal.200" 
-              color="teal.600" 
+              borderColor="rgba(86, 117, 109, 0.25)" 
+              color="#263A33" 
               borderRadius="full"
               w={{ base: "full", lg: "auto" }}
-              size={{ base: "sm", md: "md" }}
+              h="38px"
+              fontSize="13px"
+              _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
               onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Professional", noteTemplates)}
             >
               Export Full Records
             </Button>
-            <Button leftIcon={<FiCalendar />} colorScheme="teal" borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={() => router.push('/dashboard/therapist/schedule')}>Book Appointment</Button>
-            <Button leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} variant={isEditing ? "solid" : "outline"} colorScheme={isEditing ? "green" : "gray"} borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}>
+            <Button 
+              leftIcon={<FiCalendar />} 
+              bg="#56756D" 
+              color="white" 
+              borderRadius="full" 
+              w={{ base: "full", lg: "auto" }} 
+              h="38px"
+              fontSize="13px"
+              fontWeight="600"
+              _hover={{ bg: "#263A33" }}
+              onClick={() => router.push('/dashboard/therapist/schedule')}
+            >
+              Book Appointment
+            </Button>
+            <Button 
+              leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} 
+              variant={isEditing ? "solid" : "outline"} 
+              bg={isEditing ? "#56756D" : "transparent"}
+              color={isEditing ? "white" : "#263A33"}
+              borderColor="rgba(86, 117, 109, 0.25)"
+              borderRadius="full" 
+              w={{ base: "full", lg: "auto" }} 
+              h="38px"
+              fontSize="13px"
+              _hover={isEditing ? { bg: "#263A33" } : { bg: "rgba(169, 203, 183, 0.1)" }}
+              onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}
+            >
               {isEditing ? "Save Changes" : "Edit Profile"}
             </Button>
             {selectedClient?.terminated_patient ? (
-              <Button variant="outline" colorScheme="green" borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={handleReactivateRelationship} isLoading={relationshipTransitioning}>
+              <Button variant="outline" colorScheme="green" borderRadius="full" w={{ base: "full", lg: "auto" }} h="38px" fontSize="13px" onClick={handleReactivateRelationship} isLoading={relationshipTransitioning}>
                 Reactivate Relationship
               </Button>
             ) : (
-              <Button variant="outline" colorScheme="red" borderRadius="full" w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={handleTerminateRelationship} isLoading={relationshipTransitioning}>
+              <Button variant="outline" colorScheme="red" borderRadius="full" w={{ base: "full", lg: "auto" }} h="38px" fontSize="13px" onClick={handleTerminateRelationship} isLoading={relationshipTransitioning}>
                 Terminate Relationship
               </Button>
             )}
           </>
         ) : (
-          <Button leftIcon={<FiUser />} colorScheme="teal" borderRadius="full" px={8} w={{ base: "full", lg: "auto" }} size={{ base: "sm", md: "md" }} onClick={() => setViewMode("add")}>+ Add New Client</Button>
+          <Button 
+            leftIcon={<FiUser />} 
+            bg="#56756D" 
+            color="white" 
+            borderRadius="full" 
+            px={6} 
+            w={{ base: "full", lg: "auto" }} 
+            h="38px"
+            fontSize="13px"
+            fontWeight="600"
+            _hover={{ bg: "#263A33" }}
+            boxShadow="sm"
+            onClick={() => setViewMode("add")}
+          >
+            + Add New Client
+          </Button>
         )}
       </Stack>
     </Flex>
@@ -1101,26 +1151,30 @@ export default function ClientsClient() {
                 <Table variant="simple">
                   <Thead>
                     <Tr>
-                      <Th color="gray.400">PATIENT NAME</Th>
-                      <Th color="gray.400">CONTACT</Th>
-                      <Th color="gray.400">FILE #</Th>
-                      <Th color="gray.400">STATUS</Th>
-                      <Th textAlign="right" color="gray.400">ACTIONS</Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">PATIENT NAME</Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">CONTACT</Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">FILE #</Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">STATUS</Th>
+                      <Th textAlign="right" fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">ACTIONS</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
                     {activeClients.map((client) => (
-                      <Tr key={client.id} _hover={{ bg: "gray.50" }} transition="0.2s" cursor="pointer" onClick={() => { setSelectedClient(client); setViewMode("detail"); }}>
+                      <Tr key={client.id} _hover={{ bg: "rgba(169, 203, 183, 0.05)" }} transition="0.2s" cursor="pointer" onClick={() => { setSelectedClient(client); setViewMode("detail"); }}>
                         <Td>
-                          <HStack>
-                             <Avatar size="sm" name={client.name} bg="teal.100" color="teal.600" />
-                             <Text fontWeight="bold">{client.name}</Text>
+                          <HStack spacing={3}>
+                             <Avatar size="sm" name={client.name} bg="rgba(169, 203, 183, 0.25)" color="#263A33" fontWeight="600" />
+                             <Text fontWeight="600" color="#263A33" fontSize="13.5px">{client.name}</Text>
                           </HStack>
                         </Td>
-                        <Td><Text fontSize="sm">{client.email}</Text></Td>
-                        <Td><Text fontSize="xs" fontWeight="bold" color="gray.400">{client.client_file_number || "—"}</Text></Td>
-                        <Td><Badge colorScheme="green" variant="subtle" borderRadius="full" px={3}>ACTIVE</Badge></Td>
-                        <Td textAlign="right"><Button size="sm" variant="ghost" colorScheme="teal" borderRadius="full">Open File</Button></Td>
+                        <Td><Text fontSize="13px" color="#5A6E65">{client.email}</Text></Td>
+                        <Td><Text fontSize="12px" fontWeight="600" color="gray.400">{client.client_file_number || "—"}</Text></Td>
+                        <Td><Badge bg="rgba(169, 203, 183, 0.2)" color="#263A33" fontSize="10px" fontWeight="700" borderRadius="full" px={2.5} py={0.5}>ACTIVE</Badge></Td>
+                        <Td textAlign="right">
+                          <Button size="sm" variant="ghost" color="#56756D" borderRadius="full" fontSize="12.5px" _hover={{ bg: "rgba(169, 203, 183, 0.12)", color: "#263A33" }}>
+                            Open File
+                          </Button>
+                        </Td>
                       </Tr>
                     ))}
                   </Tbody>

@@ -40,203 +40,294 @@ export default function CouplesTherapyPage() {
   if (!isMounted) return null;
 
   return (
-    <Box bg="#FDFBFA" overflow="hidden">
+    <Box bg="#FAF9F6" overflow="hidden">
       {/* 🌿 HERO SECTION */}
-      <Box position="relative" h={{ base: "auto", lg: "90vh" }} bg="white">
-        <Flex direction={{ base: "column", lg: "row" }} h="full">
-          <MotionVStack 
-            flex="1" 
-            justify="center" 
-            align="start" 
-            p={{ base: 8, md: 16, lg: 24 }} 
-            spacing={8}
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <Badge 
-              bg="orange.50" 
-              color="orange.800" 
-              px={4} 
-              py={1} 
-              borderRadius="full" 
-              fontSize="xs" 
-              fontWeight="800" 
-              letterSpacing="2px"
+      <Box pt={{ base: 6, md: 8 }} pb={{ base: 10, md: 14 }} bg="white" borderBottom="1px solid" borderColor="gray.100">
+        <Container maxW="6xl">
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 8, lg: 12 }} alignItems="center">
+            <MotionVStack 
+              align="start" 
+              spacing={5}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
             >
-              RELATIONAL SERVICES
-            </Badge>
-            <Heading 
-              fontSize={{ base: "4xl", md: "5xl", lg: "7xl" }} 
-              fontFamily="'Forum', serif" 
-              color="teal.900" 
-              lineHeight="1.1"
-            >
-              Couples <br /> Therapy
-            </Heading>
-            <Text 
-              fontSize={{ base: "lg", md: "xl" }} 
-              color="gray.600" 
-              maxW="500px" 
-              fontFamily="'Inter', sans-serif"
-              lineHeight="tall"
-            >
-              Navigating the complexities of connection. We provide a neutral, safe, and structured environment for partners to explore dynamics, rebuild trust, and deepen intimacy.
-            </Text>
-            <Stack direction={{ base: "column", sm: "row" }} spacing={4} w="full">
-              <Button 
-                as={NextLink} 
-                href="/therapists/discovery" 
-                size="xl" 
-                bg="teal.800" 
-                color="white" 
-                h="64px" 
-                px={10} 
+              <Badge 
+                bg="orange.50" 
+                color="orange.800" 
+                border="1px solid"
+                borderColor="orange.200"
+                px={3.5} 
+                py={1} 
                 borderRadius="full" 
-                _hover={{ bg: "teal.900", transform: "translateY(-2px)" }}
-                transition="all 0.3s"
-                rightIcon={<FiArrowRight />}
+                fontSize="11px" 
+                fontWeight="800" 
+                letterSpacing="0.1em"
               >
-                Find a Specialist
-              </Button>
-              <Button 
-                as={NextLink} 
-                href="/contactus" 
-                size="xl" 
-                variant="outline" 
-                borderColor="teal.100" 
-                h="64px" 
-                px={10} 
-                borderRadius="full"
-                _hover={{ bg: "teal.50" }}
+                RELATIONAL SERVICES
+              </Badge>
+              
+              <Heading 
+                as="h1"
+                fontSize={{ base: "32px", md: "42px", lg: "50px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                color="#263A33" 
+                lineHeight="1.18"
+                fontWeight="600"
               >
-                Inquire for Partners
-              </Button>
-            </Stack>
-          </MotionVStack>
-          
-          <Box flex="1.2" position="relative" overflow="hidden">
-            <MotionBox
-              h="full"
-              initial={{ scale: 1.1, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1.2 }}
-            >
-              <Image 
-                src="/couples_therapy_hero.png" 
-                alt="Two partners sitting together on a modern sofa, engaged in a constructive and calm dialogue, representing relationship growth and connection" 
-                objectFit="cover" 
-                h="full" 
-                w="full" 
-              />
-            </MotionBox>
-            <Box 
-              position="absolute" 
-              top="0" 
-              left="0" 
-              w="full" 
-              h="full" 
-              bgGradient="linear(to-r, white, transparent 30%)" 
-              display={{ base: "none", lg: "block" }}
-            />
-          </Box>
-        </Flex>
+                Couples Therapy
+              </Heading>
+
+              <Text 
+                fontSize={{ base: "15px", md: "16px" }} 
+                color="rgba(46,46,46,0.75)" 
+                maxW="480px" 
+                lineHeight="1.7"
+              >
+                Navigating the complexities of connection. We provide a neutral, safe, and structured environment for partners to explore dynamics, rebuild trust, and deepen emotional intimacy.
+              </Text>
+
+              <Stack direction={{ base: "column", sm: "row" }} spacing={3.5} w="full" pt={1}>
+                <Button 
+                  as={NextLink} 
+                  href="/therapists/discovery" 
+                  h="46px" 
+                  px={7} 
+                  bg="#56756D" 
+                  color="white" 
+                  borderRadius="full" 
+                  fontSize="14px"
+                  fontWeight="600"
+                  boxShadow="0 4px 14px rgba(44, 122, 123, 0.25)"
+                  _hover={{ bg: "#263A33", transform: "translateY(-1px)", boxShadow: "0 6px 18px rgba(44, 122, 123, 0.35)" }}
+                  transition="all 0.2s ease"
+                  rightIcon={<FiArrowRight />}
+                >
+                  Find a Specialist
+                </Button>
+                <Button 
+                  as={NextLink} 
+                  href="/contactus" 
+                  h="46px" 
+                  px={6} 
+                  variant="outline" 
+                  borderColor="gray.200" 
+                  color="gray.700"
+                  borderRadius="full"
+                  fontSize="14px"
+                  fontWeight="600"
+                  _hover={{ bg: "gray.50", borderColor: "gray.300" }}
+                  transition="all 0.2s ease"
+                >
+                  Inquire for Partners
+                </Button>
+              </Stack>
+
+              <HStack spacing={5} pt={2} color="rgba(46,46,46,0.6)" fontSize="12px">
+                <HStack spacing={1.5}>
+                  <Icon as={FiCheck} color="#56756D" />
+                  <Text fontWeight="600" letterSpacing="0.03em">Neutral Facilitation</Text>
+                </HStack>
+                <HStack spacing={1.5}>
+                  <Icon as={FiCheck} color="#56756D" />
+                  <Text fontWeight="600" letterSpacing="0.03em">Virtual & In-Person</Text>
+                </HStack>
+                <HStack spacing={1.5}>
+                  <Icon as={FiCheck} color="#56756D" />
+                  <Text fontWeight="600" letterSpacing="0.03em">All Relationship Stages</Text>
+                </HStack>
+              </HStack>
+            </MotionVStack>
+            
+            <Box position="relative">
+              <Box
+                borderRadius="2xl"
+                overflow="hidden"
+                boxShadow="0 20px 45px -12px rgba(38, 58, 51, 0.16)"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.16)"
+                bg="white"
+              >
+                <Image 
+                  src="/couples_therapy_hero.png" 
+                  alt="Two partners sitting together on a modern sofa, engaged in a constructive and calm dialogue" 
+                  objectFit="cover" 
+                  w="100%"
+                  h={{ base: "300px", md: "380px" }}
+                />
+              </Box>
+
+              <Box 
+                position="absolute" 
+                bottom="12px" 
+                right={{ base: "12px", md: "16px" }} 
+                bg="rgba(255, 255, 255, 0.96)" 
+                backdropFilter="blur(8px)"
+                px={4} 
+                py={2.5} 
+                borderRadius="16px" 
+                boxShadow="0 15px 35px -5px rgba(0, 0, 0, 0.12)" 
+                border="1px solid"
+                borderColor="gray.100"
+                maxW="250px"
+              >
+                <HStack spacing={2.5} align="center">
+                  <Circle bg="orange.50" size="32px" flexShrink={0}>
+                    <Icon as={FiHeart} color="orange.600" boxSize={3.5} />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="700" fontSize="12.5px" color="#263A33">Relational Harmony</Text>
+                    <Text fontSize="11px" color="rgba(46,46,46,0.6)" lineHeight="1.3">Structured partner communication</Text>
+                  </VStack>
+                </HStack>
+              </Box>
+            </Box>
+          </SimpleGrid>
+        </Container>
       </Box>
 
       {/* 🤝 CORE PHILOSOPHY */}
-      <Container maxW="7xl" py={{ base: 20, md: 32 }}>
-        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={20} alignItems="center">
-          <Box position="relative">
-            <Image 
-              src="https://images.unsplash.com/photo-1516534775068-ba3e84589b9c?auto=format&fit=crop&q=80&w=800" 
-              borderRadius="3xl" 
-              shadow="2xl" 
-              alt="A symbolic image of two people holding hands or sitting close, emphasizing emotional connection and trust"
-            />
-            <Box 
-              position="absolute" 
-              top="-20px" 
-              left="-20px" 
-              bg="teal.800" 
-              color="white" 
-              p={8} 
-              borderRadius="2xl" 
-              shadow="xl" 
-              maxW="250px"
-              display={{ base: "none", md: "block" }}
-            >
-              <VStack align="start" spacing={2}>
-                <Text fontSize="4xl" fontWeight="900" color="mlc.gold">92%</Text>
-                <Text fontSize="sm" fontWeight="600">Of partners report improved communication after the first phase of therapy.</Text>
-              </VStack>
-            </Box>
-          </Box>
+      <Box pt={{ base: 14, md: 20 }} pb={{ base: 16, md: 24 }} bg="#FAF9F6">
+        <Container maxW="6xl">
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 10, lg: 16 }} alignItems="center">
+            <Box position="relative">
+              <Box
+                borderRadius="2xl"
+                overflow="hidden"
+                boxShadow="0 18px 40px -10px rgba(0, 0, 0, 0.12)"
+                border="1px solid"
+                borderColor="gray.100"
+                bg="white"
+              >
+                <Image 
+                  src="/couples_therapy_connection.jpg" 
+                  borderRadius="2xl" 
+                  alt="Two partners gently holding hands in a therapy setting"
+                  w="100%"
+                  h={{ base: "320px", md: "420px", lg: "440px" }}
+                  objectFit="cover"
+                />
+              </Box>
 
-          <VStack align="start" spacing={8}>
-            <Heading size="2xl" fontFamily="'Forum', serif" color="teal.900">
-              Beyond Conflict. <br /> Towards Connection.
-            </Heading>
-            <Text fontSize="lg" color="gray.600" lineHeight="tall">
-              Couples therapy at MLC focuses on the "space between" two people. We don't just look at individual issues; we look at the system you've built together.
-            </Text>
-            <Text fontSize="lg" color="gray.600" lineHeight="tall">
-              Our approach is neutral, non-judgmental, and evidence-informed. We help you move past repetitive arguments and reach the underlying emotional needs that drive them.
-            </Text>
-            
-            <VStack align="stretch" spacing={4} w="full">
-              {[
-                { title: "De-escalating Conflict", icon: FiShield },
-                { title: "Rebuilding Trust & Intimacy", icon: FiLink },
-                { title: "Navigating Life Transitions", icon: FiTrendingUp },
-                { title: "Parenting & Co-regulation", icon: FiUsers },
-              ].map((item, i) => (
-                <HStack key={i} spacing={4} p={4} bg="white" borderRadius="xl" shadow="sm" border="1px solid" borderColor="gray.50">
-                  <Icon as={item.icon} color="teal.500" boxSize={5} />
-                  <Text fontWeight="700" color="teal.900" fontSize="sm">{item.title}</Text>
-                </HStack>
-              ))}
+              <Box 
+                position="absolute" 
+                bottom="12px" 
+                left={{ base: "12px", md: "16px" }} 
+                bg="#263A33" 
+                color="white" 
+                p={4} 
+                borderRadius="16px" 
+                boxShadow="0 15px 35px rgba(0, 0, 0, 0.2)" 
+                maxW="220px"
+                display={{ base: "none", md: "block" }}
+              >
+                <VStack align="start" spacing={0.5}>
+                  <Text fontSize="24px" fontWeight="800" color="#C9A960" lineHeight="1">92%</Text>
+                  <Text fontSize="11.5px" color="whiteAlpha.800" lineHeight="1.35">
+                    Report improved communication after the initial clinical phase
+                  </Text>
+                </VStack>
+              </Box>
+            </Box>
+
+            <VStack align="start" spacing={5}>
+              <Badge bg="orange.50" color="orange.800" px={3} py={1} borderRadius="full" fontSize="11px" fontWeight="700">
+                CLINICAL FOCUS
+              </Badge>
+
+              <Heading 
+                as="h2"
+                fontSize={{ base: "26px", md: "32px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                color="#263A33"
+                lineHeight="1.25"
+                fontWeight="600"
+              >
+                Beyond Conflict, <br />Towards Connection
+              </Heading>
+
+              <Text fontSize="14.5px" color="rgba(46,46,46,0.75)" lineHeight="1.7">
+                Couples therapy at MLC focuses on the relational system you have built together. We move past surface-level arguments to address the underlying emotional needs that drive repetitive patterns.
+              </Text>
+              
+              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 4, sm: 5 }} w="full" mt={3}>
+                {[
+                  { title: "De-escalating Conflict", icon: FiShield, desc: "Breaking cycles of blame and emotional defensiveness" },
+                  { title: "Rebuilding Trust", icon: FiLink, desc: "Restoring intimacy after breaches or emotional withdrawal" },
+                  { title: "Life Transitions", icon: FiTrendingUp, desc: "Navigating relocation, career shifts, and financial stress" },
+                  { title: "Co-regulation", icon: FiUsers, desc: "Fostering mutual calm and shared parenting alignment" },
+                ].map((item, i) => (
+                  <Box key={i} p={{ base: 4.5, md: 5 }} bg="white" borderRadius="18px" border="1px solid" borderColor="gray.100" shadow="xs" _hover={{ borderColor: "rgba(86,117,109,0.15)", shadow: "sm" }} transition="all 0.2s ease">
+                    <HStack spacing={2.5} mb={2}>
+                      <Icon as={item.icon} color="#56756D" boxSize={4} />
+                      <Text fontWeight="700" color="#263A33" fontSize="13.5px">{item.title}</Text>
+                    </HStack>
+                    <Text fontSize="12.5px" color="rgba(46,46,46,0.6)" lineHeight="1.55">{item.desc}</Text>
+                  </Box>
+                ))}
+              </SimpleGrid>
             </VStack>
-          </VStack>
-        </SimpleGrid>
-      </Container>
+          </SimpleGrid>
+        </Container>
+      </Box>
 
       {/* 💠 THE RELATIONAL FRAMEWORK */}
-      <Box bg="teal.900" py={32} color="white">
-        <Container maxW="7xl">
-          <VStack spacing={16}>
-            <VStack spacing={4} textAlign="center">
-              <Badge colorScheme="whiteAlpha" px={4} py={1} borderRadius="full" fontSize="xs">OUR METHODOLOGY</Badge>
-              <Heading size="3xl" fontFamily="'Forum', serif">The Relational Framework.</Heading>
-              <Text maxW="600px" textAlign="center" fontSize="lg" color="whiteAlpha.800">
-                We utilize world-class frameworks to help you understand your relational dance.
+      <Box bg="linear-gradient(135deg, #3A5A50 0%, #56756D 50%, #4A6B62 100%)" py={{ base: 12, md: 16 }} color="white">
+        <Container maxW="6xl">
+          <VStack spacing={8}>
+            <VStack spacing={2.5} textAlign="center" maxW="600px">
+              <Badge bg="rgba(201, 169, 96, 0.15)" color="#E6CA65" border="1px solid rgba(201, 169, 96, 0.3)" px={3} py={1} borderRadius="full" fontSize="11px" fontWeight="700">
+                OUR METHODOLOGY
+              </Badge>
+              <Heading 
+                as="h2"
+                fontSize={{ base: "24px", md: "30px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                fontWeight="600"
+              >
+                The Relational Framework
+              </Heading>
+              <Text fontSize="14.5px" color="whiteAlpha.800" lineHeight="1.6">
+                We draw upon established clinical frameworks to help you decode your relational patterns.
               </Text>
             </VStack>
 
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10} w="full">
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} w="full">
               {[
                 { 
                   title: "Attachment Styles", 
-                  desc: "Understanding how your early experiences shape your current expectations of safety and closeness.",
+                  desc: "Understanding how formative experiences shape expectations of intimacy, safety, and independence.",
                   icon: FiAnchor
                 },
                 { 
                   title: "Communication Cycles", 
-                  desc: "Identifying the 'pursue-withdraw' or 'attack-defend' cycles that keep you stuck in the same arguments.",
+                  desc: "Identifying the 'pursue-withdraw' or 'attack-defend' reflexes that keep arguments recurring.",
                   icon: FiMessageSquare
                 },
                 { 
                   title: "The Emotional Core", 
-                  desc: "Moving past the surface-level complaints to the soft, vulnerable emotions that actually drive connection.",
+                  desc: "Moving beneath reactive anger to express the vulnerable needs that foster genuine repair.",
                   icon: FiHeart
                 },
               ].map((item, i) => (
-                <VStack key={i} align="start" spacing={6} p={10} bg="whiteAlpha.100" borderRadius="4xl" border="1px solid" borderColor="whiteAlpha.200">
-                  <Circle bg="mlc.gold" size="50px">
-                    <Icon as={item.icon} color="teal.900" boxSize={6} />
-                  </Circle>
-                  <Heading size="lg" fontFamily="'Forum', serif">{item.title}</Heading>
-                  <Text color="whiteAlpha.700" lineHeight="tall">{item.desc}</Text>
-                </VStack>
+                <Box 
+                  key={i} 
+                  bg="rgba(255, 255, 255, 0.04)" 
+                  p={6} 
+                  borderRadius="2xl" 
+                  border="1px solid" 
+                  borderColor="rgba(255, 255, 255, 0.08)"
+                  transition="all 0.25s ease"
+                  _hover={{ bg: "rgba(255, 255, 255, 0.07)", borderColor: "rgba(201, 169, 96, 0.3)", transform: "translateY(-2px)" }}
+                >
+                  <VStack align="start" spacing={3}>
+                    <Circle size="38px" bg="rgba(201, 169, 96, 0.12)" color="#E6CA65">
+                      <Icon as={item.icon} boxSize={4} />
+                    </Circle>
+                    <Heading size="sm" color="white" fontWeight="700">{item.title}</Heading>
+                    <Text fontSize="13px" color="whiteAlpha.700" lineHeight="1.6">{item.desc}</Text>
+                  </VStack>
+                </Box>
               ))}
             </SimpleGrid>
           </VStack>
@@ -244,29 +335,71 @@ export default function CouplesTherapyPage() {
       </Box>
 
       {/* ❔ FAQ SECTION */}
-      <Box bg="gray.50" py={32}>
-        <Container maxW="4xl">
-          <VStack spacing={12}>
-            <VStack spacing={4} textAlign="center">
-              <Heading size="2xl" fontFamily="'Forum', serif" color="teal.900">Partner FAQ</Heading>
-              <Text color="gray.500">Frequently asked questions about couples sessions.</Text>
+      <Box py={{ base: 10, md: 14 }} bg="linear-gradient(180deg, #F4F1EC 0%, #FDFBFA 100%)" position="relative">
+        <Box
+          position="absolute"
+          top="50%"
+          right="5%"
+          transform="translateY(-50%)"
+          w="300px"
+          h="300px"
+          borderRadius="full"
+          bg="radial-gradient(circle, rgba(169,203,183,0.1) 0%, transparent 70%)"
+          filter="blur(60px)"
+          pointerEvents="none"
+        />
+
+        <Container maxW="840px" position="relative" zIndex={1}>
+          <VStack spacing={6}>
+            <VStack spacing={2} textAlign="center">
+              <Text
+                fontSize="xs"
+                fontWeight="700"
+                letterSpacing="2.5px"
+                textTransform="uppercase"
+                color="#C9A960"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+              >
+                FAQ
+              </Text>
+              <Heading 
+                as="h2"
+                fontSize={{ base: "22px", md: "28px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                color="#263A33"
+                fontWeight="600"
+              >
+                Partner FAQ
+              </Heading>
+              <Text color="rgba(46,46,46,0.65)" fontSize="13.5px" fontFamily="'Inter', var(--font-inter), sans-serif">
+                Frequently asked questions about couples therapy sessions
+              </Text>
             </VStack>
 
             <Accordion allowToggle w="full">
               {[
-                { q: "Do both partners need to be present?", a: "Yes, for couples therapy, it is standard for both/all partners to be present. The 'client' is the relationship itself." },
-                { q: "What if my partner is hesitant?", a: "It's common for one partner to feel more ready than the other. We recommend a brief inquiry call where we can address concerns about 'taking sides' or judgment." },
-                { q: "How many sessions will we need?", a: "This varies significantly. Most couples start with 8-12 sessions to stabilize communication before moving into deeper relational work." },
-                { q: "Is this only for married couples?", a: "Not at all. We support partners in all stages—dating, cohabitating, pre-marital, polyamorous, or those navigating conscious uncoupling." },
+                { q: "Do both partners need to be present?", a: "Yes. In couples therapy, the primary client is the relationship itself. Having both partners present ensures balanced facilitation without taking sides." },
+                { q: "What if my partner is hesitant?", a: "It is common for one partner to feel more ready. We provide a brief inquiry consultation to discuss expectations and address concerns regarding judgment." },
+                { q: "How many sessions are recommended?", a: "Most couples begin with 8 to 12 sessions to de-escalate acute tension and build reliable communication frameworks before continuing into long-term maintenance." },
+                { q: "Is this only for married couples?", a: "No. We support partners across all relationship stages: dating, cohabitating, pre-marital, polyamorous, and those navigating conscious transitions." },
               ].map((item, i) => (
-                <AccordionItem key={i} border="none" mb={4} bg="white" borderRadius="2xl" overflow="hidden" shadow="sm">
-                  <AccordionButton py={6} _hover={{ bg: "teal.50" }}>
-                    <Box flex="1" textAlign="left" fontWeight="700" color="teal.900">
+                <AccordionItem 
+                  key={i} 
+                  border="1px solid" 
+                  borderColor="rgba(86,117,109,0.12)" 
+                  mb={2.5} 
+                  bg="rgba(255,255,255,0.7)" 
+                  backdropFilter="blur(8px)" 
+                  borderRadius="xl" 
+                  overflow="hidden"
+                >
+                  <AccordionButton py={3.5} px={5} _hover={{ bg: "rgba(169,203,183,0.05)" }}>
+                    <Box flex="1" textAlign="left" fontWeight="600" fontSize="15px" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">
                       {item.q}
                     </Box>
-                    <AccordionIcon />
+                    <AccordionIcon color="#56756D" />
                   </AccordionButton>
-                  <AccordionPanel pb={6} px={6} color="gray.600" lineHeight="tall">
+                  <AccordionPanel pt={1} pb={4} px={5} color="rgba(46,46,46,0.7)" fontSize="13.5px" lineHeight="1.65" fontFamily="'Inter', var(--font-inter), sans-serif">
                     {item.a}
                   </AccordionPanel>
                 </AccordionItem>
@@ -277,25 +410,32 @@ export default function CouplesTherapyPage() {
       </Box>
 
       {/* 🚀 CTA SECTION */}
-      <Box bg="mlc.gold" py={24}>
-        <Container maxW="7xl">
-          <Flex direction={{ base: "column", md: "row" }} align="center" justify="space-between" gap={10}>
-            <VStack align="start" spacing={4}>
-              <Heading size="2xl" color="teal.900" fontFamily="'Forum', serif">Reconnect Today.</Heading>
-              <Text color="teal.800" fontSize="lg" fontWeight="500">Invest in the relationship that matters most.</Text>
+      <Box bg="linear-gradient(135deg, #3A5A50 0%, #56756D 50%, #4A6B62 100%)" py={{ base: 10, md: 12 }} color="white">
+        <Container maxW="6xl">
+          <Flex direction={{ base: "column", md: "row" }} align="center" justify="space-between" gap={8}>
+            <VStack align="start" spacing={1.5}>
+              <Heading 
+                fontSize={{ base: "22px", md: "28px" }} 
+                color="white" 
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                fontWeight="600"
+              >
+                Reconnect Today
+              </Heading>
+              <Text color="whiteAlpha.750" fontSize="14px">Invest in the relationship that matters most.</Text>
             </VStack>
             <Button 
               as={NextLink} 
               href="/therapists/discovery" 
-              size="xl" 
-              bg="teal.900" 
-              color="white" 
-              h="64px" 
-              px={12} 
+              h="46px" 
+              px={8} 
+              bg="#C9A960" 
+              color="#263A33" 
               borderRadius="full" 
-              fontWeight="800"
-              _hover={{ transform: "scale(1.05)", shadow: "xl" }}
-              transition="all 0.3s"
+              fontSize="14px"
+              fontWeight="700"
+              _hover={{ bg: "#E6CA65", transform: "translateY(-1px)", boxShadow: "0 6px 18px rgba(201, 169, 96, 0.3)" }}
+              transition="all 0.2s ease"
             >
               Match with a Specialist
             </Button>

@@ -278,7 +278,7 @@ export default function BookingRequestsClient() {
                 ) : null}
                 {req.status === "confirmed" && (
                   <Text fontSize="xs" color="teal.700" mt={1}>
-                    Session booked — manage the session in{" "}
+                    Session booked. Manage the session in{" "}
                     <Button as={NextLink} href="/dashboard/therapist/appointments" variant="link" size="xs" color="teal.600">
                       Appointments
                     </Button>{" "}

@@ -174,9 +174,9 @@ export default function TherapistApplyClient() {
     return (
       <Container maxW="4xl" py={40} textAlign="center">
          <VStack spacing={8}>
-            <Circle size="100px" bg="teal.50" color="teal.500"><Icon as={FiCheck} w={10} h={10} /></Circle>
-            <Heading fontFamily="'Playfair Display', serif" size="2xl">Application Submitted.</Heading>
-            <Text fontSize="xl" color="gray.600">Our clinical team is now reviewing your credentials. We'll be in touch soon.</Text>
+            <Circle size="100px" bg="rgba(169,203,183,0.1)" color="#56756D"><Icon as={FiCheck} w={10} h={10} /></Circle>
+            <Heading fontFamily="'Playfair Display', serif" size="2xl">Application Submitted</Heading>
+            <Text fontSize="xl" color="rgba(46,46,46,0.75)">Our clinical team is now reviewing your credentials. We'll be in touch soon.</Text>
             <LinkButton href="/therapists" variant="ghost">Return to Ecosystem</LinkButton>
          </VStack>
       </Container>
@@ -185,41 +185,44 @@ export default function TherapistApplyClient() {
 
   return (
     <Box bg="#FDFBFA" minH="100vh">
-      <Box pt={32} pb={12} px={6} position="relative" overflow="hidden">
+      <Box pt={{ base: 10, md: 14 }} pb={{ base: 6, md: 8 }} px={6} position="relative" overflow="hidden">
         <Box position="absolute" inset={0} zIndex={0}>
           <Image src="/serene_therapy_office_1776423989664.png" alt="" w="full" h="full" objectFit="cover" opacity="0.08" />
         </Box>
         <Container maxW="5xl" position="relative" zIndex={1} textAlign="center">
-          <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" mb={6}>THERAPIST ECOSYSTEM ENTRANCE</Badge>
-          <Heading as="h1" fontSize={{ base: "4xl", md: "5xl" }} fontFamily="'Playfair Display', serif" color="teal.900" mb={4}>Clinician Application</Heading>
+          <Badge bg="#56756D" color="white" px={3.5} py={1} borderRadius="full" mb={4} fontSize="xs" fontWeight="800">THERAPIST ECOSYSTEM ENTRANCE</Badge>
+          <Heading as="h1" fontSize={{ base: "32px", md: "44px" }} fontFamily="'Playfair Display', serif" color="#263A33" fontWeight="600" mb={3}>Clinician Application</Heading>
         </Container>
       </Box>
 
       <Container maxW="4xl" mb={10}>
          <HStack spacing={2}>
             {STEPS.map((s, i) => (
-               <Box key={i} flex={1} h="3px" bg={i <= activeStep ? "teal.800" : "gray.200"} transition="0.5s" borderRadius="full" />
+               <Box key={i} flex={1} h="3px" bg={i <= activeStep ? "#56756D" : "gray.200"} transition="0.5s" borderRadius="full" />
             ))}
          </HStack>
       </Container>
 
-      <Container maxW="4xl" pb={32}>
+      <Container maxW="4xl" pb={{ base: 12, md: 16 }}>
         {!isSignedIn ? (
-           <Box bg="white" p={16} borderRadius="3rem" shadow="xl" textAlign="center">
-              <VStack spacing={6}>
-                 <Icon as={FiShield} w={12} h={12} color="teal.800" />
-                 <Heading size="lg" fontFamily="'Playfair Display', serif">Secure Vetting Environment</Heading>
-                 <Text color="gray.600">Please sign up or sign in to start your rigorous clinical application. Your progress will be saved automatically.</Text>
-                 <HStack spacing={4}>
+           <Box bg="white" p={{ base: 8, md: 12 }} borderRadius="2xl" shadow="lg" textAlign="center" border="1px solid" borderColor="rgba(169,203,183,0.1)">
+              <VStack spacing={5}>
+                 <Icon as={FiShield} w={10} h={10} color="#56756D" />
+                 <Heading fontSize={{ base: "22px", md: "26px" }} fontFamily="'Playfair Display', serif" fontWeight="600">Secure Vetting Environment</Heading>
+                 <Text color="rgba(46,46,46,0.75)" fontSize="15px" maxW="md">Please sign up or sign in to start your rigorous clinical application. Your progress will be saved automatically.</Text>
+                 <HStack spacing={3.5} pt={2}>
                     <Button
                       as={NextLink}
                       href="/signup/therapist"
-                      bg="teal.800"
+                      bg="#56756D"
                       color="white"
-                      h={14}
-                      px={10}
+                      h="46px"
+                      px={7}
                       borderRadius="full"
-                      _hover={{ bg: "teal.900" }}
+                      fontSize="14px"
+                      fontWeight="700"
+                      _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                      transition="all 0.2s"
                     >
                       Sign up to apply
                     </Button>
@@ -227,12 +230,15 @@ export default function TherapistApplyClient() {
                       as={NextLink}
                       href="/login/therapist"
                       variant="outline"
-                      borderColor="teal.800"
-                      color="teal.800"
-                      h={14}
-                      px={10}
+                      borderColor="#56756D"
+                      color="#56756D"
+                      h="46px"
+                      px={7}
                       borderRadius="full"
-                      _hover={{ bg: "teal.50" }}
+                      fontSize="14px"
+                      fontWeight="700"
+                      _hover={{ bg: "rgba(169,203,183,0.1)" }}
+                      transition="all 0.2s"
                     >
                       Sign in
                     </Button>
@@ -241,7 +247,7 @@ export default function TherapistApplyClient() {
            </Box>
         ) : (
         <form onSubmit={handleApply}>
-          <Box bg="white" p={{ base: 8, md: 16 }} borderRadius="3rem" shadow="xl" border="1px solid" borderColor="teal.50">
+          <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="2xl" shadow="lg" border="1px solid" borderColor="rgba(169,203,183,0.1)">
             <AnimatePresence mode="wait">
               {/* identity */}
               {activeStep === 0 && (
@@ -249,7 +255,7 @@ export default function TherapistApplyClient() {
                   <VStack align="stretch" spacing={8}>
                      <Box>
                         <Heading size="md" fontFamily="'Playfair Display', serif" mb={2}>01. Professional Identification</Heading>
-                        <Text fontSize="sm" color="gray.500" fontStyle="italic">Advisory: Use your legal name as it appears on clinical licenses.</Text>
+                        <Text fontSize="sm" color="rgba(46,46,46,0.6)" fontStyle="italic">Advisory: Use your legal name as it appears on clinical licenses.</Text>
                      </Box>
                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                         <FormControl isRequired><FormLabel fontSize="xs" fontWeight="900">FIRST NAME</FormLabel>
@@ -312,7 +318,7 @@ export default function TherapistApplyClient() {
                         <FormLabel fontSize="xs" fontWeight="900">POPULATIONS YOU WORK WITH</FormLabel>
                         <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3}>
                            {POPULATIONS.map(p => (
-                             <Button key={p} size="sm" variant={selectedPopulations.includes(p) ? "solid" : "outline"} colorScheme="teal" borderRadius="full" onClick={() => togglePopulation(p)}>{p}</Button>
+                             <Button key={p} size="sm" variant={selectedPopulations.includes(p) ? "solid" : "outline"} colorScheme="green" borderRadius="full" onClick={() => togglePopulation(p)}>{p}</Button>
                            ))}
                         </SimpleGrid>
                      </FormControl>
@@ -335,7 +341,7 @@ export default function TherapistApplyClient() {
                      </FormControl>
                      
                      <VStack align="stretch" spacing={6}>
-                        <Badge colorScheme="teal" alignSelf="start">SUPERVISION HISTORY *</Badge>
+                        <Badge colorScheme="green" alignSelf="start">SUPERVISION HISTORY *</Badge>
                         {supervisions.map((s, i) => (
                            <Box key={i} p={6} border="1px solid" borderColor="gray.100" borderRadius="2xl">
                               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
@@ -348,7 +354,7 @@ export default function TherapistApplyClient() {
                               <IconButton mt={4} icon={<FiTrash2 />} onClick={() => removeListItem(supervisions, setSupervisions, i)} size="sm" colorScheme="red" variant="ghost" />
                            </Box>
                         ))}
-                        <Button leftIcon={<FiPlus />} variant="ghost" size="sm" color="teal.800" alignSelf="start" onClick={() => addListItem(supervisions, setSupervisions, { name: "", work: "", title: "", email: "", duration: "", focus: "" })}>Add Supervisor</Button>
+                        <Button leftIcon={<FiPlus />} variant="ghost" size="sm" color="#56756D" alignSelf="start" onClick={() => addListItem(supervisions, setSupervisions, { name: "", work: "", title: "", email: "", duration: "", focus: "" })}>Add Supervisor</Button>
                      </VStack>
                   </VStack>
                 </MotionBox>
@@ -403,17 +409,17 @@ export default function TherapistApplyClient() {
                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
                         <VStack align="stretch" spacing={2}>
                            <FormLabel fontSize="xs" fontWeight="900">CLINICAL CV / RESUME *</FormLabel>
-                           <Box border="2px dashed" borderColor="teal.500" p={6} borderRadius="2xl" position="relative" textAlign="center">
+                           <Box border="2px dashed" borderColor="#56756D" p={6} borderRadius="2xl" position="relative" textAlign="center">
                               <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" onChange={handleFileChange("resume")} />
-                              <Icon as={FiUpload} color="teal.500" mb={1} />
+                              <Icon as={FiUpload} color="#56756D" mb={1} />
                               <Text fontSize="xs">{files.resume ? files.resume.name : "Upload Resume"}</Text>
                            </Box>
                         </VStack>
                         <VStack align="stretch" spacing={2}>
                            <FormLabel fontSize="xs" fontWeight="900">DEGREE PROOF *</FormLabel>
-                           <Box border="2px dashed" borderColor="teal.500" p={6} borderRadius="2xl" position="relative" textAlign="center">
+                           <Box border="2px dashed" borderColor="#56756D" p={6} borderRadius="2xl" position="relative" textAlign="center">
                               <Input type="file" opacity={0} position="absolute" inset={0} cursor="pointer" onChange={handleFileChange("qualification_doc")} />
-                              <Icon as={FiUpload} color="teal.500" mb={1} />
+                              <Icon as={FiUpload} color="#56756D" mb={1} />
                               <Text fontSize="xs">{files.qualification_doc ? files.qualification_doc.name : "Upload Degree"}</Text>
                            </Box>
                         </VStack>
@@ -427,12 +433,12 @@ export default function TherapistApplyClient() {
                 <MotionBox key="step5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                    <VStack align="stretch" spacing={8}>
                       <Heading size="md" fontFamily="'Playfair Display', serif">06. Review Your Application</Heading>
-                      <Box p={8} bg="teal.50" borderRadius="2xl">
+                      <Box p={8} bg="rgba(169,203,183,0.1)" borderRadius="2xl">
                          <SimpleGrid columns={2} spacing={6} mb={8}>
                             <Box><Text fontWeight="700">Full Name</Text><Text>{form.first_name} {form.last_name}</Text></Box>
                             <Box><Text fontWeight="700">Credential</Text><Text>{form.highest_qualification}</Text></Box>
                          </SimpleGrid>
-                         <Divider borderColor="teal.200" mb={8} />
+                         <Divider borderColor="rgba(86,117,109,0.15)" mb={8} />
                          <Box mb={8}>
                             <Text fontWeight="700" mb={2}>Clinical Grounding</Text>
                             <Text fontSize="sm">{supervisions.length} Supervisor(s) listed.</Text>
@@ -447,7 +453,7 @@ export default function TherapistApplyClient() {
                             </HStack>
                          </Box>
                       </Box>
-                      <Text fontSize="xs" color="gray.500">Please ensure all details are accurate. Once submitted, your credentials will enter the formal vetting queue.</Text>
+                      <Text fontSize="xs" color="rgba(46,46,46,0.6)">Please ensure all details are accurate. Once submitted, your credentials will enter the formal vetting queue.</Text>
                    </VStack>
                 </MotionBox>
               )}
@@ -465,16 +471,16 @@ export default function TherapistApplyClient() {
                         </Select>
                      </FormControl>
                      <Box bg="gray.100" p={6} borderRadius="2xl">
-                        <Checkbox colorScheme="teal" isRequired><Text fontSize="sm" fontWeight="700">I certify that all documentation is accurate.</Text></Checkbox>
+                        <Checkbox colorScheme="green" isRequired><Text fontSize="sm" fontWeight="700">I certify that all documentation is accurate.</Text></Checkbox>
                      </Box>
                   </VStack>
                 </MotionBox>
               )}
             </AnimatePresence>
 
-            <HStack spacing={4} mt={16} pt={8} borderTop="1px solid" borderColor="teal.50">
-               {activeStep > 0 && <Button variant="ghost" h={14} px={10} borderRadius="full" onClick={prevStep}>Back</Button>}
-               <Button type="submit" bg="teal.800" color="white" flex={1} h={14} borderRadius="full" isLoading={isSubmitting} rightIcon={activeStep < STEPS.length - 1 ? <FiArrowRight /> : <FiCheck />}>
+            <HStack spacing={4} mt={12} pt={6} borderTop="1px solid" borderColor="rgba(169,203,183,0.1)">
+               {activeStep > 0 && <Button variant="ghost" h="46px" px={7} borderRadius="full" fontSize="14px" fontWeight="700" onClick={prevStep}>Back</Button>}
+               <Button type="submit" bg="#56756D" color="white" flex={1} h="46px" borderRadius="full" fontSize="14px" fontWeight="700" isLoading={isSubmitting} rightIcon={activeStep < STEPS.length - 1 ? <FiArrowRight /> : <FiCheck />}>
                   {activeStep === STEPS.length - 1 ? "Submit Rigorous Application" : "Continue"}
                </Button>
             </HStack>

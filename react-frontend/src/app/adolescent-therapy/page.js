@@ -40,235 +40,373 @@ export default function AdolescentTherapyPage() {
   if (!isMounted) return null;
 
   return (
-    <Box bg="#FDFBFA" overflow="hidden">
+    <Box bg="#FAF9F6" overflow="hidden">
       {/* 🌿 HERO SECTION */}
-      <Box position="relative" h={{ base: "auto", lg: "90vh" }} bg="white">
-        <Flex direction={{ base: "column", lg: "row" }} h="full">
-          <MotionVStack 
-            flex="1" 
-            justify="center" 
-            align="start" 
-            p={{ base: 8, md: 16, lg: 24 }} 
-            spacing={8}
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <Badge 
-              bg="blue.50" 
-              color="blue.800" 
-              px={4} 
-              py={1} 
-              borderRadius="full" 
-              fontSize="xs" 
-              fontWeight="800" 
-              letterSpacing="2px"
+      <Box pt={{ base: 6, md: 8 }} pb={{ base: 10, md: 14 }} bg="white" borderBottom="1px solid" borderColor="gray.100">
+        <Container maxW="6xl">
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 10, lg: 16 }} alignItems="center">
+            <MotionVStack 
+              align="start" 
+              spacing={6}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7 }}
             >
-              YOUTH SERVICES
-            </Badge>
-            <Heading 
-              fontSize={{ base: "4xl", md: "5xl", lg: "7xl" }} 
-              fontFamily="'Forum', serif" 
-              color="teal.900" 
-              lineHeight="1.1"
-            >
-              Adolescent <br /> Therapy
-            </Heading>
-            <Text 
-              fontSize={{ base: "lg", md: "xl" }} 
-              color="gray.600" 
-              maxW="500px" 
-              fontFamily="'Inter', sans-serif"
-              lineHeight="tall"
-            >
-              A space for self-expression and discovery. We provide creative, safe, and developmentally-informed therapy for teenagers and young adults navigating the complexities of modern youth.
-            </Text>
-            <Stack direction={{ base: "column", sm: "row" }} spacing={4} w="full">
-              <Button 
-                as={NextLink} 
-                href="/therapists/discovery" 
-                size="xl" 
-                bg="teal.800" 
-                color="white" 
-                h="64px" 
-                px={10} 
+              <Badge 
+                bg="blue.50" 
+                color="blue.800" 
+                border="1px solid"
+                borderColor="blue.200"
+                px={3.5} 
+                py={1} 
                 borderRadius="full" 
-                _hover={{ bg: "teal.900", transform: "translateY(-2px)" }}
-                transition="all 0.3s"
-                rightIcon={<FiArrowRight />}
+                fontSize="11px" 
+                fontWeight="800" 
+                letterSpacing="0.1em"
               >
-                Find an Adolescent Specialist
-              </Button>
-              <Button 
-                as={NextLink} 
-                href="/contactus" 
-                size="xl" 
-                variant="outline" 
-                borderColor="teal.100" 
-                h="64px" 
-                px={10} 
-                borderRadius="full"
-                _hover={{ bg: "teal.50" }}
+                YOUTH SERVICES
+              </Badge>
+              
+              <Heading 
+                as="h1"
+                fontSize={{ base: "32px", md: "42px", lg: "50px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                color="#263A33" 
+                lineHeight="1.18"
+                fontWeight="600"
               >
-                Talk to a Care Coordinator
-              </Button>
-            </Stack>
-          </MotionVStack>
-          
-          <Box flex="1.2" position="relative" overflow="hidden">
-            <MotionBox
-              h="full"
-              initial={{ scale: 1.1, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1.2 }}
-            >
-              <Image 
-                src="/adolescent_therapy_hero.png" 
-                alt="A welcoming and creative therapy room for teenagers, featuring art supplies, comfortable seating, and a bean bag, representing a safe space for youth expression" 
-                objectFit="cover" 
-                h="full" 
-                w="full" 
-              />
-            </MotionBox>
-            <Box 
-              position="absolute" 
-              top="0" 
-              left="0" 
-              w="full" 
-              h="full" 
-              bgGradient="linear(to-r, white, transparent 30%)" 
-              display={{ base: "none", lg: "block" }}
-            />
-          </Box>
-        </Flex>
+                Adolescent Therapy
+              </Heading>
+
+              <Text 
+                fontSize={{ base: "15px", md: "16px" }} 
+                color="rgba(46,46,46,0.75)" 
+                maxW="480px" 
+                lineHeight="1.7"
+              >
+                A space for self-expression, identity, and discovery. We provide creative, safe, and developmentally-informed therapy for teenagers and young adults navigating modern complexities.
+              </Text>
+
+              <Stack direction={{ base: "column", sm: "row" }} spacing={3.5} w="full" pt={2}>
+                <Button 
+                  as={NextLink} 
+                  href="/therapists/discovery" 
+                  h="46px" 
+                  px={7} 
+                  bg="#56756D" 
+                  color="white" 
+                  borderRadius="full" 
+                  fontSize="14px"
+                  fontWeight="600"
+                  boxShadow="0 4px 14px rgba(44, 122, 123, 0.25)"
+                  _hover={{ bg: "#263A33", transform: "translateY(-1px)", boxShadow: "0 6px 18px rgba(44, 122, 123, 0.35)" }}
+                  transition="all 0.2s ease"
+                  rightIcon={<FiArrowRight />}
+                >
+                  Find an Adolescent Specialist
+                </Button>
+                <Button 
+                  as={NextLink} 
+                  href="/contactus" 
+                  h="46px" 
+                  px={6} 
+                  variant="outline" 
+                  borderColor="gray.200" 
+                  color="gray.700"
+                  borderRadius="full"
+                  fontSize="14px"
+                  fontWeight="600"
+                  _hover={{ bg: "gray.50", borderColor: "gray.300" }}
+                  transition="all 0.2s ease"
+                >
+                  Talk to Care Coordinator
+                </Button>
+              </Stack>
+
+              <HStack spacing={6} pt={3} color="rgba(46,46,46,0.6)" fontSize="12px">
+                <HStack spacing={2}>
+                  <Icon as={FiCheck} color="#56756D" />
+                  <Text fontWeight="600" letterSpacing="0.04em">Developmentally Attuned</Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Icon as={FiCheck} color="#56756D" />
+                  <Text fontWeight="600" letterSpacing="0.04em">Safe & Confidential</Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Icon as={FiCheck} color="#56756D" />
+                  <Text fontWeight="600" letterSpacing="0.04em">Virtual & In-Person</Text>
+                </HStack>
+              </HStack>
+            </MotionVStack>
+            
+            <Box position="relative">
+              <Box
+                borderRadius="28px"
+                overflow="hidden"
+                boxShadow="0 20px 45px -12px rgba(38, 58, 51, 0.16)"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.16)"
+                bg="white"
+              >
+                <Image 
+                  src="/adolescent_therapy_hero.png" 
+                  alt="A welcoming and creative therapy room for teenagers, featuring art supplies and comfortable seating" 
+                  objectFit="cover" 
+                  w="100%"
+                  h={{ base: "320px", md: "420px" }}
+                />
+              </Box>
+
+              <Box 
+                position="absolute" 
+                bottom="12px" 
+                right={{ base: "12px", md: "20px" }} 
+                bg="rgba(255, 255, 255, 0.96)" 
+                backdropFilter="blur(8px)"
+                px={5} 
+                py={3.5} 
+                borderRadius="2xl" 
+                boxShadow="0 15px 35px -5px rgba(0, 0, 0, 0.12)" 
+                border="1px solid"
+                borderColor="gray.100"
+                maxW="260px"
+              >
+                <HStack spacing={3} align="center">
+                  <Circle bg="blue.50" size="36px" flexShrink={0}>
+                    <Icon as={FiSmile} color="blue.600" boxSize={4} />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="700" fontSize="13px" color="#263A33">Youth Sanctuary</Text>
+                    <Text fontSize="11px" color="rgba(46,46,46,0.6)" lineHeight="1.4">Non-judgmental creative space</Text>
+                  </VStack>
+                </HStack>
+              </Box>
+            </Box>
+          </SimpleGrid>
+        </Container>
       </Box>
 
       {/* 🎨 CREATIVE EXPRESSION */}
-      <Container maxW="7xl" py={{ base: 20, md: 32 }}>
-        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={20} alignItems="center">
-          <Box position="relative">
-            <Image 
-              src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=800" 
-              borderRadius="3xl" 
-              shadow="2xl" 
-              alt="An adolescent engaging in creative arts during a therapy session, showcasing non-verbal self-expression"
-            />
-            <Circle 
-              position="absolute" 
-              bottom="-20px" 
-              right="-20px" 
-              bg="mlc.gold" 
-              size="150px" 
-              shadow="xl"
-              display={{ base: "none", md: "flex" }}
-              flexDirection="column"
-              justifyContent="center"
-              alignItems="center"
-              p={4}
-              textAlign="center"
-            >
-              <Icon as={FiZap} boxSize={8} color="teal.900" mb={2} />
-              <Text fontWeight="800" fontSize="xs" color="teal.900" lineHeight="tight">CREATIVE TOOLS</Text>
-            </Circle>
-          </Box>
+      <Box pt={{ base: 14, md: 20 }} pb={{ base: 16, md: 24 }} bg="#FAF9F6">
+        <Container maxW="6xl">
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 10, lg: 16 }} alignItems="center">
+            <Box position="relative">
+              <Box
+                borderRadius="2xl"
+                overflow="hidden"
+                boxShadow="0 18px 40px -10px rgba(0, 0, 0, 0.12)"
+                border="1px solid"
+                borderColor="gray.100"
+                bg="white"
+              >
+                <Image 
+                  src="/adolescent_creative.jpg" 
+                  borderRadius="2xl" 
+                  alt="An adolescent engaging in creative self-expression during a therapy session" 
+                  w="100%"
+                  h={{ base: "320px", md: "420px", lg: "440px" }}
+                  objectFit="cover"
+                />
+              </Box>
 
-          <VStack align="start" spacing={8}>
-            <Heading size="2xl" fontFamily="'Forum', serif" color="teal.900">
-              Where Words <br /> Aren't Always Needed.
-            </Heading>
-            <Text fontSize="lg" color="gray.600" lineHeight="tall">
-              Adolescent therapy at MLC recognizes that traditional talk therapy can sometimes feel daunting. We integrate art, narrative tools, and creative expression to help teens share their internal world.
-            </Text>
-            <Text fontSize="lg" color="gray.600" lineHeight="tall">
-              Our specialists are trained in developmental psychology and relational safety, ensuring that every session is a collaborative partnership rather than an interrogation.
-            </Text>
-            
-            <SimpleGrid columns={2} spacing={6} w="full">
-              {[
-                { title: "Academic Stress", icon: FiZap },
-                { title: "Identity Discovery", icon: FiSun },
-                { title: "Social Anxiety", icon: FiUsers },
-                { title: "Emotional Literacy", icon: FiEdit3 },
-              ].map((item, i) => (
-                <HStack key={i} spacing={3}>
-                  <Icon as={item.icon} color="teal.500" />
-                  <Text fontWeight="700" color="teal.900" fontSize="sm">{item.title}</Text>
+              <Box 
+                position="absolute" 
+                bottom="12px" 
+                right={{ base: "12px", md: "20px" }} 
+                bg="white" 
+                p={3.5} 
+                borderRadius="18px" 
+                boxShadow="0 15px 35px rgba(0, 0, 0, 0.1)" 
+                border="1px solid"
+                borderColor="gray.100"
+                maxW="220px"
+                display={{ base: "none", md: "block" }}
+              >
+                <HStack spacing={2.5}>
+                  <Circle bg="rgba(169,203,183,0.1)" size="34px">
+                    <Icon as={FiZap} color="#56756D" boxSize={4} />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="700" fontSize="12px" color="#263A33">Creative Modalities</Text>
+                    <Text fontSize="11px" color="rgba(46,46,46,0.6)">Art, narrative & talk</Text>
+                  </VStack>
                 </HStack>
-              ))}
-            </SimpleGrid>
-          </VStack>
-        </SimpleGrid>
-      </Container>
+              </Box>
+            </Box>
+
+            <VStack align="start" spacing={5}>
+              <Badge bg="blue.50" color="blue.800" px={3} py={1} borderRadius="full" fontSize="11px" fontWeight="700">
+                OUR APPROACH
+              </Badge>
+
+              <Heading 
+                as="h2"
+                fontSize={{ base: "26px", md: "34px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                color="#263A33"
+                lineHeight="1.25"
+                fontWeight="600"
+              >
+                Where Words <br />Aren't Always Needed
+              </Heading>
+
+              <Text fontSize="15px" color="rgba(46,46,46,0.75)" lineHeight="1.75">
+                Adolescent therapy recognizes that traditional talk therapy can sometimes feel daunting. We integrate art, narrative reflection, and creative expression to help teens articulate their internal experiences with ease.
+              </Text>
+              
+              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 4, sm: 5 }} w="full" mt={3}>
+                {[
+                  { title: "Academic Stress", icon: FiZap, desc: "Managing exam pressure, high expectations, and burnout" },
+                  { title: "Identity Discovery", icon: FiSun, desc: "Building self-esteem and navigating values and belonging" },
+                  { title: "Social Anxiety", icon: FiUsers, desc: "Navigating friendships, peer dynamics, and isolation" },
+                  { title: "Emotional Literacy", icon: FiEdit3, desc: "Learning to name, regulate, and express complex feelings" },
+                ].map((item, i) => (
+                  <Box key={i} p={{ base: 4.5, md: 5 }} bg="white" borderRadius="18px" border="1px solid" borderColor="gray.100" shadow="xs" _hover={{ borderColor: "rgba(86,117,109,0.15)", shadow: "sm" }} transition="all 0.2s ease">
+                    <HStack spacing={2.5} mb={2}>
+                      <Icon as={item.icon} color="#56756D" boxSize={4} />
+                      <Text fontWeight="700" color="#263A33" fontSize="14px">{item.title}</Text>
+                    </HStack>
+                    <Text fontSize="12.5px" color="rgba(46,46,46,0.6)" lineHeight="1.55">{item.desc}</Text>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </VStack>
+          </SimpleGrid>
+        </Container>
+      </Box>
 
       {/* 🛡️ SAFE HARBOR */}
-      <Box bg="teal.900" py={32} color="white">
-        <Container maxW="7xl">
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={20} alignItems="center">
-            <VStack align="start" spacing={10}>
-              <VStack align="start" spacing={4}>
-                <Badge colorScheme="whiteAlpha">THE MLC PROMISE</Badge>
-                <Heading size="3xl" fontFamily="'Forum', serif">A Safe Harbor.</Heading>
-              </VStack>
+      <Box bg="linear-gradient(135deg, #3A5A50 0%, #56756D 50%, #4A6B62 100%)" py={{ base: 12, md: 16 }} color="white">
+        <Container maxW="6xl">
+          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 10, lg: 16 }} alignItems="center">
+            <VStack align="start" spacing={5}>
+              <Badge bg="rgba(201, 169, 96, 0.15)" color="#E6CA65" border="1px solid rgba(201, 169, 96, 0.3)" px={3} py={1} borderRadius="full" fontSize="11px" fontWeight="700">
+                THE MLC PROMISE
+              </Badge>
+              <Heading 
+                as="h2"
+                fontSize={{ base: "24px", md: "32px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                fontWeight="600"
+              >
+                A Safe Harbor
+              </Heading>
               
-              <VStack align="stretch" spacing={8}>
-                <Box>
-                  <HStack mb={2}>
-                    <Icon as={FiShield} color="mlc.gold" />
-                    <Text fontWeight="800" fontSize="xs" letterSpacing="2px">CONFIDENTIALITY</Text>
-                  </HStack>
-                  <Text color="whiteAlpha.700">We maintain a clear framework of privacy that respects the adolescent's autonomy while ensuring safety parameters are in place.</Text>
-                </Box>
-                <Box>
-                  <HStack mb={2}>
-                    <Icon as={FiHeart} color="mlc.gold" />
-                    <Text fontWeight="800" fontSize="xs" letterSpacing="2px">RELATIONAL ALLIANCE</Text>
-                  </HStack>
-                  <Text color="whiteAlpha.700">The therapeutic relationship is built on trust, authenticity, and a non-judgmental stance towards the teen's lived experience.</Text>
-                </Box>
-                <Box>
-                  <HStack mb={2}>
-                    <Icon as={FiCoffee} color="mlc.gold" />
-                    <Text fontWeight="800" fontSize="xs" letterSpacing="2px">SYSTEMIC SUPPORT</Text>
-                  </HStack>
-                  <Text color="whiteAlpha.700">We provide guidance for parents and families to create a supportive environment at home without compromising the teen's privacy.</Text>
-                </Box>
+              <VStack align="stretch" spacing={5} w="full">
+                {[
+                  {
+                    icon: FiShield,
+                    title: "Clear Confidentiality",
+                    desc: "We maintain a transparent framework of privacy that respects the teen's autonomy while keeping crucial safety boundaries in place."
+                  },
+                  {
+                    icon: FiHeart,
+                    title: "Relational Alliance",
+                    desc: "The therapeutic bond is built on authentic listening and non-judgmental validation of the adolescent's lived world."
+                  },
+                  {
+                    icon: FiCoffee,
+                    title: "Systemic Family Guidance",
+                    desc: "We provide dedicated check-ins for parents to build a supportive home environment without breaching the teen's trust."
+                  }
+                ].map((item, i) => (
+                  <Box key={i} p={6} borderRadius="2xl" bg="rgba(255, 255, 255, 0.05)" border="1px solid" borderColor="rgba(255, 255, 255, 0.1)">
+                    <HStack spacing={3} mb={2.5}>
+                      <Icon as={item.icon} color="#E6CA65" boxSize={4} />
+                      <Heading size="xs" color="white" fontWeight="700" letterSpacing="0.04em">{item.title}</Heading>
+                    </HStack>
+                    <Text fontSize="14px" color="whiteAlpha.800" lineHeight="1.7">{item.desc}</Text>
+                  </Box>
+                ))}
               </VStack>
             </VStack>
             
-            <Image 
-              src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&q=80&w=800" 
-              borderRadius="4xl" 
-              shadow="2xl" 
-              alt="A supportive scene representing the therapeutic bond and safety provided to adolescents at MLC"
-            />
+            <Box
+              borderRadius="2xl"
+              overflow="hidden"
+              boxShadow="0 20px 45px -10px rgba(0, 0, 0, 0.35)"
+              border="1px solid"
+              borderColor="rgba(255, 255, 255, 0.1)"
+            >
+              <Image 
+                src="/adolescent_support.jpg" 
+                borderRadius="2xl" 
+                alt="A supportive scene representing the therapeutic bond and safety provided to adolescents"
+                w="100%"
+                h={{ base: "320px", md: "420px" }}
+                objectFit="cover"
+              />
+            </Box>
           </SimpleGrid>
         </Container>
       </Box>
 
       {/* ❔ FAQ SECTION */}
-      <Box bg="gray.50" py={32}>
-        <Container maxW="4xl">
-          <VStack spacing={12}>
-            <VStack spacing={4} textAlign="center">
-              <Heading size="2xl" fontFamily="'Forum', serif" color="teal.900">Parent & Teen FAQ</Heading>
-              <Text color="gray.500">Frequently asked questions about adolescent sessions.</Text>
+      <Box py={{ base: 10, md: 14 }} bg="linear-gradient(180deg, #F4F1EC 0%, #FDFBFA 100%)" position="relative">
+        <Box
+          position="absolute"
+          top="50%"
+          right="5%"
+          transform="translateY(-50%)"
+          w="300px"
+          h="300px"
+          borderRadius="full"
+          bg="radial-gradient(circle, rgba(169,203,183,0.1) 0%, transparent 70%)"
+          filter="blur(60px)"
+          pointerEvents="none"
+        />
+
+        <Container maxW="840px" position="relative" zIndex={1}>
+          <VStack spacing={6}>
+            <VStack spacing={2} textAlign="center">
+              <Text
+                fontSize="xs"
+                fontWeight="700"
+                letterSpacing="2.5px"
+                textTransform="uppercase"
+                color="#C9A960"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+              >
+                FAQ
+              </Text>
+              <Heading 
+                as="h2"
+                fontSize={{ base: "22px", md: "28px" }} 
+                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                color="#263A33"
+                fontWeight="600"
+              >
+                Parent & Teen FAQ
+              </Heading>
+              <Text color="rgba(46,46,46,0.65)" fontSize="13.5px" fontFamily="'Inter', var(--font-inter), sans-serif">
+                Frequently asked questions about adolescent sessions
+              </Text>
             </VStack>
 
             <Accordion allowToggle w="full">
               {[
-                { q: "What is the starting age for adolescent therapy?", a: "We typically work with adolescents from age 13 through young adulthood. For younger children, we may recommend specific play therapy specialists." },
-                { q: "Will I know what my child talks about?", a: "Confidentiality is vital for the success of teen therapy. We share progress updates with parents but keep specific session details private unless there is a safety concern." },
-                { q: "How involved are parents in the process?", a: "We believe in a systemic approach. While the teen has their private space, we often schedule separate parent guidance sessions to support the home environment." },
-                { q: "Do you offer online sessions for teens?", a: "Yes. Many adolescents find the virtual space comfortable and familiar. We use secure, interactive platforms to keep them engaged." },
+                { q: "What age group do you work with?", a: "We work with adolescents from ages 13 through young adulthood. For younger children, our care team can connect you with specialized pediatric practitioners." },
+                { q: "Will parents know what happens in sessions?", a: "Confidentiality is essential for teen therapeutic progress. We provide parents with thematic progress summaries while keeping specific session conversations private, except in rare safety concerns." },
+                { q: "How involved are parents in the care plan?", a: "We encourage a collaborative, systemic approach. While the teen has their dedicated one-on-one space, we often schedule separate parent consultation sessions." },
+                { q: "Do you offer virtual sessions for teens?", a: "Yes. Many adolescents appreciate the comfort of engaging in sessions from their private room through our secure, HIPAA-compliant portal." },
               ].map((item, i) => (
-                <AccordionItem key={i} border="none" mb={4} bg="white" borderRadius="2xl" overflow="hidden" shadow="sm">
-                  <AccordionButton py={6} _hover={{ bg: "teal.50" }}>
-                    <Box flex="1" textAlign="left" fontWeight="700" color="teal.900">
+                <AccordionItem 
+                  key={i} 
+                  border="1px solid" 
+                  borderColor="rgba(86,117,109,0.12)" 
+                  mb={2.5} 
+                  bg="rgba(255,255,255,0.7)" 
+                  backdropFilter="blur(8px)" 
+                  borderRadius="xl" 
+                  overflow="hidden"
+                >
+                  <AccordionButton py={3.5} px={5} _hover={{ bg: "rgba(169,203,183,0.05)" }}>
+                    <Box flex="1" textAlign="left" fontWeight="600" fontSize="15px" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">
                       {item.q}
                     </Box>
-                    <AccordionIcon />
+                    <AccordionIcon color="#56756D" />
                   </AccordionButton>
-                  <AccordionPanel pb={6} px={6} color="gray.600" lineHeight="tall">
+                  <AccordionPanel pt={1} pb={4} px={5} color="rgba(46,46,46,0.7)" fontSize="13.5px" lineHeight="1.65" fontFamily="'Inter', var(--font-inter), sans-serif">
                     {item.a}
                   </AccordionPanel>
                 </AccordionItem>
@@ -279,25 +417,32 @@ export default function AdolescentTherapyPage() {
       </Box>
 
       {/* 🚀 CTA SECTION */}
-      <Box bg="teal.800" py={24}>
-        <Container maxW="7xl">
-          <Flex direction={{ base: "column", md: "row" }} align="center" justify="space-between" gap={10}>
-            <VStack align="start" spacing={4}>
-              <Heading size="2xl" color="white" fontFamily="'Forum', serif">Support the next chapter.</Heading>
-              <Text color="whiteAlpha.800" fontSize="lg">Give your teen the space they need to thrive.</Text>
+      <Box bg="linear-gradient(135deg, #3A5A50 0%, #56756D 50%, #4A6B62 100%)" py={{ base: 10, md: 12 }} color="white">
+        <Container maxW="6xl">
+          <Flex direction={{ base: "column", md: "row" }} align="center" justify="space-between" gap={8}>
+            <VStack align="start" spacing={1.5}>
+              <Heading 
+                fontSize={{ base: "22px", md: "28px" }} 
+                color="white" 
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                fontWeight="600"
+              >
+                Support the Next Chapter
+              </Heading>
+              <Text color="whiteAlpha.750" fontSize="14px">Give your teen the dedicated space they need to thrive.</Text>
             </VStack>
             <Button 
               as={NextLink} 
               href="/therapists/discovery" 
-              size="xl" 
-              bg="white" 
-              color="teal.900" 
-              h="64px" 
-              px={12} 
+              h="46px" 
+              px={8} 
+              bg="#C9A960" 
+              color="#263A33" 
               borderRadius="full" 
-              fontWeight="800"
-              _hover={{ transform: "scale(1.05)", bg: "teal.50" }}
-              transition="all 0.3s"
+              fontSize="14px"
+              fontWeight="700"
+              _hover={{ bg: "#E6CA65", transform: "translateY(-1px)", boxShadow: "0 6px 18px rgba(201, 169, 96, 0.3)" }}
+              transition="all 0.2s ease"
             >
               Browse Youth Specialists
             </Button>

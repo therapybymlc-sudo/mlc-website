@@ -151,12 +151,12 @@ export default function SupervisionDiscoveryClient() {
       <Box bg="#FDFBFA" minH="100vh" py={{ base: 12, md: 24 }}>
         <Container maxW="lg">
           <VStack spacing={8} p={12} bg="white" borderRadius="3rem" shadow="2xl" textAlign="center">
-            <Circle size="80px" bg="teal.50" color="teal.600"><Icon as={FiLock} w={8} h={8} /></Circle>
+            <Circle size="80px" bg="rgba(169,203,183,0.1)" color="#56756D"><Icon as={FiLock} w={8} h={8} /></Circle>
             <VStack spacing={3}>
-              <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Therapist Access Required</Heading>
-              <Text color="gray.500">Supervision Discovery is a professional resource for therapists. Please sign in with your therapist account to continue.</Text>
+              <Heading size="lg" color="#263A33" fontFamily="'Playfair Display', serif">Therapist Access Required</Heading>
+              <Text color="rgba(46,46,46,0.6)">Supervision Discovery is a professional resource for therapists. Please sign in with your therapist account to continue.</Text>
             </VStack>
-            <Button as={NextLink} href="/login/therapist" bg="teal.800" color="white" borderRadius="full" px={10} w="full" h={14}>
+            <Button as={NextLink} href="/login/therapist" bg="#56756D" color="white" borderRadius="full" px={10} w="full" h={14}>
               Therapist Sign In
             </Button>
           </VStack>
@@ -174,17 +174,17 @@ export default function SupervisionDiscoveryClient() {
         <Container maxW="6xl" pt={{ base: 10, md: 20 }} pb={40}>
           <VStack spacing={12} align="stretch">
              {/* Application Received Summary */}
-             <Box p={{ base: 8, md: 12 }} bg="white" borderRadius="3rem" shadow="2xl" border="1px solid" borderColor="teal.50">
+             <Box p={{ base: 8, md: 12 }} bg="white" borderRadius="3rem" shadow="2xl" border="1px solid" borderColor="rgba(169,203,183,0.1)">
                 <VStack align="start" spacing={6}>
-                   <Badge bg="teal.50" color="teal.600" px={4} py={1} borderRadius="full" fontSize="xs">APPLICATION REGISTERED</Badge>
-                   <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900">Your Clinical Growth Path</Heading>
-                   <Text fontSize="lg" color="gray.600" lineHeight="1.8">
+                   <Badge bg="rgba(169,203,183,0.1)" color="#56756D" px={4} py={1} borderRadius="full" fontSize="xs">APPLICATION REGISTERED</Badge>
+                   <Heading size="xl" fontFamily="'Playfair Display', serif" color="#263A33">Your Clinical Growth Path</Heading>
+                   <Text fontSize="lg" color="rgba(46,46,46,0.75)" lineHeight="1.8">
                       Thank you for sharing your professional trajectory. Your request for supervision focuses on <b>{formData.primary_modality}</b> within a <b>{formData.current_context}</b> context. 
                       Clinicians at MLC prioritize modality-depth and clinical stewardship. Based on your seniority and growth goals, we have identified these senior mentors who align with your orientation.
                    </Text>
                    <HStack wrap="wrap" spacing={3}>
-                      <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.supervision_format_pref}</Badge>
-                      <Badge variant="outline" colorScheme="teal" borderRadius="full" px={3}>{formData.frequency_pref}</Badge>
+                      <Badge variant="outline" colorScheme="green" borderRadius="full" px={3}>{formData.supervision_format_pref}</Badge>
+                      <Badge variant="outline" colorScheme="green" borderRadius="full" px={3}>{formData.frequency_pref}</Badge>
                    </HStack>
                 </VStack>
              </Box>
@@ -195,10 +195,10 @@ export default function SupervisionDiscoveryClient() {
                   <VStack align="start" spacing={8} w="full">
                     <HStack w="full" justify="space-between" align="end">
                        <VStack align="start" spacing={1}>
-                          <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Matched Senior Supervisors</Heading>
-                          <Text color="gray.500" fontSize="sm">These specialists have verified mastery in your chosen modality.</Text>
+                          <Heading size="lg" color="#263A33" fontFamily="'Playfair Display', serif">Matched Senior Supervisors</Heading>
+                          <Text color="rgba(46,46,46,0.6)" fontSize="sm">These specialists have verified mastery in your chosen modality.</Text>
                        </VStack>
-                       <Button variant="link" color="teal.600" rightIcon={<FiArrowRight />} as={NextLink} href="/therapists/supervisors">View All Clinicians</Button>
+                       <Button variant="link" color="#56756D" rightIcon={<FiArrowRight />} as={NextLink} href="/therapists/supervisors">View All Clinicians</Button>
                     </HStack>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
                        {results.matches.map(mentor => (
@@ -210,7 +210,7 @@ export default function SupervisionDiscoveryClient() {
 
                 {!hasMatches && hasOthers && (
                   <VStack align="start" spacing={6} w="full">
-                     <Text color="gray.600" fontSize="lg" fontWeight="500">
+                     <Text color="rgba(46,46,46,0.75)" fontSize="lg" fontWeight="500">
                         No immediate mentors found for this specific modality, but here are our other available supervisors on the site:
                      </Text>
                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
@@ -223,7 +223,7 @@ export default function SupervisionDiscoveryClient() {
 
                 {hasMatches && hasOthers && (
                   <VStack align="start" spacing={8} w="full" pt={10} borderTop="1px solid" borderColor="gray.100">
-                    <Heading size="md" color="gray.600" fontFamily="'Playfair Display', serif">Other Available Supervisors</Heading>
+                    <Heading size="md" color="rgba(46,46,46,0.75)" fontFamily="'Playfair Display', serif">Other Available Supervisors</Heading>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
                        {results.others.map(mentor => (
                          <TherapistCard key={mentor.id} therapist={mentor} isMatch={false} />
@@ -233,9 +233,9 @@ export default function SupervisionDiscoveryClient() {
                 )}
 
                 {!hasMatches && !hasOthers && (
-                   <Center w="full" py={20} bg="white" borderRadius="3rem" border="1px dashed" borderColor="teal.100">
+                   <Center w="full" py={20} bg="white" borderRadius="3rem" border="1px dashed" borderColor="rgba(169,203,183,0.15)">
                       <VStack spacing={4}>
-                         <Icon as={FiStar} w={10} h={10} color="teal.200" />
+                         <Icon as={FiStar} w={10} h={10} color="rgba(86,117,109,0.15)" />
                          <Text color="gray.400">No immediate mentors found. Our Clinical Director will review your case manually.</Text>
                       </VStack>
                    </Center>
@@ -243,7 +243,7 @@ export default function SupervisionDiscoveryClient() {
              </VStack>
 
              {/* Action Bridge */}
-             <Box p={{ base: 8, md: 12 }} bg="teal.800" borderRadius="3rem" color="white" textAlign="center">
+             <Box p={{ base: 8, md: 12 }} bg="#56756D" borderRadius="3rem" color="white" textAlign="center">
                 <VStack spacing={6}>
                    <Heading size="md" fontFamily="'Playfair Display', serif">Need specialized board certification?</Heading>
                    <Text fontSize="sm" opacity="0.8">If you are seeking supervision for specific institutional licensing, please book an alignment call with our director.</Text>
@@ -266,8 +266,8 @@ export default function SupervisionDiscoveryClient() {
     return (
       <Center minH="100vh" bg="#FDFBFA">
         <VStack spacing={6}>
-          <Progress size="xs" isIndeterminate w="200px" colorScheme="teal" borderRadius="full" />
-          <Text fontSize="sm" color="gray.500" fontWeight="500">Checking clinical credentials...</Text>
+          <Progress size="xs" isIndeterminate w="200px" colorScheme="green" borderRadius="full" />
+          <Text fontSize="sm" color="rgba(46,46,46,0.6)" fontWeight="500">Checking clinical credentials...</Text>
         </VStack>
       </Center>
     );
@@ -278,18 +278,18 @@ export default function SupervisionDiscoveryClient() {
       case 0:
         return (
           <VStack spacing={10} align="center" textAlign="center" py={6}>
-            <Icon as={FiAward} w={16} h={16} color="teal.600" />
+            <Icon as={FiAward} w={16} h={16} color="#56756D" />
             <VStack spacing={4}>
-              <Heading size="xl" color="teal.800" fontFamily="'Playfair Display', serif">Supervisee & Mentor Alignment</Heading>
-              <Text color="gray.600" fontSize="lg" maxW="lg">
+              <Heading size="xl" color="#56756D" fontFamily="'Playfair Display', serif">Supervisee & Mentor Alignment</Heading>
+              <Text color="rgba(46,46,46,0.75)" fontSize="lg" maxW="lg">
                 Mentorship at MLC is designed to elevate your clinical identity. 
                 As a <b>Supervisee</b>, your professional context helps us match you with a mentor whose mastery 
                 aligns with your specific growth journey.
               </Text>
-              <Box p={8} bg="teal.50" borderRadius="3xl" border="1px solid" borderColor="teal.100" mt={6}>
+              <Box p={8} bg="rgba(169,203,183,0.1)" borderRadius="3xl" border="1px solid" borderColor="rgba(169,203,183,0.15)" mt={6}>
                 <Stack direction={{ base: "column", sm: "row" }} align="start" spacing={4}>
                   <Radio isChecked={formData.consent} onClick={() => setFormData({...formData, consent: !formData.consent})} />
-                  <Text fontSize="sm" fontWeight="600" textAlign="left" color="teal.900">
+                  <Text fontSize="sm" fontWeight="600" textAlign="left" color="#263A33">
                     I am applying as a <b>Supervisee</b> and consent to sharing my clinical background for the purpose of matching with an MLC Supervisor.
                   </Text>
                 </Stack>
@@ -342,7 +342,7 @@ export default function SupervisionDiscoveryClient() {
                   <RadioGroup value={formData.supervision_reason} onChange={(v) => setFormData({...formData, supervision_reason: v})}>
                     <VStack align="start" spacing={4}>
                        {["Clinical Growth (Skills/Identity)", "Licensing/Certification Requirement", "Case-by-Case Review", "Support for High-Burnout Context"].map(r => (
-                         <Radio key={r} value={r} colorScheme="teal" size="lg">{r}</Radio>
+                         <Radio key={r} value={r} colorScheme="green" size="lg">{r}</Radio>
                        ))}
                     </VStack>
                   </RadioGroup>
@@ -357,13 +357,13 @@ export default function SupervisionDiscoveryClient() {
                   ].map(f => (
                     <VStack 
                       key={f.val} 
-                      p={6} bg={formData.supervision_format_pref === f.val ? "teal.50" : "white"} 
-                      border="1px solid" borderColor={formData.supervision_format_pref === f.val ? "teal.200" : "gray.100"}
+                      p={6} bg={formData.supervision_format_pref === f.val ? "rgba(169,203,183,0.1)" : "white"} 
+                      border="1px solid" borderColor={formData.supervision_format_pref === f.val ? "rgba(86,117,109,0.15)" : "gray.100"}
                       borderRadius="2xl" cursor="pointer" onClick={() => setFormData({...formData, supervision_format_pref: f.val})}
-                      _hover={{ bg: 'teal.50' }}
+                      _hover={{ bg: 'rgba(169,203,183,0.1)' }}
                     >
-                       <Icon as={f.icon} boxSize={6} color={formData.supervision_format_pref === f.val ? "teal.500" : "gray.400"} />
-                       <Text fontSize="xs" fontWeight="800" color="teal.900">{f.val}</Text>
+                       <Icon as={f.icon} boxSize={6} color={formData.supervision_format_pref === f.val ? "#6B8B7B" : "gray.400"} />
+                       <Text fontSize="xs" fontWeight="800" color="#263A33">{f.val}</Text>
                     </VStack>
                   ))}
                </SimpleGrid>
@@ -395,14 +395,14 @@ export default function SupervisionDiscoveryClient() {
       case 5:
         return (
           <VStack spacing={10} align="center" textAlign="center" py={6}>
-            <Circle size="100px" bg="teal.50" color="teal.500"><Icon as={FiArrowRight} w={10} h={10} /></Circle>
+            <Circle size="100px" bg="rgba(169,203,183,0.1)" color="#6B8B7B"><Icon as={FiArrowRight} w={10} h={10} /></Circle>
             <VStack spacing={4}>
-              <Heading size="xl" color="teal.800" fontFamily="'Playfair Display', serif">Finalize Supervisee Path</Heading>
-              <Text color="gray.600" fontSize="lg">
+              <Heading size="xl" color="#56756D" fontFamily="'Playfair Display', serif">Finalize Supervisee Path</Heading>
+              <Text color="rgba(46,46,46,0.75)" fontSize="lg">
                 Ready to align your practice? Once submitted, our team will review your Supervisee profile against our Senior Supervisor network.
               </Text>
             </VStack>
-            <VStack spacing={6} w="full" bg="#FDFBFA" p={8} borderRadius="3rem" border="1px dashed" borderColor="teal.200">
+            <VStack spacing={6} w="full" bg="#FDFBFA" p={8} borderRadius="3rem" border="1px dashed" borderColor="rgba(86,117,109,0.15)">
                <FormControl isRequired>
                   <FormLabel fontWeight="bold" fontSize="xs" color="gray.400" textTransform="uppercase">Contact Email</FormLabel>
                   <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} borderRadius="xl" bg="white" h={14} />
@@ -425,19 +425,19 @@ export default function SupervisionDiscoveryClient() {
           {/* Header */}
           <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} spacing={6}>
             <Stack direction={{ base: "column", sm: "row" }} spacing={4} align={{ base: "start", sm: "center" }}>
-               <Icon as={FiAward} w={8} h={8} color="teal.600" />
+               <Icon as={FiAward} w={8} h={8} color="#56756D" />
                <VStack align="start" spacing={0}>
-                 <Heading size="md" color="teal.900" fontFamily="'Playfair Display', serif">Supervision Discovery</Heading>
-                 <Text fontSize="xs" color="gray.500">Aligning Clinical Growth & Mastery</Text>
+                 <Heading size="md" color="#263A33" fontFamily="'Playfair Display', serif">Supervision Discovery</Heading>
+                 <Text fontSize="xs" color="rgba(46,46,46,0.6)">Aligning Clinical Growth & Mastery</Text>
                </VStack>
             </Stack>
             <VStack align={{ base: "start", md: "end" }} spacing={1}>
-              <Text fontSize="2xs" fontWeight="900" color="teal.800">STEP {currentSection + 1} OF {SECTIONS.length}</Text>
+              <Text fontSize="2xs" fontWeight="900" color="#56756D">STEP {currentSection + 1} OF {SECTIONS.length}</Text>
               <Text fontSize="sm" fontWeight="700" color="gray.400">{SECTIONS[currentSection]}</Text>
             </VStack>
           </Stack>
 
-          <Progress value={progress} size="xs" colorScheme="teal" borderRadius="full" bg="teal.50" />
+          <Progress value={progress} size="xs" colorScheme="green" borderRadius="full" bg="rgba(169,203,183,0.1)" />
 
           {/* Form Content */}
           <MotionBox
@@ -457,7 +457,7 @@ export default function SupervisionDiscoveryClient() {
             overflow="hidden"
           >
              {/* Abstract BG elements */}
-             <Box position="absolute" top="-5%" right="-5%" w="200px" h="200px" bg="teal.50" borderRadius="full" filter="blur(60px)" opacity="0.4" />
+             <Box position="absolute" top="-5%" right="-5%" w="200px" h="200px" bg="rgba(169,203,183,0.1)" borderRadius="full" filter="blur(60px)" opacity="0.4" />
              <Box position="absolute" bottom="-5%" left="-5%" w="200px" h="200px" bg="#F9F6EE" borderRadius="full" filter="blur(60px)" opacity="0.4" />
              
              {renderSection()}
@@ -479,14 +479,14 @@ export default function SupervisionDiscoveryClient() {
             <Button
               rightIcon={currentSection === SECTIONS.length - 1 ? <FiCheck /> : <FiArrowRight />}
               onClick={nextStep}
-              bg="teal.800"
+              bg="#56756D"
               color="white"
               borderRadius="full"
               px={12}
               py={7}
               shadow="lg"
               isLoading={isLoading}
-              _hover={{ bg: "teal.900", transform: "translateY(-2px)" }}
+              _hover={{ bg: "#263A33", transform: "translateY(-2px)" }}
             >
               {currentSection === SECTIONS.length - 1 ? "Submit Clinical Profile" : "Continue Path"}
             </Button>

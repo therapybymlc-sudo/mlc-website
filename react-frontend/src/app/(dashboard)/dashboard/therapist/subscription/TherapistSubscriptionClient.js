@@ -117,7 +117,7 @@ export default function TherapistSubscriptionClient() {
             MLC Pro Subscription
           </Heading>
           <Text color="gray.600" fontSize="md" maxW="2xl">
-            MLC Pro is live — activate monthly or annual access below. Therapist OS Premium is on the back burner;
+            MLC Pro is live. Activate monthly or annual access below. Therapist OS Premium is on the back burner;
             join the waitlist from The Therapist OS page when it launches.
           </Text>
         </VStack>

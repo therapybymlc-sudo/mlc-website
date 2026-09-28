@@ -32,7 +32,7 @@ export default async function BlogPage() {
     const { posts, categories, tags } = await fetchInitialData();
 
     return (
-        <Box minH="100vh" bg="#f7f6f2">
+        <Box minH="100vh" bg="#FDFBFA">
             <BlogListClient initialPosts={posts} categories={categories} tags={tags} />
         </Box>
     );

@@ -48,7 +48,7 @@ const PREMIUM_EXTRA_FEATURES = [
   'Over 25 screening assessments with automated scoring & tracking',
   'Over 200 therapist resources, worksheets & clinical tools',
   'Therapist self-care checks & burnout-aware wellness prompts',
-  'Complete in-platform chat — full privacy; never share your number with a client again',
+  'Complete in-platform chat with full privacy; never share your number with a client again',
   'Advanced practice analytics with conversion insights',
   'Priority listing boosts in therapist discovery surfaces',
   'Premium automation workflows for follow-ups and retention',
@@ -195,7 +195,7 @@ function PlanCard({
           isLoading={!comingSoon && loadingPlan === planKey}
           loadingText="Starting…"
         >
-          {isCurrent ? 'Current plan' : comingSoon ? 'Coming soon — join waitlist' : ctaLabel || 'Continue'}
+          {isCurrent ? 'Current plan' : comingSoon ? 'Coming soon: join waitlist' : ctaLabel || 'Continue'}
         </Button>
 
         <Divider my={8} borderColor="gray.100" />
@@ -220,7 +220,7 @@ export default function TherapistSubscriptionGateway({
   isOpen = false,
   onClose,
   title = 'Activate MLC Pro',
-  contextLabel = 'MLC Pro is live now — subscribe to unlock your calendar, bookings, profile publishing, and client workflows. Therapist OS Premium is coming later.',
+  contextLabel = 'MLC Pro is live now. Subscribe to unlock your calendar, bookings, profile publishing, and client workflows. Therapist OS Premium is coming later.',
   mode = 'modal',
   variant = 'default',
   onSelectPlan,
@@ -343,7 +343,7 @@ export default function TherapistSubscriptionGateway({
           priceUnit="/ year"
           compareAt={MONTHLY_IF_PAID_MONTHLY_YEAR}
           compareLabel={`Save INR ${MONTHLY_IF_PAID_MONTHLY_YEAR - ANNUAL_INR}`}
-          subline={`Full MLC Pro access — ~INR ${Math.round(ANNUAL_INR / 12)} / month when billed annually.`}
+          subline={`Full MLC Pro access (~INR ${Math.round(ANNUAL_INR / 12)} / month when billed annually)`}
           isRecommended
           badgeLabel={isCurrentAnnual ? 'Current plan' : 'Recommended · live now'}
           onSelectPlan={onSelectPlan}
@@ -382,7 +382,7 @@ export default function TherapistSubscriptionGateway({
           isCurrent={false}
           emphasized={false}
           featureLines={PREMIUM_EXTRA_FEATURES}
-          ctaLabel={premiumSoon ? 'Coming soon — join waitlist' : 'Unlock premium'}
+          ctaLabel={premiumSoon ? 'Coming soon: join waitlist' : 'Unlock premium'}
         />
       </SimpleGrid>
 
@@ -397,7 +397,7 @@ export default function TherapistSubscriptionGateway({
       >
         <Text fontSize="sm" color="gray.500" maxW="lg">
           {premiumSoon
-            ? 'Premium (Therapist OS) is coming soon — join the pre-release list for a major discount at launch.'
+            ? 'Premium (Therapist OS) is coming soon. Join the pre-release list for a major discount at launch.'
             : 'Premium tier unlocks advanced growth, priority support, and therapist OS capabilities for INR 1799/year.'}
         </Text>
         <Button as={NextLink} href="/dashboard/therapist/premium#premium-pre-release" variant="outline" colorScheme="purple" size="sm" borderRadius="lg">

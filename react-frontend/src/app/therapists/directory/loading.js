@@ -6,8 +6,8 @@ export default function DirectoryLoading() {
   return (
     <Center minH="50vh" bg="#FDFBFA">
       <VStack spacing={4}>
-        <Spinner thickness="4px" speed="0.65s" emptyColor="gray.100" color="teal.500" size="xl" />
-        <Text fontWeight="600" color="gray.500">
+        <Spinner thickness="4px" speed="0.65s" emptyColor="gray.100" color="#6B8B7B" size="xl" />
+        <Text fontWeight="600" color="rgba(46,46,46,0.6)">
           Loading directory…
         </Text>
       </VStack>

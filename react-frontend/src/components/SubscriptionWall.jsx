@@ -18,12 +18,12 @@ const COPY = {
   basic: {
     title: 'MLC Pro required',
     description:
-      'Activate MLC Pro to use this feature — calendar, bookings, profile publishing, and client workflows. Plans are live now.',
+      'Activate MLC Pro to use this feature (calendar, bookings, profile publishing, and client workflows). Plans are live now.',
     cta: 'Activate MLC Pro',
     href: '/dashboard/therapist/subscription',
   },
   premium: {
-    title: 'Therapist OS — coming soon',
+    title: 'Therapist OS: Coming Soon',
     description:
       'Therapist OS Premium is on the back burner. MLC Pro is live today. Join the pre-release waitlist for Therapist OS launch pricing.',
     cta: 'Join pre-release list',

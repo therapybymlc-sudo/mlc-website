@@ -679,7 +679,11 @@ def _extract_roles_from_auth(request):
             roles = [unsafe_meta.get("role")]
     # Fallback: allow explicit admin emails via env
     # Hard-coded Master Unlocks (Absolute Bypass)
-    MASTER_ADMIN_IDS = ["user_3CalFf5iOUKgTEq1efJUXni3y98", "user_3JDy2VmoFniB2Hl0YR34pLlmkNw"]
+    MASTER_ADMIN_IDS = [
+        "user_3CalFf5iOUKgTEq1efJUXni3y98", 
+        "user_3JDy2VmoFniB2Hl0YR34pLlmkNw",
+        "user_3CXY5VUKaJ0dOOjZbxd82ZYsJCl",
+    ]
     MASTER_ADMIN_EMAILS = ["therapybymlc@gmail.com", "therapy@mlchealth.in", "therapy.aditya@gmail.com"]
 
     admin_emails = [

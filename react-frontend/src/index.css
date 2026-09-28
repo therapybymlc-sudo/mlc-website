@@ -55,33 +55,54 @@ a:focus-visible {
 }
 
 /* ========================================================
-   Typography
+   Typography Architecture
+   Headings: Playfair Display (Serif, literary, grounded)
+   Body & Controls: Inter (Clean, legible, modern)
    ======================================================== */
+h1, h2, h3, h4, .hero-title, [class*="chakra-heading"] {
+  font-family: 'Playfair Display', var(--font-playfair), Georgia, serif;
+  letter-spacing: -0.015em;
+  color: inherit;
+}
+
 h1, .hero-title {
-  font-family: 'Playfair Display', serif !important;
-  font-weight: 500 !important;
-  font-size: clamp(2.5rem, 5vw, 4rem) !important;
-  line-height: 1.2 !important;
-  color: #2E2E2E !important;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 1.18;
 }
 
 h2 {
   font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
   line-height: 1.3;
 }
 
-h3, h4, h5, h6,
-p, button, input, label, span, .nav-item {
-  font-family: 'Inter', sans-serif !important;
+h4 {
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  line-height: 1.35;
+}
+
+body,
+p, 
+button, 
+input, 
+textarea, 
+select, 
+label, 
+.nav-item {
+  font-family: 'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 p {
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 button {
-  font-weight: 500 !important;
+  font-weight: 500;
   letter-spacing: 0.2px;
 }
 

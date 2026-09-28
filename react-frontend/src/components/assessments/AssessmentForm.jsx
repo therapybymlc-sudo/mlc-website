@@ -57,10 +57,10 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
         <VStack spacing={8} align="stretch" py={6}>
           <Box 
             p={10} 
-            bg="teal.50" 
+            bg="rgba(169,203,183,0.1)" 
             borderRadius="3xl" 
             border="1px solid" 
-            borderColor="teal.100"
+            borderColor="rgba(169,203,183,0.15)"
             position="relative"
             overflow="hidden"
           >
@@ -70,33 +70,33 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
             
             <VStack align="start" spacing={6}>
               <HStack spacing={3}>
-                <Icon as={FiCalendar} color="teal.500" />
-                <Text fontSize="xs" fontWeight="bold" letterSpacing="0.1em" color="teal.600" textTransform="uppercase">
+                <Icon as={FiCalendar} color="#6B8B7B" />
+                <Text fontSize="xs" fontWeight="bold" letterSpacing="0.1em" color="#56756D" textTransform="uppercase">
                   Clinical Assessment
                 </Text>
               </HStack>
               
               <VStack align="start" spacing={3}>
-                <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900">
+                <Heading size="xl" fontFamily="'Playfair Display', serif" color="#263A33">
                   {form.title}
                 </Heading>
-                <Text fontSize="md" color="gray.600" lineHeight="tall">
+                <Text fontSize="md" color="rgba(46,46,46,0.75)" lineHeight="tall">
                   {form.instructions || "Please complete this assessment to help your therapist understand your current state and progress."}
                 </Text>
               </VStack>
 
               <HStack spacing={6} wrap="wrap">
                 <HStack spacing={2}>
-                  <Icon as={FiClock} color="teal.500" />
-                  <Text fontSize="sm" fontWeight="600" color="teal.800">{estimatedTime}</Text>
+                  <Icon as={FiClock} color="#6B8B7B" />
+                  <Text fontSize="sm" fontWeight="600" color="#56756D">{estimatedTime}</Text>
                 </HStack>
                 <HStack spacing={2}>
-                  <Icon as={FiFileText} color="teal.500" />
-                  <Text fontSize="sm" fontWeight="600" color="teal.800">{totalQuestions} Items</Text>
+                  <Icon as={FiFileText} color="#6B8B7B" />
+                  <Text fontSize="sm" fontWeight="600" color="#56756D">{totalQuestions} Items</Text>
                 </HStack>
                 <HStack spacing={2}>
-                  <Icon as={FiCheckCircle} color="teal.500" />
-                  <Text fontSize="sm" fontWeight="600" color="teal.800">Private & Secure</Text>
+                  <Icon as={FiCheckCircle} color="#6B8B7B" />
+                  <Text fontSize="sm" fontWeight="600" color="#56756D">Private & Secure</Text>
                 </HStack>
               </HStack>
             </VStack>
@@ -107,7 +107,7 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
               <Text fontWeight="800" fontSize="sm" color="gray.400" textTransform="uppercase" letterSpacing="widest">Process</Text>
               <HStack spacing={8} align="start">
                 <VStack align="center" spacing={2} flex={1}>
-                  <Circle size="40px" bg="teal.600" color="white" fontWeight="bold">1</Circle>
+                  <Circle size="40px" bg="#56756D" color="white" fontWeight="bold">1</Circle>
                   <Text fontSize="xs" fontWeight="bold" textAlign="center">Review Instructions</Text>
                 </VStack>
                 <VStack align="center" spacing={2} flex={1}>
@@ -137,10 +137,10 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
           <Button 
             size="lg" 
             h="70px" 
-            bg="teal.600" 
+            bg="#56756D" 
             color="white" 
             borderRadius="2xl" 
-            _hover={{ bg: 'teal.700', transform: 'translateY(-2px)', shadow: 'xl' }}
+            _hover={{ bg: '#56756D', transform: 'translateY(-2px)', shadow: 'xl' }}
             rightIcon={<FiArrowRight />}
             onClick={() => setStep("questions")}
             fontSize="lg"
@@ -169,8 +169,8 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
             </HStack>
           )}
           <HStack justify="space-between">
-            <Text fontSize="xs" fontWeight="bold" color="gray.500">PROGRESS</Text>
-            <Text fontSize="xs" fontWeight="bold" color="teal.600">{answeredCount} of {totalQuestions} answered</Text>
+            <Text fontSize="xs" fontWeight="bold" color="rgba(46,46,46,0.6)">PROGRESS</Text>
+            <Text fontSize="xs" fontWeight="bold" color="#56756D">{answeredCount} of {totalQuestions} answered</Text>
           </HStack>
           <Progress value={progress} size="xs" colorScheme="teal" borderRadius="full" />
         </VStack>
@@ -189,16 +189,16 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
                   bg={isAnswered ? "white" : "gray.50"} 
                   borderRadius="2xl" 
                   border="1px solid" 
-                  borderColor={isAnswered ? "teal.100" : "gray.200"}
+                  borderColor={isAnswered ? "rgba(169,203,183,0.15)" : "gray.200"}
                   shadow={isAnswered ? "sm" : "none"}
                   transition="all 0.3s"
                 >
                   <VStack align="start" spacing={6}>
                     <HStack align="start" spacing={4}>
-                      <Center boxSize="32px" bg="teal.600" color="white" borderRadius="full" fontSize="xs" fontWeight="bold" flexShrink={0}>
+                      <Center boxSize="32px" bg="#56756D" color="white" borderRadius="full" fontSize="xs" fontWeight="bold" flexShrink={0}>
                         {idx + 1}
                       </Center>
-                      <Text fontSize="md" fontWeight="700" color="teal.900" pt={1}>
+                      <Text fontSize="md" fontWeight="700" color="#263A33" pt={1}>
                         {item.itemText}
                       </Text>
                     </HStack>
@@ -219,9 +219,9 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
                               p={5}
                               borderRadius="2xl"
                               border="2px solid"
-                              borderColor={isSelected ? "teal.500" : "gray.50"}
-                              bg={isSelected ? "teal.50" : "white"}
-                              _hover={{ bg: isSelected ? "teal.50" : "gray.100", transform: "translateX(4px)" }}
+                              borderColor={isSelected ? "#6B8B7B" : "gray.50"}
+                              bg={isSelected ? "rgba(169,203,183,0.1)" : "white"}
+                              _hover={{ bg: isSelected ? "rgba(169,203,183,0.1)" : "gray.100", transform: "translateX(4px)" }}
                               transition="all 0.2s cubic-bezier(.4,0,.2,1)"
                               shadow={isSelected ? "md" : "sm"}
                             >
@@ -235,7 +235,7 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
                                 <Text 
                                   fontSize="sm" 
                                   fontWeight={isSelected ? "800" : "500"}
-                                  color={isSelected ? "teal.900" : "gray.700"}
+                                  color={isSelected ? "#263A33" : "gray.700"}
                                 >
                                   {opt.label}
                                 </Text>
@@ -254,11 +254,11 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
           <Button 
             size="lg" 
             h="70px" 
-            bg="teal.600" 
+            bg="#56756D" 
             color="white" 
             borderRadius="2xl" 
             isDisabled={answeredCount < totalQuestions}
-            _hover={{ bg: 'teal.700', transform: 'translateY(-2px)', shadow: 'xl' }}
+            _hover={{ bg: '#56756D', transform: 'translateY(-2px)', shadow: 'xl' }}
             onClick={() => setStep("review")}
             fontSize="lg"
             fontWeight="bold"
@@ -270,10 +270,10 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
       ) : (
         <ScaleFade initialScale={0.95} in={true}>
           <VStack spacing={8} align="stretch" textAlign="center" py={10}>
-            <Icon as={FiCheckCircle} color="teal.500" boxSize={20} mx="auto" />
+            <Icon as={FiCheckCircle} color="#6B8B7B" boxSize={20} mx="auto" />
             <VStack spacing={4}>
               <Heading size="lg" fontFamily="'Playfair Display', serif">Ready to submit?</Heading>
-              <Text color="gray.600" maxW="400px" mx="auto">
+              <Text color="rgba(46,46,46,0.75)" maxW="400px" mx="auto">
                 You've answered all {totalQuestions} items. Once submitted, your therapist will be notified and an automatic report will be generated.
               </Text>
             </VStack>
@@ -286,13 +286,13 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
               </Button>
               <Button 
                 size="lg" 
-                bg="teal.600" 
+                bg="#56756D" 
                 color="white" 
                 borderRadius="xl" 
                 px={12}
                 isLoading={isLoading}
                 onClick={handleSubmit}
-                _hover={{ bg: 'teal.700' }}
+                _hover={{ bg: '#56756D' }}
               >
                 Submit Now
               </Button>

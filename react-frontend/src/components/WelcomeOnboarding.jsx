@@ -115,7 +115,7 @@ function getSlideContent(link) {
         { title: 'When to write', items: ['Just after a session', 'When you feel overwhelmed', 'Every morning for clarity'] },
       ],
       tips: [
-        'Don\'t worry about spelling or grammar—this is for you only.',
+        'Don\'t worry about spelling or grammar, this is for you only.',
       ],
     };
   }
@@ -292,7 +292,7 @@ function buildWalkthroughSlides(links, role = 'client') {
     subtitle: 'Connecting with care (Coming Soon)',
     body: [
       'Your privacy is our priority. Soon, you will be able to message your therapist directly within this secure portal.',
-      'No need to exchange personal numbers—just a safe, professional space to stay connected between sessions.',
+      'No need to exchange personal numbers: just a safe, professional space to stay connected between sessions.',
     ],
     sections: [
       { title: 'Why it matters', items: ['Direct line to your therapist', 'All conversations are encrypted', 'Keep your personal contact private'] },
@@ -308,7 +308,7 @@ function buildWalkthroughSlides(links, role = 'client') {
     subtitle: 'Your wellbeing matters',
     body: [
       'MLC is more than a dashboard; it is a complete clinical ecosystem. From the first screening to final billing and ethical follow-through, everything stays here.',
-      'But we don’t just care for your clients—we care for you. Our built-in wellbeing tracking helps you maintain a healthy work-life balance, preventing burnout before it begins.',
+      'But we don’t just care for your clients, we care for you. Our built-in wellbeing tracking helps you maintain a healthy work-life balance, preventing burnout before it begins.',
     ],
     sections: [
       { title: 'Full Cycle', items: ['Screening & Scheduling', 'In-built Video Sessions', 'Billing & Clinical Notes'] },
@@ -323,7 +323,7 @@ function buildWalkthroughSlides(links, role = 'client') {
     subtitle: 'A complete healing journey',
     body: [
       'MLC provides a seamless experience for your entire healing process. From your first screening to your final session, everything is held in one safe place.',
-      'We handle the logistics—scheduling, resources, and secure video—so you can focus entirely on your growth and wellbeing.',
+      'We handle the logistics (scheduling, resources, and secure video) so you can focus entirely on your growth and wellbeing.',
     ],
     sections: [
       { title: 'One Home', items: ['Easy scheduling & intake', 'High-quality video sessions', 'Accessible care tools'] },
@@ -421,8 +421,7 @@ export default function WelcomeOnboarding({ links = [] }) {
       <ModalContent bg="transparent" shadow="none" m={0}>
         <ModalBody p={0}>
           <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
-            
-            {/* 🎨 Visual Side (Desktop Only) */}
+                     {/* 🎨 Visual Side (Desktop Only) */}
             {isDesktop && (
               <Box flex="1" position="relative" bg="#A9CBB7">
                 <Image 
@@ -435,13 +434,37 @@ export default function WelcomeOnboarding({ links = [] }) {
                 />
                 <Box position="absolute" inset={0} bgGradient="linear(to-r, transparent, rgba(253, 251, 250, 1))" />
                 
-                <Box position="absolute" bottom={20} left={20} maxW="400px">
-                  <VStack align="start" spacing={4}>
-                    <Badge bg="whiteAlpha.800" color="teal.900" px={4} py={1} borderRadius="full">PREMIUM CARE SYSTEM</Badge>
-                    <Heading color="white" size="2xl" fontFamily="'Playfair Display', serif" textShadow="0 2px 10px rgba(0,0,0,0.1)">
+                <Box position="absolute" bottom={12} left={12} maxW="400px">
+                  <VStack align="start" spacing={3}>
+                    <Badge 
+                      bg="whiteAlpha.900" 
+                      color="#263A33" 
+                      px={3.5} 
+                      py={1} 
+                      borderRadius="full"
+                      fontSize="10.5px"
+                      fontWeight="600"
+                      letterSpacing="0.08em"
+                      boxShadow="sm"
+                    >
+                      PREMIUM CARE SYSTEM
+                    </Badge>
+                    <Heading 
+                      color="white" 
+                      fontSize={{ lg: "30px", xl: "34px" }} 
+                      fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
+                      fontWeight="600"
+                      lineHeight="1.2"
+                      textShadow="0 2px 10px rgba(0,0,0,0.15)"
+                    >
                       A Sanctuary <br/> for the Mind.
                     </Heading>
-                    <Text color="whiteAlpha.900" fontSize="lg" fontWeight="500">
+                    <Text 
+                      color="whiteAlpha.900" 
+                      fontSize="13.5px" 
+                      fontWeight="400"
+                      lineHeight="1.5"
+                    >
                       Guided architecture for your therapeutic growth.
                     </Text>
                   </VStack>
@@ -451,26 +474,28 @@ export default function WelcomeOnboarding({ links = [] }) {
 
             {/* 📝 Interaction Side */}
             <Box 
-              w={{ base: 'full', lg: '800px' }} 
+              w={{ base: 'full', lg: '560px', xl: '620px' }} 
               bg="white" 
               position="relative" 
-              boxShadow="-20px 0 50px rgba(0,0,0,0.05)"
+              boxShadow="-10px 0 35px rgba(0,0,0,0.04)"
               zIndex={1}
             >
                <VStack h="100vh" align="stretch" spacing={0}>
                   {/* Header Bar */}
-                  <Box px={{ base: 8, md: 16 }} pt={{ base: 8, md: 12 }} pb={6}>
-                    <HStack justify="space-between" mb={12}>
-                       <HStack spacing={3}>
-                          <Circle size={2} bg="teal.500" />
-                          <Text fontSize="xs" fontWeight="900" letterSpacing="0.2em" color="gray.400">ORIENTATION SYSTEM</Text>
+                  <Box px={{ base: 6, md: 10 }} pt={{ base: 6, md: 8 }} pb={4}>
+                    <HStack justify="space-between" mb={5}>
+                       <HStack spacing={2.5}>
+                          <Circle size="6px" bg="#56756D" />
+                          <Text fontSize="10.5px" fontWeight="700" letterSpacing="0.15em" color="#56756D" textTransform="uppercase">ORIENTATION SYSTEM</Text>
                        </HStack>
                        <IconButton 
-                        icon={<FiX />} 
+                        icon={<FiX size={16} />} 
+                        size="sm"
                         variant="ghost" 
                         borderRadius="full" 
                         onClick={close} 
                         aria-label="Close" 
+                        color="gray.500"
                         _hover={{ bg: 'red.50', color: 'red.500' }}
                        />
                     </HStack>
@@ -478,16 +503,28 @@ export default function WelcomeOnboarding({ links = [] }) {
                     <AnimatePresence mode="wait">
                       <MotionBox
                         key={currentSlide?.key || slideIdx}
-                        initial={{ opacity: 0, x: 20 }}
+                        initial={{ opacity: 0, x: 15 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.4, ease: "circOut" }}
+                        exit={{ opacity: 0, x: -15 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
                       >
-                         <VStack align="start" spacing={4}>
-                            <Heading size="xl" fontFamily="'Playfair Display', serif" color="teal.900">
+                         <VStack align="start" spacing={1.5}>
+                            <Heading 
+                              fontSize={{ base: "24px", md: "28px" }}
+                              fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
+                              fontWeight="600"
+                              lineHeight="1.2"
+                              color="#263A33"
+                            >
                               {currentSlide?.title}
                             </Heading>
-                            <Text fontSize="lg" color="teal.600" fontFamily="'Forum', serif" letterSpacing="1px">
+                            <Text 
+                              fontSize="14px" 
+                              color="#56756D" 
+                              fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
+                              fontStyle="italic" 
+                              letterSpacing="0.01em"
+                            >
                               {currentSlide?.subtitle}
                             </Text>
                          </VStack>
@@ -496,44 +533,69 @@ export default function WelcomeOnboarding({ links = [] }) {
                   </Box>
 
                   {/* Content Area */}
-                  <Box flex="1" overflowY="auto" px={{ base: 8, md: 16 }} pb={10}>
+                  <Box 
+                    flex="1" 
+                    overflowY="auto" 
+                    px={{ base: 6, md: 10 }} 
+                    pb={6}
+                    sx={{
+                      '&::-webkit-scrollbar': { width: '4px' },
+                      '&::-webkit-scrollbar-track': { background: 'transparent' },
+                      '&::-webkit-scrollbar-thumb': { background: '#E2E8F0', borderRadius: '4px' },
+                    }}
+                  >
                     <AnimatePresence mode="wait">
                       <MotionBox
                         key={currentSlide?.key || slideIdx}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.25 }}
                       >
-                        <VStack align="start" spacing={8}>
+                        <VStack align="start" spacing={5}>
                           <Box>
                              {(currentSlide?.body || []).map((p, idx) => (
-                                <Text key={idx} fontSize="lg" color="gray.600" lineHeight="tall" mb={4}>
+                                <Text 
+                                  key={idx} 
+                                  fontSize="13.5px" 
+                                  color="#4A5568" 
+                                  lineHeight="1.6" 
+                                  mb={2.5}
+                                  fontFamily="'Inter', var(--font-inter), sans-serif"
+                                >
                                   {p}
                                 </Text>
                              ))}
                           </Box>
 
-                          <SimpleGrid columns={1} spacing={4} w="full">
+                          <SimpleGrid columns={1} spacing={3} w="full">
                              {(currentSlide?.sections || []).map((section) => (
                                <Box 
                                 key={section.title} 
-                                p={8} 
-                                borderRadius="2xl" 
-                                bg="teal.50" 
+                                p={4} 
+                                borderRadius="xl" 
+                                bg="rgba(169,203,183,0.08)" 
                                 border="1px solid" 
-                                borderColor="teal.100"
-                                transition="0.3s"
-                                _hover={{ shadow: 'md', transform: 'translateY(-2px)' }}
+                                borderColor="rgba(169,203,183,0.2)"
+                                transition="all 0.2s ease"
+                                _hover={{ borderColor: 'rgba(86,117,109,0.3)', bg: 'rgba(169,203,183,0.12)' }}
                                >
-                                  <Text fontSize="xs" fontWeight="900" color="teal.700" mb={4} textTransform="uppercase" letterSpacing="1px">
+                                  <Text 
+                                    fontSize="10.5px" 
+                                    fontWeight="700" 
+                                    color="#56756D" 
+                                    mb={2.5} 
+                                    textTransform="uppercase" 
+                                    letterSpacing="0.1em"
+                                    fontFamily="'Inter', var(--font-inter), sans-serif"
+                                  >
                                     {section.title}
                                   </Text>
-                                  <VStack align="start" spacing={3}>
+                                  <VStack align="start" spacing={2}>
                                     {section.items.map((item, i) => (
-                                      <HStack key={i} align="start" spacing={3}>
-                                         <Icon as={FiCheckCircle} color="teal.500" mt={1} />
-                                         <Text fontSize="md" color="gray.700" fontWeight="500">{item}</Text>
+                                      <HStack key={i} align="center" spacing={2.5}>
+                                         <Icon as={FiCheckCircle} color="#56756D" boxSize="14px" flexShrink={0} />
+                                         <Text fontSize="13px" color="#2D3748" fontWeight="500" fontFamily="'Inter', var(--font-inter), sans-serif">{item}</Text>
                                       </HStack>
                                     ))}
                                   </VStack>
@@ -542,9 +604,17 @@ export default function WelcomeOnboarding({ links = [] }) {
                           </SimpleGrid>
 
                           {currentSlide?.tips?.length > 0 && (
-                            <HStack p={6} bg="gray.900" borderRadius="2xl" w="full" spacing={4}>
-                               <Icon as={FiInfo} color="gold" w={6} h={6} />
-                               <Text fontSize="sm" color="whiteAlpha.900" fontWeight="500">
+                            <HStack 
+                              p={3.5} 
+                              bg="#F4F7F5" 
+                              border="1px solid"
+                              borderColor="rgba(86,117,109,0.15)"
+                              borderRadius="xl" 
+                              w="full" 
+                              spacing={3}
+                            >
+                               <Icon as={FiInfo} color="#56756D" boxSize="15px" flexShrink={0} />
+                               <Text fontSize="12px" color="#4A5568" fontWeight="500" fontFamily="'Inter', var(--font-inter), sans-serif">
                                   {currentSlide.tips[0]}
                                </Text>
                             </HStack>
@@ -555,49 +625,62 @@ export default function WelcomeOnboarding({ links = [] }) {
                   </Box>
 
                   {/* Navigation Bar */}
-                  <Box px={{ base: 8, md: 16 }} py={10} bg="white" borderTop="1px solid" borderColor="gray.100">
-                     <VStack spacing={6}>
-                        <Box w="full" h="2px" bg="gray.100" position="relative">
+                  <Box px={{ base: 6, md: 10 }} py={4} bg="white" borderTop="1px solid" borderColor="gray.100">
+                     <VStack spacing={3.5}>
+                        <Box w="full" h="2px" bg="gray.100" position="relative" borderRadius="full" overflow="hidden">
                            <Box 
                             position="absolute" 
                             h="full" 
-                            bg="teal.600" 
+                            bg="#56756D" 
                             w={`${progress}%`} 
-                            transition="0.5s ease" 
+                            transition="0.4s ease" 
                            />
                         </Box>
                         <HStack justify="space-between" w="full">
-                           <HStack spacing={4}>
+                           <HStack spacing={3}>
                               <Button 
                                 variant="ghost" 
                                 leftIcon={<FiChevronLeft />} 
                                 isDisabled={slideIdx === 0}
                                 onClick={goPrev}
                                 borderRadius="full"
-                                px={6}
+                                px={4}
+                                h="38px"
+                                fontSize="13px"
+                                fontWeight="500"
+                                color="gray.600"
+                                _hover={{ bg: 'gray.100' }}
                               >
                                 Previous
                               </Button>
                            </HStack>
                            
-                           <HStack spacing={4}>
+                           <HStack spacing={3}>
                               {currentSlide?.href && (
                                 <Button 
                                   variant="outline" 
                                   borderRadius="full" 
-                                  px={8}
+                                  px={5}
+                                  h="38px"
+                                  fontSize="13px"
+                                  borderColor="gray.200"
+                                  color="#263A33"
+                                  _hover={{ bg: 'gray.50' }}
                                   onClick={() => { close(); router.push(currentSlide.href); }}
                                 >
                                   Open Page
                                 </Button>
                               )}
                               <Button 
-                                bg="teal.800" 
+                                bg="#56756D" 
                                 color="white" 
                                 borderRadius="full" 
-                                px={10} 
-                                h={12}
-                                _hover={{ bg: 'teal.900', transform: 'translateX(5px)' }}
+                                px={6} 
+                                h="38px"
+                                fontSize="13px"
+                                fontWeight="600"
+                                _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                                transition="all 0.2s"
                                 rightIcon={slideIdx < slides.length - 1 ? <FiChevronRight /> : <FiCheckCircle />}
                                 onClick={slideIdx < slides.length - 1 ? goNext : close}
                               >

@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, Progress,
-  Radio, RadioGroup, Stack, Checkbox, Input, Select, useToast, Icon,
-  Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, Center, Spinner, Flex,
+  Radio, RadioGroup, Checkbox, Input, Select, useToast, Icon,
+  Tag, Textarea, FormControl, FormLabel, Center, Spinner, Flex,
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiArrowLeft, FiArrowRight, FiCheck, FiLock, FiLogIn, FiHeart,
+  FiArrowLeft, FiArrowRight, FiCheck, FiHeart, FiCompass, FiShield,
 } from 'react-icons/fi';
 import { apiPost, apiGet } from '../../../api.js';
 import { useAuth } from '../../../context/AuthContext';
@@ -20,55 +20,28 @@ const MotionBox = motion(Box);
 
 const SECTIONS = ['Privacy', 'About You', 'Your Needs', 'Contact'];
 
-const LANGUAGE_OPTIONS = ['English', 'Hindi', 'Bengali', 'Marathi', 'Telugu', 'Tamil', 'Gujarati', 'Urdu', 'Kannada', 'Malayalam', 'Punjabi']
-  .sort()
-  .map((lang) => ({ label: lang, value: lang }));
+const LANGUAGE_OPTIONS = [
+  'English', 'Hindi', 'Bengali', 'Marathi', 'Telugu', 'Tamil', 'Gujarati', 'Urdu', 'Kannada', 'Malayalam', 'Punjabi'
+].sort().map((lang) => ({ label: lang, value: lang }));
 
 const CONCERNS = [
-  'Anxiety', 'Depression & Low Mood', 'Trauma', 'Relationships', 'Workplace Burnout',
-  'Grief & Loss', 'Self-esteem', 'Sleep Issues', 'Life transitions', 'Other',
+  'Anxiety & Stress', 'Depression & Low Mood', 'Trauma & PTSD', 'Relationships', 'Workplace Burnout',
+  'Grief & Loss', 'Self-Esteem & Identity', 'Sleep Issues', 'Life Transitions', 'Other',
 ];
-
-function AuthGate() {
-  return (
-    <Box bg="#FDFBFA" minH="100vh" py={{ base: 12, md: 20 }}>
-      <Container maxW="lg">
-        <VStack spacing={8} p={{ base: 8, md: 12 }} bg="white" borderRadius="3xl" shadow="2xl" textAlign="center">
-          <Center w="80px" h="80px" borderRadius="full" bg="teal.50">
-            <Icon as={FiLock} w={8} h={8} color="teal.600" />
-          </Center>
-          <VStack spacing={3}>
-            <Heading size="lg" color="teal.800" fontFamily="'Playfair Display', serif">Sign In to Begin</Heading>
-            <Text color="gray.600" fontSize="sm">
-              Create a free account so we can save your enquiry and follow up with your therapist recommendation.
-            </Text>
-          </VStack>
-          <VStack spacing={3} w="full" maxW="xs">
-            <Button as={NextLink} href="/login/client" bg="teal.800" color="white" borderRadius="full" w="full" h="54px" leftIcon={<FiLogIn />}>
-              Sign In
-            </Button>
-            <Button as={NextLink} href="/signup/client" variant="outline" borderColor="teal.800" color="teal.800" borderRadius="full" w="full" h="54px">
-              Create Account
-            </Button>
-          </VStack>
-        </VStack>
-      </Container>
-    </Box>
-  );
-}
 
 export default function DiscoveryIntakeClient() {
   const toast = useToast();
   const { user: clerkUser, isLoaded: clerkLoaded, isSignedIn } = useUser();
   const { user: authUser } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
-  const [view, setView] = useState('checking');
+  // ⚡ Default directly to 'form' so the user NEVER faces an infinite loading screen
+  const [view, setView] = useState('form');
   const [currentSection, setCurrentSection] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [submittedAt, setSubmittedAt] = useState(null);
 
   const [formData, setFormData] = useState({
-    consent: false,
+    consent: true,
     first_name: authUser?.firstName || '',
     last_name: authUser?.lastName || '',
     age: '',
@@ -90,32 +63,41 @@ export default function DiscoveryIntakeClient() {
     setIsMounted(true);
   }, []);
 
+  // 🔄 Silent background sync if user is signed in
   useEffect(() => {
-    if (!clerkLoaded || !isMounted) return;
-    if (!isSignedIn) {
-      setView('auth_gate');
-      return;
-    }
+    if (!isMounted || !clerkLoaded || !isSignedIn) return;
 
-    async function initialize() {
+    let isSubscribed = true;
+    async function checkPendingIntake() {
       try {
-        const res = await apiGet('therapists/match/');
-        if (res?.intake_pending || res?.intake_mode === 'manual') {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 4000)
+        );
+        const res = await Promise.race([apiGet('therapists/match/'), timeoutPromise]);
+        if (isSubscribed && (res?.intake_pending || res?.status === 'submitted')) {
           setSubmittedAt(res.submitted_at || null);
           setView('submitted');
-          return;
         }
       } catch (err) {
-        console.warn('Intake status check failed', err);
+        // Fail silently and keep form available
+        console.warn('Background intake check skipped', err);
       }
-      setView('form');
     }
-    initialize();
+    checkPendingIntake();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [clerkLoaded, isSignedIn, isMounted]);
 
   useEffect(() => {
     if (clerkUser?.primaryEmailAddress?.emailAddress && !formData.email) {
-      setFormData((prev) => ({ ...prev, email: clerkUser.primaryEmailAddress.emailAddress }));
+      setFormData((prev) => ({
+        ...prev,
+        email: clerkUser.primaryEmailAddress.emailAddress,
+        first_name: prev.first_name || clerkUser.firstName || '',
+        last_name: prev.last_name || clerkUser.lastName || '',
+      }));
     }
   }, [clerkUser, formData.email]);
 
@@ -132,18 +114,18 @@ export default function DiscoveryIntakeClient() {
 
   const validateStep = () => {
     if (currentSection === 0 && !formData.consent) {
-      toast({ title: 'Consent required', status: 'warning' });
+      toast({ title: 'Consent required', description: 'Please review and accept consent to continue.', status: 'warning' });
       return false;
     }
     if (currentSection === 1) {
-      if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.age || !formData.gender) {
-        toast({ title: 'Please complete your basic details', status: 'warning' });
+      if (!formData.first_name.trim()) {
+        toast({ title: 'Please enter your first name', status: 'warning' });
         return false;
       }
     }
     if (currentSection === 2) {
-      if (!formData.problem_description.trim()) {
-        toast({ title: 'Please describe what you need support with', status: 'warning' });
+      if (!formData.problem_description.trim() && formData.presenting_concerns.length === 0) {
+        toast({ title: 'Please select a concern or describe your reason for seeking therapy', status: 'warning' });
         return false;
       }
     }
@@ -160,14 +142,17 @@ export default function DiscoveryIntakeClient() {
     if (!validateStep()) return;
     if (currentSection < SECTIONS.length - 1) {
       setCurrentSection((s) => s + 1);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       submitIntake();
     }
   };
 
   const prevStep = () => {
-    if (currentSection > 0) setCurrentSection((s) => s - 1);
+    if (currentSection > 0) {
+      setCurrentSection((s) => s - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const submitIntake = async () => {
@@ -182,11 +167,11 @@ export default function DiscoveryIntakeClient() {
       await apiPost('therapists/match/', payload);
       setSubmittedAt(new Date().toISOString());
       setView('submitted');
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       toast({
-        title: 'Could not submit your enquiry',
-        description: err.response?.data?.detail || 'Please try again.',
+        title: 'Could not submit enquiry',
+        description: err.response?.data?.detail || 'Please try again or email us directly at therapy@mlchealth.in',
         status: 'error',
       });
     } finally {
@@ -199,223 +184,300 @@ export default function DiscoveryIntakeClient() {
       case 0:
         return (
           <VStack spacing={6} align="start">
-            <Heading size="md" color="teal.900">Privacy & Consent</Heading>
-            <Text color="gray.600" fontSize="sm" lineHeight="tall">
-              Your responses are confidential. Our clinical team will review your enquiry and contact you with a therapist recommendation matched to your needs.
-            </Text>
+            <VStack align="start" spacing={2}>
+              <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+                Privacy & Confidentiality
+              </Heading>
+              <Text color="#5A6E65" fontSize="14px" lineHeight="1.65">
+                At MLC Health, we take confidentiality seriously. Everything you share is strictly protected and reviewed solely by our licensed clinical leads to match you with the best practitioner for your needs.
+              </Text>
+            </VStack>
+
+            <Box p={4} borderRadius="xl" bg="#F4F7F5" border="1px solid" borderColor="rgba(86, 117, 109, 0.16)" w="full">
+              <HStack spacing={3} align="start">
+                <Icon as={FiShield} color="#56756D" boxSize="20px" mt={1} />
+                <VStack align="start" spacing={1}>
+                  <Text fontWeight="600" fontSize="14px" color="#263A33">DISHA & HIPAA Aligned Data Standards</Text>
+                  <Text fontSize="12.5px" color="#5A6E65">Zero third-party data sharing. Your personal details are only used for clinical matching.</Text>
+                </VStack>
+              </HStack>
+            </Box>
+
             <Checkbox
               isChecked={formData.consent}
               onChange={(e) => setFormData((prev) => ({ ...prev, consent: e.target.checked }))}
               colorScheme="teal"
+              size="lg"
             >
-              I consent to MLC Health storing this information to arrange therapy support.
+              <Text fontSize="13.5px" color="#263A33">
+                I consent to MLC Health securely storing this information to arrange therapeutic matching.
+              </Text>
             </Checkbox>
           </VStack>
         );
+
       case 1:
         return (
           <VStack spacing={5} align="stretch">
-            <Heading size="md" color="teal.900">About You</Heading>
+            <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+              About You
+            </Heading>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <FormControl isRequired>
-                <FormLabel>First name</FormLabel>
-                <Input value={formData.first_name} onChange={(e) => setFormData((p) => ({ ...p, first_name: e.target.value }))} />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Last name</FormLabel>
-                <Input value={formData.last_name} onChange={(e) => setFormData((p) => ({ ...p, last_name: e.target.value }))} />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Age</FormLabel>
-                <Input type="number" value={formData.age} onChange={(e) => setFormData((p) => ({ ...p, age: e.target.value }))} />
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>Gender</FormLabel>
-                <Select value={formData.gender} onChange={(e) => setFormData((p) => ({ ...p, gender: e.target.value }))} placeholder="Select">
-                  {['Woman', 'Man', 'Non-binary', 'Prefer not to say'].map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>City</FormLabel>
+                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">First Name</FormLabel>
                 <Input
-                  value={formData.location.city}
-                  onChange={(e) => setFormData((p) => ({ ...p, location: { ...p.location, city: e.target.value } }))}
-                  placeholder="e.g. Mumbai"
+                  borderRadius="xl"
+                  value={formData.first_name}
+                  onChange={(e) => setFormData((p) => ({ ...p, first_name: e.target.value }))}
+                  placeholder="e.g. Priya"
                 />
               </FormControl>
               <FormControl>
-                <FormLabel>Languages</FormLabel>
-                <ChakraReactSelect
-                  isMulti
-                  options={LANGUAGE_OPTIONS}
-                  value={LANGUAGE_OPTIONS.filter((o) => formData.languages.includes(o.value))}
-                  onChange={(selected) => setFormData((p) => ({ ...p, languages: (selected || []).map((s) => s.value) }))}
+                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Last Name</FormLabel>
+                <Input
+                  borderRadius="xl"
+                  value={formData.last_name}
+                  onChange={(e) => setFormData((p) => ({ ...p, last_name: e.target.value }))}
+                  placeholder="e.g. Sharma"
                 />
               </FormControl>
             </SimpleGrid>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+              <FormControl>
+                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Age</FormLabel>
+                <Input
+                  borderRadius="xl"
+                  type="number"
+                  value={formData.age}
+                  onChange={(e) => setFormData((p) => ({ ...p, age: e.target.value }))}
+                  placeholder="e.g. 28"
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">City / Location</FormLabel>
+                <Input
+                  borderRadius="xl"
+                  value={formData.location.city}
+                  onChange={(e) => setFormData((p) => ({ ...p, location: { ...p.location, city: e.target.value } }))}
+                  placeholder="e.g. Mumbai, Bangalore, Online"
+                />
+              </FormControl>
+            </SimpleGrid>
+
+            <FormControl>
+              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Preferred Languages</FormLabel>
+              <ChakraReactSelect
+                isMulti
+                options={LANGUAGE_OPTIONS}
+                value={formData.languages.map((l) => ({ label: l, value: l }))}
+                onChange={(selected) => setFormData((p) => ({ ...p, languages: selected.map((s) => s.value) }))}
+                placeholder="Select one or more languages..."
+              />
+            </FormControl>
           </VStack>
         );
+
       case 2:
         return (
           <VStack spacing={5} align="stretch">
-            <Heading size="md" color="teal.900">What brings you here?</Heading>
-            <FormControl isRequired>
-              <FormLabel>Describe your problem or what you need support with</FormLabel>
-              <Textarea
-                value={formData.problem_description}
-                onChange={(e) => setFormData((p) => ({ ...p, problem_description: e.target.value }))}
-                placeholder="Share what you have been going through, what kind of support you are looking for, and anything else that would help us match you well..."
-                minH="160px"
-              />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Areas of concern (optional)</FormLabel>
-              <Wrap spacing={2}>
-                {CONCERNS.map((c) => (
-                  <Tag
+            <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+              What brings you to therapy?
+            </Heading>
+            <Text color="#5A6E65" fontSize="13.5px">Select any areas you would like to explore or focus on:</Text>
+            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5}>
+              {CONCERNS.map((c) => {
+                const active = formData.presenting_concerns.includes(c);
+                return (
+                  <Button
                     key={c}
-                    size="md"
-                    variant={formData.presenting_concerns.includes(c) ? 'solid' : 'outline'}
-                    colorScheme="teal"
-                    cursor="pointer"
+                    variant={active ? 'solid' : 'outline'}
+                    bg={active ? '#56756D' : 'white'}
+                    color={active ? 'white' : '#374A43'}
+                    borderColor={active ? '#56756D' : 'gray.200'}
+                    borderRadius="xl"
+                    justifyContent="flex-start"
+                    fontSize="13px"
+                    fontWeight="500"
+                    h="44px"
                     onClick={() => toggleConcern(c)}
+                    _hover={{ bg: active ? '#425C55' : '#F4F7F5' }}
                   >
                     {c}
-                  </Tag>
-                ))}
-              </Wrap>
-            </FormControl>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl>
-                <FormLabel>Session preference</FormLabel>
-                <Select value={formData.session_type_pref} onChange={(e) => setFormData((p) => ({ ...p, session_type_pref: e.target.value }))}>
-                  {['Online Video (Individual)', 'In-person (Select Locations)', 'No preference'].map((o) => (
-                    <option key={o} value={o}>{o}</option>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl>
-                <FormLabel>Therapist gender preference</FormLabel>
-                <RadioGroup value={formData.therapist_gender_pref} onChange={(v) => setFormData((p) => ({ ...p, therapist_gender_pref: v }))}>
-                  <Stack direction={{ base: 'column', sm: 'row' }} spacing={4}>
-                    {['No preference', 'Woman', 'Man'].map((o) => (
-                      <Radio key={o} value={o} colorScheme="teal">{o}</Radio>
-                    ))}
-                  </Stack>
-                </RadioGroup>
-              </FormControl>
+                  </Button>
+                );
+              })}
             </SimpleGrid>
+
+            <FormControl mt={3}>
+              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Tell us a little more (in your own words)</FormLabel>
+              <Textarea
+                borderRadius="xl"
+                rows={4}
+                value={formData.problem_description}
+                onChange={(e) => setFormData((p) => ({ ...p, problem_description: e.target.value }))}
+                placeholder="What have you been feeling or experiencing recently? (Optional, but helps us match you accurately)"
+              />
+            </FormControl>
           </VStack>
         );
+
       case 3:
         return (
           <VStack spacing={5} align="stretch">
-            <Heading size="md" color="teal.900">How can we reach you?</Heading>
-            <Alert status="info" borderRadius="xl">
-              <AlertIcon />
-              <Text fontSize="sm">
-                We will personally review your enquiry and email you with a therapist recommendation. This usually takes 1–2 business days.
-              </Text>
-            </Alert>
+            <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+              How can our team reach you?
+            </Heading>
             <FormControl isRequired>
-              <FormLabel>Email</FormLabel>
+              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Email Address</FormLabel>
               <Input
+                borderRadius="xl"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+                placeholder="name@example.com"
               />
             </FormControl>
             <FormControl>
-              <FormLabel>Phone / WhatsApp (recommended)</FormLabel>
+              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Phone / WhatsApp Number</FormLabel>
               <Input
+                borderRadius="xl"
                 value={formData.phone}
                 onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
-                placeholder="+91 ..."
+                placeholder="+91 98765 43210"
               />
             </FormControl>
             <FormControl>
-              <FormLabel>How soon do you hope to begin?</FormLabel>
-              <Select value={formData.urgency} onChange={(e) => setFormData((p) => ({ ...p, urgency: e.target.value }))}>
-                {['Within the next week', 'Within the next month', 'Just exploring for now'].map((o) => (
+              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">How soon do you hope to begin?</FormLabel>
+              <Select
+                borderRadius="xl"
+                value={formData.urgency}
+                onChange={(e) => setFormData((p) => ({ ...p, urgency: e.target.value }))}
+              >
+                {['Within the next few days', 'Within the next week', 'Within this month', 'Just exploring options'].map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </Select>
             </FormControl>
           </VStack>
         );
+
       default:
         return null;
     }
   };
 
   const renderSubmitted = () => (
-    <Container maxW="3xl" py={{ base: 10, md: 20 }}>
-      <VStack spacing={8} p={{ base: 8, md: 12 }} bg="white" borderRadius="3xl" shadow="2xl" textAlign="center">
-        <Icon as={FiCheck} w={16} h={16} color="teal.500" />
-        <VStack spacing={4}>
-          <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Thank you for reaching out</Heading>
-          <Text color="gray.600" fontSize="lg" lineHeight="tall">
-            Our clinical team is reviewing what you shared. We will reach out to you at{' '}
-            <Box as="span" fontWeight="700" color="teal.800">{formData.email || 'your email'}</Box>
-            {' '}with a personalized therapist recommendation matched to your needs.
+    <Container maxW="2xl" py={{ base: 10, md: 16 }}>
+      <VStack spacing={7} p={{ base: 8, md: 12 }} bg="white" borderRadius="28px" shadow="xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.16)" textAlign="center">
+        <Center w="72px" h="72px" borderRadius="full" bg="#EBF3EE" border="1px solid" borderColor="rgba(86, 117, 109, 0.25)">
+          <Icon as={FiCheck} w={9} h={9} color="#56756D" />
+        </Center>
+        <VStack spacing={3}>
+          <Heading size="lg" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+            Thank you for reaching out
+          </Heading>
+          <Text color="#5A6E65" fontSize="15px" lineHeight="1.65" maxW="480px">
+            Our clinical team is reviewing your intake. We will reach out to you directly at{' '}
+            <Box as="span" fontWeight="700" color="#56756D">{formData.email || 'your email'}</Box>
+            {' '}with a personalized therapist recommendation.
           </Text>
           {submittedAt && (
-            <Text fontSize="sm" color="gray.500">Submitted {new Date(submittedAt).toLocaleString()}</Text>
+            <Text fontSize="12px" color="gray.400">Submitted {new Date(submittedAt).toLocaleString()}</Text>
           )}
         </VStack>
-        <HStack spacing={4} flexWrap="wrap" justify="center">
-          <Button as={NextLink} href="/" variant="outline" borderRadius="full">Back to Home</Button>
-          <Button as={NextLink} href="/book" bg="teal.800" color="white" borderRadius="full">Book a Consultation</Button>
+        <HStack spacing={4} flexWrap="wrap" justify="center" pt={2}>
+          <Button as={NextLink} href="/" variant="outline" borderRadius="full" px={6}>
+            Back to Home
+          </Button>
+          <Button as={NextLink} href="/therapists/directory" bg="#56756D" color="white" borderRadius="full" px={6} _hover={{ bg: "#425C55" }}>
+            Browse Therapist Directory
+          </Button>
         </HStack>
       </VStack>
     </Container>
   );
 
-  if (view === 'checking' || !isMounted) {
-    return (
-      <Box py={40} textAlign="center">
-        <Spinner size="xl" color="teal.500" />
-        <Text mt={4} color="gray.500">Loading...</Text>
-      </Box>
-    );
-  }
-  if (view === 'auth_gate') return <AuthGate />;
   if (view === 'submitted') return renderSubmitted();
 
   return (
-    <Box bg="#FDFBFA" minH="100vh" py={{ base: 10, md: 20 }}>
+    <Box bg="#FDFBFA" minH="100vh" py={{ base: 10, md: 16 }} px={4}>
       <Container maxW="3xl">
+        
+        {/* 🌿 Directory Helper Banner */}
+        <Box 
+          mb={8} 
+          p={3.5} 
+          borderRadius="2xl" 
+          bg="rgba(86, 117, 109, 0.07)" 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.16)"
+        >
+          <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "start", sm: "center" }} gap={2}>
+            <HStack spacing={2.5}>
+              <Icon as={FiCompass} color="#56756D" boxSize="18px" />
+              <Text fontSize="13px" color="#374A43" fontWeight="500">
+                Prefer to choose and browse all verified practitioners directly?
+              </Text>
+            </HStack>
+            <Button
+              as={NextLink}
+              href="/therapists/directory"
+              size="sm"
+              variant="outline"
+              borderColor="#56756D"
+              color="#56756D"
+              borderRadius="full"
+              px={4}
+              fontSize="12.5px"
+              fontWeight="600"
+              _hover={{ bg: "#56756D", color: "white" }}
+            >
+              View Directory
+            </Button>
+          </Flex>
+        </Box>
+
         <VStack spacing={2} mb={8} textAlign="center">
-          <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Find Your Therapist</Heading>
-          <Text color="gray.600" fontSize="sm">Tell us about your needs — our team will match you personally.</Text>
+          <Heading size="xl" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+            Find Your Therapist
+          </Heading>
+          <Text color="#5A6E65" fontSize="15px">
+            Tell us about your needs, and our clinical team will personally recommend the right practitioner for you.
+          </Text>
         </VStack>
-        <Box bg="white" p={{ base: 5, md: 10 }} borderRadius="3xl" shadow="2xl" border="1px solid" borderColor="gray.50">
+
+        <Box bg="white" p={{ base: 6, md: 10 }} borderRadius="28px" shadow="xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.14)">
           <VStack spacing={6} align="stretch">
             <Box>
               <HStack justify="space-between" mb={2}>
-                <Text fontSize="xs" fontWeight="800" color="teal.600">STEP {currentSection + 1} / {SECTIONS.length}</Text>
-                <Text fontSize="xs" color="gray.400">{Math.round(progress)}%</Text>
+                <Text fontSize="12px" fontWeight="700" color="#56756D" letterSpacing="0.08em">
+                  STEP {currentSection + 1} OF {SECTIONS.length}: {SECTIONS[currentSection].toUpperCase()}
+                </Text>
+                <Text fontSize="12px" color="gray.400" fontWeight="600">{Math.round(progress)}%</Text>
               </HStack>
               <Progress value={progress} size="xs" colorScheme="teal" borderRadius="full" />
             </Box>
+
             <AnimatePresence mode="wait">
-              <MotionBox key={currentSection} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
+              <MotionBox key={currentSection} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} transition={{ duration: 0.2 }}>
                 {renderSection()}
               </MotionBox>
             </AnimatePresence>
-            <Flex justify="space-between" pt={4}>
-              <Button variant="ghost" leftIcon={<FiArrowLeft />} onClick={prevStep} isDisabled={currentSection === 0}>
+
+            <Flex justify="space-between" pt={4} borderTop="1px solid" borderColor="gray.100">
+              <Button variant="ghost" leftIcon={<FiArrowLeft />} onClick={prevStep} isDisabled={currentSection === 0} borderRadius="full">
                 Back
               </Button>
               <Button
-                bg="teal.800"
+                bg="#56756D"
                 color="white"
                 borderRadius="full"
+                px={7}
                 rightIcon={currentSection === SECTIONS.length - 1 ? <FiHeart /> : <FiArrowRight />}
                 onClick={nextStep}
                 isLoading={isLoading}
+                _hover={{ bg: "#425C55" }}
               >
                 {currentSection === SECTIONS.length - 1 ? 'Submit Enquiry' : 'Continue'}
               </Button>

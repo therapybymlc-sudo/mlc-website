@@ -12,7 +12,7 @@ const TherapyRoom = dynamic(() => import('../../../components/video/TherapyRoom'
   loading: () => (
     <Center h="100vh" bg="gray.950">
       <VStack spacing={6}>
-        <Spinner size="xl" color="teal.500" thickness="4px" />
+        <Spinner size="xl" color="#6B8B7B" thickness="4px" />
         <Text color="whiteAlpha.700" fontFamily="'Playfair Display', serif">Preparing Secure Sanctuary...</Text>
       </VStack>
     </Center>
@@ -100,7 +100,7 @@ export default function ConferencePage() {
     return (
       <Center h="100vh" bg="gray.950">
         <VStack spacing={6}>
-          <Spinner size="xl" color="teal.500" thickness="4px" />
+          <Spinner size="xl" color="#6B8B7B" thickness="4px" />
           <Text color="whiteAlpha.700" fontFamily="'Playfair Display', serif">Authenticating Session...</Text>
         </VStack>
       </Center>
@@ -151,8 +151,8 @@ export default function ConferencePage() {
     return (
       <Center h="100vh" bg="gray.50">
         <VStack spacing={4}>
-          <Heading size="md" color="gray.600">Invalid Meeting Link</Heading>
-          <Text color="gray.500">Please return to your dashboard and join again.</Text>
+          <Heading size="md" color="rgba(46,46,46,0.75)">Invalid Meeting Link</Heading>
+          <Text color="rgba(46,46,46,0.6)">Please return to your dashboard and join again.</Text>
         </VStack>
       </Center>
     );

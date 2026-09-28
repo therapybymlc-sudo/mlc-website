@@ -71,7 +71,7 @@ export default function PremiumTherapist() {
                 The Therapist OS
               </Heading>
               <Text fontSize="xl" color="whiteAlpha.800" lineHeight="tall">
-                Your unified clinical command center — assessments, resources, private messaging,
+                Your unified clinical command center for assessments, resources, private messaging,
                 and self-care tools designed for practitioners who want depth without burnout.
               </Text>
             </Box>
@@ -128,7 +128,7 @@ export default function PremiumTherapist() {
             <FeatureCard
               icon={FiMessageCircle}
               title="Private In-Platform Chat"
-              description="Complete chat with full privacy — you never have to share your personal number with a client again."
+              description="Complete chat with full privacy, so you never have to share your personal number with a client again."
             />
             <FeatureCard
               icon={FiActivity}

@@ -13,6 +13,7 @@ const nextConfig = {
     ...(clerkDomain ? { NEXT_PUBLIC_CLERK_DOMAIN: clerkDomain } : {}),
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -46,6 +47,17 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.r2.dev',
       },
+    ],
+  },
+  experimental: {
+    optimizePackageImports: [
+      '@chakra-ui/react',
+      '@chakra-ui/icons',
+      'react-icons',
+      'lucide-react',
+      'date-fns',
+      'recharts',
+      'framer-motion',
     ],
   },
   trailingSlash: true,

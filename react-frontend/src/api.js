@@ -12,6 +12,7 @@ const API_BASE = (
 const api = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
+  timeout: 12000,
 });
 
 let tokenGetter = null;

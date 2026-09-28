@@ -4,6 +4,28 @@ import { Box, Heading, Text, VStack, LinkBox, LinkOverlay, Image, HStack, Skelet
 import NextLink from 'next/link';
 import api from '../../api';
 
+function getPostCoverImage(post) {
+    if (post.slug === 'why-supervision-is-essential-for-therapists') {
+        return '/supervision_essay_cover.jpg';
+    }
+    const raw = post.cover_image_url || '';
+    const value = raw.trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value)) return value;
+    
+    const API_BASE = (
+      (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE : null) ||
+      (typeof window !== 'undefined' && window.__ENV__?.NEXT_PUBLIC_API_BASE) ||
+      "https://api.mlchealth.in/api"
+    ).replace(/\/+$/, "");
+    const backendHost = API_BASE.replace(/\/api$/, "");
+
+    if (value.startsWith('/')) {
+      return `${backendHost}${value}`;
+    }
+    return `${backendHost}/${value}`;
+}
+
 export default function RelatedBlogs({ keywords = [] }) {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,10 +67,10 @@ export default function RelatedBlogs({ keywords = [] }) {
 
     return (
         <Box p={6} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100" shadow="sm">
-            <Heading size="md" color="teal.900" mb={2} fontFamily="Playfair Display, serif">
+            <Heading size="md" color="#263A33" mb={2} fontFamily="Playfair Display, serif">
                 Recommended Reading
             </Heading>
-            <Text fontSize="sm" color="gray.500" mb={6}>
+            <Text fontSize="sm" color="rgba(46,46,46,0.6)" mb={6}>
                 Clinical insights related to your current focus.
             </Text>
 
@@ -60,21 +82,21 @@ export default function RelatedBlogs({ keywords = [] }) {
                         gap={4} 
                         p={3} 
                         borderRadius="lg" 
-                        _hover={{ bg: 'teal.50' }} 
+                        _hover={{ bg: 'rgba(169,203,183,0.1)' }} 
                         transition="background 0.2s"
                     >
                         <Box w="80px" h="80px" flexShrink={0} borderRadius="md" overflow="hidden" bg="gray.100">
-                            {post.cover_image_url && (
-                                <Image src={post.cover_image_url} alt={post.title} w="full" h="full" objectFit="cover" />
+                            {getPostCoverImage(post) && (
+                                <Image src={getPostCoverImage(post)} alt={post.title} w="full" h="full" objectFit="cover" />
                             )}
                         </Box>
                         <Box flex="1">
-                            <Heading size="sm" color="teal.800" mb={1} noOfLines={2} lineHeight="1.3">
+                            <Heading size="sm" color="#56756D" mb={1} noOfLines={2} lineHeight="1.3">
                                 <LinkOverlay as={NextLink} href={`/blog/${post.slug}/`}>
                                     {post.title}
                                 </LinkOverlay>
                             </Heading>
-                            <HStack fontSize="xs" color="gray.500">
+                            <HStack fontSize="xs" color="rgba(46,46,46,0.6)">
                                 <Text fontWeight="600">{post.author_name}</Text>
                                 <Text>•</Text>
                                 <Text>{post.category?.name || 'Article'}</Text>

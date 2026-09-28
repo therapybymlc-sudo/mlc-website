@@ -2,9 +2,16 @@ minio_data/
 __pycache__/
 *.pyc
 *.pyo
+
+# Environment files — NEVER push real secrets
 .env
 .env.*
 *.local
+!.env.example
+!.env.sandbox.example
+!backend/.env.example
+!react-frontend/.env.example
+
 *.sqlite3
 backend/db.sqlite3
 venv/
@@ -13,3 +20,5 @@ node_modules/
 dist/
 .DS_Store
 
+# Gemini / Antigravity agent workspace
+.gemini/

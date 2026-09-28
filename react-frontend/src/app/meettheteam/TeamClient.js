@@ -35,7 +35,7 @@ export default function TeamClient() {
     <Box>
       {/* HERO SECTION */}
       <Box bg="#F9F9F9" py={24}>
-        <Container maxW="7xl">
+        <Container maxW="6xl">
           <VStack spacing={6} textAlign="center" mb={10}>
             <Heading
               fontFamily="'Playfair Display', var(--font-playfair), serif"
@@ -52,7 +52,7 @@ export default function TeamClient() {
               fontSize="lg"
               lineHeight="1.8"
             >
-              At MLC Therapy, our strength lies in collaboration — between
+              At MLC Therapy, our strength lies in collaboration between
               clinicians, supervisors, and the dedicated operations team that
               keeps our ecosystem thriving. Each individual plays a key role in
               ensuring that care remains human, ethical, and sustainable.
@@ -98,31 +98,42 @@ export default function TeamClient() {
                   key={member.id}
                   bg="white"
                   borderRadius="2xl"
-                  boxShadow="md"
+                  boxShadow="sm"
+                  border="1px solid"
+                  borderColor="gray.100"
                   p={6}
                   cursor="pointer"
-                  transition="transform 0.2s ease, box-shadow 0.2s ease"
-                  _hover={{ transform: "translateY(-4px)", boxShadow: "lg" }}
+                  transition="all 0.25s ease"
+                  _hover={{ transform: "translateY(-2px)", boxShadow: "0 10px 25px -5px rgba(86, 117, 109, 0.12)" }}
                   onClick={() => setActiveMember(member)}
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  h="full"
                 >
-                  {member.photo_url && (
-                    <Image
-                      src={member.photo_url}
-                      alt={`Professional profile photo of ${member.name}, ${member.title} at MLC Health and Wellness Centre`}
-                      borderRadius="xl"
-                      mb={4}
-                    />
-                  )}
-                  <Heading size="md" fontFamily="'Playfair Display', var(--font-playfair), serif">
-                    {member.name}
-                  </Heading>
-                  {member.title && (
-                    <Text color="#56756D" fontWeight="semibold" mb={2}>
-                      {member.title}
-                    </Text>
-                  )}
-                  <Text fontSize="sm" color="#56756D">
-                    Tap to view full profile
+                  <Box>
+                    {member.photo_url && (
+                      <Image
+                        src={member.photo_url}
+                        alt={`Professional profile photo of ${member.name}, ${member.title} at MLC Health and Wellness Centre`}
+                        borderRadius="xl"
+                        mb={4}
+                        w="full"
+                        h="260px"
+                        objectFit="cover"
+                      />
+                    )}
+                    <Heading size="md" fontFamily="'Playfair Display', var(--font-playfair), serif" mb={1}>
+                      {member.name}
+                    </Heading>
+                    {member.title && (
+                      <Text color="#56756D" fontWeight="600" fontSize="sm" mb={2}>
+                        {member.title}
+                      </Text>
+                    )}
+                  </Box>
+                  <Text fontSize="xs" color="#56756D" fontWeight="500" pt={2}>
+                    Tap to view full profile →
                   </Text>
                 </Box>
               ))}
@@ -149,7 +160,7 @@ export default function TeamClient() {
             fontFamily="'Inter', var(--font-inter), sans-serif"
             lineHeight="1.8"
           >
-            Every member of MLC shares a common goal — to create a space that
+            Every member of MLC shares a common goal: to create a space that
             nurtures both client and clinician. Together, we are redefining what
             compassionate and sustainable therapy can look like.
           </Text>

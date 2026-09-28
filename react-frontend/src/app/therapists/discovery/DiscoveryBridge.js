@@ -4,30 +4,28 @@ import dynamic from 'next/dynamic'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../../context/AuthContext'
+import { Box, Spinner, Center, Text, VStack } from '@chakra-ui/react'
 
 const DiscoveryClient = dynamic(() => import('./DiscoveryClient'), {
   ssr: false,
-  loading: () => (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#666' }}>Loading therapist matching...</p>
-    </div>
-  ),
+  loading: () => <DiscoveryLoading text="Preparing match quiz..." />,
 })
 
 const DiscoveryIntakeClient = dynamic(() => import('./DiscoveryIntakeClient'), {
   ssr: false,
-  loading: () => (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#666' }}>Loading...</p>
-    </div>
-  ),
+  loading: () => <DiscoveryLoading text="Loading therapist matching..." />,
 })
 
-function DiscoveryLoading() {
+function DiscoveryLoading({ text = "Loading..." }) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#666' }}>Loading...</p>
-    </div>
+    <Center minHeight="60vh" py={20}>
+      <VStack spacing={4}>
+        <Spinner size="lg" color="#56756D" thickness="3px" speed="0.75s" />
+        <Text fontSize="14px" color="#5A6E65" fontFamily="'Inter', sans-serif">
+          {text}
+        </Text>
+      </VStack>
+    </Center>
   )
 }
 

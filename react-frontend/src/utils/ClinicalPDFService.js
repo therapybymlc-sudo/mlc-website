@@ -1,11 +1,15 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
 /**
  * ClinicalPDFService
  * Handles high-fidelity clinical record exports with watermarking and legal disclaimers.
  */
+const getPDFModules = async () => {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
+  return { jsPDF, autoTable };
+};
+
 export const exportNoteToPDF = async (client, note, therapistName, template) => {
+  const { jsPDF, autoTable } = await getPDFModules();
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -108,6 +112,7 @@ export const exportNoteToPDF = async (client, note, therapistName, template) => 
 };
 
 export const exportAllClientNotes = async (client, notes, therapistName, allTemplates = []) => {
+  const { jsPDF, autoTable } = await getPDFModules();
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();

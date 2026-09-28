@@ -74,12 +74,12 @@ export default function RocketChatEmbeddedClient({ title, description }) {
   };
 
   return (
-    <VStack align="stretch" spacing={4} maxW="1200px" mx="auto" pb={8}>
+    <VStack align="stretch" spacing={4} maxW="6xl" mx="auto" pb={8}>
       <Box>
         <Heading size="md" color="#2E2E2E">
           {title || 'Secure Messages'}
         </Heading>
-        <Text color="gray.600" mt={1}>
+        <Text color="rgba(46,46,46,0.75)" mt={1}>
           {description ||
             'Rocket.Chat workspace for therapist-client communication. Your login is provisioned automatically from your MLC profile.'}
         </Text>
@@ -88,7 +88,7 @@ export default function RocketChatEmbeddedClient({ title, description }) {
       {loading ? (
         <HStack bg="white" borderRadius="2xl" p={8} border="1px solid" borderColor="gray.100">
           <Spinner size="sm" />
-          <Text color="gray.600">Loading chat session…</Text>
+          <Text color="rgba(46,46,46,0.75)">Loading chat session…</Text>
         </HStack>
       ) : null}
 
@@ -132,7 +132,7 @@ export default function RocketChatEmbeddedClient({ title, description }) {
               </Text>
               <List spacing={1}>
                 {session.peers.map((peer) => (
-                  <ListItem key={`${peer.relationship_id}-${peer.peer_id}`} fontSize="sm" color="gray.600">
+                  <ListItem key={`${peer.relationship_id}-${peer.peer_id}`} fontSize="sm" color="rgba(46,46,46,0.75)">
                     • {peer.peer_name} ({peer.peer_role})
                   </ListItem>
                 ))}

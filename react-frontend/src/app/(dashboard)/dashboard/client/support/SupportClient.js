@@ -163,7 +163,7 @@ export default function ClientSupportClient() {
                       </Circle>
                       <VStack align="start" spacing={0}>
                         <Text fontSize="xs" fontWeight="700" color="mlc.gold">EMAIL CARE TEAM</Text>
-                        <Text fontSize="sm" fontWeight="600">care@mlchealth.in</Text>
+                        <Text fontSize="sm" fontWeight="600">therapy@mlchealth.in</Text>
                       </VStack>
                     </HStack>
 

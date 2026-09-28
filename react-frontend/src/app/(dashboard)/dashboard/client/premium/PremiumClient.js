@@ -70,7 +70,7 @@ export default function PremiumClient() {
                 The Lux Studio
               </Heading>
               <Text fontSize="xl" color="whiteAlpha.800" lineHeight="tall">
-                A refined, cloud-synced experience for clients who want deeper support between sessions —
+                A refined, cloud-synced experience for clients who want deeper support between sessions,
                 with rituals, resources, and continuity across every device.
               </Text>
             </Box>
@@ -136,7 +136,7 @@ export default function PremiumClient() {
             <FeatureCard
               icon={FiBook}
               title="200+ Resources for Your Journey"
-              description="Access over 200 resources to support your therapy journey — a complete arsenal of skills and knowledge to help you do better each day."
+              description="Access over 200 resources to support your therapy journey: a complete arsenal of skills and knowledge to help you do better each day."
             />
             <FeatureCard
               icon={FiCloud}

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from "react";
-import ClientResources from '../../../../../legacy_pages/dashboards/resources/ClientResources';
+import ClientResources from '../../../../../components/dashboard/ClientResources';
 
 export default function ResourcesClient() {
   const [isMounted, setIsMounted] = useState(false);

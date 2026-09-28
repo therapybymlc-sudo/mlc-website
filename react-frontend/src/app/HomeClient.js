@@ -27,10 +27,20 @@ import {
   Stack,
   Center,
 } from "@chakra-ui/react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiUsers, FiCompass, FiCheckCircle, FiFeather, FiArrowRight, FiCalendar, FiLayout, FiClock, FiTarget, FiSliders } from "react-icons/fi";
+import { motion } from "framer-motion";
+import {
+  FiUsers,
+  FiCompass,
+  FiCheckCircle,
+  FiFeather,
+  FiArrowRight,
+  FiCalendar,
+  FiBriefcase,
+  FiAward,
+} from "react-icons/fi";
 import React, { useEffect, useState, useRef } from "react";
 import NextLink from "next/link";
+import NextImage from "next/image";
 import { apiGet } from "../api.js";
 import BlogCarousel from '../components/blog/BlogCarousel';
 
@@ -39,7 +49,7 @@ const MotionBox = motion(Box);
 const fallbackHome = {
   hero: {
     title: "MLC Therapy",
-    tagline: "A space to feel, to heal, to become.",
+    tagline: "A space to feel, to heal, to become",
     paragraph_one:
       "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through.",
     paragraph_two:
@@ -141,7 +151,6 @@ export default function HomeClient() {
   return (
     <Box>
       {/* HERO SECTION */}
-      {/* HERO SECTION */}
       <MotionBox
         position="relative"
         bgImage={`url('${homeContent.hero.background_image || "/hero-bg.jpg"}')`}
@@ -149,7 +158,7 @@ export default function HomeClient() {
         bgPosition="center"
         bgRepeat="no-repeat"
         bgColor="#FDFBFA" 
-        minH={{ base: "90dvh", md: "110vh" }}
+        minH={{ base: "76vh", md: "82vh" }}
         display="flex"
         flexDirection="column"
         alignItems="center"
@@ -159,42 +168,43 @@ export default function HomeClient() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
-        px={6}
+        px={{ base: 4, md: 6 }}
+        py={{ base: 12, md: 16 }}
       >
         {/* Dynamic Gradient Overlay */}
         <Box 
           position="absolute"
           inset={0}
-          bg="linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.85))"
+          bg="linear-gradient(rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.88))"
           zIndex={1}
         />
 
-        <Box position="relative" zIndex={2} maxW="4xl" w="full">
+        <Box position="relative" zIndex={2} maxW="3xl" w="full" mx="auto">
           <Image
             src={homeContent.hero.logo_url || "/logo_tra.png"}
             alt="MLC Health and Wellness Centre Official Logo - A symbol of holistic healing and growth"
-            boxSize={{ base: "90px", sm: "110px", md: "130px" }}
-            mb={8}
+            boxSize={{ base: "72px", sm: "88px", md: "100px" }}
+            mb={{ base: 3, md: 4 }}
             mx="auto"
           />
           <Heading
             as="h1"
             fontFamily="'Playfair Display', var(--font-playfair), serif"
             fontWeight="600"
-            fontSize={{ base: "2.2rem", md: "4.5rem", lg: "5.5rem" }}
+            fontSize={{ base: "28px", sm: "36px", md: "44px", lg: "48px" }}
             color="#2E2E2E"
-            letterSpacing="-0.01em"
-            lineHeight="1.1"
-            mb={6}
+            letterSpacing="-0.015em"
+            lineHeight={{ base: "1.2", md: "1.16" }}
+            mb={{ base: 3, md: 4 }}
           >
             Enter the <Text as="span" color="mlc.green">therapy ecosystem</Text> built for your journey
           </Heading>
           
           <Text
-            mt={4}
+            mt={1}
             fontSize={{ base: "xs", md: "sm" }}
             color="#56756D"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
+            fontFamily="body"
             fontWeight="700"
             letterSpacing="2px"
             textTransform="uppercase"
@@ -203,36 +213,36 @@ export default function HomeClient() {
           </Text>
 
           <Text
-            mt={8}
+            mt={{ base: 3.5, md: 4 }}
             color="rgba(46, 46, 46, 0.85)"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
-            fontSize={{ base: "md", md: "lg" }}
-            lineHeight="1.8"
+            fontFamily="body"
+            fontSize={{ base: "14.5px", md: "16px" }}
+            lineHeight="1.7"
             maxW="2xl"
             mx="auto"
           >
             {homeContent.hero.paragraph_one || "Therapy is a space where you can slow down, speak openly, and begin to understand what you're going through."}
           </Text>
 
-          <VStack spacing={6} mt={12} align="center">
+          <VStack spacing={3} mt={{ base: 5, md: 6 }} align="center">
             <Button
               as={NextLink}
               href="/therapists/discovery"
-              size="lg"
+              h={{ base: "48px", md: "52px" }}
+              px={{ base: 8, md: 10 }}
               bg="#56756D"
               color="white"
               borderRadius="full"
-              shadow="2xl"
-              _hover={{ bg: "#C9A960", transform: "scale(1.05)", shadow: "dark-lg" }}
+              shadow="lg"
+              _hover={{ bg: "#C9A960", transform: "translateY(-2px)", shadow: "xl" }}
               fontWeight="600"
-              fontSize="lg"
-              px={14}
-              py={8}
+              fontSize={{ base: "14.5px", md: "15px" }}
+              whiteSpace="nowrap"
             >
               Take the Matching Quiz
             </Button>
-            <HStack spacing={4}>
-              <Text fontSize="xs" color="gray.500" fontWeight="500">Already know who you're looking for?</Text>
+            <HStack spacing={2.5}>
+              <Text fontSize="xs" color="rgba(46,46,46,0.6)" fontWeight="500">Already know who you're looking for?</Text>
               <ChakraLink
                 as={NextLink}
                 href="/therapists/directory"
@@ -240,7 +250,7 @@ export default function HomeClient() {
                 fontWeight="700"
                 fontSize="xs"
                 textDecoration="none"
-                borderBottom="2px solid"
+                borderBottom="1.5px solid"
                 borderColor="mlc.green"
                 _hover={{ color: "mlc.gold", borderColor: "mlc.gold" }}
               >
@@ -252,19 +262,26 @@ export default function HomeClient() {
       </MotionBox>
 
       {/* HOW TO START SECTION */}
-      <Box py={24} bg="white">
+      <Box py={{ base: 12, md: 16 }} bg="white">
         <Container maxW="6xl">
-          <VStack spacing={16} align="center">
-            <VStack spacing={4} textAlign="center">
-              <Heading fontFamily="'Playfair Display', var(--font-playfair), serif" size="xl" color="mlc.black">
+          <VStack spacing={{ base: 8, md: 10 }} align="center">
+
+            <VStack spacing={2.5} textAlign="center">
+              <Heading
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                fontSize={{ base: "26px", md: "34px" }}
+                fontWeight="600"
+                color="#263A33"
+                lineHeight="1.25"
+              >
                 How to find your space here
               </Heading>
-              <Text fontSize="lg" color="gray.600" maxW="2xl">
+              <Text fontSize={{ base: "14.5px", md: "15.5px" }} color="rgba(46,46,46,0.75)" maxW="2xl" lineHeight="1.7">
                 We have designed a connected therapy ecosystem to help you find aligned care quickly and continue that care with confidence.
               </Text>
             </VStack>
 
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={12} w="full">
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 5, md: 6 }} w="full">
               {[
                 {
                   step: "01",
@@ -282,10 +299,23 @@ export default function HomeClient() {
                   desc: "Book your first session and continue with in-platform tools, secure workflows, and continuity across every step of care.",
                 },
               ].map((item, idx) => (
-                <VStack key={idx} align="flex-start" spacing={6} p={8} bg="#FDFBFA" borderRadius="2xl" border="1px solid" borderColor="gray.100" _hover={{ shadow: 'lg', transform: 'translateY(-4px)' }} transition="all 0.3s">
-                   <Text fontSize="5xl" fontWeight="800" color="mlc.gold" opacity="0.3" fontFamily="'Playfair Display', serif" lineHeight="1">{item.step}</Text>
-                   <Heading size="md" color="mlc.greenDark">{item.title}</Heading>
-                   <Text color="gray.600" fontSize="md">{item.desc}</Text>
+                <VStack
+                  key={idx}
+                  align="flex-start"
+                  spacing={3.5}
+                  p={{ base: 5, md: 6 }}
+                  bg="#FDFBFA"
+                  borderRadius="2xl"
+                  border="1px solid"
+                  borderColor="gray.100"
+                  shadow="sm"
+                  _hover={{ shadow: 'md', transform: 'translateY(-2px)' }}
+                  transition="all 0.25s ease"
+                  h="full"
+                >
+                   <Text fontSize={{ base: "32px", md: "38px" }} fontWeight="700" color="mlc.gold" opacity="0.35" fontFamily="'Playfair Display', serif" lineHeight="1">{item.step}</Text>
+                   <Heading fontSize="17.5px" fontWeight="600" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">{item.title}</Heading>
+                   <Text color="rgba(46,46,46,0.75)" fontSize="14px" lineHeight="1.65">{item.desc}</Text>
                 </VStack>
               ))}
             </SimpleGrid>
@@ -296,10 +326,13 @@ export default function HomeClient() {
               variant="outline"
               borderColor="mlc.green"
               color="mlc.greenDark"
-              px={10}
-              py={7}
+              h="46px"
+              px={8}
+              fontSize="14px"
+              fontWeight="600"
               borderRadius="full"
               _hover={{ bg: "mlc.green", color: "white" }}
+              transition="all 0.2s ease"
             >
               Start the Discovery Quiz
             </Button>
@@ -308,65 +341,109 @@ export default function HomeClient() {
       </Box>
 
       {/* 🌿 FOR CLINICIANS / THERAPISTS SECTION */}
-      <Box py={24} bg="#F4F7F5" borderY="1px solid" borderColor="gray.100">
+      <Box py={{ base: 12, md: 16 }} bg="#F4F7F5" borderY="1px solid" borderColor="gray.100">
         <Container maxW="6xl">
-          <VStack spacing={16}>
-            <VStack spacing={4} textAlign="center" maxW="3xl">
-              <Badge colorScheme="teal" borderRadius="full" px={3} py={1} fontSize="xs" fontWeight="800">
+          <VStack spacing={{ base: 8, md: 10 }}>
+            <VStack spacing={2.5} textAlign="center" maxW="3xl">
+              <Badge colorScheme="green" borderRadius="full" px={3} py={1} fontSize="xs" fontWeight="800">
                 FOR PRACTITIONERS
               </Badge>
-              <Heading fontFamily="'Playfair Display', var(--font-playfair), serif" size="xl" color="teal.900" mt={2}>
+              <Heading
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                fontSize={{ base: "26px", md: "34px" }}
+                fontWeight="600"
+                color="#263A33"
+                lineHeight="1.25"
+                mt={1}
+              >
                 Bring Your Entire Practice Into One Unified Workspace
               </Heading>
-              <Text fontSize="lg" color="gray.600">
-                MLC is more than a therapist directory. It is a complete digital ecosystem built by therapists, for therapists—designed to streamline client matching, case notes, billing, and peer supervision.
+              <Text fontSize={{ base: "14.5px", md: "15.5px" }} color="rgba(46,46,46,0.75)" lineHeight="1.7">
+                MLC is more than a therapist directory. It is a complete digital ecosystem built by therapists, for therapists, designed to streamline client matching, case notes, billing, and peer supervision.
               </Text>
             </VStack>
 
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={8} w="full">
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} w="full">
               {[
                 {
-                  icon: FiLayout,
+                  icon: FiBriefcase,
                   title: "Practice Management",
                   desc: "Streamlined client booking, flexible scheduling availability, and secure clinical records tailored for Indian practitioners.",
                 },
                 {
-                  icon: FiTarget,
+                  icon: FiUsers,
                   title: "Client Workspace",
                   desc: "Interactive toolsets for goals, progress trackers, and secure document sharing directly with your matched clients.",
                 },
                 {
-                  icon: FiClock,
+                  icon: FiCompass,
                   title: "Reflective Supervision",
                   desc: "Connect with licensed supervisors, participate in small cohorts, and strengthen your clinical reasoning skills.",
                 },
                 {
-                  icon: FiSliders,
+                  icon: FiAward,
                   title: "Accredited Workshops",
                   desc: "Continuously refine your expertise through structured peer consults and accredited continuing education sessions.",
                 },
               ].map((item, idx) => (
-                <VStack key={idx} align="flex-start" spacing={5} p={8} bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" shadow="sm" _hover={{ shadow: 'lg', transform: 'translateY(-4px)' }} transition="all 0.3s">
-                  <Center bg="teal.50" color="teal.700" p={4} borderRadius="xl">
-                    <Icon as={item.icon} boxSize={6} />
+                <VStack
+                  key={idx}
+                  align="flex-start"
+                  spacing={3}
+                  p={{ base: 5, md: 5 }}
+                  bg="white"
+                  borderRadius="2xl"
+                  border="1px solid"
+                  borderColor="gray.100"
+                  shadow="sm"
+                  _hover={{ shadow: 'md', transform: 'translateY(-2px)' }}
+                  transition="all 0.25s ease"
+                  h="full"
+                >
+                  <Center
+                    bg="rgba(169, 203, 183, 0.2)"
+                    color="#4A6B62"
+                    w="42px"
+                    h="42px"
+                    borderRadius="12px"
+                    border="1px solid"
+                    borderColor="rgba(86, 117, 109, 0.15)"
+                    flexShrink={0}
+                  >
+                    <Icon as={item.icon} boxSize="20px" />
                   </Center>
-                  <Heading size="md" color="teal.900" fontFamily="'Playfair Display', serif">{item.title}</Heading>
-                  <Text color="gray.600" fontSize="sm" lineHeight="relaxed">{item.desc}</Text>
+                  <Heading
+                    fontSize={{ base: "16px", md: "15.5px", lg: "16px" }}
+                    fontWeight="600"
+                    color="#263A33"
+                    fontFamily="'Playfair Display', var(--font-playfair), serif"
+                    lineHeight="1.3"
+                  >
+                    {item.title}
+                  </Heading>
+                  <Text
+                    color="rgba(46,46,46,0.75)"
+                    fontSize={{ base: "13px", md: "12.5px", lg: "13px" }}
+                    lineHeight="1.6"
+                  >
+                    {item.desc}
+                  </Text>
                 </VStack>
               ))}
             </SimpleGrid>
 
-            <Stack direction={{ base: "column", sm: "row" }} spacing={4} justify="center" w="full">
+            <Stack direction={{ base: "column", sm: "row" }} spacing={3.5} justify="center" w="full">
               <Button
                 as={NextLink}
                 href="/therapist-apply"
-                size="lg"
-                bg="teal.700"
+                h="46px"
+                px={7}
+                fontSize="14px"
+                fontWeight="600"
+                bg="#56756D"
                 color="white"
-                px={10}
-                py={7}
                 borderRadius="full"
-                _hover={{ bg: "teal.800", transform: "translateY(-2px)" }}
+                _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
                 transition="all 0.2s"
               >
                 Apply as a Therapist
@@ -374,13 +451,16 @@ export default function HomeClient() {
               <Button
                 as={NextLink}
                 href="/therapists"
-                size="lg"
+                h="46px"
+                px={7}
+                fontSize="14px"
+                fontWeight="600"
                 variant="outline"
-                colorScheme="teal"
-                px={10}
-                py={7}
+                colorScheme="green"
+                borderColor="rgba(86,117,109,0.3)"
+                color="#56756D"
                 borderRadius="full"
-                _hover={{ bg: "teal.50", transform: "translateY(-2px)" }}
+                _hover={{ bg: "rgba(169,203,183,0.1)", transform: "translateY(-1px)" }}
                 transition="all 0.2s"
               >
                 Learn More
@@ -390,71 +470,154 @@ export default function HomeClient() {
         </Container>
       </Box>
 
-      {/* MISSION SECTION */}
-      <Container maxW="6xl" py={24}>
-        <SimpleGrid
-          columns={{ base: 1, md: 2 }}
-          spacing={10}
-          alignItems="center"
-        >
-          <Box>
-            <Heading
-              as="h2"
-              fontFamily="'Playfair Display', var(--font-playfair), serif"
-              color="#2E2E2E"
-              mb={4}
-              lineHeight="1.3"
-              fontWeight="500"
-            >
-              A Therapy Ecosystem Where Healing Meets Precision
-            </Heading>
-            <Text
-              color="#2E2E2E"
-              fontFamily="'Inter', var(--font-inter), sans-serif"
-              lineHeight="1.8"
-              fontSize="lg"
-            >
-              At MLC Therapy, we combine empathy, clinical rigor, and thoughtful technology to create a true therapy ecosystem.
-              From your first match to ongoing sessions, resources, and progress tracking, every part of your care journey is designed to feel
-              safer, more coordinated, and more human.
-            </Text>
-            <Button
-              mt={6}
-              borderRadius="full"
-              bg="#C9A960"
-              color="white"
-              _hover={{ bg: "#56756D", color: "white" }}
-              as={NextLink}
-              href="/about"
-              fontWeight="500"
-              boxShadow="sm"
-              px={8}
-            >
-              Learn More
-            </Button>
-          </Box>
-          <Image
-            src="/new-therapy-room.jpg"
-            alt="A beautifully designed, modern therapy room at MLC Centre, featuring warm lighting and a calm atmosphere for client sessions"
-            borderRadius="2xl"
-            boxShadow="xl"
-            w="100%"
-            maxW={{ base: "100%", md: "520px" }}
-            mx={{ base: "auto", md: "0" }}
-          />
-        </SimpleGrid>
-      </Container>
+      {/* MISSION / ECOSYSTEM SECTION */}
+      <Box py={{ base: 12, md: 16 }} bg="white">
+        <Container maxW="1140px">
+          <SimpleGrid
+            columns={{ base: 1, lg: 2 }}
+            spacing={{ base: 8, lg: 12 }}
+            alignItems="center"
+          >
+            <VStack align="start" spacing={5}>
+              <Badge
+                bg="rgba(169,203,183,0.1)"
+                color="#56756D"
+                px={3.5}
+                py={1}
+                borderRadius="full"
+                fontSize="11px"
+                fontWeight="700"
+                letterSpacing="0.06em"
+              >
+                THE MLC PHILOSOPHY
+              </Badge>
+
+              <Heading
+                as="h2"
+                fontFamily="'Playfair Display', var(--font-playfair), serif"
+                color="#263A33"
+                fontSize={{ base: "26px", md: "34px" }}
+                lineHeight="1.24"
+                fontWeight="600"
+              >
+                A Therapy Ecosystem Where Healing Meets Precision
+              </Heading>
+
+              <Text
+                color="rgba(46,46,46,0.75)"
+                fontSize={{ base: "14.5px", md: "15.5px" }}
+                lineHeight="1.75"
+              >
+                At MLC Therapy, we combine empathy, clinical rigor, and thoughtful technology to create a true therapy ecosystem. From your first match to ongoing sessions, resources, and progress tracking, every part of your care journey is designed to feel safer, more coordinated, and more human.
+              </Text>
+
+              <HStack spacing={{ base: 3, sm: 5 }} pt={1} wrap="wrap">
+                <HStack spacing={2}>
+                  <Icon as={FiCheckCircle} color="#C9A960" boxSize={4} />
+                  <Text fontSize="13px" fontWeight="600" color="#263A33">Clinically Vetted</Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Icon as={FiCheckCircle} color="#C9A960" boxSize={4} />
+                  <Text fontSize="13px" fontWeight="600" color="#263A33">Coordinated Care</Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Icon as={FiCheckCircle} color="#C9A960" boxSize={4} />
+                  <Text fontSize="13px" fontWeight="600" color="#263A33">Continuous Support</Text>
+                </HStack>
+              </HStack>
+
+              <Button
+                as={NextLink}
+                href="/about"
+                mt={2}
+                h="44px"
+                px={7}
+                borderRadius="full"
+                bg="#C9A960"
+                color="#263A33"
+                fontWeight="700"
+                fontSize="13.5px"
+                boxShadow="0 4px 14px rgba(201, 169, 96, 0.22)"
+                _hover={{
+                  bg: "#E6CA65",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 6px 18px rgba(201, 169, 96, 0.35)",
+                }}
+                transition="all 0.2s ease"
+                rightIcon={<FiArrowRight />}
+              >
+                Learn More
+              </Button>
+            </VStack>
+
+            <Box position="relative">
+              <Box
+                position="absolute"
+                inset="-6px"
+                borderRadius="30px"
+                bgGradient="linear(to-br, rgba(201, 169, 96, 0.12), rgba(16, 40, 34, 0.04))"
+                filter="blur(14px)"
+                zIndex={0}
+              />
+              
+              <Box
+                position="relative"
+                zIndex={1}
+                borderRadius="2xl"
+                overflow="hidden"
+                border="1px solid"
+                borderColor="gray.100"
+                boxShadow="0 18px 40px -12px rgba(16, 40, 34, 0.1)"
+                bg="white"
+              >
+                <Box position="relative" w="100%" h={{ base: "260px", sm: "320px", md: "360px" }}>
+                  <NextImage
+                    src="/new-therapy-room.jpg"
+                    alt="A beautifully designed, modern therapy room at MLC Centre, featuring warm lighting and a calm atmosphere for client sessions"
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    loading="lazy"
+                  />
+                </Box>
+              </Box>
+
+              <Box
+                position="absolute"
+                bottom={{ base: "12px", md: "16px" }}
+                left={{ base: "12px", md: "16px" }}
+                zIndex={2}
+                bg="rgba(255, 255, 255, 0.94)"
+                backdropFilter="blur(8px)"
+                px={3.5}
+                py={2}
+                borderRadius="14px"
+                border="1px solid"
+                borderColor="rgba(255, 255, 255, 0.8)"
+                boxShadow="0 8px 20px rgba(0, 0, 0, 0.08)"
+              >
+                <HStack spacing={2}>
+                  <Box w="7px" h="7px" borderRadius="full" bg="#C9A960" />
+                  <Text fontSize="12px" fontWeight="600" color="#263A33">
+                    Intentional clinical spaces
+                  </Text>
+                </HStack>
+              </Box>
+            </Box>
+          </SimpleGrid>
+        </Container>
+      </Box>
       
       <BlogCarousel />
 
       <Modal isOpen={isCohortModalOpen} onClose={() => { sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); setCohortModalOpen(false); }} isCentered size="lg">
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(5px)" />
-        <ModalContent borderRadius="3xl" overflow="hidden" border="1px solid" borderColor="teal.100" p={2}>
+        <ModalContent borderRadius="3xl" overflow="hidden" border="1px solid" borderColor="rgba(169,203,183,0.15)" p={2}>
           <ModalCloseButton borderRadius="full" m={2} />
           <ModalBody p={8}>
             <VStack align="start" spacing={6}>
               <HStack spacing={2}>
-                <Badge colorScheme="teal" borderRadius="full" px={3} py={1} fontSize="2xs" fontWeight="800">
+                <Badge colorScheme="green" borderRadius="full" px={3} py={1} fontSize="2xs" fontWeight="800">
                   NEW PROGRAMME
                 </Badge>
                 <Badge colorScheme="purple" borderRadius="full" px={3} py={1} fontSize="2xs" fontWeight="800">
@@ -462,24 +625,24 @@ export default function HomeClient() {
                 </Badge>
               </HStack>
               
-              <VStack align="start" spacing={2}>
-                <Heading size="lg" fontFamily="'Playfair Display', serif" color="teal.900">
+              <VStack align="start" spacing={1.5}>
+                <Heading fontSize={{ base: "19px", md: "21px" }} fontFamily="'Playfair Display', serif" color="#263A33" fontWeight="600">
                   MLC Clinical Supervision Cohort
                 </Heading>
-                <Text color="mlc.gold" fontWeight="700" fontSize="sm" letterSpacing="0.5px">
+                <Text color="mlc.gold" fontWeight="700" fontSize="13px" letterSpacing="0.5px">
                   12-Week Reflective Clinical Supervision Programme
                 </Text>
               </VStack>
 
-              <Text color="gray.600" fontSize="sm" lineHeight="relaxed">
+              <Text color="rgba(46,46,46,0.75)" fontSize="13.5px" lineHeight="1.65">
                 An intensive, structured learning journey designed for early-career psychologists to build confidence, sharpen clinical thinking, and discover their authentic clinical voice. Led by Ahmed Asif, M.Sc.
               </Text>
 
-              <HStack spacing={4} w="full" bg="teal.50" p={4} borderRadius="2xl" border="1px solid" borderColor="teal.100">
-                <Icon as={FiCalendar} color="teal.600" boxSize={5} />
+              <HStack spacing={3.5} w="full" bg="rgba(169,203,183,0.1)" p={3.5} borderRadius="2xl" border="1px solid" borderColor="rgba(169,203,183,0.15)">
+                <Icon as={FiCalendar} color="#56756D" boxSize={4.5} />
                 <Box>
-                  <Text fontWeight="800" fontSize="xs" color="teal.800" letterSpacing="0.5px">FOUNDING COHORT SIZE</Text>
-                  <Text fontSize="xs" color="gray.700">Intentionally limited to 6 selected therapists.</Text>
+                  <Text fontWeight="800" fontSize="11px" color="#56756D" letterSpacing="0.5px">FOUNDING COHORT SIZE</Text>
+                  <Text fontSize="12px" color="gray.700">Intentionally limited to 6 selected therapists.</Text>
                 </Box>
               </HStack>
 
@@ -489,11 +652,11 @@ export default function HomeClient() {
                   href="/supervision"
                   onClick={() => { sessionStorage.setItem("mlc_supervision_modal_dismissed", "true"); setCohortModalOpen(false); }}
                   flex="1.2"
-                  bg="teal.800"
+                  bg="#56756D"
                   color="white"
                   borderRadius="full"
                   h="48px"
-                  _hover={{ bg: "teal.900" }}
+                  _hover={{ bg: "#263A33" }}
                   rightIcon={<FiArrowRight />}
                 >
                   Learn More & Apply
@@ -506,11 +669,11 @@ export default function HomeClient() {
                   }}
                   flex="0.9"
                   variant="outline"
-                  borderColor="teal.200"
-                  color="teal.800"
+                  borderColor="rgba(86,117,109,0.15)"
+                  color="#56756D"
                   borderRadius="full"
                   h="48px"
-                  _hover={{ bg: "teal.50" }}
+                  _hover={{ bg: "rgba(169,203,183,0.1)" }}
                 >
                   Download Brochure
                 </Button>

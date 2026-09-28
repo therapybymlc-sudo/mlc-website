@@ -17,13 +17,13 @@ export default function TherapistCard({ therapist, isMatch = false }) {
   return (
     <Box
       bg="white"
-      borderRadius="24px"
+      borderRadius="2xl"
       overflow="hidden"
       border="1px solid"
       borderColor={isMatch ? "mlc.green" : "gray.100"}
       boxShadow="sm"
-      transition="all 0.3s ease"
-      _hover={{ transform: "translateY(-4px)", boxShadow: "xl" }}
+      transition="all 0.25s ease"
+      _hover={{ transform: "translateY(-2px)", boxShadow: "0 10px 25px -5px rgba(86, 117, 109, 0.12)" }}
       display="flex"
       flexDirection={{ base: "column", sm: "row" }}
       position="relative"
@@ -69,15 +69,15 @@ export default function TherapistCard({ therapist, isMatch = false }) {
                   <Icon as={FiCheckCircle} color="blue.400" />
                 )}
               </HStack>
-              <Text fontSize="sm" color="gray.500" fontWeight="500">
+              <Text fontSize="sm" color="rgba(46,46,46,0.6)" fontWeight="500">
                 {therapist.years_experience}+ years of experience
               </Text>
             </Box>
             <Box textAlign="right">
               <Text fontSize="lg" fontWeight="bold" color="mlc.greenDark">
-                ${therapist.hourly_rate || "80"}
+                ₹{therapist.hourly_rate || "1200"}
               </Text>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="rgba(46,46,46,0.6)">
                 for {therapist.session_duration || 50} mins
               </Text>
             </Box>
@@ -101,16 +101,16 @@ export default function TherapistCard({ therapist, isMatch = false }) {
           </HStack>
 
           <VStack align="stretch" spacing={1} mt={2}>
-            <HStack spacing={2} color="gray.600">
+            <HStack spacing={2} color="rgba(46,46,46,0.75)">
               <Icon as={FiVideo} color="mlc.green" />
               <Text fontSize="xs">Available Online via Video</Text>
             </HStack>
-            <HStack spacing={2} color="gray.600">
+            <HStack spacing={2} color="rgba(46,46,46,0.75)">
               <Icon as={FiClock} color="mlc.green" />
               <Text fontSize="xs">Next available: <Text as="span" fontWeight="600" color="mlc.greenDark">Today, 02:30 PM</Text></Text>
             </HStack>
             {therapist.city && (
-              <HStack spacing={2} color="gray.600">
+              <HStack spacing={2} color="rgba(46,46,46,0.75)">
                 <Icon as={FiMapPin} color="mlc.green" />
                 <Text fontSize="xs">{therapist.city}</Text>
               </HStack>

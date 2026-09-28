@@ -56,10 +56,10 @@ export default function TherapistsClient() {
       {/* 🌿 VISIONARY HERO WITH ADJUSTED OVERLAY */}
       <Box 
         position="relative" 
-        pt={{ base: 32, md: 48 }} 
-        pb={{ base: 16, md: 28 }} 
+        pt={{ base: 8, md: 12 }} 
+        pb={{ base: 10, md: 14 }} 
         px={6} 
-        minH={{ base: "auto", md: "95vh" }}
+        minH={{ base: "auto", lg: "85vh" }}
         display="flex"
         alignItems="center"
       >
@@ -68,31 +68,31 @@ export default function TherapistsClient() {
         </Box>
         <Box position="absolute" inset={0} bg="rgba(255, 255, 255, 0.92)" zIndex={1} />
 
-        <Container maxW="7xl" position="relative" zIndex={2}>
+        <Container maxW="6xl" position="relative" zIndex={2}>
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 10, md: 16 }} alignItems="center">
-            <VStack align="start" spacing={8}>
-              <Badge bg="teal.800" color="white" px={4} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE THERAPY ECOSYSTEM</Badge>
-              <Heading as="h1" fontSize={{ base: "4xl", md: "5xl", lg: "7xl" }} fontFamily="'Playfair Display', serif" color="teal.900" lineHeight="1" fontWeight="600">
+            <VStack align="start" spacing={5}>
+              <Badge bg="#56756D" color="white" px={3.5} py={1} borderRadius="full" fontSize="xs" fontWeight="800" letterSpacing="widest">THE THERAPY ECOSYSTEM</Badge>
+              <Heading as="h1" fontSize={{ base: "32px", md: "44px", lg: "54px" }} fontFamily="'Playfair Display', serif" color="#263A33" lineHeight="1.15" fontWeight="600">
                 Holding Space <br /> for You.
               </Heading>
-              <Text fontSize={{ base: "lg", md: "xl" }} color="teal.900" fontWeight="600" lineHeight="tall" maxW="xl">
+              <Text fontSize={{ base: "15px", md: "16.5px" }} color="rgba(46,46,46,0.75)" fontWeight="400" lineHeight="1.7" maxW="xl">
                 A complete therapy operating system designed to protect your boundaries, elevate your outcomes, and reduce admin fatigue.
               </Text>
-              <Stack direction={{ base: "column", sm: "row" }} spacing={4} w={{ base: "full", sm: "auto" }}>
-                <LinkButton href="/therapists/supervision-discovery" bg="mlc.gold" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "#b99647" }}>
+              <Stack direction={{ base: "column", sm: "row" }} spacing={3.5} pt={2} w={{ base: "full", sm: "auto" }}>
+                <LinkButton href="/therapists/supervision-discovery" bg="mlc.gold" color="#263A33" h="46px" px={7} borderRadius="full" fontSize="14px" fontWeight="700" _hover={{ bg: "#b99647" }}>
                   Find a Mentor
                 </LinkButton>
-                <LinkButton href="/therapist-apply" bg="teal.800" color="white" borderRadius="full" px={10} py={7} _hover={{ bg: "teal.900" }}>
+                <LinkButton href="/therapist-apply" bg="#56756D" color="white" h="46px" px={7} borderRadius="full" fontSize="14px" fontWeight="700" _hover={{ bg: "#263A33" }}>
                   Join the Collective
                 </LinkButton>
-                <LinkButton href="/login/therapist" variant="ghost" color="teal.800" fontWeight="900">
+                <LinkButton href="/login/therapist" variant="ghost" color="#56756D" h="46px" px={5} fontSize="14px" fontWeight="700">
                   Therapist Sign In
                 </LinkButton>
               </Stack>
             </VStack>
 
             <VStack align="center" spacing={0} position="relative">
-               <Box w="300px" mb={-4}>
+               <Box w="280px" mb={-4}>
                  <Image 
                     src="/therapy_cat_final.png" 
                     alt="Therapy Cat" 
@@ -112,15 +112,15 @@ export default function TherapistsClient() {
                     "Community & Growth"
                   ].map((label, i) => (
                     <MotionBox key={i} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i*0.2 }}>
-                      <HStack spacing={6} align="center" py={4}>
-                        <Box position="relative" w="60px" h="60px">
+                      <HStack spacing={6} align="center" py={3}>
+                        <Box position="relative" w="50px" h="50px">
                           <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M50 10 C20 20 10 50 40 70 C70 90 90 60 60 40 C30 20 20 80 50 90 C80 100 100 30 70 10 C40 -10 10 30 30 60 C50 90 90 70 80 40 C70 10 20 20 10 50" stroke="#56756D" strokeWidth="2.5" strokeLinecap="round" opacity="0.8" />
                           </svg>
                         </Box>
                         <VStack align="start" spacing={0}>
-                           <Text fontSize="xs" fontWeight="900" color="teal.800" letterSpacing="widest">SECTION 0{i+1}</Text>
-                           <Text fontSize="md" fontWeight="700" color="teal.900" fontFamily="'Playfair Display', serif">{label}</Text>
+                           <Text fontSize="xs" fontWeight="900" color="#56756D" letterSpacing="widest">SECTION 0{i+1}</Text>
+                           <Text fontSize="sm" fontWeight="700" color="#263A33" fontFamily="'Playfair Display', serif">{label}</Text>
                         </VStack>
                       </HStack>
                     </MotionBox>
@@ -132,29 +132,29 @@ export default function TherapistsClient() {
       </Box>
 
       {/* Mentor discovery surfaced early */}
-      <Box py={{ base: 10, md: 14 }} px={6} bg="white">
-        <Container maxW="7xl">
+      <Box py={{ base: 6, md: 8 }} px={6} bg="white">
+        <Container maxW="6xl">
           <Flex
             direction={{ base: "column", md: "row" }}
             align={{ base: "start", md: "center" }}
             justify="space-between"
             gap={6}
-            p={{ base: 6, md: 8 }}
-            borderRadius="3xl"
-            bg="teal.50"
+            p={{ base: 5, md: 6 }}
+            borderRadius="2xl"
+            bg="rgba(169,203,183,0.1)"
             border="1px solid"
-            borderColor="teal.100"
+            borderColor="rgba(169,203,183,0.15)"
           >
-            <VStack align="start" spacing={2} maxW="3xl">
-              <Badge colorScheme="teal" borderRadius="full" px={3}>EARLY ACCESS</Badge>
-              <Heading size="md" color="teal.900" fontFamily="'Playfair Display', serif">
+            <VStack align="start" spacing={1.5} maxW="3xl">
+              <Badge colorScheme="green" borderRadius="full" px={3}>EARLY ACCESS</Badge>
+              <Heading fontSize={{ base: "18px", md: "20px" }} color="#263A33" fontFamily="'Playfair Display', serif" fontWeight="600">
                 Find Your Supervisor or Clinical Mentor from Day One
               </Heading>
-              <Text color="gray.700">
+              <Text color="gray.700" fontSize="14.5px" lineHeight="1.6">
                 Get matched with senior, verified professionals who can support your growth through structured supervision, reflective practice, and real-world clinical guidance.
               </Text>
             </VStack>
-            <LinkButton href="/therapists/supervision-discovery" bg="teal.800" color="white" borderRadius="full" px={8} py={6} _hover={{ bg: "teal.900" }}>
+            <LinkButton href="/therapists/supervision-discovery" bg="#56756D" color="white" h="44px" px={6} borderRadius="full" fontSize="14px" fontWeight="700" _hover={{ bg: "#263A33" }} flexShrink={0}>
               Start Mentor Matching
             </LinkButton>
           </Flex>
@@ -162,20 +162,20 @@ export default function TherapistsClient() {
       </Box>
 
       {/* 💠 THE CLINICAL DASHBOARD SUITE */}
-      <Box py={24} px={6} bg="white">
-        <Container maxW="7xl">
-          <VStack spacing={16}>
-             <VStack spacing={4} textAlign="center" maxW="3xl">
-                <Heading color="teal.900" fontFamily="'Playfair Display', serif" fontSize="4xl">Your Complete Clinical Suite</Heading>
-                <Text color="gray.600" fontSize="lg">Align with best practices effortlessly with a dashboard that handles the complexity of therapy administration.</Text>
+      <Box py={{ base: 12, md: 16 }} px={6} bg="white">
+        <Container maxW="6xl">
+          <VStack spacing={10}>
+             <VStack spacing={3} textAlign="center" maxW="3xl">
+                <Heading color="#263A33" fontFamily="'Playfair Display', serif" fontSize={{ base: "26px", md: "36px" }} fontWeight="600">Your Complete Clinical Suite</Heading>
+                <Text color="rgba(46,46,46,0.75)" fontSize="15px" lineHeight="1.7">Align with best practices effortlessly with a dashboard that handles the complexity of therapy administration.</Text>
              </VStack>
-             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 6, md: 10 }} w="full">
+             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 5, md: 6 }} w="full">
                 {ECOSYSTEM_FEATURES.map((f, i) => (
-                  <HStack key={i} align="start" p={10} bg="#FDFBFA" borderRadius="2rem" shadow="sm" border="1px solid" borderColor="teal.50" spacing={6} transition="all 0.3s" _hover={{ shadow: "xl" }}>
-                    <Circle size="60px" bg="teal.50" color="teal.700"><Icon as={f.icon} w={6} h={6} /></Circle>
-                    <VStack align="start" spacing={2}>
-                      <Heading size="md" color="teal.800">{f.title}</Heading>
-                      <Text color="gray.500" fontSize="sm" lineHeight="1.7">{f.desc}</Text>
+                  <HStack key={i} align="start" p={{ base: 5, md: 6 }} bg="#FDFBFA" borderRadius="2xl" shadow="sm" border="1px solid" borderColor="rgba(169,203,183,0.1)" spacing={5} transition="all 0.3s" _hover={{ shadow: "md" }}>
+                    <Circle size="50px" bg="rgba(169,203,183,0.1)" color="#56756D" flexShrink={0}><Icon as={f.icon} w={5} h={5} /></Circle>
+                    <VStack align="start" spacing={1.5}>
+                      <Heading fontSize="17px" color="#56756D" fontWeight="600">{f.title}</Heading>
+                      <Text color="rgba(46,46,46,0.6)" fontSize="14px" lineHeight="1.6">{f.desc}</Text>
                     </VStack>
                   </HStack>
                 ))}
@@ -185,79 +185,79 @@ export default function TherapistsClient() {
       </Box>
 
       {/* 🧘 WELL-BEING: PRACTICING WHAT YOU PREACH */}
-      <Box bg="teal.900" py={{ base: 20, md: 32 }} color="white" position="relative" overflow="hidden">
-         <Box position="absolute" top="-10%" left="-10%" w="50%" h="50%" bg="teal.800" borderRadius="full" filter="blur(120px)" opacity="0.4" />
-         <Container maxW="7xl">
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 10, md: 20 }} alignItems="center">
-               <VStack align="start" spacing={10}>
-                  <Badge bg="teal.700" color="teal.100" px={4} py={1} borderRadius="full">CLINICIAN CARE</Badge>
-                  <Heading fontSize="5xl" fontFamily="'Playfair Display', serif" lineHeight="1.1">
+      <Box bg="#263A33" py={{ base: 12, md: 16 }} color="white" position="relative" overflow="hidden">
+         <Box position="absolute" top="-10%" left="-10%" w="50%" h="50%" bg="#56756D" borderRadius="full" filter="blur(120px)" opacity="0.4" />
+         <Container maxW="6xl">
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 8, md: 14 }} alignItems="center">
+               <VStack align="start" spacing={6}>
+                  <Badge bg="#56756D" color="rgba(169,203,183,0.15)" px={3.5} py={1} borderRadius="full" fontSize="xs">CLINICIAN CARE</Badge>
+                  <Heading fontSize={{ base: "26px", md: "36px" }} fontFamily="'Playfair Display', serif" lineHeight="1.2" fontWeight="600">
                     Taking Care of You, So Burnout Stays at Bay.
                   </Heading>
-                  <Text fontSize={{ base: "md", md: "xl" }} opacity="0.9" lineHeight="1.8">
+                  <Text fontSize={{ base: "15px", md: "16px" }} opacity="0.9" lineHeight="1.7">
                     MLC helps you practice what you preach by bringing therapist well-being directly into your workflow. Track burnout signals early and maintain a healthier pace of practice.
                   </Text>
                   
-                  <VStack align="start" spacing={6} w="full">
-                    <Text fontWeight="800" color="teal.300" textTransform="uppercase" letterSpacing="widest" fontSize="sm">Self-Care & Resource Library</Text>
-                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} w="full">
+                  <VStack align="start" spacing={4} w="full">
+                    <Text fontWeight="800" color="#A9CBB7" textTransform="uppercase" letterSpacing="widest" fontSize="xs">Self-Care & Resource Library</Text>
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3} w="full">
                        {SELF_CARE_TOOLS.map((tool, idx) => (
-                         <HStack key={idx} p={4} bg="rgba(255,255,255,0.05)" borderRadius="xl" border="1px solid rgba(255,255,255,0.1)">
-                            <Icon as={tool.icon} color="teal.300" />
+                         <HStack key={idx} p={3.5} bg="rgba(255,255,255,0.05)" borderRadius="xl" border="1px solid rgba(255,255,255,0.1)">
+                            <Icon as={tool.icon} color="#A9CBB7" />
                             <Text fontSize="xs" fontWeight="600">{tool.title}</Text>
                          </HStack>
                        ))}
                     </SimpleGrid>
                   </VStack>
                </VStack>
-               <Image src="/human_connection_therapy_1776424085531.png" alt="Self Care" borderRadius="3rem" shadow="2xl" />
+               <Image src="/human_connection_therapy_1776424085531.png" alt="Self Care" borderRadius="2xl" shadow="2xl" maxH="440px" objectFit="cover" w="full" />
             </SimpleGrid>
          </Container>
       </Box>
 
       {/* 📈 COMPREHENSIVE GROWTH & SUPERVISION */}
-      <Box py={{ base: 20, md: 32 }} px={6} bg="white">
-         <Container maxW="7xl">
-            <VStack spacing={20}>
-               <VStack spacing={6} textAlign="center" maxW="4xl">
-                  <Badge colorScheme="teal" px={4} py={1} borderRadius="full">PROFESSIONAL STEWARDSHIP</Badge>
-                  <Heading color="teal.900" fontFamily="'Playfair Display', serif" fontSize={{ base: "3xl", md: "5xl" }}>Continuing Education & Holistic Growth</Heading>
-                  <Text color="gray.600" fontSize="xl" lineHeight="relaxed">
+      <Box py={{ base: 12, md: 16 }} px={6} bg="white">
+         <Container maxW="6xl">
+            <VStack spacing={10}>
+               <VStack spacing={3} textAlign="center" maxW="4xl">
+                  <Badge colorScheme="green" px={3.5} py={1} borderRadius="full" fontSize="xs">PROFESSIONAL STEWARDSHIP</Badge>
+                  <Heading color="#263A33" fontFamily="'Playfair Display', serif" fontSize={{ base: "26px", md: "36px" }} fontWeight="600">Continuing Education & Holistic Growth</Heading>
+                  <Text color="rgba(46,46,46,0.75)" fontSize="15px" lineHeight="1.7">
                     At MLC, we believe the therapist’s growth is never "finished." We are building a structured ecosystem where clinical supervision, professional development, and community connection happen in one seamless experience.
                   </Text>
                </VStack>
 
-               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={12}>
+               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
                   {/* Supervision Cohorts */}
-                  <VStack align="start" p={12} bg="teal.50" borderRadius="3rem" spacing={8} border="1px solid" borderColor="teal.100">
-                     <Circle size="70px" bg="teal.800" color="white" shadow="xl"><Icon as={FiAward} w={8} h={8} /></Circle>
-                     <VStack align="start" spacing={4}>
-                        <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Supervision Cohorts & 1:1 Labs</Heading>
-                        <Text color="gray.700" fontSize="lg" lineHeight="1.8">
+                  <VStack align="start" p={{ base: 6, md: 8 }} bg="rgba(169,203,183,0.1)" borderRadius="2xl" spacing={6} border="1px solid" borderColor="rgba(169,203,183,0.15)">
+                     <Circle size="56px" bg="#56756D" color="white" shadow="md"><Icon as={FiAward} w={6} h={6} /></Circle>
+                     <VStack align="start" spacing={3}>
+                        <Heading fontSize={{ base: "20px", md: "22px" }} color="#263A33" fontFamily="'Playfair Display', serif" fontWeight="600">Supervision Cohorts & 1:1 Labs</Heading>
+                        <Text color="gray.700" fontSize="15px" lineHeight="1.7">
                           Experience a seamless clinical journey where your <b>supervisor is on the same platform</b>. Conduct your reflective sessions through our secure video tools, tracks goals together, and share clinical resources in one unified space.
                         </Text>
-                        <Text color="gray.600">
-                          Our cohorts transcend simple case-by-case troubleshooting—they are designed for the <b>holistic evolution of your therapeutic identity</b>, helping you cultivate the clinical depth and personal presence required to truly hold space for the human experience.
+                        <Text color="rgba(46,46,46,0.75)" fontSize="14px" lineHeight="1.6">
+                          Our cohorts transcend simple case-by-case troubleshooting, as they are designed for the <b>holistic evolution of your therapeutic identity</b>, helping you cultivate the clinical depth and personal presence required to truly hold space for the human experience.
                         </Text>
                      </VStack>
-                     <VStack align="stretch" spacing={6} w="full" bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="teal.100">
+                     <VStack align="stretch" spacing={4} w="full" bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" shadow="sm" border="1px solid" borderColor="rgba(169,203,183,0.15)">
                         <HStack spacing={3}>
-                           <Icon as={FiZap} color="mlc.gold" boxSize={5} />
-                           <Heading size="xs" color="teal.800" textTransform="uppercase" letterSpacing="widest" fontWeight="800">Find Your Mentor</Heading>
+                           <Icon as={FiZap} color="mlc.gold" boxSize={4} />
+                           <Heading size="xs" color="#56756D" textTransform="uppercase" letterSpacing="widest" fontWeight="800">Find Your Mentor</Heading>
                         </HStack>
                         
-                        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
+                        <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={3}>
                            <VStack align="start" spacing={1}>
                               <Text fontSize="2xs" fontWeight="800" color="gray.400" letterSpacing="wider">FOCUS AREA</Text>
-                              <Box w="full" border="1px solid" borderColor="gray.100" p={3} borderRadius="xl" fontSize="sm" color="gray.600" cursor="pointer" _hover={{ bg: 'gray.50' }}>Clinical Supervision</Box>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={2.5} borderRadius="lg" fontSize="xs" color="rgba(46,46,46,0.75)">Clinical Supervision</Box>
                            </VStack>
                            <VStack align="start" spacing={1}>
                               <Text fontSize="2xs" fontWeight="800" color="gray.400" letterSpacing="wider">MODALITY</Text>
-                              <Box w="full" border="1px solid" borderColor="gray.100" p={3} borderRadius="xl" fontSize="sm" color="gray.600" cursor="pointer" _hover={{ bg: 'gray.50' }}>Integrative Therapy</Box>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={2.5} borderRadius="lg" fontSize="xs" color="rgba(46,46,46,0.75)">Integrative Therapy</Box>
                            </VStack>
                            <VStack align="start" spacing={1}>
                               <Text fontSize="2xs" fontWeight="800" color="gray.400" letterSpacing="wider">EXPERIENCE</Text>
-                              <Box w="full" border="1px solid" borderColor="gray.100" p={3} borderRadius="xl" fontSize="sm" color="gray.600" cursor="pointer" _hover={{ bg: 'gray.50' }}>10+ Years Mastery</Box>
+                              <Box w="full" border="1px solid" borderColor="gray.100" p={2.5} borderRadius="lg" fontSize="xs" color="rgba(46,46,46,0.75)">10+ Years Mastery</Box>
                            </VStack>
                         </SimpleGrid>
 
@@ -267,11 +267,11 @@ export default function TherapistsClient() {
                            bg="mlc.green" 
                            color="white" 
                            borderRadius="full" 
-                           size="lg" 
-                           h={14}
-                           fontWeight="800"
+                           h="46px"
+                           fontSize="14px"
+                           fontWeight="700"
                            boxShadow="0 4px 15px rgba(86, 117, 109, 0.2)"
-                           _hover={{ bg: 'teal.900', transform: 'translateY(-2px)' }}
+                           _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
                            transition="all 0.2s"
                         >
                            Match with Supervisor
@@ -280,15 +280,15 @@ export default function TherapistsClient() {
                   </VStack>
 
                   {/* Therapist Community */}
-                  <VStack align="start" p={12} bg="teal.900" color="white" borderRadius="3rem" spacing={8} shadow="2xl" position="relative" overflow="hidden">
-                     <Box position="absolute" top="-20%" right="-20%" w="200px" h="200px" bg="teal.800" borderRadius="full" filter="blur(60px)" opacity="0.3" />
-                     <Circle size="70px" bg="teal.700" color="teal.300" shadow="xl"><Icon as={FiUsers} w={8} h={8} /></Circle>
-                     <VStack align="start" spacing={4}>
-                        <Heading size="lg" fontFamily="'Playfair Display', serif">A Global Collective of Peers</Heading>
-                        <Text opacity="0.9" fontSize="lg" lineHeight="1.8">
+                  <VStack align="start" p={{ base: 6, md: 8 }} bg="#263A33" color="white" borderRadius="2xl" spacing={6} shadow="xl" position="relative" overflow="hidden">
+                     <Box position="absolute" top="-20%" right="-20%" w="200px" h="200px" bg="#56756D" borderRadius="full" filter="blur(60px)" opacity="0.3" />
+                     <Circle size="56px" bg="#56756D" color="#A9CBB7" shadow="md"><Icon as={FiUsers} w={6} h={6} /></Circle>
+                     <VStack align="start" spacing={3}>
+                        <Heading fontSize={{ base: "20px", md: "22px" }} fontFamily="'Playfair Display', serif" fontWeight="600">A Global Collective of Peers</Heading>
+                        <Text opacity="0.9" fontSize="15px" lineHeight="1.7">
                           Break the isolation of private practice. Connect with a community of therapists who connect, grow, and support one another in ways that were previously impossible.
                         </Text>
-                        <Text opacity="0.8">
+                        <Text opacity="0.8" fontSize="14px" lineHeight="1.6">
                           From peer-led learning circles to holistic wellness events, we are creating a world where your practice is held by a healthy, professional community.
                         </Text>
                      </VStack>
@@ -297,13 +297,14 @@ export default function TherapistsClient() {
                        href="https://forms.office.com/r/MF2yHPLsz3" 
                        target="_blank" 
                        bg="white" 
-                       color="teal.900" 
+                       color="#263A33" 
                        borderRadius="full" 
-                       px={10} 
-                       py={6} 
-                       fontWeight="900"
-                       _hover={{ bg: "teal.100", transform: "scale(1.02)" }}
-                       transition="all 0.2s"
+                       h="46px"
+                       px={8} 
+                       fontSize="14px"
+                       fontWeight="700"
+                       _hover={{ bg: "rgba(169,203,183,0.15)", transform: "translateY(-1px)" }}
+                       transition="all 0.25s ease"
                      >
                        Join the Community
                      </Button>
@@ -311,19 +312,19 @@ export default function TherapistsClient() {
                </SimpleGrid>
 
                {/* Continuing Education */}
-               <Box w="full" p={12} bg="rgba(201, 169, 96, 0.05)" borderRadius="3rem" border="1px dashed" borderColor="#C9A960">
-                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10} alignItems="center">
+               <Box w="full" p={{ base: 5, md: 7 }} bg="rgba(201, 169, 96, 0.05)" borderRadius="2xl" border="1px dashed" borderColor="#C9A960">
+                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} alignItems="center">
                     <VStack align="start" gridColumn={{ md: "span 2" }}>
-                       <HStack color="#C9A960" spacing={4}>
-                         <Icon as={FiBookOpen} w={6} h={6} />
-                         <Heading size="md">Lifelong Clinical Learning</Heading>
+                       <HStack color="#C9A960" spacing={3}>
+                         <Icon as={FiBookOpen} w={5} h={5} />
+                         <Heading fontSize="18px" fontWeight="600">Lifelong Clinical Learning</Heading>
                        </HStack>
-                       <Text color="gray.600" mt={2}>
+                       <Text color="rgba(46,46,46,0.75)" fontSize="14.5px" mt={1}>
                          Access curated workshops and structured training programs designed to deepen your therapeutic identity and refine your clinical formulations across various modalities.
                        </Text>
                     </VStack>
                     <Box textAlign={{ md: "right" }}>
-                       <LinkButton href="/workshops" variant="outline" borderColor="#C9A960" color="#C9A960" borderRadius="full">View Workshops</LinkButton>
+                       <LinkButton href="/workshops" variant="outline" borderColor="#C9A960" color="#C9A960" h="44px" px={6} borderRadius="full" fontSize="14px" fontWeight="700">View Workshops</LinkButton>
                     </Box>
                  </SimpleGrid>
                </Box>
@@ -332,12 +333,12 @@ export default function TherapistsClient() {
       </Box>
 
       {/* 🚀 FINAL CALL TO ACTION */}
-      <Box py={32} bg="teal.50" textAlign="center">
+      <Box py={{ base: 10, md: 12 }} bg="rgba(169,203,183,0.1)" textAlign="center" borderTop="1px solid" borderColor="rgba(169,203,183,0.15)">
          <Container maxW="4xl">
-            <VStack spacing={10}>
-               <Heading size="2xl" fontFamily="'Playfair Display', serif" color="teal.900">Build Your Practice Within a Healthy Ecosystem.</Heading>
-               <Text fontSize="xl" color="gray.600">We are creating a world where mental healthcare is sustainable for everyone. Join the MLC collective today.</Text>
-               <LinkButton href="/therapist-apply" size="lg" bg="teal.800" color="white" borderRadius="full" px={16} py={8} height="auto" fontSize="xl" fontWeight="800" _hover={{ bg: "teal.900", transform: "scale(1.05)" }}>
+            <VStack spacing={5}>
+               <Heading fontSize={{ base: "24px", md: "32px" }} fontFamily="'Playfair Display', serif" color="#263A33" fontWeight="600">Build Your Practice Within a Healthy Ecosystem</Heading>
+               <Text fontSize="15px" color="rgba(46,46,46,0.75)" maxW="xl">We are creating a world where mental healthcare is sustainable for everyone. Join the MLC collective today.</Text>
+               <LinkButton href="/therapist-apply" bg="#56756D" color="white" borderRadius="full" h="46px" px={8} fontSize="14px" fontWeight="700" _hover={{ bg: "#263A33", transform: "translateY(-1px)", shadow: "md" }} transition="all 0.25s ease">
                   Join the Collective
                </LinkButton>
             </VStack>

@@ -13,7 +13,19 @@ import {
   HStack
 } from '@chakra-ui/react';
 import { FiShield, FiLock } from 'react-icons/fi';
-import { JitsiMeeting } from '@jitsi/react-sdk';
+import dynamic from 'next/dynamic';
+
+const JitsiMeeting = dynamic(
+  () => import('@jitsi/react-sdk').then((mod) => mod.JitsiMeeting),
+  { 
+    ssr: false, 
+    loading: () => (
+      <Center py={16}>
+        <Spinner size="xl" color="teal.500" thickness="4px" />
+      </Center>
+    ) 
+  }
+);
 
 export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
   const [isMounted, setIsMounted] = useState(false);

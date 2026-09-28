@@ -10,14 +10,44 @@ const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfa
 const forum = Forum({ weight: '400', subsets: ['latin'], variable: '--font-forum' })
 
 export const metadata = {
+  metadataBase: new URL('https://www.mlchealth.in'),
   title: {
     default: 'MLC Health | India\'s First Integrated Therapy Ecosystem',
     template: '%s | MLC Health'
   },
   description: 'MLC Health and Wellness Centre is building India\'s first integrated therapy ecosystem. A unified platform for ethical therapy, clinical supervision, and professional growth across India.',
   icons: {
-    icon: '/logo_tra.png',
-    apple: '/logo_tra.png',
+    icon: [
+      { url: '/favicon.ico?v=3' },
+      { url: '/favicon-32x32.png?v=3', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
+      { url: '/favicon.png?v=3', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico?v=3',
+    apple: '/apple-touch-icon.png?v=3',
+  },
+  openGraph: {
+    title: 'MLC Health | India\'s First Integrated Therapy Ecosystem',
+    description: 'A Mental Health Organization providing structured, ethical, and evidence-informed therapy across India. Start your journey with our personalized therapist matching quiz.',
+    url: 'https://www.mlchealth.in',
+    siteName: 'MLC Health and Wellness Centre',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1024,
+        height: 465,
+        type: 'image/png',
+        alt: 'MLC Health and Wellness Centre - Enter the therapy ecosystem built for your journey',
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MLC Health | India\'s First Integrated Therapy Ecosystem',
+    description: 'A Mental Health Organization providing structured, ethical, and evidence-informed therapy across India. Start your journey with our personalized therapist matching quiz.',
+    images: ['/og-image.png'],
   },
 }
 

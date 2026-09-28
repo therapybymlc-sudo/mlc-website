@@ -33,25 +33,28 @@ export default function MeetTheTeamClient() {
   }, []);
 
   return (
-    <Box>
+    <Box bg="#FDFBFA">
       {/* HERO SECTION */}
-      <Box bg="#F9F9F9" py={24}>
-        <Container maxW="7xl">
-          <VStack spacing={6} textAlign="center" mb={10}>
+      <Box bg="#FDFBFA" py={{ base: 10, md: 14 }} borderBottom="1px solid" borderColor="gray.100">
+        <Container maxW="6xl">
+          <VStack spacing={3.5} textAlign="center">
+            <Badge bg="#56756D" color="white" px={3.5} py={1} borderRadius="full" fontSize="xs" fontWeight="800">
+              CLINICAL LEADERSHIP
+            </Badge>
             <Heading
               fontFamily="'Playfair Display', var(--font-playfair), serif"
-              color="#2E2E2E"
+              color="#263A33"
               fontWeight="600"
-              fontSize={{ base: "2xl", md: "3xl" }}
+              fontSize={{ base: "32px", md: "44px" }}
             >
               Meet Our Team
             </Heading>
             <Text
               maxW="3xl"
-              color="#2E2E2E"
+              color="rgba(46,46,46,0.75)"
               fontFamily="'Inter', var(--font-inter), sans-serif"
-              fontSize="lg"
-              lineHeight="1.8"
+              fontSize={{ base: "15px", md: "16px" }}
+              lineHeight="1.7"
             >
               At MLC Therapy, our strength lies in collaboration, between
               clinicians, supervisors, and the dedicated operations team that
@@ -63,7 +66,7 @@ export default function MeetTheTeamClient() {
       </Box>
 
       {/* TEAM PROFILES */}
-      <Box bg="#E9F2ED" py={24}>
+      <Box bg="#F5F9F7" py={{ base: 12, md: 16 }}>
         <Container maxW="6xl">
           {team.length === 0 ? (
             <Box
@@ -99,31 +102,42 @@ export default function MeetTheTeamClient() {
                   key={member.id}
                   bg="white"
                   borderRadius="2xl"
-                  boxShadow="md"
+                  boxShadow="sm"
+                  border="1px solid"
+                  borderColor="gray.100"
                   p={6}
                   cursor="pointer"
-                  transition="transform 0.2s ease, box-shadow 0.2s ease"
-                  _hover={{ transform: "translateY(-4px)", boxShadow: "lg" }}
+                  transition="all 0.25s ease"
+                  _hover={{ transform: "translateY(-2px)", boxShadow: "0 10px 25px -5px rgba(86, 117, 109, 0.12)" }}
                   onClick={() => setActiveMember(member)}
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  h="full"
                 >
-                  {member.photo_url && (
-                    <Image
-                      src={member.photo_url}
-                      alt={member.name}
-                      borderRadius="xl"
-                      mb={4}
-                    />
-                  )}
-                  <Heading size="md" fontFamily="'Playfair Display', var(--font-playfair), serif">
-                    {member.name}
-                  </Heading>
-                  {member.title && (
-                    <Text color="#56756D" fontWeight="semibold" mb={2}>
-                      {member.title}
-                    </Text>
-                  )}
-                  <Text fontSize="sm" color="#56756D">
-                    Tap to view full profile
+                  <Box>
+                    {member.photo_url && (
+                      <Image
+                        src={member.photo_url}
+                        alt={member.name}
+                        borderRadius="xl"
+                        mb={4}
+                        w="full"
+                        h="260px"
+                        objectFit="cover"
+                      />
+                    )}
+                    <Heading size="md" fontFamily="'Playfair Display', var(--font-playfair), serif" mb={1}>
+                      {member.name}
+                    </Heading>
+                    {member.title && (
+                      <Text color="#56756D" fontWeight="600" fontSize="sm" mb={2}>
+                        {member.title}
+                      </Text>
+                    )}
+                  </Box>
+                  <Text fontSize="xs" color="#56756D" fontWeight="500" pt={2}>
+                    Tap to view full profile →
                   </Text>
                 </Box>
               ))}
@@ -223,7 +237,15 @@ export default function MeetTheTeamClient() {
               </Button>
               <LinkButton
                 href="/book"
-                bg="#A9CBB7" color="#2E2E2E" _hover={{ bg: "#56756D", color: "white" }}
+                bg="#56756D"
+                color="white"
+                borderRadius="full"
+                h="46px"
+                px={7}
+                fontSize="14px"
+                fontWeight="700"
+                _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                transition="all 0.2s"
               >
                 Book a session now
               </LinkButton>

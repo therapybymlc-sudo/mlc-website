@@ -227,7 +227,7 @@ export default function BlogEditor({ initialData = null, isEdit = false }) {
     };
 
     return (
-        <Box p={8} maxW="7xl" mx="auto">
+        <Box p={8} maxW="6xl" mx="auto">
             <Flex align="center" mb={8} gap={4} flexWrap="wrap">
                 <IconButton icon={<FiArrowLeft />} onClick={() => router.push('/admin/blog')} aria-label="Back" variant="ghost" />
                 <Heading size="lg" color="gray.800">{isEdit ? 'Edit Post' : 'Create New Post'}</Heading>

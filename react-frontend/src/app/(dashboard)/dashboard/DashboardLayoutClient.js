@@ -22,6 +22,8 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  Image,
+  useToast,
 } from '@chakra-ui/react'
 import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons'
 import { 
@@ -42,11 +44,12 @@ import {
   FiMessageSquare,
   FiHelpCircle,
   FiTrendingUp,
-  FiShare2
+  FiShare2,
+  FiShield
 } from 'react-icons/fi'
 import { useUser, useClerk } from '@clerk/nextjs'
 import NextLink from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useMemo } from 'react';
 import SidebarContent from './SidebarContent';
 import NotificationCenter from '../../../components/NotificationCenter';
@@ -64,11 +67,14 @@ export default function DashboardLayout({ children }) {
     isAdmin,
     isTherapist,
     isClient,
+    authReady,
     roleDashboardMismatch,
     clearRoleDashboardMismatch,
   } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
+  const router = useRouter();
+  const toast = useToast();
   const [mounted, setMounted] = useState(false);
   const onClientDashboardRoute = pathname?.startsWith('/dashboard/client');
   const onTherapistDashboardRoute = pathname?.startsWith('/dashboard/therapist');
@@ -83,6 +89,47 @@ export default function DashboardLayout({ children }) {
     !isAdmin &&
     therapistProfile &&
     therapistProfile.is_verified === false;
+
+  // 🚨 Strict Dashboard Route Isolation
+  useEffect(() => {
+    if (!mounted || !isLoaded || !authReady) return;
+
+    // 1. Client user attempting to access Practitioner workspace
+    if (onTherapistDashboardRoute && isClient && !isTherapist && !isAdmin) {
+      toast.closeAll();
+      signOut().then(() => {
+        router.replace("/login/client?mismatch=client");
+      });
+      return;
+    }
+
+    // 2. Therapist user attempting to access Client workspace
+    if (onClientDashboardRoute && isTherapist && !isClient && !isAdmin) {
+      toast.closeAll();
+      signOut().then(() => {
+        router.replace("/login/therapist?mismatch=therapist");
+      });
+      return;
+    }
+  }, [
+    mounted,
+    isLoaded,
+    authReady,
+    onTherapistDashboardRoute,
+    onClientDashboardRoute,
+    isClient,
+    isTherapist,
+    isAdmin,
+    router,
+    toast,
+    signOut,
+  ]);
+
+  const isUnauthorizedMismatch =
+    mounted && isLoaded && authReady && (
+      (onTherapistDashboardRoute && isClient && !isTherapist && !isAdmin) ||
+      (onClientDashboardRoute && isTherapist && !isClient && !isAdmin)
+    );
 
   const isPlaceholderClientIdentity = useMemo(() => {
     const name = String(clientProfile?.name || "").trim().toLowerCase();
@@ -145,19 +192,8 @@ export default function DashboardLayout({ children }) {
       { label: 'Need Help?', icon: FiHelpCircle, href: '/dashboard/client/support' },
     ];
 
-    if (isAdmin) {
-      return [
-        { label: 'ADMINISTRATION', type: 'header' },
-        { label: 'Site Editors', icon: FiFileText, href: '/admin?tab=home' },
-        { label: 'Applications', icon: FiUsers, href: '/admin?tab=vetting' },
-        { label: 'Inquiries', icon: FiHeart, href: '/admin?tab=messages' },
-        
-        { label: 'PRACTITIONER', type: 'header' },
-        ...therapistLinks,
-        
-        { label: 'CLIENT VIEW', type: 'header' },
-        ...clientLinks
-      ];
+    if (onClientDashboardRoute) {
+      return clientLinks;
     }
 
     if (isTherapistPendingVerification) {
@@ -168,10 +204,16 @@ export default function DashboardLayout({ children }) {
       ];
     }
 
-    // For dual-role users, keep nav aligned to active dashboard context.
-    if (onClientDashboardRoute) return clientLinks;
-    if (onTherapistDashboardRoute) return therapistLinks;
-    return isTherapist ? therapistLinks : clientLinks;
+    // Standard Therapist Navigation
+    // If the account also has admin privileges, provide ONE clear switch option at the top:
+    if (isAdmin) {
+      return [
+        { label: 'Switch to Admin', icon: FiShield, href: '/admin', isSwitchAction: true },
+        ...therapistLinks,
+      ];
+    }
+
+    return therapistLinks;
   }, [
     isTherapist,
     isAdmin,
@@ -181,7 +223,7 @@ export default function DashboardLayout({ children }) {
     onTherapistDashboardRoute,
   ]);
 
-  if (!mounted || !isLoaded) {
+  if (!mounted || !isLoaded || !authReady || isUnauthorizedMismatch) {
     return (
         <Center h="100vh">
             <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
@@ -249,11 +291,41 @@ export default function DashboardLayout({ children }) {
           borderBottom="1px solid"
           borderColor="gray.100"
         >
-          <HStack spacing={3} as={NextLink} href="/">
-             <Box bg="#56756C" p={2} borderRadius="lg">
-                <Icon as={FiHome} color="white" boxSize={4} />
+          <HStack spacing={3} as={NextLink} href="/" _hover={{ textDecoration: 'none' }}>
+             <Box 
+               w="36px" 
+               h="36px" 
+               borderRadius="10px" 
+               bg="white" 
+               border="1px solid rgba(86, 117, 109, 0.2)" 
+               p={1}
+               display="flex"
+               alignItems="center"
+               justifyContent="center"
+               boxShadow="0 2px 6px rgba(38, 58, 51, 0.06)"
+             >
+                <Image src="/logo_tra.png" alt="MLC" w="100%" h="100%" objectFit="contain" />
              </Box>
-             <Text fontWeight="700" color="#2E2E2E" fontSize="md">MLC Portal</Text>
+             <VStack align="start" spacing={0}>
+               <Text 
+                 fontFamily="'Playfair Display', Georgia, serif" 
+                 fontWeight="600" 
+                 color="#263A33" 
+                 fontSize="14.5px"
+                 lineHeight="1.2"
+               >
+                 MLC Portal
+               </Text>
+               <Text 
+                 fontFamily="'Playfair Display', Georgia, serif" 
+                 fontStyle="italic" 
+                 fontSize="11.5px" 
+                 color="#56756D"
+                 lineHeight="1.2"
+               >
+                 Mental Health Org
+               </Text>
+             </VStack>
           </HStack>
           <IconButton
             icon={<HamburgerIcon />}
@@ -360,7 +432,24 @@ export default function DashboardLayout({ children }) {
         <DrawerContent>
           <DrawerHeader borderBottomWidth="1px" p={4}>
             <HStack justify="space-between">
-              <Text fontSize="md" fontWeight="800">MLC Portal</Text>
+              <HStack spacing={2.5}>
+                <Box 
+                  w="32px" 
+                  h="32px" 
+                  borderRadius="8px" 
+                  bg="white" 
+                  border="1px solid rgba(86, 117, 109, 0.2)" 
+                  p={0.5}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Image src="/logo_tra.png" alt="MLC" w="100%" h="100%" objectFit="contain" />
+                </Box>
+                <Text fontFamily="'Playfair Display', Georgia, serif" fontSize="15px" fontWeight="600" color="#263A33">
+                  MLC Portal
+                </Text>
+              </HStack>
               <IconButton icon={<CloseIcon />} variant="ghost" onClick={onClose} size="sm" />
             </HStack>
           </DrawerHeader>

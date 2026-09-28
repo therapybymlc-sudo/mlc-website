@@ -15,7 +15,8 @@ import {
   Icon,
   ScaleFade,
   Fade,
-  SimpleGrid
+  SimpleGrid,
+  Badge
 } from '@chakra-ui/react';
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -490,16 +491,16 @@ export default function FeelingsWheelClient() {
   const R3 = 370; // Middle to Outer (adjusted to keep Outer layer 115px radial width)
 
   return (
-    <Box bg="#F9FAFB" minH="100vh" py={{ base: 6, md: 16 }}>
-      <Container maxW="7xl" px={{ base: 4, md: 8 }}>
-        <VStack spacing={4} textAlign="center" mb={10}>
-          <Tag borderRadius="full" colorScheme="teal" px={4} py={2} fontWeight="700">
-            Emotional Check-In
-          </Tag>
-          <Heading color="mlc.greenDark" fontFamily="'Playfair Display', serif" size="2xl">
+    <Box bg="#F9FAFB" minH="100vh" py={{ base: 8, md: 12 }}>
+      <Container maxW="6xl" px={{ base: 4, md: 8 }}>
+        <VStack spacing={3.5} textAlign="center" mb={{ base: 8, md: 10 }}>
+          <Badge bg="#56756D" color="white" px={3.5} py={1} borderRadius="full" fontSize="xs" fontWeight="800">
+            EMOTIONAL CHECK-IN
+          </Badge>
+          <Heading color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif" fontSize={{ base: "28px", md: "38px" }} fontWeight="600">
             Let's help you understand what you're feeling.
           </Heading>
-          <Text color="gray.600" maxW="2xl" mx="auto" fontSize="lg">
+          <Text color="rgba(46,46,46,0.75)" maxW="2xl" mx="auto" fontSize={{ base: "15px", md: "16px" }} lineHeight="1.7">
             {!selectedCore && "Start by picking a core emotion from the center."}
             {selectedCore && !selectedMiddle && "Great. Now refine it by selecting a more specific secondary emotion."}
             {selectedMiddle && "Almost there. Select the exact words that resonate with your current experience."}
@@ -527,7 +528,7 @@ export default function FeelingsWheelClient() {
                 top={6} 
                 left={6} 
                 variant="ghost" 
-                colorScheme="teal" 
+                colorScheme="green" 
                 size="sm"
                 leftIcon={<FiRefreshCw />}
                 onClick={() => { setSelectedCore(null); setSelectedMiddle(null); }}
@@ -625,7 +626,7 @@ export default function FeelingsWheelClient() {
                 {selectedFeelings.length === 0 ? (
                   <Flex direction="column" align="center" justify="center" py={10} bg="gray.50" borderRadius="xl" border="1px dashed" borderColor="gray.200">
                     <Icon as={FiCheckCircle} size={24} color="gray.300" mb={3} />
-                    <Text color="gray.500" fontSize="sm" textAlign="center" px={6}>
+                    <Text color="rgba(46,46,46,0.6)" fontSize="sm" textAlign="center" px={6}>
                       Dive deep into the wheel and select the specific emotions you are feeling.
                     </Text>
                   </Flex>
@@ -635,14 +636,14 @@ export default function FeelingsWheelClient() {
                       <ScaleFade initialScale={0.9} in={true} key={f}>
                         <Box
                           borderWidth="1px"
-                          borderColor="teal.100"
+                          borderColor="rgba(169,203,183,0.15)"
                           borderRadius="xl"
                           p={4}
-                          bg="teal.50"
+                          bg="rgba(169,203,183,0.1)"
                           position="relative"
                         >
                           <HStack justify="space-between" align="start" mb={2}>
-                            <Tag borderRadius="full" colorScheme="teal" size="md" fontWeight="bold">
+                            <Tag borderRadius="full" colorScheme="green" size="md" fontWeight="bold">
                               {f}
                             </Tag>
                             <Button 
@@ -666,16 +667,21 @@ export default function FeelingsWheelClient() {
 
                 {selectedFeelings.length > 0 && (
                   <Box mt={6}>
-                    <Text fontSize="sm" color="gray.600" mb={4} fontStyle="italic">
+                    <Text fontSize="sm" color="rgba(46,46,46,0.75)" mb={4} fontStyle="italic">
                       "What is this combination of emotions trying to communicate to you today?"
                     </Text>
                     <Button 
                       w="full" 
-                      colorScheme="teal" 
-                      size="lg" 
+                      bg="#56756D"
+                      color="white" 
+                      h="46px"
+                      fontSize="14px"
+                      fontWeight="700"
                       borderRadius="full" 
                       rightIcon={<FiArrowRight />}
                       onClick={continueToJournal}
+                      _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                      transition="all 0.2s"
                     >
                       Journal these feelings
                     </Button>
@@ -725,7 +731,7 @@ function AnimatePresenceWrapper({ hovered }) {
           </Text>
           <Heading size="md" color={hovered.color} mb={2}>{hovered.name}</Heading>
           {hovered.level === 3 && (
-            <Text fontSize="xs" color="gray.600" lineHeight="tall">
+            <Text fontSize="xs" color="rgba(46,46,46,0.75)" lineHeight="tall">
               {getMeaning(hovered.name)}
             </Text>
           )}

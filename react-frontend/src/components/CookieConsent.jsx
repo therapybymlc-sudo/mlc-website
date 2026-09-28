@@ -67,28 +67,28 @@ export default function CookieConsent() {
           >
             <VStack align="stretch" spacing={4}>
               <HStack spacing={3}>
-                <Box p={2} bg="teal.50" borderRadius="lg" color="teal.600">
+                <Box p={2} bg="rgba(169,203,183,0.1)" borderRadius="lg" color="#56756D">
                   <Icon as={FiShield} boxSize={5} />
                 </Box>
                 <VStack align="start" spacing={0}>
                   <Text fontWeight="800" fontSize="sm" color="gray.800">Cookie Privacy</Text>
-                  <Text fontSize="xs" color="gray.500">How we use data</Text>
+                  <Text fontSize="xs" color="rgba(46,46,46,0.6)">How we use data</Text>
                 </VStack>
               </HStack>
 
-              <Text fontSize="sm" color="gray.600" lineHeight="tall">
-                We use cookies to enhance your clinical portal experience, remember your preferences, and ensure secure authentication. By continuing, you agree to our <Link as={NextLink} href="/privacy" color="teal.500" fontWeight="600">Privacy Policy</Link>.
+              <Text fontSize="sm" color="rgba(46,46,46,0.75)" lineHeight="tall">
+                We use cookies to enhance your clinical portal experience, remember your preferences, and ensure secure authentication. By continuing, you agree to our <Link as={NextLink} href="/privacy" color="#6B8B7B" fontWeight="600">Privacy Policy</Link>.
               </Text>
 
               <HStack spacing={3} pt={2}>
                 <Button 
                   flex={1}
-                  bg="teal.800" 
+                  bg="#56756D" 
                   color="white" 
                   fontSize="xs"
                   borderRadius="full"
                   h={10}
-                  _hover={{ bg: "teal.900" }}
+                  _hover={{ bg: "#263A33" }}
                   onClick={handleAccept}
                   leftIcon={<Icon as={FiCheck} />}
                 >
@@ -97,7 +97,7 @@ export default function CookieConsent() {
                 <Button 
                   variant="ghost"
                   fontSize="xs"
-                  color="gray.500"
+                  color="rgba(46,46,46,0.6)"
                   h={10}
                   borderRadius="full"
                   onClick={handleDecline}
