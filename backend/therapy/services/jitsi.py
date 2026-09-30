@@ -48,9 +48,9 @@ def generate_jitsi_token(user, room_name):
     """
     Generates a JaaS (Jitsi as a Service) JWT token for a specific user and room.
     """
-    app_id = getattr(settings, "JITSI_APP_ID", "").strip()
-    kid = getattr(settings, "JITSI_KID", "").strip()
-    private_key = getattr(settings, "JITSI_PRIVATE_KEY", "").strip()
+    app_id = (getattr(settings, "JITSI_APP_ID", "") or "").strip()
+    kid = (getattr(settings, "JITSI_KID", "") or "").strip()
+    private_key = (getattr(settings, "JITSI_PRIVATE_KEY", "") or "").strip()
     if not all([app_id, kid, private_key]):
         # Option B: Standard Jitsi mode (no JaaS token required)
         return None
