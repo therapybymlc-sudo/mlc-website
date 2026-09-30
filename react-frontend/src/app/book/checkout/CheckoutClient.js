@@ -279,6 +279,14 @@ export default function CheckoutClient() {
 
   if (!isMounted) return <Box h="100vh" bg="#FDFBFA" />;
 
+  const slotDate = slot?.start_time ? new Date(slot.start_time) : null;
+  const formattedDate = slotDate
+    ? slotDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+    : (slot?.date || 'Confirmed Date');
+  const formattedTime = slotDate
+    ? slotDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    : (slot?.time || 'Scheduled Time');
+
   if (simulatedSuccessData) {
     return (
       <Box minH="100vh" bg="#FAF8F5" py={{ base: 10, md: 16 }} fontFamily="'Inter', var(--font-inter), sans-serif">
@@ -442,11 +450,14 @@ export default function CheckoutClient() {
     );
   }
 
-  const slotDate = new Date(slot.start_time);
-  const dateStr = slotDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  const timeStr = slotDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  const slotEndDate = slot.end_time ? new Date(slot.end_time) : new Date(slotDate.getTime() + 50 * 60 * 1000);
-  const endTimeStr = slotEndDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const dateStr = slotDate
+    ? slotDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    : '';
+  const timeStr = slotDate
+    ? slotDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    : '';
+  const slotEndDate = slot.end_time ? new Date(slot.end_time) : (slotDate ? new Date(slotDate.getTime() + 50 * 60 * 1000) : null);
+  const endTimeStr = slotEndDate ? slotEndDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
 
   // Robust currency calculation based on session type
   const rateNumber = parseFloat(
