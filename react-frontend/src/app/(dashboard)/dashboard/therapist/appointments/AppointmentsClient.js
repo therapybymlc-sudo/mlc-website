@@ -1158,73 +1158,121 @@ export default function TherapistAppointmentsClient() {
 
       {/* ⚠️ Cancellation Confirmation Modal */}
       <Modal isOpen={isCancelOpen} onClose={onCancelClose} isCentered size="md">
-        <ModalOverlay bg="blackAlpha.400" backdropFilter="blur(4px)" />
-        <ModalContent borderRadius="2xl" p={2} fontFamily="'Inter', sans-serif">
-          <ModalHeader pb={2}>
-            <HStack spacing={2} color="#DC2626">
-              <Icon as={FiAlertCircle} boxSize="20px" />
-              <Heading
-                fontSize="17px"
-                fontWeight="600"
-                fontFamily="'Outfit', var(--font-outfit), sans-serif"
-                color="#263A33"
-              >
-                Cancel Session Appointment
-              </Heading>
+        <ModalOverlay bg="rgba(38, 58, 51, 0.45)" backdropFilter="blur(8px)" />
+        <ModalContent
+          borderRadius="2xl"
+          bg="white"
+          border="1px solid rgba(86, 117, 109, 0.16)"
+          boxShadow="0 24px 48px -6px rgba(38, 58, 51, 0.18), 0 4px 16px rgba(0, 0, 0, 0.04)"
+          overflow="hidden"
+          fontFamily="'Inter', var(--font-inter), sans-serif"
+        >
+          <ModalHeader pt={6} px={6} pb={2}>
+            <HStack spacing={3} align="center">
+              <Circle size="36px" bg="rgba(239, 68, 68, 0.12)" color="#DC2626" flexShrink={0}>
+                <Icon as={FiAlertCircle} boxSize="19px" />
+              </Circle>
+              <VStack align="start" spacing={0.5}>
+                <Heading
+                  as="h2"
+                  fontSize="17.5px"
+                  fontWeight="600"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.015em"
+                  color="#263A33"
+                >
+                  Cancel Session Appointment
+                </Heading>
+                <Text fontSize="12px" color="#718096" fontWeight="500">
+                  Confirm slot release & client notification
+                </Text>
+              </VStack>
             </HStack>
           </ModalHeader>
-          <ModalBody>
+
+          <ModalBody px={6} py={3}>
             {cancellingAppt && (
               <VStack align="stretch" spacing={3.5}>
-                <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
-                  Are you sure you want to cancel the session with{' '}
-                  <Text as="span" fontWeight="700" color="#263A33">
-                    {cancellingAppt.client_display_name || cancellingAppt.client_name || 'the client'}
+                <Box
+                  p={3.5}
+                  borderRadius="xl"
+                  bg="rgba(250, 248, 245, 0.9)"
+                  border="1px solid rgba(86, 117, 109, 0.12)"
+                >
+                  <Text fontSize="13px" color="#5A6E65" lineHeight="1.55">
+                    Are you sure you want to cancel the session with{' '}
+                    <Text as="span" fontWeight="600" color="#263A33">
+                      {cancellingAppt.client_display_name || cancellingAppt.client_name || 'the client'}
+                    </Text>
+                    ? The client will be automatically notified and this slot will be released back to your open schedule.
                   </Text>
-                  ? The client will be notified and the slot will be released back to your public schedule.
-                </Text>
+                </Box>
 
                 <FormControl>
-                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">
-                    Cancellation Reason (Visible to Client)
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5}>
+                    Cancellation Reason <Text as="span" fontWeight="400" color="#718096">(Visible to Client)</Text>
                   </FormLabel>
                   <Textarea
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
                     placeholder="Enter reason for cancellation..."
                     borderRadius="xl"
+                    border="1px solid"
                     borderColor="rgba(86, 117, 109, 0.2)"
+                    bg="white"
                     fontSize="13px"
+                    color="#263A33"
                     rows={3}
+                    resize="none"
+                    _placeholder={{ color: '#A0AEC0' }}
+                    _hover={{ borderColor: '#56756D' }}
                     _focus={{ borderColor: '#56756D', boxShadow: '0 0 0 1px #56756D' }}
                   />
                 </FormControl>
               </VStack>
             )}
           </ModalBody>
-          <ModalFooter gap={2} pt={2}>
-            <Button
-              size="sm"
-              borderRadius="full"
-              variant="outline"
-              borderColor="rgba(86, 117, 109, 0.25)"
-              color="#263A33"
-              onClick={onCancelClose}
-              isDisabled={isSubmittingCancel}
-            >
-              Keep Session
-            </Button>
-            <Button
-              size="sm"
-              borderRadius="full"
-              bg="#DC2626"
-              color="white"
-              onClick={handleConfirmCancel}
-              isLoading={isSubmittingCancel}
-              _hover={{ bg: '#B91C1C' }}
-            >
-              Confirm Cancellation
-            </Button>
+
+          <ModalFooter
+            px={6}
+            pt={3.5}
+            pb={5}
+            borderTop="1px solid rgba(86, 117, 109, 0.1)"
+            mt={2}
+          >
+            <HStack spacing={3} justify="flex-end" w="full">
+              <Button
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                height="38px"
+                fontSize="13px"
+                fontWeight="600"
+                px={5}
+                onClick={onCancelClose}
+                isDisabled={isSubmittingCancel}
+                _hover={{ bg: 'rgba(86, 117, 109, 0.06)', borderColor: '#56756D' }}
+              >
+                Keep Session
+              </Button>
+              <Button
+                bg="#DC2626"
+                color="white"
+                borderRadius="full"
+                height="38px"
+                fontSize="13px"
+                fontWeight="600"
+                px={5.5}
+                onClick={handleConfirmCancel}
+                isLoading={isSubmittingCancel}
+                boxShadow="0 2px 8px rgba(220, 38, 38, 0.22)"
+                _hover={{ bg: '#B91C1C', transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(220, 38, 38, 0.32)' }}
+                _active={{ transform: 'translateY(0)' }}
+              >
+                Confirm Cancellation
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
