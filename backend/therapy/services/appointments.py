@@ -1,8 +1,12 @@
+import logging
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 
 from therapy.models import Appointment, AvailabilitySlot, BookingRequest, Notification
 from therapy.notifications import get_scheduling_action_url
+
+logger = logging.getLogger(__name__)
 
 
 def cancel_appointment(appointment: Appointment, cancelled_by=None, reason="", reopen_slot=True, force=False):
@@ -76,4 +80,32 @@ def cancel_appointment(appointment: Appointment, cancelled_by=None, reason="", r
             ),
         )
 
+    # Dispatch branded cancellation emails to client and therapist
+    try:
+        from therapy.services.booking_email import send_appointment_cancellation_emails
+
+        def _send_cancel_emails():
+            try:
+                send_appointment_cancellation_emails(
+                    appointment=appointment,
+                    cancelled_by=cancelled_by,
+                    reason=reason,
+                )
+            except Exception as _mail_err:
+                logger.warning("Failed to send cancellation emails for appointment #%s: %s", appointment.id, _mail_err)
+
+        transaction.on_commit(_send_cancel_emails)
+    except Exception as _commit_err:
+        # Fallback if outside an atomic block
+        try:
+            from therapy.services.booking_email import send_appointment_cancellation_emails
+            send_appointment_cancellation_emails(
+                appointment=appointment,
+                cancelled_by=cancelled_by,
+                reason=reason,
+            )
+        except Exception as _direct_mail_err:
+            logger.warning("Fallback direct cancellation email failed for appointment #%s: %s", appointment.id, _direct_mail_err)
+
     return appointment
+

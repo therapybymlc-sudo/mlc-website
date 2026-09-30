@@ -113,3 +113,114 @@ def send_booking_confirmation_emails(booking_request) -> tuple[bool, str | None]
             logger.warning("Failed to send booking notification to therapist: %s", t_err)
 
     return client_sent, client_err
+
+
+def send_appointment_cancellation_emails(appointment, cancelled_by=None, reason="") -> tuple[bool, str | None]:
+    """
+    Sends appointment cancellation email to the client and to the therapist.
+    """
+    if not appointment:
+        return False, "No appointment provided."
+
+    client = getattr(appointment, "client", None)
+    therapist = getattr(appointment, "therapist", None)
+    slot = getattr(appointment, "availability_slot", None)
+
+    client_email = getattr(client, "email", None)
+    therapist_email = getattr(therapist, "email", None)
+
+    client_name = getattr(client, "name", "there")
+    therapist_name = getattr(therapist, "name", "Therapist")
+
+    # Format scheduled time
+    start_time = getattr(appointment, "start_time", None) or (getattr(slot, "start_time", None) if slot else None)
+    if start_time:
+        if timezone.is_naive(start_time):
+            start_time = timezone.make_aware(start_time)
+        ist_time = timezone.localtime(start_time)
+        scheduled_str = ist_time.strftime("%A, %d %b %Y · %I:%M %p IST")
+    else:
+        scheduled_str = "Scheduled session"
+
+    # Identify who cancelled
+    cancelled_by_label_client = "Your therapist"
+    cancelled_by_label_therapist = "The client"
+    if cancelled_by:
+        user_id = getattr(cancelled_by, "id", None)
+        client_user_id = getattr(getattr(client, "user", None), "id", None)
+        therapist_user_id = getattr(getattr(therapist, "user", None), "id", None)
+        if user_id and user_id == client_user_id:
+            cancelled_by_label_client = "You (Client)"
+            cancelled_by_label_therapist = f"{client_name} (Client)"
+        elif user_id and user_id == therapist_user_id:
+            cancelled_by_label_client = f"{therapist_name} (Therapist)"
+            cancelled_by_label_therapist = "You (Therapist)"
+        else:
+            cancelled_by_label_client = "MLC Care Team"
+            cancelled_by_label_therapist = "MLC Care Team"
+
+    cancellation_reason = (
+        reason
+        or getattr(appointment, "cancellation_reason", "")
+        or getattr(appointment, "message_from_client", "")
+        or getattr(appointment, "therapist_response_note", "")
+    )
+
+    frontend_url = getattr(settings, "FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
+    booking_url = f"{frontend_url}/therapists/discovery"
+    dashboard_url = f"{frontend_url}/dashboard/client/appointments"
+    schedule_url = f"{frontend_url}/dashboard/therapist/schedule"
+    workspace_url = f"{frontend_url}/dashboard/therapist"
+
+    from therapy.services.resend_email import send_templated_email
+
+    # 1. Send cancellation to Client
+    client_sent = False
+    client_err = None
+    if client_email:
+        client_context = {
+            "client_name": client_name,
+            "therapist_name": therapist_name,
+            "scheduled_time": scheduled_str,
+            "cancelled_by_label": cancelled_by_label_client,
+            "cancellation_reason": cancellation_reason,
+            "booking_url": booking_url,
+            "dashboard_url": dashboard_url,
+        }
+        client_sent, client_err = send_templated_email(
+            template_name="emails/appointment_cancelled_client.html",
+            context=client_context,
+            to=client_email,
+            subject=f"Session Cancelled with {therapist_name} — MLC Health",
+            reply_to="therapy@mlchealth.in",
+        )
+        if client_sent:
+            logger.info("Sent appointment cancellation email to client %s for appt #%s", client_email, appointment.id)
+        else:
+            logger.warning("Failed to send cancellation email to client: %s", client_err)
+
+    # 2. Send cancellation to Therapist
+    if therapist_email:
+        therapist_context = {
+            "therapist_name": therapist_name,
+            "client_name": client_name,
+            "scheduled_time": scheduled_str,
+            "cancelled_by_label": cancelled_by_label_therapist,
+            "cancellation_reason": cancellation_reason,
+            "schedule_url": schedule_url,
+            "workspace_url": workspace_url,
+        }
+        t_sent, t_err = send_templated_email(
+            template_name="emails/appointment_cancelled_therapist.html",
+            context=therapist_context,
+            to=therapist_email,
+            subject=f"Appointment Cancelled: {client_name} — MLC Health",
+            reply_to=client_email or "therapy@mlchealth.in",
+        )
+        if t_sent:
+            logger.info("Sent appointment cancellation email to therapist %s for appt #%s", therapist_email, appointment.id)
+        else:
+            logger.warning("Failed to send cancellation email to therapist: %s", t_err)
+
+    return client_sent, client_err
+

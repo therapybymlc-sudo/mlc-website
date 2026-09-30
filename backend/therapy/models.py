@@ -1010,6 +1010,46 @@ class BookingRequest(models.Model):
                 recipient=getattr(self.therapist, "user", None),
             ),
         )
+
+        appt = getattr(self, "appointment", None)
+        if appt and appt.status != Appointment.Status.CANCELLED:
+            from therapy.services.appointments import cancel_appointment
+            try:
+                cancel_appointment(
+                    appt,
+                    cancelled_by=getattr(self.client, "user", None),
+                    reason=reason,
+                    reopen_slot=False,
+                    force=True,
+                )
+            except Exception as _e:
+                logger.warning("Could not cancel linked appointment for booking request %s: %s", self.id, _e)
+        else:
+            try:
+                from therapy.services.booking_email import send_appointment_cancellation_emails
+
+                def _send_cancel_client():
+                    try:
+                        send_appointment_cancellation_emails(
+                            self,
+                            cancelled_by=getattr(self.client, "user", None),
+                            reason=reason,
+                        )
+                    except Exception as _mail_err:
+                        logger.warning("Failed to send booking cancellation email: %s", _mail_err)
+
+                transaction.on_commit(_send_cancel_client)
+            except Exception:
+                try:
+                    from therapy.services.booking_email import send_appointment_cancellation_emails
+                    send_appointment_cancellation_emails(
+                        self,
+                        cancelled_by=getattr(self.client, "user", None),
+                        reason=reason,
+                    )
+                except Exception:
+                    pass
+
         return self
 
     def cancel_by_therapist(self, reason=""):
@@ -1038,6 +1078,46 @@ class BookingRequest(models.Model):
                 recipient=getattr(self.client, "user", None),
             ),
         )
+
+        appt = getattr(self, "appointment", None)
+        if appt and appt.status != Appointment.Status.CANCELLED:
+            from therapy.services.appointments import cancel_appointment
+            try:
+                cancel_appointment(
+                    appt,
+                    cancelled_by=getattr(self.therapist, "user", None),
+                    reason=reason,
+                    reopen_slot=False,
+                    force=True,
+                )
+            except Exception as _e:
+                logger.warning("Could not cancel linked appointment for booking request %s: %s", self.id, _e)
+        else:
+            try:
+                from therapy.services.booking_email import send_appointment_cancellation_emails
+
+                def _send_cancel_therapist():
+                    try:
+                        send_appointment_cancellation_emails(
+                            self,
+                            cancelled_by=getattr(self.therapist, "user", None),
+                            reason=reason,
+                        )
+                    except Exception as _mail_err:
+                        logger.warning("Failed to send booking cancellation email: %s", _mail_err)
+
+                transaction.on_commit(_send_cancel_therapist)
+            except Exception:
+                try:
+                    from therapy.services.booking_email import send_appointment_cancellation_emails
+                    send_appointment_cancellation_emails(
+                        self,
+                        cancelled_by=getattr(self.therapist, "user", None),
+                        reason=reason,
+                    )
+                except Exception:
+                    pass
+
         return self
 
     def mark_payment_failed(self, reason="Payment failed or cancelled"):
