@@ -18,6 +18,7 @@ import {
   Circle,
   Avatar,
   Grid,
+  SimpleGrid,
   Divider,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
@@ -323,10 +324,17 @@ export default function BookingRequestsClient() {
 
       {/* ⚖️ 2. 7:5 BALANCED BENTO GRID */}
       <Grid templateColumns={{ base: "1fr", lg: "7fr 5fr" }} gap={6} alignItems="start">
-        {/* Left Column (7fr): Pending Queue */}
+        {/* Left Column (7fr): Pending Queue & Policy */}
         <VStack align="stretch" spacing={5}>
-          <Box>
-            <HStack justify="space-between" mb={3.5} align="center">
+          {/* Card 1: Pending Queue */}
+          <Box
+            bg="white"
+            p={5}
+            borderRadius="2xl"
+            border="1px solid rgba(86, 117, 109, 0.14)"
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+          >
+            <HStack justify="space-between" mb={4} align="center">
               <HStack spacing={2}>
                 <Text 
                   fontWeight="600" 
@@ -355,83 +363,72 @@ export default function BookingRequestsClient() {
             </HStack>
 
             {pendingRequests.length === 0 ? (
-              <Box 
-                bg="white" 
-                p={{ base: 6, md: 8 }} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="rgba(86, 117, 109, 0.14)"
-                boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
-                textAlign="center"
-              >
-                <VStack spacing={3.5} maxW="400px" mx="auto">
-                  <Circle size="50px" bg="rgba(86, 117, 109, 0.08)" color="#56756D">
-                    <Icon as={FiCheckCircle} boxSize="24px" />
-                  </Circle>
-                  <VStack spacing={1}>
-                    <Text 
-                      fontSize="16px" 
-                      fontWeight="600" 
-                      color="#263A33"
-                      fontFamily="'Outfit', var(--font-outfit), sans-serif"
-                      letterSpacing="-0.01em"
-                    >
-                      All Caught Up
-                    </Text>
-                    <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
-                      No pending booking requests right now. New requests will appear here for your one-click approval.
-                    </Text>
-                  </VStack>
-
-                  <HStack spacing={2.5} pt={2} wrap="wrap" justify="center">
-                    <Button
-                      as={NextLink}
-                      href="/dashboard/therapist/schedule"
-                      variant="outline"
-                      borderColor="rgba(86, 117, 109, 0.25)"
-                      color="#263A33"
-                      borderRadius="full"
-                      height="34px"
-                      fontSize="12px"
-                      fontWeight="600"
-                      px={4}
-                      leftIcon={<Icon as={FiCalendar} boxSize="12px" color="#56756D" />}
-                      _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
-                    >
-                      View Schedule
-                    </Button>
-                    <Button
-                      as={NextLink}
-                      href="/dashboard/therapist/availability"
-                      variant="outline"
-                      borderColor="rgba(86, 117, 109, 0.25)"
-                      color="#263A33"
-                      borderRadius="full"
-                      height="34px"
-                      fontSize="12px"
-                      fontWeight="600"
-                      px={4}
-                      leftIcon={<Icon as={FiClock} boxSize="12px" color="#56756D" />}
-                      _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
-                    >
-                      Working Hours
-                    </Button>
-                  </HStack>
+              <VStack spacing={3.5} py={{ base: 4, md: 5 }} maxW="420px" mx="auto" textAlign="center">
+                <Circle size="48px" bg="rgba(86, 117, 109, 0.08)" color="#56756D">
+                  <Icon as={FiCheckCircle} boxSize="22px" />
+                </Circle>
+                <VStack spacing={1}>
+                  <Text 
+                    fontSize="15.5px" 
+                    fontWeight="600" 
+                    color="#263A33"
+                    fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                    letterSpacing="-0.01em"
+                  >
+                    All Caught Up
+                  </Text>
+                  <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
+                    No pending booking requests right now. New requests will appear here for your one-click approval.
+                  </Text>
                 </VStack>
-              </Box>
+
+                <HStack spacing={2.5} pt={2} wrap="wrap" justify="center">
+                  <Button
+                    as={NextLink}
+                    href="/dashboard/therapist/schedule"
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    height="34px"
+                    fontSize="12px"
+                    fontWeight="600"
+                    px={4}
+                    leftIcon={<Icon as={FiCalendar} boxSize="12px" color="#56756D" />}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    View Schedule
+                  </Button>
+                  <Button
+                    as={NextLink}
+                    href="/dashboard/therapist/availability"
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    height="34px"
+                    fontSize="12px"
+                    fontWeight="600"
+                    px={4}
+                    leftIcon={<Icon as={FiClock} boxSize="12px" color="#56756D" />}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Working Hours
+                  </Button>
+                </HStack>
+              </VStack>
             ) : (
-              <VStack spacing={4} align="stretch">
+              <VStack spacing={3.5} align="stretch">
                 {pendingRequests.map((req) => (
                   <Box
                     key={req.id}
-                    p={{ base: 4, md: 5 }}
-                    borderRadius="2xl"
+                    p={{ base: 4, md: 4.5 }}
+                    borderRadius="xl"
                     border="1px solid"
-                    borderColor="rgba(86, 117, 109, 0.14)"
-                    bg="white"
-                    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+                    borderColor="rgba(86, 117, 109, 0.12)"
+                    bg="rgba(250, 248, 245, 0.7)"
                     transition="all 0.2s"
-                    _hover={{ borderColor: "rgba(86, 117, 109, 0.25)" }}
+                    _hover={{ borderColor: "rgba(86, 117, 109, 0.25)", bg: "rgba(250, 248, 245, 0.95)" }}
                   >
                     <Flex 
                       direction={{ base: "column", sm: "row" }} 
@@ -583,6 +580,50 @@ export default function BookingRequestsClient() {
               </VStack>
             )}
           </Box>
+
+          {/* Card 2: Clinical Booking Guidelines & Practice Card */}
+          <Box
+            bg="white"
+            p={5}
+            borderRadius="2xl"
+            border="1px solid rgba(86, 117, 109, 0.14)"
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+          >
+            <HStack spacing={2} mb={3.5}>
+              <Circle size="24px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiShield} boxSize="12px" />
+              </Circle>
+              <Text 
+                fontWeight="600" 
+                color="#263A33" 
+                fontSize="14.5px" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                letterSpacing="-0.01em"
+              >
+                Booking Policy & Practice
+              </Text>
+            </HStack>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+              <Box p={3.5} borderRadius="xl" bg="rgba(250, 248, 245, 0.75)" border="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="12px" fontWeight="600" color="#263A33">
+                  Automatic Slot Release
+                </Text>
+                <Text fontSize="11.5px" color="#5A6E65" mt={1} lineHeight="1.5">
+                  Declining or cancelling a booking immediately frees the calendar slot for other clients.
+                </Text>
+              </Box>
+
+              <Box p={3.5} borderRadius="xl" bg="rgba(250, 248, 245, 0.75)" border="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="12px" fontWeight="600" color="#263A33">
+                  Real-Time Sync
+                </Text>
+                <Text fontSize="11.5px" color="#5A6E65" mt={1} lineHeight="1.5">
+                  Confirmed sessions instantly generate video links and notify the client through their portal.
+                </Text>
+              </Box>
+            </SimpleGrid>
+          </Box>
         </VStack>
 
         {/* Right Column (5fr): Recent Updates & Guidance */}
@@ -595,7 +636,7 @@ export default function BookingRequestsClient() {
             border="1px solid rgba(86, 117, 109, 0.14)"
             boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
           >
-            <HStack justify="space-between" mb={3.5} align="center">
+            <HStack justify="space-between" mb={4} align="center">
               <Text 
                 fontWeight="600" 
                 color="#263A33" 
@@ -719,49 +760,6 @@ export default function BookingRequestsClient() {
                 })}
               </VStack>
             )}
-          </Box>
-
-          {/* Clinical Booking Guidelines Card */}
-          <Box
-            bg="white"
-            p={5}
-            borderRadius="2xl"
-            border="1px solid rgba(86, 117, 109, 0.14)"
-            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
-          >
-            <HStack spacing={2} mb={3}>
-              <Circle size="24px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
-                <Icon as={FiShield} boxSize="12px" />
-              </Circle>
-              <Text 
-                fontWeight="600" 
-                color="#263A33" 
-                fontSize="14px" 
-                fontFamily="'Outfit', var(--font-outfit), sans-serif"
-              >
-                Booking Policy & Practice
-              </Text>
-            </HStack>
-
-            <VStack align="stretch" spacing={2.5}>
-              <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.75)" border="1px solid rgba(86, 117, 109, 0.08)">
-                <Text fontSize="12px" fontWeight="600" color="#263A33">
-                  Automatic Slot Release
-                </Text>
-                <Text fontSize="11.5px" color="#5A6E65" mt={0.5}>
-                  Declining or cancelling a booking immediately frees the calendar slot for other clients.
-                </Text>
-              </Box>
-
-              <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.75)" border="1px solid rgba(86, 117, 109, 0.08)">
-                <Text fontSize="12px" fontWeight="600" color="#263A33">
-                  Real-Time Sync
-                </Text>
-                <Text fontSize="11.5px" color="#5A6E65" mt={0.5}>
-                  Confirmed sessions instantly generate video links and notify the client through their portal.
-                </Text>
-              </Box>
-            </VStack>
           </Box>
         </VStack>
       </Grid>
