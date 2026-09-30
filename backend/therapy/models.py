@@ -910,6 +910,12 @@ class BookingRequest(models.Model):
 
             self._ensure_relationship()
 
+            frontend_url = getattr(settings, "FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
+            expected_meeting_link = f"{frontend_url}/conference/MLC_{appointment.id}"
+            if appointment.meeting_link != expected_meeting_link:
+                appointment.meeting_link = expected_meeting_link
+                appointment.save(update_fields=["meeting_link", "updated_at"])
+
         self._create_notification(
             recipient=getattr(self.client, "user", None),
             notification_type=Notification.Type.BOOKING_REQUEST_CONFIRMED,

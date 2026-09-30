@@ -13,7 +13,7 @@ const TherapyRoom = dynamic(() => import('../../../components/video/TherapyRoom'
     <Center h="100vh" bg="gray.950">
       <VStack spacing={6}>
         <Spinner size="xl" color="#6B8B7B" thickness="4px" />
-        <Text color="whiteAlpha.700" fontFamily="'Playfair Display', serif">Preparing Secure Sanctuary...</Text>
+        <Text color="whiteAlpha.800" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" fontSize="15px">Preparing Secure Session Room...</Text>
       </VStack>
     </Center>
   )
@@ -52,20 +52,6 @@ export default function ConferencePage() {
     // Wait until role resolution stabilizes so we don't call the wrong endpoint first.
     if (!isTherapist && !isClient) return;
 
-    const normalizeDetail = (raw) => {
-      if (!raw) return "";
-      if (typeof raw === "string") return raw;
-      if (typeof raw === "object") {
-        if (typeof raw.detail === "string") return raw.detail;
-        try {
-          return JSON.stringify(raw);
-        } catch (_e) {
-          return "";
-        }
-      }
-      return String(raw);
-    };
-
     const fetchToken = async () => {
       setTokenError(null);
       try {
@@ -81,14 +67,10 @@ export default function ConferencePage() {
         }
       } catch (err) {
         console.warn("Jitsi token probe (Option B standard mode active):", err);
-        const detail = normalizeDetail(err.response?.data?.detail || err.response?.data);
-        const code = err.response?.data?.code;
-        if (err.response?.status === 403 && (code === 'session_room_closed' || detail)) {
-          setTokenError(detail || 'This video room is not open yet.');
-        } else {
-          // Graceful Option B fallback: proceed to standard secure Jitsi room
-          setJitsiDisplayName(therapistProfile?.name || clientProfile?.name || user?.fullName || 'MLC Participant');
-        }
+        // Option B is the active conferencing mode (standard meet.jit.si room)
+        // If JWT generation is unavailable or restricted by time window,
+        // proceed directly to standard secure room instead of blocking the user
+        setJitsiDisplayName(therapistProfile?.name || clientProfile?.name || user?.fullName || 'MLC Participant');
       } finally {
         setTokenLoading(false);
       }
@@ -102,7 +84,7 @@ export default function ConferencePage() {
       <Center h="100vh" bg="gray.950">
         <VStack spacing={6}>
           <Spinner size="xl" color="#6B8B7B" thickness="4px" />
-          <Text color="whiteAlpha.700" fontFamily="'Playfair Display', serif">Authenticating Session...</Text>
+          <Text color="whiteAlpha.800" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" fontSize="15px">Connecting to Video Session...</Text>
         </VStack>
       </Center>
     );

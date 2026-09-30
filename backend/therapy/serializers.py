@@ -112,6 +112,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
     therapist_name = serializers.CharField(source="therapist.name", read_only=True)
     payment_status = serializers.SerializerMethodField()
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    meeting_link = serializers.SerializerMethodField()
+
+    def get_meeting_link(self, obj):
+        if obj.meeting_link:
+            return obj.meeting_link
+        from django.conf import settings
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
+        return f"{frontend_url}/conference/MLC_{obj.id}"
 
     class Meta:
         model = Appointment

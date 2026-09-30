@@ -55,7 +55,10 @@ def send_booking_confirmation_emails(booking_request) -> tuple[bool, str | None]
     appointment = getattr(booking_request, "appointment", None)
     meeting_link = getattr(appointment, "meeting_link", None) if appointment else None
     if not meeting_link:
-        meeting_link = f"{frontend_url}/conference/mlc_session_{booking_request.id}"
+        if appointment and appointment.id:
+            meeting_link = f"{frontend_url}/conference/MLC_{appointment.id}"
+        else:
+            meeting_link = f"{frontend_url}/conference/MLC_{booking_request.id}"
 
     dashboard_url = f"{frontend_url}/dashboard/client/appointments"
     schedule_url = f"{frontend_url}/dashboard/therapist/schedule"
@@ -93,6 +96,7 @@ def send_booking_confirmation_emails(booking_request) -> tuple[bool, str | None]
             "scheduled_time": scheduled_str,
             "duration_minutes": duration,
             "message_from_client": getattr(booking_request, "message_from_client", ""),
+            "meeting_link": meeting_link,
             "schedule_url": schedule_url,
             "workspace_url": workspace_url,
         }

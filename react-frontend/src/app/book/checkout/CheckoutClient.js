@@ -36,6 +36,7 @@ export default function CheckoutClient() {
   const [slot, setSlot] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [_bookingRequestId, setBookingRequestId] = useState(null);
+  const [simulatedSuccessData, setSimulatedSuccessData] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -243,20 +244,22 @@ export default function CheckoutClient() {
         message_from_client: isSupervision ? "Local dev test clinical supervision" : "Local dev test booking",
       });
 
+      const meetingLink = res.meeting_link || `/conference/MLC_${res.appointment_id || res.booking_request_id}`;
       if (res.booking_request_id) {
         setBookingRequestId(res.booking_request_id);
       }
+      setSimulatedSuccessData({
+        bookingRequestId: res.booking_request_id,
+        appointmentId: res.appointment_id,
+        meetingLink,
+      });
 
       toast({
         title: "⚡ Payment Simulated Successfully!",
-        description: "Bypassed payment gateway. Session booked, Jitsi link created & confirmation emails triggered.",
+        description: "Session confirmed & Jitsi room created. Meeting link is ready below.",
         status: "success",
         duration: 8000,
       });
-
-      setTimeout(() => {
-        window.location.href = "/dashboard/client/appointments";
-      }, 1500);
     } catch (e) {
       console.error("Simulation error", e);
       const is404 = e?.response?.status === 404;
@@ -275,6 +278,131 @@ export default function CheckoutClient() {
   };
 
   if (!isMounted) return <Box h="100vh" bg="#FDFBFA" />;
+
+  if (simulatedSuccessData) {
+    return (
+      <Box minH="100vh" bg="#FAF8F5" py={{ base: 10, md: 16 }} fontFamily="'Inter', var(--font-inter), sans-serif">
+        <Container maxW="600px">
+          <Box
+            bg="white"
+            borderRadius="2xl"
+            p={{ base: 6, md: 8 }}
+            border="1px solid rgba(86, 117, 109, 0.16)"
+            boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)"
+            textAlign="center"
+          >
+            <Circle size="64px" bg="rgba(16, 185, 129, 0.12)" color="#059669" mx="auto" mb={4}>
+              <Icon as={FiCheck} boxSize="30px" />
+            </Circle>
+
+            <Badge
+              bg="rgba(16, 185, 129, 0.12)"
+              color="#047857"
+              fontSize="11px"
+              fontWeight="700"
+              letterSpacing="0.08em"
+              textTransform="uppercase"
+              borderRadius="full"
+              px={3}
+              py={1}
+              mb={3}
+            >
+              Session Confirmed · Simulated Payment
+            </Badge>
+
+            <Heading
+              as="h1"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              fontWeight="600"
+              fontSize="24px"
+              color="#263A33"
+              mb={2}
+            >
+              Session Booked Successfully!
+            </Heading>
+
+            <Text fontSize="13.5px" color="#5A6E65" mb={6} lineHeight="1.6">
+              Your test booking has been confirmed without Razorpay charges. All database records and session rooms are live.
+            </Text>
+
+            <Box
+              bg="rgba(250, 248, 245, 0.9)"
+              borderRadius="xl"
+              p={4}
+              border="1px solid rgba(86, 117, 109, 0.12)"
+              textAlign="left"
+              mb={6}
+            >
+              <VStack align="stretch" spacing={2.5} fontSize="13px">
+                <HStack justify="space-between">
+                  <Text color="#718096">Therapist</Text>
+                  <Text fontWeight="600" color="#263A33">{profile?.name || "Therapist"}</Text>
+                </HStack>
+                <Divider borderColor="rgba(86, 117, 109, 0.1)" />
+                <HStack justify="space-between">
+                  <Text color="#718096">Date & Time</Text>
+                  <Text fontWeight="600" color="#263A33">{formattedDate} · {formattedTime}</Text>
+                </HStack>
+                <Divider borderColor="rgba(86, 117, 109, 0.1)" />
+                <HStack justify="space-between">
+                  <Text color="#718096">Session Type</Text>
+                  <Text fontWeight="600" color="#263A33">{isSupervision ? "Clinical Supervision" : "Individual Therapy"}</Text>
+                </HStack>
+                <Divider borderColor="rgba(86, 117, 109, 0.1)" />
+                <VStack align="start" spacing={1} pt={1}>
+                  <Text color="#718096">Direct Video Room Link</Text>
+                  <Text
+                    as={Link}
+                    href={simulatedSuccessData.meetingLink}
+                    color="#56756D"
+                    fontWeight="600"
+                    fontSize="12.5px"
+                    wordBreak="break-all"
+                    textDecoration="underline"
+                  >
+                    {typeof window !== "undefined" ? `${window.location.origin}${simulatedSuccessData.meetingLink}` : simulatedSuccessData.meetingLink}
+                  </Text>
+                </VStack>
+              </VStack>
+            </Box>
+
+            <VStack spacing={3} align="stretch">
+              <Button
+                as={Link}
+                href={simulatedSuccessData.meetingLink}
+                bg="#56756D"
+                color="white"
+                borderRadius="full"
+                height="42px"
+                fontSize="13.5px"
+                fontWeight="600"
+                leftIcon={<Icon as={FiVideo} color="#A9CBB7" />}
+                _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                boxShadow="0 4px 12px rgba(86, 117, 109, 0.25)"
+              >
+                Join Video Session Room Now
+              </Button>
+
+              <Button
+                as={Link}
+                href="/dashboard/client/appointments"
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                height="40px"
+                fontSize="13px"
+                fontWeight="600"
+                _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+              >
+                View in Client Appointments
+              </Button>
+            </VStack>
+          </Box>
+        </Container>
+      </Box>
+    );
+  }
 
   if (isLoading) {
     return (

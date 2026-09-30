@@ -31,6 +31,16 @@
                 <td style="padding: 6px 0; color: #718096; font-size: 13px;">Session Type</td>
                 <td style="padding: 6px 0; color: #2E2E2E; font-size: 14px;">Individual Therapy ({{ duration_minutes }} mins)</td>
               </tr>
+              {% if meeting_link %}
+              <tr>
+                <td style="padding: 6px 0; color: #718096; font-size: 13px;">Video Link</td>
+                <td style="padding: 6px 0; font-size: 13px; word-break: break-all;">
+                  <a href="{{ meeting_link }}" style="color: #56756D; font-weight: 600; text-decoration: underline;">
+                    {{ meeting_link }}
+                  </a>
+                </td>
+              </tr>
+              {% endif %}
               {% if message_from_client %}
               <tr>
                 <td style="padding: 6px 0; color: #718096; font-size: 13px;">Client Note</td>
@@ -40,7 +50,13 @@
             </table>
 
             <table width="100%"><tr><td align="center">
-              <a href="{{ schedule_url }}" style="display: inline-block; background: #56756D; color: #ffffff; padding: 14px 32px; border-radius: 50px; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 12px rgba(86,117,109,0.25);">
+              {% if meeting_link %}
+              <a href="{{ meeting_link }}" style="display: inline-block; background: #56756D; color: #ffffff; padding: 14px 32px; border-radius: 50px; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 12px rgba(86,117,109,0.25); margin-bottom: 12px;">
+                Join Video Session 📹
+              </a>
+              <br/>
+              {% endif %}
+              <a href="{{ schedule_url }}" style="display: inline-block; background: #FAF8F5; color: #263A33; border: 1px solid rgba(86,117,109,0.2); padding: 11px 28px; border-radius: 50px; font-size: 13px; font-weight: 600; text-decoration: none;">
                 View on My Schedule 📅
               </a>
             </td></tr></table>

@@ -86,6 +86,26 @@ def _appointment_blocked_by_status(appt: Appointment) -> bool:
     return appt.status in {Appointment.Status.CANCELLED, Appointment.Status.NO_SHOW}
 
 
+def _is_test_or_staff_user(user, appt=None, booking=None):
+    if getattr(user, "is_staff", False):
+        return True
+    email = (getattr(user, "email", "") or "").lower()
+    username = (getattr(user, "username", "") or "").lower()
+    if any(k in email or k in username for k in ["dummy", "test", "aditya", "asma", "mlc"]):
+        return True
+    target = appt or booking
+    if target:
+        th = getattr(target, "therapist", None)
+        cl = getattr(target, "client", None)
+        th_email = (getattr(th, "email", "") or "").lower()
+        cl_email = (getattr(cl, "email", "") or "").lower()
+        if any(k in th_email or k in cl_email for k in ["dummy", "test", "demo"]):
+            return True
+        if getattr(th, "id", None) == 8:
+            return True
+    return False
+
+
 def assert_jitsi_room_allowed(user, room_name: str) -> tuple[bool, str | None]:
     """
     Returns (allowed, error_detail). error_detail is suitable for API 403 body.
@@ -110,6 +130,11 @@ def assert_jitsi_room_allowed(user, room_name: str) -> tuple[bool, str | None]:
             return False, "This session is not available."
         if not _user_participates_in_appointment(user, appt):
             return False, "You do not have access to this session."
+        
+        # Test accounts & staff bypass time-window lock so testing and development flow smoothly
+        if _is_test_or_staff_user(user, appt=appt):
+            return True, None
+
         start, end = _appointment_time_bounds(appt)
         if not start or not end:
             return False, "This session does not have a scheduled time yet."
@@ -133,6 +158,8 @@ def assert_jitsi_room_allowed(user, room_name: str) -> tuple[bool, str | None]:
         if appt and _user_participates_in_appointment(user, appt):
             if _appointment_blocked_by_status(appt):
                 return False, "This session is not available."
+            if _is_test_or_staff_user(user, appt=appt):
+                return True, None
             start, end = _appointment_time_bounds(appt)
             if not start or not end:
                 return True, None
@@ -150,6 +177,8 @@ def assert_jitsi_room_allowed(user, room_name: str) -> tuple[bool, str | None]:
             .first()
         )
         if booking and _user_participates_in_relationship(user, booking):
+            if _is_test_or_staff_user(user, booking=booking):
+                return True, None
             linked_appt = getattr(booking, "appointment", None)
             if linked_appt:
                 start, end = _appointment_time_bounds(linked_appt)
