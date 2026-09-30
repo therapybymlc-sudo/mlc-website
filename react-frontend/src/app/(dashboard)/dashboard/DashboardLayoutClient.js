@@ -172,6 +172,7 @@ export default function DashboardLayout({ children }) {
     const therapistLinks = [
       { type: 'header', label: 'Clinical Practice' },
       { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
+      { label: 'Appointments', icon: FiCalendar, href: '/dashboard/therapist/appointments' },
       { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
       { label: 'Clinical Blueprints', icon: FiClipboard, href: '/dashboard/therapist/notes' },
       { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
