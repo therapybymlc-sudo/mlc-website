@@ -179,20 +179,32 @@ globals().update(_storage)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ==========================
-# Email (report delivery)
+# Email Configuration (Resend & Reports)
 # ==========================
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "MLC Health <therapy@mlchealth.in>").strip()
+
+# If RESEND_API_KEY is configured, default Django's SMTP backend to Resend SMTP
+_has_resend = bool(RESEND_API_KEY)
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
+    "django.core.mail.backends.smtp.EmailBackend" if _has_resend else "django.core.mail.backends.console.EmailBackend",
 )
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.resend.com" if _has_resend else "")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "resend" if _has_resend else "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", RESEND_API_KEY if _has_resend else "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "MLC Reports <noreply@mlc-therapy.local>")
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.mlchealth.in")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", RESEND_FROM_EMAIL)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
+
+# ==========================
+# Video Conferencing (Jitsi / Option B)
+# ==========================
+JITSI_APP_ID = os.getenv("JITSI_APP_ID", "").strip()
+JITSI_KID = os.getenv("JITSI_KID", "").strip()
+JITSI_PRIVATE_KEY = os.getenv("JITSI_PRIVATE_KEY", "").strip()
 
 # ==========================
 # Clerk Configuration
@@ -217,13 +229,9 @@ PREMIUM_SUBSCRIPTION_ENABLED = os.getenv("PREMIUM_SUBSCRIPTION_ENABLED", "false"
     "yes",
 }
 
-# Brevo HTTP API (recommended on Render — faster and more reliable than SMTP)
+# Brevo HTTP API (optional fallback)
 BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 INTAKE_EMAIL_FROM = os.getenv("INTAKE_EMAIL_FROM", "MLC Health <therapy@mlchealth.in>")
-
-# Resend Email API (primary transactional email service)
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "MLC Health <therapy@mlchealth.in>")
 
 # ==========================
 # Django REST Framework

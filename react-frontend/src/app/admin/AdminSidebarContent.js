@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   VStack,
@@ -8,76 +8,55 @@ import {
   Icon,
   Image,
   Link as ChakraLink,
-  Divider,
-  Button,
   Avatar,
   Badge,
   IconButton,
   Tooltip
-} from '@chakra-ui/react'
-import { FiLogOut, FiArrowRight } from 'react-icons/fi'
-import NextLink from 'next/link'
-import { useUser } from '@clerk/nextjs'
-import { useAuth } from '../../../context/AuthContext'
+} from '@chakra-ui/react';
+import { FiLogOut } from 'react-icons/fi';
+import NextLink from 'next/link';
+import { useUser } from '@clerk/nextjs';
+import { useAuth } from '../../context/AuthContext';
 
 const iconThemes = {
-  // Client & shared links
   'Overview': { color: '#56756D', bg: 'rgba(86, 117, 109, 0.12)' },
-  'Appointments': { color: '#319795', bg: 'rgba(49, 151, 149, 0.12)' },
-  'Booking requests': { color: '#D69E2E', bg: 'rgba(214, 158, 46, 0.12)' },
-  'Messages': { color: '#6366F1', bg: 'rgba(99, 102, 241, 0.12)' },
-  'My Goals': { color: '#38A169', bg: 'rgba(56, 161, 105, 0.12)' },
-  'Journal': { color: '#C9A960', bg: 'rgba(201, 169, 96, 0.14)' },
-  'The Lux Studio': { color: '#9F7AEA', bg: 'rgba(159, 122, 234, 0.12)' },
-  'Care Tools': { color: '#3182CE', bg: 'rgba(49, 130, 206, 0.12)' },
-  'Safety Plan': { color: '#E53E3E', bg: 'rgba(229, 62, 62, 0.12)' },
-  'My Profile': { color: '#4A5568', bg: 'rgba(74, 85, 104, 0.12)' },
-  'Need Help?': { color: '#00A3C4', bg: 'rgba(0, 163, 196, 0.12)' },
-
-  // Therapist links
-  'Clients': { color: '#2F855A', bg: 'rgba(47, 133, 90, 0.12)' },
-  'Clinical Blueprints': { color: '#3182CE', bg: 'rgba(49, 130, 206, 0.12)' },
-  'My Schedule': { color: '#319795', bg: 'rgba(49, 151, 149, 0.12)' },
-  'Availability': { color: '#DD6B20', bg: 'rgba(221, 107, 32, 0.12)' },
-  'Care Space': { color: '#E53E3E', bg: 'rgba(229, 62, 62, 0.12)' },
-  'Community Hub': { color: '#805AD5', bg: 'rgba(128, 90, 213, 0.12)' },
-  'Supervision Hub': { color: '#D69E2E', bg: 'rgba(214, 158, 46, 0.12)' },
-  'Supervisee Suite': { color: '#D69E2E', bg: 'rgba(214, 158, 46, 0.12)' },
-  'Earnings': { color: '#38A169', bg: 'rgba(56, 161, 105, 0.12)' },
-  'Subscription': { color: '#6366F1', bg: 'rgba(99, 102, 241, 0.12)' },
-  'Resources': { color: '#3182CE', bg: 'rgba(49, 130, 206, 0.12)' },
-  'The Therapist OS': { color: '#9F7AEA', bg: 'rgba(159, 122, 234, 0.12)' },
+  'Contact Inquiries': { color: '#319795', bg: 'rgba(49, 151, 149, 0.12)' },
+  'Booking Leads': { color: '#D69E2E', bg: 'rgba(214, 158, 46, 0.12)' },
+  'Support Tickets': { color: '#E53E3E', bg: 'rgba(229, 62, 62, 0.12)' },
+  'Therapist Directory': { color: '#2F855A', bg: 'rgba(47, 133, 90, 0.12)' },
+  'Business Reports': { color: '#3182CE', bg: 'rgba(49, 130, 206, 0.12)' },
+  'Improvement Architect': { color: '#6366F1', bg: 'rgba(99, 102, 241, 0.12)' },
+  'Assessment QA': { color: '#805AD5', bg: 'rgba(128, 90, 213, 0.12)' },
+  'Home Page': { color: '#56756D', bg: 'rgba(86, 117, 109, 0.12)' },
+  'Services Cards': { color: '#3182CE', bg: 'rgba(49, 130, 206, 0.12)' },
+  'Team Members': { color: '#2F855A', bg: 'rgba(47, 133, 90, 0.12)' },
+  'Other Pages': { color: '#718096', bg: 'rgba(113, 128, 150, 0.12)' },
+  'Blog CMS': { color: '#C9A960', bg: 'rgba(201, 169, 96, 0.14)' },
+  'Therapist Matching': { color: '#9F7AEA', bg: 'rgba(159, 122, 234, 0.12)' },
+  'Video Test Lab': { color: '#DD6B20', bg: 'rgba(221, 107, 32, 0.12)' },
 };
 
-function isPathActive(currentPath, targetHref) {
-  if (!currentPath || !targetHref) return false;
-  // Normalize both by removing trailing slashes
-  const cleanCurrent = currentPath.replace(/\/+$/, '') || '/';
-  const cleanTarget = targetHref.replace(/\/+$/, '') || '/';
+function isItemActive(link, pathname, currentTab) {
+  if (!pathname) return false;
+  const cleanPath = pathname.replace(/\/+$/, '') || '/';
   
-  if (cleanCurrent === cleanTarget) return true;
+  if (link.isRoute) {
+    const cleanTarget = link.href.replace(/\/+$/, '');
+    return cleanPath === cleanTarget || cleanPath.startsWith(`${cleanTarget}/`);
+  }
   
-  // For subroutes (except root dashboard routes)
-  if (
-    cleanTarget !== '/dashboard/client' && 
-    cleanTarget !== '/dashboard/therapist' && 
-    cleanTarget !== '/admin'
-  ) {
-    return cleanCurrent.startsWith(`${cleanTarget}/`);
+  // It's a tab link under /admin
+  if (cleanPath === '/admin') {
+    const targetTab = link.tab || 'overview';
+    return (currentTab || 'overview') === targetTab;
   }
   
   return false;
 }
 
-export default function SidebarContent({ links, pathname, signOut, onClose }) {
+export default function AdminSidebarContent({ links, pathname, currentTab, signOut, onClose }) {
   const { user } = useUser();
-  const { isTherapist, isClient, isAdmin } = useAuth();
-
-  const userRoleLabel = isAdmin 
-    ? 'Admin' 
-    : isTherapist 
-    ? 'Practitioner' 
-    : 'Client';
+  const { isTherapist } = useAuth();
 
   return (
     <VStack 
@@ -101,14 +80,14 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
           },
         }}
       >
-        {/* Brand Header */}
+        {/* Brand Header (Rule 7: Outfit 600 upright mark, Inter upright subtext) */}
         <HStack 
           spacing={3} 
           mb={4} 
           px={2} 
           py={1}
           as={NextLink} 
-          href="/"
+          href="/admin"
           cursor="pointer"
           role="group"
           transition="all 0.2s ease"
@@ -152,17 +131,17 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
               transition="color 0.2s"
               _groupHover={{ color: "#182722" }}
             >
-              MLC Portal
+              MLC Admin
             </Text>
             <Text 
-              fontFamily="'Inter', var(--font-inter), sans-serif"
+              fontFamily="'Inter', var(--font-inter), sans-serif" 
               fontSize="11px" 
               fontWeight="500"
-              color="#56756D"
+              color="#56756D" 
               lineHeight="1.2"
               mt={0.5}
             >
-              Mental Health Org
+              Management Console
             </Text>
           </VStack>
         </HStack>
@@ -170,66 +149,9 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
         {/* Links Navigation */}
         <VStack align="stretch" spacing="3px">
           {links.map((link, idx) => {
-            if (link.isSwitchAction) {
-              return (
-                <ChakraLink
-                  as={NextLink}
-                  key={`${link.label}-${idx}`}
-                  href={link.href}
-                  _hover={{ textDecoration: 'none' }}
-                  onClick={onClose}
-                  mb={2.5}
-                >
-                  <HStack
-                    spacing={2}
-                    px={2.5}
-                    py="8px"
-                    borderRadius="10px"
-                    bg="rgba(86, 117, 109, 0.08)"
-                    border="1px solid rgba(86, 117, 109, 0.2)"
-                    color="#263A33"
-                    transition="all 0.18s ease"
-                    _hover={{ 
-                      bg: 'rgba(86, 117, 109, 0.14)', 
-                      borderColor: '#56756D',
-                      transform: 'translateY(-1px)',
-                      boxShadow: '0 2px 6px rgba(38, 58, 51, 0.06)'
-                    }}
-                    align="center"
-                    justify="space-between"
-                  >
-                    <HStack spacing={2} align="center" minW={0} flex={1}>
-                      <Box
-                        w="24px"
-                        h="24px"
-                        borderRadius="7px"
-                        bg="rgba(86, 117, 109, 0.16)"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        flexShrink={0}
-                      >
-                        <Icon as={link.icon} boxSize="13px" color="#56756D" />
-                      </Box>
-                      <Text 
-                        fontSize="12.5px" 
-                        fontWeight="600" 
-                        color="#263A33" 
-                        fontFamily="'Inter', var(--font-inter), sans-serif"
-                        whiteSpace="nowrap"
-                      >
-                        {link.label}
-                      </Text>
-                    </HStack>
-                    <Icon as={FiArrowRight} boxSize="13px" color="#56756D" flexShrink={0} />
-                  </HStack>
-                </ChakraLink>
-              );
-            }
-
             if (link.type === 'header') {
               return (
-                <Box key={`header-${idx}`} pt={idx === 0 ? 0.5 : 2.5} pb={1} px={2.5}>
+                <Box key={`header-${idx}`} pt={3.5} pb={1} px={2.5}>
                   <Text 
                     fontSize="10px" 
                     fontWeight="700" 
@@ -245,7 +167,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
               );
             }
 
-            const isActive = isPathActive(pathname, link.href);
+            const isActive = isItemActive(link, pathname, currentTab);
             const theme = iconThemes[link.label] || { color: '#56756D', bg: 'rgba(86, 117, 109, 0.12)' };
 
             return (
@@ -257,8 +179,6 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
                 onClick={onClose}
               >
                 <HStack
-                  id={`tour-${link.label.toLowerCase().replace(/\s+/g, '-')}${link.isClient ? '-client' : ''}`}
-                  data-tour={link.label === 'Overview' && link.isClient ? "overview-link" : undefined}
                   spacing={2.5}
                   px={2.5}
                   py="7px"
@@ -273,7 +193,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
                     color: '#263A33',
                   }}
                 >
-                  {/* Slender left rail indicator (flush, zero layout shift) */}
+                  {/* Slender left rail indicator (Rule 7) */}
                   {isActive && (
                     <Box 
                       position="absolute"
@@ -308,9 +228,24 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
                     fontSize="13px" 
                     fontFamily="'Inter', var(--font-inter), sans-serif"
                     flex="1"
+                    noOfLines={1}
                   >
                     {link.label}
                   </Text>
+                  {link.badge && (
+                    <Badge
+                      fontSize="9px"
+                      fontWeight="700"
+                      borderRadius="full"
+                      px={1.5}
+                      py={0}
+                      bg={link.badge === 'NEW' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(86, 117, 109, 0.12)'}
+                      color={link.badge === 'NEW' ? '#D97706' : '#56756D'}
+                      letterSpacing="0.05em"
+                    >
+                      {link.badge}
+                    </Badge>
+                  )}
                 </HStack>
               </ChakraLink>
             );
@@ -318,7 +253,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
         </VStack>
       </Box>
 
-      {/* Bottom User Profile Card & Sign Out */}
+      {/* Bottom Admin User Profile Card & Sign Out */}
       <Box pt={2.5} mt={1} borderTop="1px solid" borderColor="rgba(86, 117, 109, 0.12)">
         <HStack 
           justify="space-between" 
@@ -332,7 +267,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
             <Box position="relative">
               <Avatar 
                 size="sm" 
-                name={user?.fullName || "User"} 
+                name={user?.fullName || "Admin"} 
                 src={user?.imageUrl} 
                 border="1.5px solid white"
                 boxShadow="0 1px 4px rgba(38, 58, 51, 0.1)"
@@ -356,7 +291,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
                 noOfLines={1}
                 fontFamily="'Inter', var(--font-inter), sans-serif"
               >
-                {user?.fullName || user?.firstName || 'User'}
+                {user?.fullName || user?.firstName || 'Admin'}
               </Text>
               <Badge 
                 variant="subtle" 
@@ -370,7 +305,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
                 textTransform="uppercase"
                 letterSpacing="0.05em"
               >
-                {userRoleLabel}
+                Super Admin
               </Badge>
             </VStack>
           </HStack>
@@ -398,7 +333,7 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
               borderRadius="full"
               color="#56756D"
               aria-label="Sign Out"
-              onClick={() => signOut()}
+              onClick={() => signOut && signOut()}
               _hover={{ bg: 'red.50', color: 'red.600' }}
             />
           </Tooltip>

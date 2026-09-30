@@ -47,17 +47,16 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
     }
   }, [api, displayName]);
 
-  // JaaS Naming Convention: AppID/RoomName
-  const JAAS_APP_ID = "vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406";
+  // Standard Jitsi Room (Option B - Free, no paid 8x8 JaaS keys required)
   const rawRoom = (roomUrl 
     ? roomUrl.split('/').filter(Boolean).pop() 
-    : "MLC-Secure-Lounge").toLowerCase();
-  const roomName = `${JAAS_APP_ID}/${rawRoom}`;
+    : "MLC-Secure-Lounge").toLowerCase().replace(/[^a-z0-9_-]/gi, '');
+  const roomName = `mlc-session-${rawRoom || "lounge"}`;
   
-  console.log("🌿 [TherapyRoom] Initializing session:", {
+  console.log("🌿 [TherapyRoom] Initializing session (Option B Jitsi):", {
     rawRoom,
     roomName,
-    appId: JAAS_APP_ID,
+    domain: "meet.jit.si",
     hasJwt: !!jwt
   });
 
@@ -109,8 +108,8 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
                  <Icon as={FiShield} position="absolute" top="50%" left="50%" transform="translate(-50%, -50%)" color="teal.500" />
               </Box>
               <VStack spacing={1}>
-                <Heading size="md" color="white" fontFamily="'Playfair Display', serif">Initializing Secure Sanctuary...</Heading>
-                <Text color="whiteAlpha.600" fontSize="sm">Secure Clinical Protocol Active</Text>
+                <Heading size="md" color="white" fontFamily="'Outfit', sans-serif">Initializing Secure Session...</Heading>
+                <Text color="whiteAlpha.600" fontSize="sm">End-to-End Secure Clinical Protocol</Text>
               </VStack>
            </VStack>
         </Center>
@@ -118,14 +117,13 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
 
       <Box h="full" w="full">
         <JitsiMeeting
-          domain="8x8.vc"
-          appId="vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406"
+          domain="meet.jit.si"
           roomName={roomName}
-          jwt={jwt}
+          jwt={jwt || undefined}
           configOverwrite={{
-            startWithAudioMuted: true,
-            disableModeratorIndicator: true,
-            startWithVideoMuted: true,
+            startWithAudioMuted: false,
+            disableModeratorIndicator: false,
+            startWithVideoMuted: false,
             enableEmailInStats: false,
             disableDeepLinking: true,
             prejoinPageEnabled: false,

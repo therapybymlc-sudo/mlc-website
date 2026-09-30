@@ -6,6 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useToast, Center, Spinner, VStack, Text } from "@chakra-ui/react";
 
+import AdminLayoutClient from "./AdminLayoutClient";
+
 export default function AdminLayout({ children }) {
   const { isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
@@ -54,5 +56,5 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  return children;
+  return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }

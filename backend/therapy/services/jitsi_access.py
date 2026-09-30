@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
-from therapy.models import Appointment, TherapeuticRelationship
+from therapy.models import Appointment, BookingRequest, TherapeuticRelationship
 
 _WINDOW_PRE = timedelta(hours=1)
 _WINDOW_POST = timedelta(hours=1)
@@ -122,38 +122,77 @@ def assert_jitsi_room_allowed(user, room_name: str) -> tuple[bool, str | None]:
 
     m_rel = re.match(r"^mlc_session_(\d+)$", n)
     if m_rel:
-        rel_id = int(m_rel.group(1))
-        rel = (
-            TherapeuticRelationship.objects.filter(pk=rel_id)
+        target_id = int(m_rel.group(1))
+
+        # Check 1: Direct Appointment ID
+        appt = (
+            Appointment.objects.filter(pk=target_id)
             .select_related("therapist", "client")
             .first()
         )
-        if not rel:
-            return False, "Session room not found."
-        if rel.status != TherapeuticRelationship.Status.ACTIVE:
-            return False, "This care relationship is not active."
-        if not _user_participates_in_relationship(user, rel):
-            return False, "You do not have access to this session."
-
-        qs = (
-            Appointment.objects.filter(therapist=rel.therapist, client=rel.client)
-            .exclude(
-                status__in={
-                    Appointment.Status.CANCELLED,
-                    Appointment.Status.NO_SHOW,
-                }
-            )
-            .select_related("therapist", "client")
-        )
-        for appt in qs.order_by("-start_time", "-date", "-id"):
+        if appt and _user_participates_in_appointment(user, appt):
+            if _appointment_blocked_by_status(appt):
+                return False, "This session is not available."
             start, end = _appointment_time_bounds(appt)
             if not start or not end:
-                continue
+                return True, None
             if start - _WINDOW_PRE <= now <= end + _WINDOW_POST:
                 return True, None
-        return (
-            False,
-            "The video room is only open from 1 hour before until 1 hour after your scheduled session.",
+            return (
+                False,
+                "The video room is only open from 1 hour before until 1 hour after your scheduled session.",
+            )
+
+        # Check 2: BookingRequest ID (generated in confirmation emails)
+        booking = (
+            BookingRequest.objects.filter(pk=target_id)
+            .select_related("therapist", "client", "appointment")
+            .first()
         )
+        if booking and _user_participates_in_relationship(user, booking):
+            linked_appt = getattr(booking, "appointment", None)
+            if linked_appt:
+                start, end = _appointment_time_bounds(linked_appt)
+                if start and end and not (start - _WINDOW_PRE <= now <= end + _WINDOW_POST):
+                    return (
+                        False,
+                        "The video room is only open from 1 hour before until 1 hour after your scheduled session.",
+                    )
+            return True, None
+
+        # Check 3: TherapeuticRelationship ID
+        rel = (
+            TherapeuticRelationship.objects.filter(pk=target_id)
+            .select_related("therapist", "client")
+            .first()
+        )
+        if rel:
+            if rel.status != TherapeuticRelationship.Status.ACTIVE:
+                return False, "This care relationship is not active."
+            if not _user_participates_in_relationship(user, rel):
+                return False, "You do not have access to this session."
+
+            qs = (
+                Appointment.objects.filter(therapist=rel.therapist, client=rel.client)
+                .exclude(
+                    status__in={
+                        Appointment.Status.CANCELLED,
+                        Appointment.Status.NO_SHOW,
+                    }
+                )
+                .select_related("therapist", "client")
+            )
+            for a in qs.order_by("-start_time", "-date", "-id"):
+                start, end = _appointment_time_bounds(a)
+                if not start or not end:
+                    continue
+                if start - _WINDOW_PRE <= now <= end + _WINDOW_POST:
+                    return True, None
+            return (
+                False,
+                "The video room is only open from 1 hour before until 1 hour after your scheduled session.",
+            )
+
+        return False, "Session room not found."
 
     return False, "Unrecognized meeting room."

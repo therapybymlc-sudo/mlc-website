@@ -12,7 +12,7 @@ const API_BASE = (
 const api = axios.create({
   baseURL: API_BASE,
   headers: { "Content-Type": "application/json" },
-  timeout: 12000,
+  timeout: 30000,
 });
 
 let tokenGetter = null;
@@ -31,13 +31,16 @@ const isLikelyJwt = (token) =>
 async function resolveClerkTokenFallback() {
   if (typeof window === "undefined" || !window.Clerk?.session?.getToken) return null;
   try {
-    // Prefer default Clerk session token for backend JWKS verification.
+    if (CLERK_JWT_TEMPLATE) {
+      try {
+        const templated = await window.Clerk.session.getToken({ template: CLERK_JWT_TEMPLATE });
+        if (isLikelyJwt(templated)) return templated;
+      } catch (e) {
+        console.warn("Clerk templated fallback token failed, falling back to default", e);
+      }
+    }
     const sessionToken = await window.Clerk.session.getToken();
     if (isLikelyJwt(sessionToken)) return sessionToken;
-    if (CLERK_JWT_TEMPLATE) {
-      const templated = await window.Clerk.session.getToken({ template: CLERK_JWT_TEMPLATE });
-      if (isLikelyJwt(templated)) return templated;
-    }
     return null;
   } catch (e) {
     console.warn("Clerk fallback token retrieval failed", e);
@@ -138,7 +141,32 @@ export async function apiGet(path) {
     const res = await api.get(preparePath(path));
     return res.data;
   } catch (err) {
-    console.error(`API GET Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    const status = err.response?.status;
+    // Probe endpoints: /me/ variants (therapists/me/, clients/me/) and whoami
+    const isProbe =
+      path.includes("/me/") ||
+      path.includes("/me") ||
+      path.endsWith("me/") ||
+      path.endsWith("me") ||
+      path.startsWith("whoami") ||
+      path.includes("earnings") ||
+      path.includes("messages") ||
+      path.includes("threads") ||
+      path.includes("notifications");
+    const isMutedReport = path.includes("admin/reports/");
+    const isTimeout = err.code === "ECONNABORTED" || err.message?.includes("timeout");
+
+    if (isProbe && (status === 401 || status === 403 || status === 404)) {
+      // Expected role/profile boundary – do NOT use console.error so
+      // Next.js Turbopack dev overlay won't trigger a red error popup.
+      console.warn(`API GET Probe [${path}]: ${status} (expected role/profile boundary)`);
+    } else if (isTimeout) {
+      console.warn(`API GET Timeout [${path}]: Backend service may be warming up on Render.`);
+    } else if (isMutedReport) {
+      console.warn(`API GET Report Notice [${path}]: ${status}`, err.response?.data || err.message);
+    } else {
+      console.error(`API GET Error [${path}]:`, status, err.response?.data || err.message);
+    }
     throw err;
   }
 }
@@ -159,7 +187,17 @@ export async function apiPost(path, body) {
     const res = await api.post(preparePath(path), body);
     return res.data;
   } catch (err) {
-    console.error(`API POST Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    const status = err.response?.status;
+    const isOnboard =
+      path.startsWith("onboard") ||
+      path.includes("/onboard");
+    if (isOnboard && (status === 400 || status === 401 || status === 403 || status === 404)) {
+      // Expected role/profile boundary – do NOT use console.error so
+      // Next.js Turbopack dev overlay won't trigger a red error popup.
+      console.warn(`API POST Probe [${path}]: ${status} (expected role/profile boundary)`);
+    } else {
+      console.error(`API POST Error [${path}]:`, err.response?.status, err.response?.data || err.message);
+    }
     throw err;
   }
 }

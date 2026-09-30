@@ -31,10 +31,62 @@ import {
   TabList,
   Tab,
   Badge,
+  Circle,
+  Grid,
+  GridItem,
+  Stack,
+  IconButton,
+  Tooltip,
+  Avatar,
+  Spinner,
+  InputGroup,
+  InputLeftElement,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
 } from "@chakra-ui/react";
-import { FiZap } from "react-icons/fi";
-import { useEffect, useRef, useState } from "react";
+import { 
+  FiZap, 
+  FiCheckCircle, 
+  FiUserCheck, 
+  FiHelpCircle, 
+  FiInbox, 
+  FiMail, 
+  FiTrendingUp, 
+  FiArrowRight, 
+  FiFileText, 
+  FiCompass, 
+  FiVideo, 
+  FiExternalLink, 
+  FiClock, 
+  FiCheck, 
+  FiX, 
+  FiAlertCircle, 
+  FiCalendar, 
+  FiShield,
+  FiSearch,
+  FiBold,
+  FiItalic,
+  FiUnderline,
+  FiList,
+  FiRotateCcw,
+  FiEye,
+  FiEyeOff,
+  FiUsers,
+  FiRefreshCw,
+  FiHome,
+  FiBriefcase,
+  FiLayers,
+  FiLayout,
+} from "react-icons/fi";
+import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { 
   Users, 
   Home as HomeIcon, 
@@ -59,6 +111,7 @@ import {
   AboutEditor, 
   ContactEditor 
 } from "./AdminEditors";
+import ModernSelect from "../ModernSelect.jsx";
 
 const apiErrorDetail = (error, fallback = "Please try again.") => {
   const data = error?.response?.data;
@@ -651,45 +704,68 @@ function RichTextEditor({ value, onChange }) {
     onChange(editorRef.current?.innerHTML || "");
   };
 
+  const toolbarBtnStyle = {
+    size: "xs",
+    h: "28px",
+    px: 2.5,
+    borderRadius: "lg",
+    fontSize: "12px",
+    fontWeight: "500",
+    fontFamily: "'Inter', var(--font-inter), sans-serif",
+    color: "#263A33",
+    bg: "white",
+    border: "1px solid rgba(86, 117, 109, 0.18)",
+    boxShadow: "0 1px 2px rgba(38, 58, 51, 0.04)",
+    _hover: {
+      bg: "rgba(86, 117, 109, 0.08)",
+      borderColor: "#56756D",
+    },
+    _active: {
+      bg: "#56756D",
+      color: "white",
+    },
+    transition: "all 0.15s ease",
+  };
+
   return (
-    <VStack align="stretch" spacing={2}>
-      <HStack spacing={2} wrap="wrap">
-        <Button size="sm" variant="outline" onClick={() => applyCommand("bold")}
-          >Bold</Button>
-        <Button size="sm" variant="outline" onClick={() => applyCommand("italic")}
-          >Italic</Button>
-        <Button size="sm" variant="outline" onClick={() => applyCommand("underline")}
-          >Underline</Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => applyCommand("insertUnorderedList")}
-        >
+    <VStack align="stretch" spacing={2.5} fontFamily="'Inter', var(--font-inter), sans-serif">
+      <HStack
+        spacing={1.5}
+        wrap="wrap"
+        p={1.5}
+        bg="rgba(250, 248, 245, 0.85)"
+        borderRadius="xl"
+        border="1px solid rgba(86, 117, 109, 0.14)"
+      >
+        <Button {...toolbarBtnStyle} leftIcon={<Icon as={FiBold} boxSize="12px" />} onClick={() => applyCommand("bold")}>
+          Bold
+        </Button>
+        <Button {...toolbarBtnStyle} leftIcon={<Icon as={FiItalic} boxSize="12px" />} onClick={() => applyCommand("italic")}>
+          Italic
+        </Button>
+        <Button {...toolbarBtnStyle} leftIcon={<Icon as={FiUnderline} boxSize="12px" />} onClick={() => applyCommand("underline")}>
+          Underline
+        </Button>
+        <Button {...toolbarBtnStyle} leftIcon={<Icon as={FiList} boxSize="12px" />} onClick={() => applyCommand("insertUnorderedList")}>
           Bullets
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => applyCommand("insertOrderedList")}
-        >
-          Numbers
+        <Button {...toolbarBtnStyle} onClick={() => applyCommand("insertOrderedList")}>
+          1. Numbers
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => applyCommand("removeFormat")}
-        >
+        <Button {...toolbarBtnStyle} leftIcon={<Icon as={FiRotateCcw} boxSize="12px" />} onClick={() => applyCommand("removeFormat")}>
           Clear
         </Button>
       </HStack>
       <Box
-        border="1px solid #E2E8F0"
-        borderRadius="lg"
+        border="1px solid rgba(86, 117, 109, 0.2)"
+        borderRadius="xl"
         px={4}
-        py={3}
+        py={3.5}
         bg="white"
         minH="140px"
-        _focusWithin={{ borderColor: "#5FA093", boxShadow: "0 0 0 1px #5FA093" }}
+        transition="all 0.18s ease"
+        _hover={{ borderColor: "rgba(86, 117, 109, 0.35)" }}
+        _focusWithin={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
       >
         <Box
           ref={editorRef}
@@ -697,17 +773,21 @@ function RichTextEditor({ value, onChange }) {
           suppressContentEditableWarning
           onInput={(e) => onChange(e.currentTarget.innerHTML)}
           minH="100px"
-          fontSize="sm"
-          color="#2E2E2E"
+          fontSize="13.5px"
+          lineHeight="1.6"
+          color="#263A33"
+          fontFamily="'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          outline="none"
           sx={{
-            "ul, ol": { paddingLeft: "1.25rem", marginTop: "0.5rem" },
-            li: { marginBottom: "0.25rem" },
+            "ul": { listStyleType: "disc !important", paddingLeft: "26px !important", margin: "12px 0 !important" },
+            "ol": { listStyleType: "decimal !important", paddingLeft: "26px !important", margin: "12px 0 !important" },
+            "li": { margin: "6px 0 !important", lineHeight: "1.75 !important", paddingLeft: "4px !important" },
           }}
         />
       </Box>
-      <FormHelperText color="gray.500">
+      <Text fontSize="12px" color="#5A6E65" fontFamily="'Inter', var(--font-inter), sans-serif">
         Basic formatting supported (bold, italic, underline, bullets).
-      </FormHelperText>
+      </Text>
     </VStack>
   );
 }
@@ -733,11 +813,17 @@ const NavItem = ({ icon: Icon, label, id, isSub = false, activeTab, setActiveTab
   );
 
 const MetricCard = ({ label, value }) => (
-  <Box p={4} borderRadius="xl" border="1px solid" borderColor="gray.100" bg="white">
-    <Text fontSize="xs" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+  <Box 
+    p={4} 
+    borderRadius="xl" 
+    border="1px solid rgba(86, 117, 109, 0.12)" 
+    bg="rgba(250, 248, 245, 0.6)"
+    boxShadow="0 2px 8px -2px rgba(38, 58, 51, 0.03)"
+  >
+    <Text fontSize="10.5px" color="#718096" textTransform="uppercase" letterSpacing="0.08em" fontWeight="700">
       {label}
     </Text>
-    <Heading size="md" color="mlc.greenDark" mt={2}>
+    <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" mt={1.5}>
       {value ?? 0}
     </Heading>
   </Box>
@@ -770,22 +856,22 @@ const downloadCsv = (filename, rows) => {
 const MiniBarChart = ({ title, data = [], valueKey, unit = "" }) => {
   const max = Math.max(...data.map((d) => Number(d?.[valueKey] || 0)), 1);
   return (
-    <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4}>
-      <Heading size="sm" mb={4}>{title}</Heading>
+    <Box border="1px solid rgba(86, 117, 109, 0.14)" borderRadius="2xl" p={5} bg="white" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+      <Heading size="sm" mb={4} color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">{title}</Heading>
       <VStack align="stretch" spacing={3}>
         {data.length === 0 ? (
-          <Text fontSize="sm" color="gray.500">No trend data available.</Text>
+          <Text fontSize="12.5px" color="#5A6E65">No trend data available.</Text>
         ) : data.map((d) => {
           const value = Number(d?.[valueKey] || 0);
           const pct = Math.max(4, Math.round((value / max) * 100));
           return (
             <Box key={`${title}-${d.month}`}>
               <HStack justify="space-between" mb={1}>
-                <Text fontSize="xs" color="gray.500">{d.month}</Text>
-                <Text fontSize="xs" fontWeight="700">{value.toLocaleString()}{unit}</Text>
+                <Text fontSize="11.5px" color="#5A6E65">{d.month}</Text>
+                <Text fontSize="12px" fontWeight="700" color="#263A33">{value.toLocaleString()}{unit}</Text>
               </HStack>
-              <Box h="8px" bg="gray.100" borderRadius="full" overflow="hidden">
-                <Box h="100%" w={`${pct}%`} bg="teal.400" borderRadius="full" />
+              <Box h="7px" bg="rgba(86, 117, 109, 0.1)" borderRadius="full" overflow="hidden">
+                <Box h="100%" w={`${pct}%`} bg="#56756D" borderRadius="full" />
               </Box>
             </Box>
           );
@@ -796,13 +882,13 @@ const MiniBarChart = ({ title, data = [], valueKey, unit = "" }) => {
 };
 
 const ReportSectionCard = ({ title, description, children, headerRight }) => (
-  <Box border="1px solid" borderColor="gray.100" borderRadius="xl" p={4} bg="white">
+  <Box border="1px solid rgba(86, 117, 109, 0.14)" borderRadius="2xl" p={5} bg="white" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
     <HStack justify="space-between" align="flex-start" mb={description ? 2 : 4} flexWrap="wrap" gap={2}>
-      <Heading size="sm">{title}</Heading>
+      <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">{title}</Heading>
       {headerRight}
     </HStack>
     {description ? (
-      <Text fontSize="sm" color="gray.600" mb={4}>
+      <Text fontSize="13px" color="#5A6E65" mb={4} lineHeight="1.5">
         {description}
       </Text>
     ) : null}
@@ -918,7 +1004,7 @@ const growthSectionBody = (sec) => {
 
       <VStack align="stretch" spacing={1}>
         <Text fontSize="xs" fontWeight="bold" color="gray.400" px={4} mb={2}>VERIFICATION</Text>
-        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Users} label="Vetting Portal" id="vetting" />
+        <NavItem activeTab={activeTab} setActiveTab={setActiveTab} icon={Users} label="Therapist Directory" id="vetting" />
       </VStack>
 
       <VStack align="stretch" spacing={1}>
@@ -1033,21 +1119,26 @@ const growthSectionBody = (sec) => {
 
 export default function AdminDashboard() {
   const [isMounted, setIsMounted] = useState(false);
+  const { user } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlTab = searchParams?.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(urlTab);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const [activeTab, setActiveTab] = useState("overview");
-
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const urlTab = params.get("tab");
-      if (urlTab) {
-        setActiveTab(urlTab);
-      }
+    if (urlTab) {
+      setActiveTab(urlTab);
     }
-  }, []);
+  }, [urlTab]);
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    router.push(`/admin?tab=${tabKey}`, { scroll: false });
+  };
   const [supportTickets, setSupportTickets] = useState([]);
   const [localLoading, setLocalLoading] = useState(true);
   const { isAuthenticated, isAdmin, isTherapist, login, logout, loading: authLoading } = useAuth();
@@ -1079,6 +1170,11 @@ export default function AdminDashboard() {
   const [unverifiedTherapists, setUnverifiedTherapists] = useState([]);
   const [allTherapists, setAllTherapists] = useState([]);
   const [therapistApplications, setTherapistApplications] = useState([]);
+  const [vettingSubTab, setVettingSubTab] = useState("queue"); // "queue" | "published" | "all"
+  const [publishedSearchQuery, setPublishedSearchQuery] = useState("");
+  const [unpublishTarget, setUnpublishTarget] = useState(null);
+  const [unpublishing, setUnpublishing] = useState(false);
+  const [selectedClinician, setSelectedClinician] = useState(null);
 
   const [contactMessages, setContactMessages] = useState([]);
   const [quickBookings, setQuickBookings] = useState([]);
@@ -1087,6 +1183,7 @@ export default function AdminDashboard() {
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
   const [reportQuarter, setReportQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1);
   const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportError, setReportError] = useState(null);
   const [reportCatalog, setReportCatalog] = useState([]);
   const [activeReportKey, setActiveReportKey] = useState("executive");
   const [reportByKey, setReportByKey] = useState({});
@@ -1147,13 +1244,16 @@ export default function AdminDashboard() {
     const reportKey = key || activeReportKey;
     try {
       setReportsLoading(true);
+      setReportError(null);
       const data = await apiGet(`admin/reports/${reportKey}/?${reportQueryString()}`);
       setReportByKey((prev) => ({ ...prev, [reportKey]: data }));
     } catch (err) {
+      const errMsg = err?.response?.data?.detail || err?.message || "Could not load report.";
+      setReportError(errMsg);
       toast({
-        status: "error",
-        title: "Could not load report",
-        description: err?.response?.data?.detail || "Please try again.",
+        status: "warning",
+        title: "Report unavailable",
+        description: errMsg,
       });
     } finally {
       setReportsLoading(false);
@@ -1563,6 +1663,94 @@ export default function AdminDashboard() {
     }
   };
 
+  const publishedTherapists = useMemo(() => {
+    return allTherapists.filter(t => t.is_verified || t.profile_status === "approved");
+  }, [allTherapists]);
+
+  const filteredPublishedTherapists = useMemo(() => {
+    const q = publishedSearchQuery.trim().toLowerCase();
+    if (!q) return publishedTherapists;
+    return publishedTherapists.filter(t => 
+      (t.name || "").toLowerCase().includes(q) ||
+      (t.email || "").toLowerCase().includes(q) ||
+      (t.title || "").toLowerCase().includes(q) ||
+      (Array.isArray(t.specializations) && t.specializations.some(s => String(s).toLowerCase().includes(q)))
+    );
+  }, [publishedTherapists, publishedSearchQuery]);
+
+  const duplicateTherapistNames = useMemo(() => {
+    const counts = {};
+    allTherapists.forEach(t => {
+      const n = (t.name || "").trim().toLowerCase();
+      if (n && !n.startsWith("user_")) {
+        counts[n] = (counts[n] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [allTherapists]);
+
+  const handleVerifyTherapist = async (therapistId, name = "Clinician") => {
+    try {
+      await apiPost(`therapists/verify/${therapistId}/`, {});
+      toast({
+        status: "success",
+        title: "Therapist Verified & Published",
+        description: `${name} is now verified and live on the public directory.`,
+      });
+      await Promise.all([
+        fetchUnverifiedTherapists(),
+        fetchAllTherapists(),
+        fetchTherapistApplications(),
+      ]);
+    } catch (err) {
+      console.error("Verification failed", err);
+      toast({
+        status: "error",
+        title: "Verification failed",
+        description: apiErrorDetail(err),
+      });
+    }
+  };
+
+  const handleConfirmUnpublish = async () => {
+    if (!unpublishTarget?.id) return;
+    setUnpublishing(true);
+    try {
+      try {
+        await apiPatch(`therapists/${unpublishTarget.id}/`, {
+          is_verified: false,
+          profile_status: "draft",
+        });
+      } catch (patchErr) {
+        console.warn("Direct PATCH unpublish failed, attempting request-profile-changes fallback", patchErr);
+        await apiPost(`therapists/${unpublishTarget.id}/request-profile-changes/`, {
+          feedback: "Unpublished from directory by administrator.",
+        });
+      }
+
+      toast({
+        status: "info",
+        title: "Clinician Unpublished",
+        description: `${unpublishTarget.name || unpublishTarget.email} has been removed from live directory.`,
+      });
+      setUnpublishTarget(null);
+      await Promise.all([
+        fetchAllTherapists(),
+        fetchUnverifiedTherapists(),
+        fetchTherapistApplications(),
+      ]);
+    } catch (err) {
+      console.error("Unpublish failed", err);
+      toast({
+        status: "error",
+        title: "Unpublish failed",
+        description: apiErrorDetail(err, "Could not unpublish clinician profile. Please try again."),
+      });
+    } finally {
+      setUnpublishing(false);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
       fetchMembers();
@@ -1580,6 +1768,7 @@ export default function AdminDashboard() {
       fetchTherapistApplications();
       fetchContactMessages();
       fetchQuickBookings();
+      fetchSupportTickets();
     }
   }, [isAuthenticated, isAdmin]);
 
@@ -1670,47 +1859,983 @@ export default function AdminDashboard() {
     );
   }
 
-  return (
-    <Flex bg="gray.50" minH="100vh">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isTherapist={isTherapist} onLogout={logout} />
-      <Box flex="1" p={{ base: 4, md: 10 }} maxW="1200px">
-        <HStack justify="space-between" mb={10} flexWrap="wrap" gap={3}>
-          <VStack align="flex-start" spacing={0}>
-             <Heading size="lg" color="mlc.greenDark" fontFamily="'Playfair Display', serif">
-                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace("_", " ")}
-             </Heading>
-             <Text fontSize="13.5px" color="gray.500" fontFamily="'Inter', sans-serif">Welcome back to the MLC Command Center</Text>
-          </VStack>
-          <HStack spacing={3}>
-             <Button 
-               variant="outline" 
-               size="sm" 
-               borderRadius="full"
-               borderColor="rgba(86, 117, 109, 0.2)"
-               color="#56756D"
-               fontSize="13px"
-               onClick={() => (window.location.href = "/")}
-               _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
-             >
-               Back to Home
-             </Button>
-             <Button 
-               variant="solid" 
-               size="sm" 
-               bg="#263A33"
-               color="white"
-               borderRadius="full"
-               fontSize="13px"
-               leftIcon={<LogOut size={13} />}
-               onClick={() => logout()}
-               _hover={{ bg: "#182722" }}
-             >
-               Sign Out
-             </Button>
-          </HStack>
-        </HStack>
+  const pendingVettingCount =
+    therapistApplications.filter(a => ["review", "awaiting_contract"].includes(getVettingStage(a))).length +
+    unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).length;
+  const openTicketsCount = supportTickets.filter(
+    (t) => t.status !== "resolved" && t.status !== "closed"
+  ).length;
 
-        {activeTab === "reports" && (() => {
+  const tabTitles = {
+    overview: "Executive Overview",
+    messages: "Contact Inquiries",
+    bookings: "Booking Leads",
+    support_tickets: "Support Tickets",
+    vetting: "Therapist Directory",
+    reports: "Business Reports & Intelligence",
+    home: "Home Page CMS",
+    services_list: "Services Catalog",
+    team: "Clinical Team Directory",
+    other_pages: "Static Pages Editor",
+    video_test: "Video Test Lab",
+    training: "Training Content Editor",
+    careers: "Careers Content Editor",
+    therapists: "Therapists Page Editor",
+    services_content: "Services Content Editor",
+    therapist_apply: "Therapist Apply Page Editor",
+  };
+
+  const tabSubtitles = {
+    overview: "Real-time command center, operational metrics, and immediate triage.",
+    messages: "Public user messages and direct client contact submissions.",
+    bookings: "Inbound quick booking requests and client intake prospects.",
+    support_tickets: "Therapist and client platform support inquiries and resolutions.",
+    vetting: "Candidate triage, clinical qualifications, and live discovery directory management.",
+    reports: "Platform health, financial performance, and executive analytics.",
+    home: "Curate hero sections, value propositions, and interactive portal copy.",
+    services_list: "Manage clinical offerings, therapy modalities, and direct booking links.",
+    team: "Maintain therapist and practitioner roster, photos, and credentials.",
+    other_pages: "Update about, contact, training, careers, and legal policies.",
+    video_test: "Diagnostics sandbox for WebRTC tokens and 1-on-1 session video feeds.",
+  };
+
+  const tabHeroIcons = {
+    overview: null,
+    vetting: FiUsers,
+    reports: FiTrendingUp,
+    messages: FiMail,
+    bookings: FiInbox,
+    support_tickets: FiHelpCircle,
+    home: FiHome,
+    services_list: FiBriefcase,
+    team: FiUsers,
+    other_pages: FiLayers,
+    video_test: FiVideo,
+  };
+
+  const currentTabTitle = tabTitles[activeTab] || (activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace("_", " "));
+  const currentTabSubtitle = tabSubtitles[activeTab] || "Management and operational settings.";
+
+  return (
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* 🌿 1. UNIFIED GOLDEN BENCHMARK HERO CARD (Rule 8 & 10) */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', lg: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', lg: 'center' }}
+          gap={4}
+        >
+          {/* Identity & Space Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              {activeTab === "overview" || !tabHeroIcons[activeTab] ? (
+                <Avatar 
+                  size="md" 
+                  name={user?.fullName || "Administrator"} 
+                  src={user?.imageUrl} 
+                  border="2px solid white" 
+                  boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)" 
+                />
+              ) : (
+                <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                  <Icon as={tabHeroIcons[activeTab]} boxSize="22px" />
+                </Circle>
+              )}
+              <Circle 
+                size="11px" 
+                bg="#38A169" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0" 
+              />
+            </Box>
+
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2}>
+                <Badge 
+                  bg="rgba(169, 203, 183, 0.2)" 
+                  color="#263A33" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.04em"
+                  textTransform="uppercase"
+                >
+                  {activeTab === "vetting" ? "Command Center · Directory 🌿" : "Command Center • Live 🌿"}
+                </Badge>
+                {pendingVettingCount > 0 ? (
+                  <Badge 
+                    as="button"
+                    onClick={() => handleTabChange("vetting")}
+                    bg="#FFFBEB" 
+                    color="#D97706" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full"
+                    px={2.5}
+                    py={0.5}
+                    _hover={{ bg: "#FEF3C7" }}
+                    cursor="pointer"
+                  >
+                    ⚡ {pendingVettingCount} Pending Triage
+                  </Badge>
+                ) : activeTab === "vetting" ? (
+                  <Badge 
+                    bg="#ECFDF5" 
+                    color="#065F46" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full" 
+                    px={2.5} 
+                    py={0.5}
+                  >
+                    ✓ All Triaged
+                  </Badge>
+                ) : null}
+              </HStack>
+
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33" 
+                fontWeight="600" 
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                {currentTabTitle}
+              </Heading>
+              <Text 
+                fontSize="13px" 
+                color="#5A6E65" 
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                lineHeight="1.4"
+              >
+                {currentTabSubtitle}
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Right cluster: Segmented Rail if on Vetting tab, or standard metric strip for other tabs */}
+          {activeTab === "vetting" ? (
+            <HStack 
+              bg="rgba(250, 248, 245, 0.95)" 
+              p={1} 
+              borderRadius="full" 
+              border="1px solid rgba(86, 117, 109, 0.14)" 
+              spacing={1}
+              boxShadow="inset 0 1px 2px rgba(38, 58, 51, 0.03)"
+              flexShrink={0}
+              w={{ base: "full", sm: "auto" }}
+              overflowX="auto"
+            >
+              <Button
+                size="sm"
+                h="34px"
+                borderRadius="full"
+                fontSize="12.5px"
+                fontWeight="600"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                px={3.5}
+                whiteSpace="nowrap"
+                bg={vettingSubTab === "queue" ? "#56756D" : "transparent"}
+                color={vettingSubTab === "queue" ? "white" : "#5A6E65"}
+                boxShadow={vettingSubTab === "queue" ? "0 2px 6px rgba(86, 117, 109, 0.25)" : "none"}
+                _hover={{ bg: vettingSubTab === "queue" ? "#263A33" : "rgba(86, 117, 109, 0.08)", color: vettingSubTab === "queue" ? "white" : "#263A33" }}
+                onClick={() => setVettingSubTab("queue")}
+              >
+                Directory Queue
+                <Box 
+                  as="span" 
+                  ml={2} 
+                  px={1.5} 
+                  py={0.2} 
+                  borderRadius="full" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  bg={vettingSubTab === "queue" ? "rgba(255, 255, 255, 0.25)" : (pendingVettingCount > 0 ? "rgba(245, 158, 11, 0.16)" : "rgba(86, 117, 109, 0.12)")}
+                  color={vettingSubTab === "queue" ? "white" : (pendingVettingCount > 0 ? "#D97706" : "#56756D")}
+                >
+                  {pendingVettingCount}
+                </Box>
+              </Button>
+
+              <Button
+                size="sm"
+                h="34px"
+                borderRadius="full"
+                fontSize="12.5px"
+                fontWeight="600"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                px={3.5}
+                whiteSpace="nowrap"
+                bg={vettingSubTab === "published" ? "#56756D" : "transparent"}
+                color={vettingSubTab === "published" ? "white" : "#5A6E65"}
+                boxShadow={vettingSubTab === "published" ? "0 2px 6px rgba(86, 117, 109, 0.25)" : "none"}
+                _hover={{ bg: vettingSubTab === "published" ? "#263A33" : "rgba(86, 117, 109, 0.08)", color: vettingSubTab === "published" ? "white" : "#263A33" }}
+                onClick={() => setVettingSubTab("published")}
+              >
+                Published Live
+                <Box 
+                  as="span" 
+                  ml={2} 
+                  px={1.5} 
+                  py={0.2} 
+                  borderRadius="full" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  bg={vettingSubTab === "published" ? "rgba(255, 255, 255, 0.25)" : "rgba(16, 185, 129, 0.15)"}
+                  color={vettingSubTab === "published" ? "white" : "#059669"}
+                >
+                  {publishedTherapists.length}
+                </Box>
+              </Button>
+
+              <Button
+                size="sm"
+                h="34px"
+                borderRadius="full"
+                fontSize="12.5px"
+                fontWeight="600"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                px={3.5}
+                whiteSpace="nowrap"
+                bg={vettingSubTab === "all" ? "#56756D" : "transparent"}
+                color={vettingSubTab === "all" ? "white" : "#5A6E65"}
+                boxShadow={vettingSubTab === "all" ? "0 2px 6px rgba(86, 117, 109, 0.25)" : "none"}
+                _hover={{ bg: vettingSubTab === "all" ? "#263A33" : "rgba(86, 117, 109, 0.08)", color: vettingSubTab === "all" ? "white" : "#263A33" }}
+                onClick={() => setVettingSubTab("all")}
+              >
+                All Profiles
+                <Box 
+                  as="span" 
+                  ml={2} 
+                  px={1.5} 
+                  py={0.2} 
+                  borderRadius="full" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  bg={vettingSubTab === "all" ? "rgba(255, 255, 255, 0.25)" : "rgba(86, 117, 109, 0.12)"}
+                  color={vettingSubTab === "all" ? "white" : "#56756D"}
+                >
+                  {allTherapists.length}
+                </Box>
+              </Button>
+            </HStack>
+          ) : (
+            <Stack direction={{ base: "column", md: "row" }} spacing={3} align={{ base: "stretch", md: "center" }} w={{ base: "full", lg: "auto" }}>
+              <HStack 
+                spacing={{ base: 1.5, sm: 3 }} 
+                p={1.5} 
+                px={{ base: 2, sm: 2.5 }} 
+                borderRadius="xl" 
+                bg="rgba(250, 248, 245, 0.9)" 
+                border="1px solid rgba(86, 117, 109, 0.1)" 
+                w={{ base: "full", md: "auto" }} 
+                justify="space-between"
+              >
+                {/* Node 1: Pending Directory */}
+                <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                  <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" flexShrink={0}>
+                    <Icon as={FiUsers} boxSize="13px" />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" whiteSpace="nowrap">
+                      Pending Directory
+                    </Text>
+                    <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                      {pendingVettingCount}
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+                {/* Node 2: Open Tickets */}
+                <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                  <Circle size="28px" bg="rgba(229, 62, 62, 0.12)" color="#E53E3E" flexShrink={0}>
+                    <Icon as={FiHelpCircle} boxSize="13px" />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" whiteSpace="nowrap">
+                      Open Tickets
+                    </Text>
+                    <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                      {openTicketsCount}
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+                {/* Node 3: Inbound Leads */}
+                <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                  <Circle size="28px" bg="rgba(214, 158, 46, 0.12)" color="#D69E2E" flexShrink={0}>
+                    <Icon as={FiInbox} boxSize="13px" />
+                  </Circle>
+                  <VStack align="start" spacing={0}>
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" whiteSpace="nowrap">
+                      Active Leads
+                    </Text>
+                    <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                      {quickBookings.length}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </HStack>
+            </Stack>
+          )}
+        </Flex>
+
+        {/* Dynamic bottom triage breakdown when on vetting tab */}
+        {activeTab === "vetting" && (
+          <>
+            <Divider my={4} borderColor="rgba(86, 117, 109, 0.12)" />
+            <Flex 
+              direction={{ base: "column", sm: "row" }} 
+              justify="space-between" 
+              align={{ base: "flex-start", sm: "center" }}
+              gap={3}
+              px={1}
+            >
+              <HStack spacing={4} wrap="wrap">
+                <HStack spacing={2}>
+                  <Circle size="8px" bg="#D97706" />
+                  <Text fontSize="12px" color="#5A6E65">
+                    Review Applications: <Text as="span" fontWeight="700" color="#263A33">{therapistApplications.filter(a => ["review", "awaiting_contract"].includes(getVettingStage(a))).length}</Text>
+                  </Text>
+                </HStack>
+                <Divider orientation="vertical" h="14px" borderColor="rgba(86, 117, 109, 0.2)" display={{ base: "none", sm: "block" }} />
+                <HStack spacing={2}>
+                  <Circle size="8px" bg="#4F46E5" />
+                  <Text fontSize="12px" color="#5A6E65">
+                    Pending Direct Verification: <Text as="span" fontWeight="700" color="#263A33">{unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).length}</Text>
+                  </Text>
+                </HStack>
+                <Divider orientation="vertical" h="14px" borderColor="rgba(86, 117, 109, 0.2)" display={{ base: "none", sm: "block" }} />
+                <HStack spacing={2}>
+                  <Circle size="8px" bg="#10B981" />
+                  <Text fontSize="12px" color="#5A6E65">
+                    Live on Directory: <Text as="span" fontWeight="700" color="#263A33">{publishedTherapists.length}</Text>
+                  </Text>
+                </HStack>
+              </HStack>
+
+              <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
+                {unverifiedTherapists.filter(t => t.name.toLowerCase().startsWith("user_")).length > 0 && (
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    color="#DC2626"
+                    fontSize="11px"
+                    fontWeight="600"
+                    _hover={{ bg: "#FEF2F2" }}
+                    onClick={async () => {
+                      const ghosts = unverifiedTherapists.filter(t => t.name.toLowerCase().startsWith("user_"));
+                      if (!confirm(`Purge ${ghosts.length} placeholder ghost profiles (named user_...)?`)) return;
+                      try {
+                        for (const g of ghosts) {
+                          await apiDelete('therapists/' + g.id + '/');
+                        }
+                        toast({ status: "info", title: "Ghosts Purged", description: `Removed ${ghosts.length} placeholder accounts.` });
+                        fetchUnverifiedTherapists();
+                        fetchAllTherapists();
+                      } catch {
+                        toast({ status: "error", title: "Purge failed" });
+                      }
+                    }}
+                  >
+                    Purge {unverifiedTherapists.filter(t => t.name.toLowerCase().startsWith("user_")).length} Ghosts
+                  </Button>
+                )}
+                <IconButton 
+                  size="xs" 
+                  variant="outline" 
+                  borderRadius="full" 
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  icon={<Icon as={FiRefreshCw} boxSize="11px" />} 
+                  aria-label="Refresh directory list"
+                  title="Refresh clinician databases"
+                  onClick={() => {
+                    fetchUnverifiedTherapists();
+                    fetchAllTherapists();
+                    fetchTherapistApplications();
+                  }}
+                />
+              </HStack>
+            </Flex>
+          </>
+        )}
+      </Box>
+
+      {/* 🏛️ 2. EXECUTIVE COMMAND CENTER OVERVIEW (When activeTab === 'overview') */}
+      {activeTab === "overview" && (
+        <VStack align="stretch" spacing={6}>
+          {/* 4 Executive KPI Cards */}
+          <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} spacing={4}>
+            {/* Card 1: Directory */}
+            <Box
+              bg="white"
+              p={5}
+              borderRadius="2xl"
+              border="1px solid rgba(86, 117, 109, 0.14)"
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              transition="all 0.2s"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "0 8px 24px -4px rgba(38, 58, 51, 0.08)" }}
+            >
+              <HStack justify="space-between" mb={3}>
+                <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">
+                  Therapist Directory
+                </Text>
+                <Circle size="30px" bg="rgba(47, 133, 90, 0.12)" color="#2F855A">
+                  <Icon as={FiUsers} boxSize="15px" />
+                </Circle>
+              </HStack>
+              <Heading size="lg" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                {pendingVettingCount}
+              </Heading>
+              <HStack justify="space-between" mt={3} pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="12px" color="#5A6E65">
+                  {unverifiedTherapists.length} awaiting review
+                </Text>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  color="#56756D"
+                  fontWeight="600"
+                  rightIcon={<FiArrowRight size={11} />}
+                  onClick={() => handleTabChange("vetting")}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                >
+                  Open
+                </Button>
+              </HStack>
+            </Box>
+
+            {/* Card 2: Support Tickets */}
+            <Box
+              bg="white"
+              p={5}
+              borderRadius="2xl"
+              border="1px solid rgba(86, 117, 109, 0.14)"
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              transition="all 0.2s"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "0 8px 24px -4px rgba(38, 58, 51, 0.08)" }}
+            >
+              <HStack justify="space-between" mb={3}>
+                <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">
+                  Support Tickets
+                </Text>
+                <Circle size="30px" bg="rgba(229, 62, 62, 0.12)" color="#E53E3E">
+                  <Icon as={FiHelpCircle} boxSize="15px" />
+                </Circle>
+              </HStack>
+              <Heading size="lg" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                {openTicketsCount}
+              </Heading>
+              <HStack justify="space-between" mt={3} pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="12px" color="#5A6E65">
+                  {supportTickets.length} total tickets
+                </Text>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  color="#56756D"
+                  fontWeight="600"
+                  rightIcon={<FiArrowRight size={11} />}
+                  onClick={() => handleTabChange("support_tickets")}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                >
+                  Triage
+                </Button>
+              </HStack>
+            </Box>
+
+            {/* Card 3: Inbound Leads */}
+            <Box
+              bg="white"
+              p={5}
+              borderRadius="2xl"
+              border="1px solid rgba(86, 117, 109, 0.14)"
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              transition="all 0.2s"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "0 8px 24px -4px rgba(38, 58, 51, 0.08)" }}
+            >
+              <HStack justify="space-between" mb={3}>
+                <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">
+                  Inbound Leads
+                </Text>
+                <Circle size="30px" bg="rgba(214, 158, 46, 0.12)" color="#D69E2E">
+                  <Icon as={FiInbox} boxSize="15px" />
+                </Circle>
+              </HStack>
+              <Heading size="lg" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                {quickBookings.length + contactMessages.length}
+              </Heading>
+              <HStack justify="space-between" mt={3} pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="12px" color="#5A6E65">
+                  {quickBookings.length} booking / {contactMessages.length} inquiry
+                </Text>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  color="#56756D"
+                  fontWeight="600"
+                  rightIcon={<FiArrowRight size={11} />}
+                  onClick={() => handleTabChange("bookings")}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                >
+                  View
+                </Button>
+              </HStack>
+            </Box>
+
+            {/* Card 4: Quality & Feedback */}
+            <Box
+              bg="white"
+              p={5}
+              borderRadius="2xl"
+              border="1px solid rgba(86, 117, 109, 0.14)"
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              transition="all 0.2s"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "0 8px 24px -4px rgba(38, 58, 51, 0.08)" }}
+            >
+              <HStack justify="space-between" mb={3}>
+                <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">
+                  Quality Architect
+                </Text>
+                <Circle size="30px" bg="rgba(99, 102, 241, 0.12)" color="#6366F1">
+                  <Icon as={FiZap} boxSize="15px" />
+                </Circle>
+              </HStack>
+              <Heading size="lg" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                Signals
+              </Heading>
+              <HStack justify="space-between" mt={3} pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="12px" color="#5A6E65">
+                  Platform friction & triage
+                </Text>
+                <Button
+                  as={Link}
+                  href="/admin/feedback"
+                  size="xs"
+                  variant="ghost"
+                  color="#56756D"
+                  fontWeight="600"
+                  rightIcon={<FiArrowRight size={11} />}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                >
+                  Analyze
+                </Button>
+              </HStack>
+            </Box>
+          </SimpleGrid>
+
+          {/* 7:5 Bento Grid (Rule 5 & 8) */}
+          <Grid templateColumns={{ base: "1fr", lg: "7fr 5fr" }} gap={6} alignItems="start">
+            {/* Left Column (7 cols): Operational Triage */}
+            <VStack align="stretch" spacing={5}>
+              {/* Priority Directory Card */}
+              <Box
+                bg="white"
+                p={5}
+                borderRadius="2xl"
+                border="1px solid rgba(86, 117, 109, 0.14)"
+                boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              >
+                <HStack justify="space-between" mb={4}>
+                  <VStack align="start" spacing={0.5}>
+                    <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                      Priority Directory Queue
+                    </Heading>
+                    <Text fontSize="12.5px" color="#5A6E65">
+                      Therapists awaiting document verification and license review
+                    </Text>
+                  </VStack>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    borderRadius="full"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    fontSize="12px"
+                    fontWeight="600"
+                    onClick={() => handleTabChange("vetting")}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    View All ({unverifiedTherapists.length})
+                  </Button>
+                </HStack>
+
+                {unverifiedTherapists.length === 0 ? (
+                  <VStack py={8} spacing={3} textAlign="center">
+                    <Circle size="42px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+                      <Icon as={FiCheckCircle} boxSize="20px" />
+                    </Circle>
+                    <Text fontSize="13.5px" fontWeight="600" color="#263A33">
+                      All clear! No pending therapist verifications
+                    </Text>
+                    <Text fontSize="12px" color="#5A6E65">
+                      New applications will appear here automatically when submitted.
+                    </Text>
+                  </VStack>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {unverifiedTherapists.slice(0, 3).map((item, idx) => (
+                      <HStack
+                        key={item.id || idx}
+                        p={3.5}
+                        borderRadius="xl"
+                        bg="rgba(250, 248, 245, 0.85)"
+                        border="1px solid rgba(86, 117, 109, 0.1)"
+                        justify="space-between"
+                        align="center"
+                      >
+                        <HStack spacing={3}>
+                          <Avatar size="sm" name={item.name || item.email} src={item.photo_url} />
+                          <VStack align="start" spacing={0}>
+                            <Text fontSize="13px" fontWeight="600" color="#263A33">
+                              {item.name || "Practitioner Applicant"}
+                            </Text>
+                            <Text fontSize="11.5px" color="#5A6E65">
+                              {item.specialties || item.email || "Clinical Psychologist"} • {item.years_experience || 0}y exp
+                            </Text>
+                          </VStack>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Badge
+                            bg="rgba(245, 158, 11, 0.12)"
+                            color="#D97706"
+                            fontSize="10px"
+                            fontWeight="700"
+                            borderRadius="full"
+                            px={2}
+                            py={0.5}
+                          >
+                            Pending Review
+                          </Badge>
+                          <Button
+                            size="xs"
+                            bg="#56756D"
+                            color="white"
+                            borderRadius="full"
+                            fontSize="11.5px"
+                            fontWeight="600"
+                            px={3}
+                            onClick={() => handleTabChange("vetting")}
+                            _hover={{ bg: "#263A33" }}
+                          >
+                            Review
+                          </Button>
+                        </HStack>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+
+              {/* Recent Booking Leads */}
+              <Box
+                bg="white"
+                p={5}
+                borderRadius="2xl"
+                border="1px solid rgba(86, 117, 109, 0.14)"
+                boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              >
+                <HStack justify="space-between" mb={4}>
+                  <VStack align="start" spacing={0.5}>
+                    <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                      Inbound Booking Leads
+                    </Heading>
+                    <Text fontSize="12.5px" color="#5A6E65">
+                      Prospective clients submitting quick consultation requests
+                    </Text>
+                  </VStack>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    borderRadius="full"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    fontSize="12px"
+                    fontWeight="600"
+                    onClick={() => handleTabChange("bookings")}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    View All ({quickBookings.length})
+                  </Button>
+                </HStack>
+
+                {quickBookings.length === 0 ? (
+                  <VStack py={8} spacing={3} textAlign="center">
+                    <Circle size="42px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                      <Icon as={FiInbox} boxSize="20px" />
+                    </Circle>
+                    <Text fontSize="13.5px" fontWeight="600" color="#263A33">
+                      No new booking leads
+                    </Text>
+                    <Text fontSize="12px" color="#5A6E65">
+                      New consultation requests from the homepage will appear here.
+                    </Text>
+                  </VStack>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {quickBookings.slice(0, 3).map((lead, idx) => (
+                      <HStack
+                        key={lead.id || idx}
+                        p={3.5}
+                        borderRadius="xl"
+                        bg="rgba(250, 248, 245, 0.85)"
+                        border="1px solid rgba(86, 117, 109, 0.1)"
+                        justify="space-between"
+                        align="center"
+                      >
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="13px" fontWeight="600" color="#263A33">
+                            {lead.name || "Client Prospect"}
+                          </Text>
+                          <Text fontSize="11.5px" color="#5A6E65">
+                            {lead.phone || lead.email || "No direct phone provided"}
+                          </Text>
+                        </VStack>
+                        <HStack spacing={2}>
+                          <Badge
+                            bg="rgba(16, 185, 129, 0.12)"
+                            color="#059669"
+                            fontSize="10px"
+                            fontWeight="700"
+                            borderRadius="full"
+                            px={2}
+                            py={0.5}
+                          >
+                            New Lead
+                          </Badge>
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            borderRadius="full"
+                            borderColor="rgba(86, 117, 109, 0.25)"
+                            color="#263A33"
+                            fontSize="11.5px"
+                            fontWeight="600"
+                            px={3}
+                            onClick={() => handleTabChange("bookings")}
+                            _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                          >
+                            View
+                          </Button>
+                        </HStack>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
+              </Box>
+            </VStack>
+
+            {/* Right Column (5 cols): Shortcuts & Infrastructure */}
+            <VStack align="stretch" spacing={5}>
+              {/* Operations & CMS Shortcuts */}
+              <Box
+                bg="white"
+                p={5}
+                borderRadius="2xl"
+                border="1px solid rgba(86, 117, 109, 0.14)"
+                boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              >
+                <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" mb={1}>
+                  Console Workspaces
+                </Heading>
+                <Text fontSize="12.5px" color="#5A6E65" mb={4}>
+                  Quick access to CMS suites and analytics
+                </Text>
+
+                <VStack align="stretch" spacing={2.5}>
+                  {/* Blog CMS */}
+                  <HStack
+                    as={Link}
+                    href="/admin/blog"
+                    p={3}
+                    borderRadius="xl"
+                    bg="rgba(250, 248, 245, 0.85)"
+                    border="1px solid rgba(86, 117, 109, 0.1)"
+                    justify="space-between"
+                    transition="all 0.15s"
+                    _hover={{ bg: "white", borderColor: "#56756D", transform: "translateX(2px)" }}
+                  >
+                    <HStack spacing={3}>
+                      <Circle size="30px" bg="rgba(201, 169, 96, 0.14)" color="#C9A960">
+                        <Icon as={FiFileText} boxSize="14px" />
+                      </Circle>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="13px" fontWeight="600" color="#263A33">
+                          Blog CMS Suite
+                        </Text>
+                        <Text fontSize="11px" color="#5A6E65">
+                          Manage articles, categories, and SEO
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <Icon as={FiArrowRight} color="#56756D" boxSize="14px" />
+                  </HStack>
+
+                  {/* Business Reports */}
+                  <HStack
+                    as="button"
+                    onClick={() => handleTabChange("reports")}
+                    p={3}
+                    borderRadius="xl"
+                    bg="rgba(250, 248, 245, 0.85)"
+                    border="1px solid rgba(86, 117, 109, 0.1)"
+                    justify="space-between"
+                    textAlign="left"
+                    transition="all 0.15s"
+                    _hover={{ bg: "white", borderColor: "#56756D", transform: "translateX(2px)" }}
+                  >
+                    <HStack spacing={3}>
+                      <Circle size="30px" bg="rgba(49, 130, 206, 0.12)" color="#3182CE">
+                        <Icon as={FiTrendingUp} boxSize="14px" />
+                      </Circle>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="13px" fontWeight="600" color="#263A33">
+                          Business Reports
+                        </Text>
+                        <Text fontSize="11px" color="#5A6E65">
+                          Financial intelligence & trends
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <Icon as={FiArrowRight} color="#56756D" boxSize="14px" />
+                  </HStack>
+
+                  {/* Improvement Architect */}
+                  <HStack
+                    as={Link}
+                    href="/admin/feedback"
+                    p={3}
+                    borderRadius="xl"
+                    bg="rgba(250, 248, 245, 0.85)"
+                    border="1px solid rgba(86, 117, 109, 0.1)"
+                    justify="space-between"
+                    transition="all 0.15s"
+                    _hover={{ bg: "white", borderColor: "#56756D", transform: "translateX(2px)" }}
+                  >
+                    <HStack spacing={3}>
+                      <Circle size="30px" bg="rgba(99, 102, 241, 0.12)" color="#6366F1">
+                        <Icon as={FiZap} boxSize="14px" />
+                      </Circle>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="13px" fontWeight="600" color="#263A33">
+                          Improvement Architect
+                        </Text>
+                        <Text fontSize="11px" color="#5A6E65">
+                          User feedback, triage & UX friction
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <Icon as={FiArrowRight} color="#56756D" boxSize="14px" />
+                  </HStack>
+
+                  {/* Assessment QA Panel */}
+                  <HStack
+                    as={Link}
+                    href="/admin/assessments"
+                    p={3}
+                    borderRadius="xl"
+                    bg="rgba(250, 248, 245, 0.85)"
+                    border="1px solid rgba(86, 117, 109, 0.1)"
+                    justify="space-between"
+                    transition="all 0.15s"
+                    _hover={{ bg: "white", borderColor: "#56756D", transform: "translateX(2px)" }}
+                  >
+                    <HStack spacing={3}>
+                      <Circle size="30px" bg="rgba(128, 90, 213, 0.12)" color="#805AD5">
+                        <Icon as={FiCompass} boxSize="14px" />
+                      </Circle>
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="13px" fontWeight="600" color="#263A33">
+                          Assessment QA
+                        </Text>
+                        <Text fontSize="11px" color="#5A6E65">
+                          Scoring simulation & catalog
+                        </Text>
+                      </VStack>
+                    </HStack>
+                    <Icon as={FiArrowRight} color="#56756D" boxSize="14px" />
+                  </HStack>
+                </VStack>
+              </Box>
+
+              {/* System & Services Gate */}
+              <Box
+                bg="white"
+                p={5}
+                borderRadius="2xl"
+                border="1px solid rgba(86, 117, 109, 0.14)"
+                boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+              >
+                <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" mb={1}>
+                  Platform Connectivity
+                </Heading>
+                <Text fontSize="12.5px" color="#5A6E65" mb={3}>
+                  Core services telemetry
+                </Text>
+
+                <VStack align="stretch" spacing={2.5}>
+                  <HStack justify="space-between">
+                    <HStack spacing={2}>
+                      <Circle size="8px" bg="#10B981" />
+                      <Text fontSize="12.5px" color="#263A33" fontWeight="500">
+                        Database API
+                      </Text>
+                    </HStack>
+                    <Badge bg="rgba(16, 185, 129, 0.12)" color="#059669" fontSize="10px" borderRadius="full">
+                      Online
+                    </Badge>
+                  </HStack>
+
+                  <HStack justify="space-between">
+                    <HStack spacing={2}>
+                      <Circle size="8px" bg="#10B981" />
+                      <Text fontSize="12.5px" color="#263A33" fontWeight="500">
+                        Auth Engine (Clerk)
+                      </Text>
+                    </HStack>
+                    <Badge bg="rgba(16, 185, 129, 0.12)" color="#059669" fontSize="10px" borderRadius="full">
+                      Active
+                    </Badge>
+                  </HStack>
+
+                  <HStack justify="space-between">
+                    <HStack spacing={2}>
+                      <Circle size="8px" bg="#10B981" />
+                      <Text fontSize="12.5px" color="#263A33" fontWeight="500">
+                        Video Service
+                      </Text>
+                    </HStack>
+                    <Badge bg="rgba(16, 185, 129, 0.12)" color="#059669" fontSize="10px" borderRadius="full">
+                      Ready
+                    </Badge>
+                  </HStack>
+                </VStack>
+              </Box>
+            </VStack>
+          </Grid>
+        </VStack>
+      )}
+
+      {/* Legacy Tabs Container */}
+{activeTab === "reports" && (() => {
           const catalogTabs =
             reportCatalog.length > 0 ? reportCatalog : FALLBACK_ADMIN_REPORT_CATALOG;
           const tabIndex = Math.max(
@@ -1721,96 +2846,121 @@ export default function AdminDashboard() {
           const activeMeta = catalogTabs.find((t) => t.key === activeReportKey);
 
           return (
-            <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
+            <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
               <VStack align="stretch" spacing={6}>
-                <HStack spacing={2} flexWrap="wrap" pb={2} borderBottom="1px solid" borderColor="gray.100">
-                  <Button
-                    size="sm"
-                    variant={reportWorkspaceTab === "live" ? "solid" : "ghost"}
-                    colorScheme="teal"
-                    onClick={() => setReportWorkspaceTab("live")}
-                  >
-                    Live reports
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={reportWorkspaceTab === "snapshots" ? "solid" : "ghost"}
-                    colorScheme="teal"
-                    onClick={() => setReportWorkspaceTab("snapshots")}
-                  >
-                    Saved snapshots
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={reportWorkspaceTab === "schedules" ? "solid" : "ghost"}
-                    colorScheme="teal"
-                    onClick={() => setReportWorkspaceTab("schedules")}
-                  >
-                    Email schedules
-                  </Button>
+                <HStack spacing={2} flexWrap="wrap" pb={3} borderBottom="1px solid rgba(86, 117, 109, 0.12)">
+                  {[
+                    { id: "live", label: "Live Reports" },
+                    { id: "snapshots", label: "Saved Snapshots" },
+                    { id: "schedules", label: "Email Schedules" },
+                  ].map((tab) => {
+                    const isSelected = reportWorkspaceTab === tab.id;
+                    return (
+                      <Button
+                        key={tab.id}
+                        size="sm"
+                        variant="unstyled"
+                        display="inline-flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        borderRadius="full"
+                        px={4}
+                        py={1.5}
+                        h="34px"
+                        fontSize="12.5px"
+                        fontWeight="600"
+                        border="1px solid"
+                        borderColor={isSelected ? "#56756D" : "rgba(86, 117, 109, 0.18)"}
+                        bg={isSelected ? "#56756D" : "white"}
+                        color={isSelected ? "white" : "#5A6E65"}
+                        boxShadow={isSelected ? "0 2px 6px rgba(86, 117, 109, 0.22)" : "none"}
+                        _hover={{
+                          bg: isSelected ? "#263A33" : "rgba(86, 117, 109, 0.08)",
+                          color: isSelected ? "white" : "#263A33",
+                        }}
+                        onClick={() => setReportWorkspaceTab(tab.id)}
+                      >
+                        {tab.label}
+                      </Button>
+                    );
+                  })}
                 </HStack>
 
                 {reportWorkspaceTab === "live" && (
                 <>
                 <HStack justify="space-between" flexWrap="wrap" gap={4} align="flex-start">
                   <VStack align="flex-start" spacing={1}>
-                    <Heading size="md" color="mlc.greenDark">
-                      Business intelligence
+                    <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                      Business Intelligence & Audits
                     </Heading>
-                    <Text fontSize="sm" color="gray.600" maxW="lg">
-                      Each tab is a separate report with its own metrics and exports. Choose a period once; refresh pulls the latest data for the active report.
+                    <Text fontSize="13px" color="#5A6E65" maxW="lg">
+                      Each stream maintains dedicated analytical matrices and audit exports. Select an audit interval to compute real-time calculations.
                     </Text>
                   </VStack>
-                  <HStack flexWrap="wrap">
-                    <Select
-                      size="sm"
-                      value={reportPeriod}
-                      onChange={(e) => setReportPeriod(e.target.value)}
-                      w="140px"
-                    >
-                      <option value="monthly">Monthly</option>
-                      <option value="quarterly">Quarterly</option>
-                      <option value="yearly">Yearly</option>
-                    </Select>
+                  <HStack flexWrap="wrap" spacing={2.5}>
+                    <Box w="140px">
+                      <ModernSelect
+                        h="36px"
+                        value={reportPeriod}
+                        onChange={(val) => setReportPeriod(val)}
+                        options={[
+                          { value: "monthly", label: "Monthly" },
+                          { value: "quarterly", label: "Quarterly" },
+                          { value: "yearly", label: "Yearly" },
+                        ]}
+                      />
+                    </Box>
                     <Input
-                      size="sm"
+                      h="36px"
                       type="number"
                       value={reportYear}
                       onChange={(e) =>
                         setReportYear(Number(e.target.value || new Date().getFullYear()))
                       }
-                      w="110px"
+                      w="95px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                     />
                     {reportPeriod === "monthly" && (
-                      <Select
-                        size="sm"
-                        value={reportMonth}
-                        onChange={(e) => setReportMonth(Number(e.target.value))}
-                        w="120px"
-                      >
-                        {Array.from({ length: 12 }).map((_, i) => (
-                          <option key={i + 1} value={i + 1}>
-                            {i + 1}
-                          </option>
-                        ))}
-                      </Select>
+                      <Box w="110px">
+                        <ModernSelect
+                          h="36px"
+                          value={reportMonth}
+                          onChange={(val) => setReportMonth(Number(val))}
+                          options={Array.from({ length: 12 }).map((_, i) => ({
+                            value: i + 1,
+                            label: `Month ${i + 1}`,
+                          }))}
+                        />
+                      </Box>
                     )}
                     {reportPeriod === "quarterly" && (
-                      <Select
-                        size="sm"
-                        value={reportQuarter}
-                        onChange={(e) => setReportQuarter(Number(e.target.value))}
-                        w="120px"
-                      >
-                        <option value={1}>Q1</option>
-                        <option value={2}>Q2</option>
-                        <option value={3}>Q3</option>
-                        <option value={4}>Q4</option>
-                      </Select>
+                      <Box w="105px">
+                        <ModernSelect
+                          h="36px"
+                          value={reportQuarter}
+                          onChange={(val) => setReportQuarter(Number(val))}
+                          options={[
+                            { value: 1, label: "Q1" },
+                            { value: 2, label: "Q2" },
+                            { value: 3, label: "Q3" },
+                            { value: 4, label: "Q4" },
+                          ]}
+                        />
+                      </Box>
                     )}
                     <Button
-                      size="sm"
-                      colorScheme="teal"
+                      h="36px"
+                      bg="#56756D"
+                      color="white"
+                      borderRadius="full"
+                      fontSize="12.5px"
+                      fontWeight="600"
+                      px={4}
+                      _hover={{ bg: "#263A33" }}
+                      boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
                       onClick={() => fetchAdminReport(activeReportKey)}
                       isLoading={reportsLoading}
                     >
@@ -1818,8 +2968,15 @@ export default function AdminDashboard() {
                     </Button>
                     {reportData && (
                       <Button
-                        size="sm"
+                        h="36px"
                         variant="outline"
+                        borderColor="rgba(86, 117, 109, 0.25)"
+                        color="#263A33"
+                        borderRadius="full"
+                        fontSize="12.5px"
+                        fontWeight="600"
+                        px={3.5}
+                        _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
                         onClick={() =>
                           downloadJson(
                             `mlc-report-${activeReportKey}-${reportData?.period?.label || "export"}.json`,
@@ -1833,40 +2990,68 @@ export default function AdminDashboard() {
                   </HStack>
                 </HStack>
 
-                <HStack flexWrap="wrap" spacing={3} align="center">
+                <HStack flexWrap="wrap" spacing={3} align="center" bg="rgba(250, 248, 245, 0.7)" p={3} borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.1)">
                   <Input
-                    size="sm"
-                    placeholder="Snapshot title (optional)"
+                    h="36px"
+                    placeholder="Snapshot title / reference tag (optional)"
                     value={snapshotTitle}
                     onChange={(e) => setSnapshotTitle(e.target.value)}
                     maxW="300px"
+                    borderRadius="xl"
+                    borderColor="rgba(86, 117, 109, 0.2)"
+                    bg="white"
+                    fontSize="13px"
+                    _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                   />
                   <Button
-                    size="sm"
-                    colorScheme="blue"
+                    h="36px"
                     variant="outline"
+                    borderRadius="full"
+                    borderColor="rgba(86, 117, 109, 0.3)"
+                    color="#263A33"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    px={4}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
                     onClick={saveCurrentReportSnapshot}
                     isLoading={savingSnapshot}
                     isDisabled={!reportData?.period}
                   >
-                    Save snapshot (JSON + PDF)
+                    Save Snapshot (JSON + PDF)
                   </Button>
                 </HStack>
 
-                <Tabs
-                  variant="soft-rounded"
-                  colorScheme="teal"
-                  index={tabIndex}
-                  onChange={(i) => setActiveReportKey(catalogTabs[i]?.key || "executive")}
-                >
-                  <TabList flexWrap="wrap" gap={1}>
-                    {catalogTabs.map((t) => (
-                      <Tab key={t.key} fontSize="sm" px={3} py={2}>
+                <Wrap spacing={2} pt={1}>
+                  {catalogTabs.map((t) => {
+                    const isSelected = t.key === activeReportKey;
+                    return (
+                      <Button
+                        key={t.key}
+                        size="sm"
+                        variant="unstyled"
+                        display="inline-flex"
+                        alignItems="center"
+                        borderRadius="full"
+                        px={3.5}
+                        py={1}
+                        h="32px"
+                        fontSize="12px"
+                        fontWeight={isSelected ? "600" : "500"}
+                        border="1px solid"
+                        borderColor={isSelected ? "#56756D" : "rgba(86, 117, 109, 0.18)"}
+                        bg={isSelected ? "rgba(86, 117, 109, 0.12)" : "white"}
+                        color={isSelected ? "#263A33" : "#5A6E65"}
+                        _hover={{
+                          bg: "rgba(86, 117, 109, 0.08)",
+                          color: "#263A33",
+                        }}
+                        onClick={() => setActiveReportKey(t.key)}
+                      >
                         {t.title}
-                      </Tab>
-                    ))}
-                  </TabList>
-                </Tabs>
+                      </Button>
+                    );
+                  })}
+                </Wrap>
 
                 {activeMeta?.description ? (
                   <Text fontSize="sm" color="gray.600">
@@ -1874,13 +3059,60 @@ export default function AdminDashboard() {
                   </Text>
                 ) : null}
 
-                {reportsLoading && <Text color="gray.500">Loading this report…</Text>}
+                {reportsLoading && (
+                  <HStack spacing={3} p={8} justify="center" bg="rgba(250, 248, 245, 0.6)" borderRadius="xl">
+                    <Spinner size="sm" color="#56756D" />
+                    <Text fontSize="13px" color="#5A6E65">Loading report metrics…</Text>
+                  </HStack>
+                )}
+
+                {reportError && !reportData?.period && !reportsLoading && (
+                  <Box
+                    p={6}
+                    borderRadius="2xl"
+                    bg="rgba(254, 242, 242, 0.6)"
+                    border="1px solid rgba(239, 68, 68, 0.25)"
+                    textAlign="center"
+                  >
+                    <VStack spacing={3}>
+                      <Circle size="42px" bg="rgba(239, 68, 68, 0.12)" color="#DC2626">
+                        <Icon as={FiAlertCircle} boxSize="20px" />
+                      </Circle>
+                      <Heading
+                        fontSize="15px"
+                        fontWeight="600"
+                        fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                        color="#263A33"
+                      >
+                        Unable to load {activeMeta?.title || "report"}
+                      </Heading>
+                      <Text fontSize="13px" color="#5A6E65" maxW="480px">
+                        {reportError}
+                      </Text>
+                      <Button
+                        size="sm"
+                        h="36px"
+                        bg="#56756D"
+                        color="white"
+                        borderRadius="full"
+                        fontSize="12.5px"
+                        fontWeight="600"
+                        px={5}
+                        _hover={{ bg: "#263A33" }}
+                        boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                        onClick={() => fetchAdminReport(activeReportKey)}
+                      >
+                        Retry Report
+                      </Button>
+                    </VStack>
+                  </Box>
+                )}
 
                 {!reportsLoading && reportData?.period && (
-                  <Box p={4} borderRadius="xl" bg="gray.50">
-                    <Text fontSize="sm" color="gray.600">
-                      <b>{reportData.title || activeReportKey}</b> — window{" "}
-                      <b>{reportData.period.label}</b> (
+                  <Box p={4} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.12)">
+                    <Text fontSize="13px" color="#5A6E65">
+                      <b style={{ color: "#263A33" }}>{reportData.title || activeReportKey}</b> — window{" "}
+                      <b style={{ color: "#263A33" }}>{reportData.period.label}</b> (
                       {new Date(reportData.period.start).toLocaleDateString()} –{" "}
                       {new Date(reportData.period.end).toLocaleDateString()})
                     </Text>
@@ -1892,7 +3124,7 @@ export default function AdminDashboard() {
                     <Text fontSize="sm" color="gray.600">
                       Compared with prior period: <b>{reportData.prior_period_label || "—"}</b>
                     </Text>
-                    <Heading size="sm">Current period</Heading>
+                    <Heading fontSize="15px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">Current period</Heading>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
                       <MetricCard
                         label="Incoming registrations"
@@ -1926,7 +3158,7 @@ export default function AdminDashboard() {
                     </SimpleGrid>
                     {reportData.kpis_prior_period && (
                       <>
-                        <Heading size="sm">Prior period</Heading>
+                        <Heading fontSize="15px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">Prior period</Heading>
                         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
                           <MetricCard
                             label="Incoming registrations"
@@ -1951,7 +3183,7 @@ export default function AdminDashboard() {
                     )}
                     {reportData.kpis_delta && (
                       <>
-                        <Heading size="sm">Change (current − prior)</Heading>
+                        <Heading fontSize="15px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">Change (current − prior)</Heading>
                         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
                           {Object.entries(reportData.kpis_delta).map(([k, v]) => (
                             <Box
@@ -2363,232 +3595,320 @@ export default function AdminDashboard() {
 
                 {reportWorkspaceTab === "snapshots" && (
                   <VStack align="stretch" spacing={4}>
-                    <Heading size="sm" color="mlc.greenDark">
-                      Saved report snapshots
-                    </Heading>
-                    <Text fontSize="sm" color="gray.600">
-                      Point-in-time copies with PDFs. Create new ones from <b>Live reports</b> using the current period and report tab.
-                    </Text>
-                    <Button size="sm" variant="outline" w="fit-content" onClick={fetchReportSnapshots}>
-                      Refresh list
-                    </Button>
+                    <HStack justify="space-between" align="center" flexWrap="wrap" gap={3}>
+                      <VStack align="start" spacing={0.5}>
+                        <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                          Saved Report Snapshots
+                        </Heading>
+                        <Text fontSize="13px" color="#5A6E65">
+                          Point-in-time archived copies with generated PDFs. Create new ones from <b>Live Reports</b>.
+                        </Text>
+                      </VStack>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        borderRadius="full"
+                        borderColor="rgba(86, 117, 109, 0.25)"
+                        color="#263A33"
+                        fontSize="12.5px"
+                        fontWeight="600"
+                        h="34px"
+                        px={4}
+                        _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                        onClick={fetchReportSnapshots}
+                      >
+                        Refresh List
+                      </Button>
+                    </HStack>
+
                     {reportSnapshots.length === 0 ? (
-                      <Text fontSize="sm" color="gray.500">
-                        No snapshots yet.
-                      </Text>
+                      <Box p={8} textAlign="center" borderRadius="xl" bg="rgba(250, 248, 245, 0.6)" border="1px dashed rgba(86, 117, 109, 0.2)">
+                        <Text fontSize="13px" color="#5A6E65">
+                          No archived snapshots generated yet. Run an export in Live Reports to store persistent copies.
+                        </Text>
+                      </Box>
                     ) : (
-                      <Table size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Created</Th>
-                            <Th>Report</Th>
-                            <Th>Period</Th>
-                            <Th>PDF</Th>
-                            <Th />
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {reportSnapshots.map((s) => (
-                            <Tr key={s.id}>
-                              <Td>{new Date(s.created_at).toLocaleString()}</Td>
-                              <Td>{s.report_key}</Td>
-                              <Td>{s.period_label || "—"}</Td>
-                              <Td>
-                                {s.pdf_url ? (
-                                  <Button size="xs" variant="outline" onClick={() => downloadSnapshotPdfFile(s)}>
-                                    Download
-                                  </Button>
-                                ) : (
-                                  <Text fontSize="xs" color="gray.500">
-                                    {s.pdf_error || "—"}
-                                  </Text>
-                                )}
-                              </Td>
-                              <Td>
-                                <Button size="xs" colorScheme="red" variant="ghost" onClick={() => deleteSnapshot(s.id)}>
-                                  Delete
-                                </Button>
-                              </Td>
+                      <Box border="1px solid rgba(86, 117, 109, 0.12)" borderRadius="xl" overflow="hidden">
+                        <Table size="sm">
+                          <Thead bg="rgba(250, 248, 245, 0.85)">
+                            <Tr>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Created</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Report</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Period</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">PDF</Th>
+                              <Th borderBottom="1px solid rgba(86, 117, 109, 0.12)" />
                             </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
+                          </Thead>
+                          <Tbody>
+                            {reportSnapshots.map((s) => (
+                              <Tr key={s.id} _hover={{ bg: "rgba(250, 248, 245, 0.6)" }}>
+                                <Td fontSize="13px" color="#263A33" borderBottom="1px solid rgba(86, 117, 109, 0.08)">{new Date(s.created_at).toLocaleString()}</Td>
+                                <Td fontSize="13px" fontWeight="600" color="#263A33" borderBottom="1px solid rgba(86, 117, 109, 0.08)">{s.report_key}</Td>
+                                <Td fontSize="13px" color="#5A6E65" borderBottom="1px solid rgba(86, 117, 109, 0.08)">{s.period_label || "—"}</Td>
+                                <Td borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                                  {s.pdf_url ? (
+                                    <Button 
+                                      size="xs" 
+                                      variant="outline" 
+                                      borderRadius="full"
+                                      borderColor="rgba(86, 117, 109, 0.25)"
+                                      color="#56756D"
+                                      fontSize="11.5px"
+                                      onClick={() => downloadSnapshotPdfFile(s)}
+                                    >
+                                      Download PDF
+                                    </Button>
+                                  ) : (
+                                    <Text fontSize="11.5px" color="#718096">
+                                      {s.pdf_error || "—"}
+                                    </Text>
+                                  )}
+                                </Td>
+                                <Td borderBottom="1px solid rgba(86, 117, 109, 0.08)" textAlign="right">
+                                  <Button 
+                                    size="xs" 
+                                    colorScheme="red" 
+                                    variant="ghost" 
+                                    borderRadius="full"
+                                    onClick={() => deleteSnapshot(s.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </Box>
                     )}
                   </VStack>
                 )}
 
                 {reportWorkspaceTab === "schedules" && (
                   <VStack align="stretch" spacing={6}>
-                    <Heading size="sm" color="mlc.greenDark">
-                      Scheduled email delivery
-                    </Heading>
-                    <Text fontSize="sm" color="gray.600">
-                      Runs when you execute{" "}
-                      <Text as="span" fontFamily="mono" fontSize="xs">
-                        python manage.py process_admin_report_schedules
-                      </Text>{" "}
-                      on a daily (or hourly) cron. Monthly schedules use <b>day of month</b>; weekly use <b>weekday</b> (0 = Monday). Each run sends the{" "}
-                      <b>previous complete calendar month / quarter / year</b> per preset. Set{" "}
-                      <Text as="span" fontFamily="mono" fontSize="xs">
-                        EMAIL_BACKEND
-                      </Text>{" "}
-                      and SMTP env vars for real delivery.
-                    </Text>
+                    <VStack align="start" spacing={1}>
+                      <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                        Automated Email Delivery Schedules
+                      </Heading>
+                      <Text fontSize="13px" color="#5A6E65">
+                        Executes via recurring cron (<Text as="span" fontFamily="mono" fontSize="11.5px" bg="rgba(86, 117, 109, 0.1)" px={1.5} py={0.5} borderRadius="md">python manage.py process_admin_report_schedules</Text>). 
+                        Sends the previous complete calendar period as an executive summary.
+                      </Text>
+                    </VStack>
 
-                    <Box borderWidth="1px" borderRadius="xl" borderColor="gray.100" p={4}>
-                      <Heading size="xs" mb={3}>
-                        New schedule
+                    <Box borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.14)" bg="rgba(250, 248, 245, 0.6)" p={4}>
+                      <Heading size="xs" mb={3} color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="0.05em" textTransform="uppercase">
+                        Configure New Email Schedule
                       </Heading>
                       <VStack align="stretch" spacing={3}>
-                        <HStack flexWrap="wrap">
+                        <HStack flexWrap="wrap" spacing={3}>
                           <Input
-                            size="sm"
-                            placeholder="Label (optional)"
+                            h="36px"
+                            placeholder="Schedule label (optional)"
                             value={schedName}
                             onChange={(e) => setSchedName(e.target.value)}
-                            maxW="240px"
+                            maxW="220px"
+                            borderRadius="xl"
+                            borderColor="rgba(86, 117, 109, 0.2)"
+                            bg="white"
+                            fontSize="13px"
+                            _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                           />
-                          <Select
-                            size="sm"
-                            value={schedReportKey}
-                            onChange={(e) => setSchedReportKey(e.target.value)}
-                            w="200px"
-                          >
-                            {FALLBACK_ADMIN_REPORT_CATALOG.map((r) => (
-                              <option key={r.key} value={r.key}>
-                                {r.title}
-                              </option>
-                            ))}
-                          </Select>
-                          <Select
-                            size="sm"
-                            value={schedPreset}
-                            onChange={(e) => setSchedPreset(e.target.value)}
-                            w="220px"
-                          >
-                            <option value="previous_month">Previous month</option>
-                            <option value="previous_quarter">Previous quarter</option>
-                            <option value="previous_year">Previous year</option>
-                          </Select>
+                          <Box w="200px">
+                            <ModernSelect
+                              h="36px"
+                              value={schedReportKey}
+                              onChange={(val) => setSchedReportKey(val)}
+                              options={FALLBACK_ADMIN_REPORT_CATALOG.map((r) => ({
+                                value: r.key,
+                                label: r.title,
+                              }))}
+                            />
+                          </Box>
+                          <Box w="180px">
+                            <ModernSelect
+                              h="36px"
+                              value={schedPreset}
+                              onChange={(val) => setSchedPreset(val)}
+                              options={[
+                                { value: "previous_month", label: "Previous Month" },
+                                { value: "previous_quarter", label: "Previous Quarter" },
+                                { value: "previous_year", label: "Previous Year" },
+                              ]}
+                            />
+                          </Box>
                         </HStack>
-                        <HStack flexWrap="wrap">
-                          <Select
-                            size="sm"
-                            value={schedFreq}
-                            onChange={(e) => setSchedFreq(e.target.value)}
-                            w="140px"
-                          >
-                            <option value="monthly">Monthly</option>
-                            <option value="weekly">Weekly</option>
-                          </Select>
+                        <HStack flexWrap="wrap" spacing={3}>
+                          <Box w="140px">
+                            <ModernSelect
+                              h="36px"
+                              value={schedFreq}
+                              onChange={(val) => setSchedFreq(val)}
+                              options={[
+                                { value: "monthly", label: "Monthly" },
+                                { value: "weekly", label: "Weekly" },
+                              ]}
+                            />
+                          </Box>
                           {schedFreq === "monthly" && (
-                            <HStack>
-                              <Text fontSize="sm">Day</Text>
+                            <HStack spacing={2}>
+                              <Text fontSize="12.5px" color="#5A6E65">Day of Month:</Text>
                               <Input
-                                size="sm"
+                                h="36px"
                                 type="number"
                                 min={1}
                                 max={28}
                                 w="70px"
                                 value={schedDayOfMonth}
                                 onChange={(e) => setSchedDayOfMonth(Number(e.target.value || 1))}
+                                borderRadius="xl"
+                                borderColor="rgba(86, 117, 109, 0.2)"
+                                bg="white"
+                                fontSize="13px"
                               />
                             </HStack>
                           )}
                           {schedFreq === "weekly" && (
-                            <Select
-                              size="sm"
-                              value={schedWeekday}
-                              onChange={(e) => setSchedWeekday(Number(e.target.value))}
-                              w="180px"
-                            >
-                              <option value={0}>Monday</option>
-                              <option value={1}>Tuesday</option>
-                              <option value={2}>Wednesday</option>
-                              <option value={3}>Thursday</option>
-                              <option value={4}>Friday</option>
-                              <option value={5}>Saturday</option>
-                              <option value={6}>Sunday</option>
-                            </Select>
+                            <Box w="150px">
+                              <ModernSelect
+                                h="36px"
+                                value={schedWeekday}
+                                onChange={(val) => setSchedWeekday(Number(val))}
+                                options={[
+                                  { value: 0, label: "Monday" },
+                                  { value: 1, label: "Tuesday" },
+                                  { value: 2, label: "Wednesday" },
+                                  { value: 3, label: "Thursday" },
+                                  { value: 4, label: "Friday" },
+                                  { value: 5, label: "Saturday" },
+                                  { value: 6, label: "Sunday" },
+                                ]}
+                              />
+                            </Box>
                           )}
                         </HStack>
                         <Textarea
-                          size="sm"
                           placeholder="Recipient emails (comma or newline separated)"
                           value={schedRecipients}
                           onChange={(e) => setSchedRecipients(e.target.value)}
-                          minH="80px"
+                          minH="70px"
+                          borderRadius="xl"
+                          borderColor="rgba(86, 117, 109, 0.2)"
+                          bg="white"
+                          fontSize="13px"
+                          _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                         />
-                        <Button size="sm" colorScheme="teal" w="fit-content" onClick={createEmailSchedule}>
-                          Create schedule
+                        <Button 
+                          h="36px" 
+                          bg="#56756D" 
+                          color="white" 
+                          borderRadius="full" 
+                          fontSize="12.5px"
+                          fontWeight="600"
+                          px={5}
+                          w="fit-content" 
+                          _hover={{ bg: "#263A33" }}
+                          boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                          onClick={createEmailSchedule}
+                        >
+                          Create Schedule
                         </Button>
                       </VStack>
                     </Box>
 
-                    <Button size="sm" variant="outline" w="fit-content" onClick={fetchReportSchedules}>
-                      Refresh schedules
-                    </Button>
+                    <HStack justify="space-between" align="center">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        borderRadius="full"
+                        borderColor="rgba(86, 117, 109, 0.25)"
+                        color="#263A33"
+                        fontSize="12.5px"
+                        fontWeight="600"
+                        h="34px"
+                        px={4}
+                        _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                        onClick={fetchReportSchedules}
+                      >
+                        Refresh Schedules
+                      </Button>
+                    </HStack>
+
                     {reportSchedules.length === 0 ? (
-                      <Text fontSize="sm" color="gray.500">
-                        No schedules yet.
-                      </Text>
+                      <Box p={8} textAlign="center" borderRadius="xl" bg="rgba(250, 248, 245, 0.6)" border="1px dashed rgba(86, 117, 109, 0.2)">
+                        <Text fontSize="13px" color="#5A6E65">
+                          No recurring email schedules configured yet.
+                        </Text>
+                      </Box>
                     ) : (
-                      <Table size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Active</Th>
-                            <Th>Report</Th>
-                            <Th>Preset</Th>
-                            <Th>Frequency</Th>
-                            <Th>Last sent</Th>
-                            <Th>Error</Th>
-                            <Th />
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {reportSchedules.map((sch) => (
-                            <Tr key={sch.id}>
-                              <Td>
-                                <Switch
-                                  size="sm"
-                                  isChecked={sch.is_active}
-                                  onChange={(e) => patchScheduleActive(sch, e.target.checked)}
-                                />
-                              </Td>
-                              <Td>{sch.report_key}</Td>
-                              <Td>{sch.period_preset}</Td>
-                              <Td>
-                                {sch.frequency}
-                                {sch.frequency === "monthly" && sch.day_of_month != null
-                                  ? ` (day ${sch.day_of_month})`
-                                  : ""}
-                                {sch.frequency === "weekly" && sch.weekday != null ? ` (wd ${sch.weekday})` : ""}
-                              </Td>
-                              <Td>
-                                {sch.last_sent_at ? new Date(sch.last_sent_at).toLocaleString() : "—"}
-                              </Td>
-                              <Td maxW="180px" fontSize="xs" color="red.500">
-                                {sch.last_error || "—"}
-                              </Td>
-                              <Td>
-                                <HStack spacing={1}>
-                                  <Button size="xs" onClick={() => sendScheduleNow(sch.id)}>
-                                    Send now
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    colorScheme="red"
-                                    onClick={() => deleteSchedule(sch.id)}
-                                  >
-                                    Delete
-                                  </Button>
-                                </HStack>
-                              </Td>
+                      <Box border="1px solid rgba(86, 117, 109, 0.12)" borderRadius="xl" overflow="hidden">
+                        <Table size="sm">
+                          <Thead bg="rgba(250, 248, 245, 0.85)">
+                            <Tr>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Active</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Report</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Preset</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Frequency</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Last Sent</Th>
+                              <Th fontSize="10.5px" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em" color="#718096" borderBottom="1px solid rgba(86, 117, 109, 0.12)">Error</Th>
+                              <Th borderBottom="1px solid rgba(86, 117, 109, 0.12)" />
                             </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
+                          </Thead>
+                          <Tbody>
+                            {reportSchedules.map((sch) => (
+                              <Tr key={sch.id} _hover={{ bg: "rgba(250, 248, 245, 0.6)" }}>
+                                <Td borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Switch
+                                    size="sm"
+                                    colorScheme="teal"
+                                    isChecked={sch.is_active}
+                                    onChange={(e) => patchScheduleActive(sch, e.target.checked)}
+                                  />
+                                </Td>
+                                <Td fontSize="13px" fontWeight="600" color="#263A33" borderBottom="1px solid rgba(86, 117, 109, 0.08)">{sch.report_key}</Td>
+                                <Td fontSize="12.5px" color="#5A6E65" borderBottom="1px solid rgba(86, 117, 109, 0.08)">{sch.period_preset}</Td>
+                                <Td fontSize="12.5px" color="#263A33" borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                                  {sch.frequency}
+                                  {sch.frequency === "monthly" && sch.day_of_month != null
+                                    ? ` (day ${sch.day_of_month})`
+                                    : ""}
+                                  {sch.frequency === "weekly" && sch.weekday != null ? ` (wd ${sch.weekday})` : ""}
+                                </Td>
+                                <Td fontSize="12px" color="#5A6E65" borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                                  {sch.last_sent_at ? new Date(sch.last_sent_at).toLocaleString() : "—"}
+                                </Td>
+                                <Td maxW="180px" fontSize="11.5px" color="#DC2626" borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                                  {sch.last_error || "—"}
+                                </Td>
+                                <Td borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                                  <HStack spacing={1.5} justify="flex-end">
+                                    <Button 
+                                      size="xs" 
+                                      variant="outline"
+                                      borderRadius="full"
+                                      borderColor="rgba(86, 117, 109, 0.25)"
+                                      color="#56756D"
+                                      fontSize="11.5px"
+                                      onClick={() => sendScheduleNow(sch.id)}
+                                    >
+                                      Send Now
+                                    </Button>
+                                    <Button
+                                      size="xs"
+                                      variant="ghost"
+                                      colorScheme="red"
+                                      borderRadius="full"
+                                      onClick={() => deleteSchedule(sch.id)}
+                                    >
+                                      Delete
+                                    </Button>
+                                  </HStack>
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
+                      </Box>
                     )}
                   </VStack>
                 )}
@@ -2597,333 +3917,1015 @@ export default function AdminDashboard() {
           );
         })()}
 
-        {activeTab === "vetting" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
-              <Heading size="md" mb={6} borderBottom="2px solid" borderColor="mlc.green" pb={2} display="inline-block">
-                Therapist Vetting Portal
-              </Heading>
-              {/* THE VETTING PORTAL UI FROM BEFORE */}
-              <Box>
-                <Heading size="sm" mb={4} color="mlc.greenDark">
-                  Therapist Applications ({therapistApplications.filter(a => ["review", "awaiting_contract"].includes(getVettingStage(a))).length} In Progress)
-                </Heading>
-                <Text fontSize="xs" color="gray.500" mb={4}>
-                  Review order: 1) Request changes or approve profile content, 2) send contract, 3) verify contract to publish profile live.
-                </Text>
-                {therapistApplications.length === 0 ? (
-                  <Text color="gray.500" fontSize="sm">No applications found.</Text>
-                ) : (
-                  <VStack align="stretch" spacing={6}>
-                    {therapistApplications.map(app => {
-                      const vettingStage = getVettingStage(app);
-                      const stageMeta = VETTING_STAGE_META[vettingStage] || VETTING_STAGE_META.review;
-                      const matchingProfile = getTherapistByEmail(app.email);
-                      return (
-                      <Box key={app.id} p={6} border="1px solid" borderColor="gray.200" borderRadius="2xl" boxShadow="sm" bg={vettingStage === "published" ? "gray.50" : "white"}>
-                        <HStack justify="space-between" mb={4}>
-                          <VStack align="flex-start" spacing={1}>
-                            <HStack>
-                              <Text fontWeight="700" fontSize="lg">{app.first_name} {app.last_name}</Text>
-                              <Tag colorScheme={stageMeta.color} size="sm" variant="subtle">
-                                {stageMeta.label}
-                              </Tag>
+        {activeTab === "vetting" && (() => {
+          const appsInReview = therapistApplications.filter(a => ["review", "awaiting_contract"].includes(getVettingStage(a)));
+          const directUnverified = unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_"));
+          const ghostProfiles = unverifiedTherapists.filter(t => t.name.toLowerCase().startsWith("user_"));
+          const totalPending = appsInReview.length + directUnverified.length;
+
+          return (
+            <VStack align="stretch" spacing={5}>
+              {/* 🌿 SUBTAB 1: DIRECTORY QUEUE */}
+              {vettingSubTab === "queue" && (
+                <VStack align="stretch" spacing={5}>
+                  {/* DIRECT ACCOUNT REGISTRATIONS AWAITING VERIFICATION (PROMINENT AT TOP) */}
+                  {directUnverified.length > 0 && (
+                    <Box 
+                      bg="white" 
+                      p={5} 
+                      borderRadius="2xl" 
+                      border="1px solid rgba(86, 117, 109, 0.14)" 
+                      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+                    >
+                      <HStack spacing={2.5} mb={4} justify="space-between" wrap="wrap">
+                        <HStack spacing={2.5}>
+                          <Circle size="30px" bg="rgba(79, 70, 229, 0.12)" color="#4F46E5">
+                            <Icon as={FiUserCheck} boxSize="15px" />
+                          </Circle>
+                          <VStack align="start" spacing={0}>
+                            <HStack spacing={2}>
+                              <Heading fontSize="15px" fontWeight="600" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                                Direct Account Verifications
+                              </Heading>
+                              <Badge bg="#EEF2FF" color="#4F46E5" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                                {directUnverified.length} PENDING
+                              </Badge>
                             </HStack>
-                            <Text fontSize="sm" color="gray.600">{app.email} • {app.phone}</Text>
-                            {matchingProfile?.profile_status && (
-                              <Text fontSize="xs" color="gray.500">
-                                Profile stage: {matchingProfile.profile_status.replace(/_/g, " ")}
-                              </Text>
-                            )}
+                            <Text fontSize="12px" color="#5A6E65">
+                              Clinicians with registered profiles awaiting administrative directory approval to go live.
+                            </Text>
                           </VStack>
-                          <HStack spacing={3}>
-                             <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.resume), "_blank")}>CV</Button>
-                             {app.qualification_doc && <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.qualification_doc), "_blank")}>Quals</Button>}
-                             {app.license_doc && <Button size="sm" variant="ghost" onClick={() => window.open(resolveAssetUrl(app.license_doc), "_blank")}>License</Button>}
-                          </HStack>
                         </HStack>
+                      </HStack>
 
-                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4} p={4} bg="rgba(95, 160, 147, 0.05)" borderRadius="xl">
-                           <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">CLINICAL EXPERIENCE</Text>
-                              <Text fontSize="sm">{app.years_experience} Years ({app.highest_qualification})</Text>
-                           </Box>
-                           <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">LANGUAGES</Text>
-                              <Wrap spacing={1} mt={1}>
-                                {Array.isArray(app.languages) ? app.languages.map((l, idx) => (
-                                  <Tag key={idx} size="sm" variant="outline">
-                                    {typeof l === 'object' ? (l.name || JSON.stringify(l)) : String(l)}
-                                  </Tag>
-                                )) : <Text fontSize="sm">{String(app.languages || "")}</Text>}
-                              </Wrap>
-                           </Box>
-                           <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">POPULATIONS</Text>
-                              <Wrap spacing={1} mt={1}>
-                                {Array.isArray(app.populations) ? app.populations.map((p, idx) => (
-                                  <Tag key={idx} size="sm" variant="outline">
-                                    {typeof p === 'object' ? (p.name || JSON.stringify(p)) : String(p)}
-                                  </Tag>
-                                )) : <Text fontSize="sm">{String(app.populations || "")}</Text>}
-                              </Wrap>
-                           </Box>
-                        </SimpleGrid>
-
-                        <VStack align="stretch" spacing={3} mb={6}>
-                           <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">THERAPEUTIC STANCE</Text>
-                              <Text fontSize="sm" noOfLines={3}>{app.therapeutic_stance}</Text>
-                           </Box>
-                           <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">RELEVANT EXPERIENCE</Text>
-                              <Text fontSize="sm" noOfLines={3}>{app.relevant_experience}</Text>
-                           </Box>
-                        </VStack>
-
-                        {vettingStage === 'review' && (
-                          <VStack align="stretch" spacing={4} borderTop="1px dashed" borderColor="gray.200" pt={4}>
-                             <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Internal Review Notes</FormLabel>
-                                <Textarea 
-                                  placeholder="Notes for our clinical team..." 
-                                  size="sm" 
-                                  id={`notes-${app.id}`}
-                                  borderRadius="md"
-                                />
-                             </FormControl>
-                             <HStack justify="flex-end">
-                                <Button 
-                                  variant="ghost" 
-                                  colorScheme="red" 
-                                  size="sm"
-                                  onClick={async () => {
-                                    if(!confirm("Send this back for profile changes?")) return;
-                                    try { 
-                                      const notes = document.getElementById(`notes-${app.id}`)?.value || "Please update profile details and resubmit.";
-                                      const matchingProfile = getTherapistByEmail(app.email);
-                                      if (matchingProfile?.id) {
-                                        await apiPost(`therapists/${matchingProfile.id}/request-profile-changes/`, { feedback: notes });
-                                      } else {
-                                        await apiPut(`manage-therapist-applications/${app.id}/`, { status: "rejected" });
-                                      }
-                                      fetchTherapistApplications();
-                                      fetchAllTherapists();
-                                      toast({ status: "info", title: "Changes requested" });
-                                    } catch (err) { toast({ status: "error", title: "Action failed", description: apiErrorDetail(err) }); }
-                                  }}
-                                >
-                                  Request Changes
-                                </Button>
-                                <Button 
-                                  bg="mlc.green" 
-                                  color="white" 
-                                  size="md"
-                                  _hover={{ bg: "mlc.greenDark" }}
-                                  onClick={async () => {
-                                    const notes = document.getElementById(`notes-${app.id}`)?.value;
-                                    try {
-                                      const profile = getTherapistByEmail(app.email);
-                                      let response;
-                                      if (profile?.id) {
-                                        response = await apiPost(`therapists/${profile.id}/approve-content-send-contract/`, { feedback: notes || "" });
-                                      } else {
-                                        response = await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: notes, send_contract: true });
-                                      }
-                                      const emailSent = response?.email_sent;
-                                      toast({
-                                        status: emailSent === false ? "warning" : "success",
-                                        title: emailSent === false ? "Approved, email not sent" : "Content approved",
-                                        description: emailSent === false
-                                          ? (response?.email_error || "Configure EMAIL_* env vars on Render to send contract emails.")
-                                          : "Contract notification sent. Waiting for therapist signature.",
-                                      });
-                                      fetchTherapistApplications();
-                                      fetchAllTherapists();
-                                      fetchUnverifiedTherapists();
-                                    } catch (err) {
-                                      toast({ status: "error", title: "Approval failed", description: apiErrorDetail(err, "Please check required profile fields and try again.") });
-                                    }
-                                  }}
-                                >
-                                  Approve Content & Send Contract
-                                </Button>
-                             </HStack>
-                          </VStack>
-                        )}
-                        {vettingStage === 'awaiting_contract' && (
-                          <VStack align="stretch" spacing={3} borderTop="1px dashed" borderColor="gray.200" pt={4}>
-                            <Text fontSize="sm" color="gray.600">
-                              Contract notification was sent to {app.email}. After the therapist signs, use the button below to publish their profile live.
-                            </Text>
-                            <HStack justify="flex-end">
-                            <Button
-                              size="sm"
-                              colorScheme="green"
-                              onClick={async () => {
-                                try {
-                                  const profile = getTherapistByEmail(app.email);
-                                  if (!profile?.id) {
-                                    toast({ status: "warning", title: "Profile not found", description: "Run Re-verify / Repair first." });
-                                    return;
-                                  }
-                                  const response = await apiPost(`therapists/${profile.id}/verify-contract-approve-profile/`, {});
-                                  toast({
-                                    status: "success",
-                                    title: "Contract verified",
-                                    description: response?.email_sent === false
-                                      ? "Profile is live. Published email could not be sent — check Render email settings."
-                                      : "Profile is now published live.",
-                                  });
-                                  fetchTherapistApplications();
-                                  fetchAllTherapists();
-                                  fetchUnverifiedTherapists();
-                                } catch (err) {
-                                  toast({ status: "error", title: "Publish failed", description: apiErrorDetail(err) });
-                                }
-                              }}
-                            >
-                              Verify Contract & Publish
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              colorScheme="teal"
-                              onClick={async () => {
-                                try {
-                                  await apiPost(`manage-therapist-applications/${app.id}/approve/`, { review_notes: "Manual re-verify/repair from admin portal." });
-                                  toast({ status: "success", title: "Verification repaired", description: "Canonical profile verification sync re-applied." });
-                                  fetchTherapistApplications();
-                                  fetchAllTherapists();
-                                  fetchUnverifiedTherapists();
-                                } catch {
-                                  toast({ status: "error", title: "Repair failed", description: "Please try again." });
-                                }
-                              }}
-                            >
-                              Re-verify / Repair
-                            </Button>
-                            </HStack>
-                          </VStack>
-                        )}
-                        {vettingStage === 'published' && (
-                          <Box borderTop="1px dashed" borderColor="gray.200" pt={4}>
-                            <Text fontSize="sm" color="green.700" fontWeight="600">
-                              Profile is live on the public directory.
-                            </Text>
-                          </Box>
-                        )}
-                      </Box>
-                    );})}
-                  </VStack>
-                )}
-              </Box>
-
-              <Divider mb={10} />
-
-              <Box>
-                <HStack justify="space-between" mb={4}>
-                  <Heading size="sm" color="mlc.greenDark">
-                    Pending Profile Verifications ({unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).length})
-                  </Heading>
-                  <Button size="xs" variant="ghost" colorScheme="red" onClick={async () => {
-                    if (!confirm("Permanently delete all ghost profiles (named user_...)?")) return;
-                    try {
-                       const ghosts = unverifiedTherapists.filter(t => t.name.toLowerCase().startsWith("user_"));
-                       for (const g of ghosts) {
-                         await apiDelete(`therapists/${g.id}/`);
-                       }
-                       toast({ status: "info", title: "Ghosts Purged" });
-                       fetchUnverifiedTherapists();
-                    } catch { toast({ status: "error", title: "Purge failed" }); }
-                  }}>Purge Ghosts</Button>
-                </HStack>
-                <Text fontSize="xs" color="gray.500" mb={4}>
-                  These are clinicians with active accounts who need final directory verification.
-                </Text>
-                {unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).length === 0 ? (
-                  <Text color="gray.500" fontSize="sm">All profiles verified.</Text>
-                ) : (
-                  <VStack align="stretch" spacing={3}>
-                    {unverifiedTherapists.filter(t => !t.name.toLowerCase().startsWith("user_")).map(t => (
-                      <Box key={t.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" _hover={{ bg: "gray.50" }}>
-                        <HStack justify="space-between">
-                          <VStack align="flex-start" spacing={1}>
-                            <Text fontWeight="600">{t.name}</Text>
-                            <Text fontSize="xs" color="gray.500">{t.email} • ID: {t.id}</Text>
-                          </VStack>
-                          <Button 
-                            size="sm" 
-                            bg="mlc.green" 
-                            color="white"
-                            onClick={async () => {
-                              try {
-                                await apiPost(`therapists/verify/${t.id}/`, {});
-                                toast({ status: "success", title: "Therapist verified" });
-                                await Promise.all([
-                                  fetchUnverifiedTherapists(),
-                                  fetchAllTherapists(),
-                                  fetchTherapistApplications(),
-                                ]);
-                              } catch (error) {
-                                if (error.response?.status === 403) {
-                                  toast({ 
-                                    status: "error", 
-                                    title: "Access Denied", 
-                                    description: apiErrorDetail(error, "You need administrator privileges to verify therapists.") 
-                                  });
-                                } else {
-                                  toast({ status: "error", title: "Verification failed", description: apiErrorDetail(error) });
-                                }
-                              }
-                            }}
+                      <VStack align="stretch" spacing={3}>
+                        {directUnverified.map(t => (
+                          <Box 
+                            key={t.id} 
+                            p={4} 
+                            border="1px solid rgba(86, 117, 109, 0.14)" 
+                            borderRadius="xl" 
+                            bg="rgba(250, 248, 245, 0.85)"
+                            boxShadow="0 2px 6px -2px rgba(38, 58, 51, 0.03)"
+                            transition="all 0.2s ease"
+                            _hover={{ borderColor: "#56756D", boxShadow: "0 4px 14px -2px rgba(38, 58, 51, 0.08)" }}
                           >
-                            Mark Verified
-                          </Button>
-                        </HStack>
-                      </Box>
-                    ))}
+                            <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "flex-start", md: "center" }} gap={3.5}>
+                              <HStack 
+                                spacing={3.5} 
+                                align="flex-start" 
+                                cursor="pointer" 
+                                onClick={() => setSelectedClinician(t)}
+                                flex="1"
+                              >
+                                <Box position="relative" flexShrink={0}>
+                                  <Avatar size="md" name={t.name || t.email} src={t.photo_url} />
+                                  <Circle size="11px" bg="#F59E0B" border="2px solid white" position="absolute" bottom="0" right="0" />
+                                </Box>
+                                <VStack align="flex-start" spacing={1}>
+                                  <HStack spacing={2} wrap="wrap">
+                                    <Text 
+                                      fontWeight="600" 
+                                      fontSize="14.5px" 
+                                      color="#263A33" 
+                                      fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                                      _hover={{ color: "#56756D", textDecoration: "underline" }}
+                                    >
+                                      {t.name}
+                                    </Text>
+                                    <Badge bg="rgba(245, 158, 11, 0.12)" color="#D97706" fontSize="9.5px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                                      PENDING DIRECT VERIFICATION
+                                    </Badge>
+                                    {t.is_supervisor && (
+                                      <Badge bg="rgba(99, 102, 241, 0.12)" color="#4F46E5" fontSize="9.5px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                                        SUPERVISOR
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                  <Text fontSize="12px" color="#5A6E65">
+                                    {t.title || t.highest_qualification || "Licensed Clinician"} • {t.email} • {t.phone || "No phone"} • ID: {t.id}
+                                  </Text>
+                                  <HStack spacing={2} wrap="wrap" pt={0.5}>
+                                    <Badge bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="10.5px" borderRadius="md" px={2} py={0.5}>
+                                      {t.hourly_rate != null ? `₹${t.hourly_rate}/hr` : "Rate not set"}
+                                    </Badge>
+                                    {t.years_experience != null && t.years_experience !== "" && (
+                                      <Badge bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="10.5px" borderRadius="md" px={2} py={0.5}>
+                                        {t.years_experience}+ yrs exp
+                                      </Badge>
+                                    )}
+                                    {Array.isArray(t.specializations) && t.specializations.slice(0, 3).map((s, idx) => (
+                                      <Badge key={idx} bg="white" border="1px solid rgba(86, 117, 109, 0.15)" color="#5A6E65" fontSize="10px" borderRadius="md" px={2} py={0.5}>
+                                        {s}
+                                      </Badge>
+                                    ))}
+                                  </HStack>
+                                </VStack>
+                              </HStack>
+
+                              <HStack spacing={3} flexShrink={0} align="center" alignSelf={{ base: "flex-end", md: "center" }}>
+                                <Button 
+                                  h="36px"
+                                  variant="outline"
+                                  borderRadius="full" 
+                                  borderColor="rgba(86, 117, 109, 0.28)"
+                                  color="#263A33"
+                                  fontSize="12.5px" 
+                                  fontWeight="600" 
+                                  px={4} 
+                                  leftIcon={<Icon as={FiEye} boxSize="13px" />}
+                                  _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                                  onClick={(e) => { e.stopPropagation(); setSelectedClinician(t); }}
+                                  whiteSpace="nowrap"
+                                >
+                                  View Details
+                                </Button>
+                                <Button 
+                                  h="36px"
+                                  bg="#56756D" 
+                                  color="white" 
+                                  borderRadius="full" 
+                                  fontSize="12.5px" 
+                                  fontWeight="600" 
+                                  px={5} 
+                                  _hover={{ bg: "#263A33", transform: "translateY(-1px)" }} 
+                                  boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                                  onClick={(e) => { e.stopPropagation(); handleVerifyTherapist(t.id, t.name); }}
+                                  whiteSpace="nowrap"
+                                >
+                                  Verify & Publish Live
+                                </Button>
+                              </HStack>
+                            </Flex>
+                          </Box>
+                        ))}
+                      </VStack>
+                    </Box>
+                  )}
+
+                  {/* CLINICIAN INTAKE APPLICATIONS IN REVIEW */}
+                  {therapistApplications.length > 0 && (
+                    <Box 
+                      bg="white" 
+                      p={5} 
+                      borderRadius="2xl" 
+                      border="1px solid rgba(86, 117, 109, 0.14)" 
+                      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+                    >
+                      <HStack spacing={2.5} mb={4}>
+                        <Circle size="30px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                          <Icon as={FiFileText} boxSize="15px" />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <HStack spacing={2}>
+                            <Heading fontSize="15px" fontWeight="600" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                              Clinical Intake Applications
+                            </Heading>
+                            <Badge bg="rgba(86, 117, 109, 0.1)" color="#263A33" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                              {therapistApplications.length} TOTAL
+                            </Badge>
+                          </HStack>
+                          <Text fontSize="12px" color="#5A6E65">
+                            Applications submitted via the practitioner portal and career pathways.
+                          </Text>
+                        </VStack>
+                      </HStack>
+
+                      <VStack align="stretch" spacing={4}>
+                        {therapistApplications.map(app => {
+                          const vettingStage = getVettingStage(app);
+                          const matchingProfile = getTherapistByEmail(app.email);
+
+                          const badgeStyles = {
+                            review: { bg: "rgba(245, 158, 11, 0.12)", color: "#D97706", label: "PENDING REVIEW" },
+                            awaiting_contract: { bg: "rgba(99, 102, 241, 0.12)", color: "#4F46E5", label: "AWAITING CONTRACT" },
+                            changes_requested: { bg: "rgba(239, 68, 68, 0.12)", color: "#DC2626", label: "CHANGES REQUESTED" },
+                            published: { bg: "rgba(16, 185, 129, 0.12)", color: "#059669", label: "PUBLISHED LIVE" },
+                            rejected: { bg: "rgba(239, 68, 68, 0.12)", color: "#DC2626", label: "REJECTED" },
+                          };
+                          const currentBadge = badgeStyles[vettingStage] || badgeStyles.review;
+
+                          return (
+                            <Box 
+                              key={app.id} 
+                              p={5} 
+                              border="1px solid" 
+                              borderColor="rgba(86, 117, 109, 0.14)" 
+                              borderRadius="xl" 
+                              bg={vettingStage === "published" ? "rgba(250, 248, 245, 0.5)" : "white"}
+                              boxShadow="0 2px 8px -2px rgba(38, 58, 51, 0.03)"
+                            >
+                              <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "flex-start", sm: "center" }} gap={3} mb={4}>
+                                <VStack align="flex-start" spacing={1}>
+                                  <HStack spacing={2.5}>
+                                    <Text fontWeight="600" fontSize="15px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                                      {app.first_name} {app.last_name}
+                                    </Text>
+                                    <Badge 
+                                      bg={currentBadge.bg} 
+                                      color={currentBadge.color} 
+                                      fontSize="10px" 
+                                      fontWeight="700" 
+                                      borderRadius="full" 
+                                      px={2.5} 
+                                      py={0.5}
+                                    >
+                                      {currentBadge.label}
+                                    </Badge>
+                                  </HStack>
+                                  <Text fontSize="12.5px" color="#5A6E65">
+                                    {app.email} • {app.phone || "No phone"}
+                                  </Text>
+                                  {matchingProfile?.profile_status && (
+                                    <Text fontSize="11.5px" color="#718096">
+                                      Internal stage: <Text as="span" fontWeight="600" color="#263A33">{matchingProfile.profile_status.replace(/_/g, " ")}</Text>
+                                    </Text>
+                                  )}
+                                </VStack>
+
+                                {/* Document Access Buttons */}
+                                <HStack spacing={2}>
+                                  <Button 
+                                    size="xs" 
+                                    variant="outline" 
+                                    borderRadius="full" 
+                                    borderColor="rgba(86, 117, 109, 0.25)" 
+                                    color="#263A33" 
+                                    fontWeight="600" 
+                                    onClick={() => window.open(resolveAssetUrl(app.resume), "_blank")} 
+                                    _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                                  >
+                                    CV / Resume
+                                  </Button>
+                                  {app.qualification_doc && (
+                                    <Button 
+                                      size="xs" 
+                                      variant="outline" 
+                                      borderRadius="full" 
+                                      borderColor="rgba(86, 117, 109, 0.25)" 
+                                      color="#263A33" 
+                                      fontWeight="600" 
+                                      onClick={() => window.open(resolveAssetUrl(app.qualification_doc), "_blank")} 
+                                      _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                                    >
+                                      Degrees
+                                    </Button>
+                                  )}
+                                  {app.license_doc && (
+                                    <Button 
+                                      size="xs" 
+                                      variant="outline" 
+                                      borderRadius="full" 
+                                      borderColor="rgba(86, 117, 109, 0.25)" 
+                                      color="#263A33" 
+                                      fontWeight="600" 
+                                      onClick={() => window.open(resolveAssetUrl(app.license_doc), "_blank")} 
+                                      _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                                    >
+                                      License
+                                    </Button>
+                                  )}
+                                </HStack>
+                              </Flex>
+
+                              {/* Clinical Metadata Strip */}
+                              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3} mb={4} p={3.5} bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)" borderRadius="xl">
+                                <Box>
+                                  <Text fontSize="10px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">CLINICAL EXPERIENCE</Text>
+                                  <Text fontSize="13px" fontWeight="600" color="#263A33" mt={0.5}>
+                                    {app.years_experience} Years ({app.highest_qualification || "Licensed"})
+                                  </Text>
+                                </Box>
+                                <Box>
+                                  <Text fontSize="10px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">LANGUAGES</Text>
+                                  <Wrap spacing={1} mt={1}>
+                                    {Array.isArray(app.languages) ? app.languages.map((l, idx) => (
+                                      <Tag key={idx} size="sm" variant="subtle" bg="rgba(86, 117, 109, 0.1)" color="#263A33" fontSize="11px">
+                                        {typeof l === 'object' ? (l.name || JSON.stringify(l)) : String(l)}
+                                      </Tag>
+                                    )) : <Text fontSize="12.5px" color="#263A33">{String(app.languages || "English")}</Text>}
+                                  </Wrap>
+                                </Box>
+                                <Box>
+                                  <Text fontSize="10px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">POPULATIONS</Text>
+                                  <Wrap spacing={1} mt={1}>
+                                    {Array.isArray(app.populations) ? app.populations.map((p, idx) => (
+                                      <Tag key={idx} size="sm" variant="subtle" bg="rgba(86, 117, 109, 0.1)" color="#263A33" fontSize="11px">
+                                        {typeof p === 'object' ? (p.name || JSON.stringify(p)) : String(p)}
+                                      </Tag>
+                                    )) : <Text fontSize="12.5px" color="#263A33">{String(app.populations || "Adults")}</Text>}
+                                  </Wrap>
+                                </Box>
+                              </SimpleGrid>
+
+                              {/* Stance & Background */}
+                              <VStack align="stretch" spacing={2.5} mb={4}>
+                                <Box>
+                                  <Text fontSize="10px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">THERAPEUTIC STANCE</Text>
+                                  <Text fontSize="12.5px" color="#263A33" mt={0.5} noOfLines={3}>
+                                    {app.therapeutic_stance || "No statement submitted."}
+                                  </Text>
+                                </Box>
+                                {app.relevant_experience && (
+                                  <Box>
+                                    <Text fontSize="10px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">RELEVANT EXPERIENCE</Text>
+                                    <Text fontSize="12.5px" color="#263A33" mt={0.5} noOfLines={2}>
+                                      {app.relevant_experience}
+                                    </Text>
+                                  </Box>
+                                )}
+                              </VStack>
+
+                              {/* Vetting Action Rows */}
+                              {vettingStage === 'review' && (
+                                <VStack align="stretch" spacing={3} borderTop="1px solid rgba(86, 117, 109, 0.12)" pt={3.5}>
+                                  <FormControl>
+                                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Internal Review Notes & Clinician Feedback</FormLabel>
+                                    <Textarea 
+                                      placeholder="Feedback or instructions for the clinical applicant..." 
+                                      size="sm" 
+                                      id={'notes-' + app.id}
+                                      borderRadius="xl"
+                                      borderColor="rgba(86, 117, 109, 0.2)"
+                                      bg="white"
+                                      fontSize="13px"
+                                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                                    />
+                                  </FormControl>
+                                  <HStack justify="flex-end" spacing={3}>
+                                    <Button 
+                                      variant="outline" 
+                                      colorScheme="red" 
+                                      size="sm"
+                                      borderRadius="full"
+                                      fontSize="12.5px"
+                                      fontWeight="600"
+                                      px={4}
+                                      onClick={async () => {
+                                        if(!confirm("Send this back for profile changes?")) return;
+                                        try { 
+                                          const notes = document.getElementById('notes-' + app.id)?.value || "Please update profile details and resubmit.";
+                                          const matching = getTherapistByEmail(app.email);
+                                          if (matching?.id) {
+                                            await apiPost('therapists/' + matching.id + '/request-profile-changes/', { feedback: notes });
+                                          } else {
+                                            await apiPut('manage-therapist-applications/' + app.id + '/', { status: "rejected" });
+                                          }
+                                          fetchTherapistApplications();
+                                          fetchAllTherapists();
+                                          toast({ status: "info", title: "Changes requested" });
+                                        } catch (err) { toast({ status: "error", title: "Action failed", description: apiErrorDetail(err) }); }
+                                      }}
+                                    >
+                                      Request Changes
+                                    </Button>
+                                    <Button 
+                                      bg="#56756D" 
+                                      color="white" 
+                                      size="sm"
+                                      borderRadius="full"
+                                      fontSize="12.5px"
+                                      fontWeight="600"
+                                      px={5}
+                                      _hover={{ bg: "#263A33" }}
+                                      boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                                      onClick={async () => {
+                                        const notes = document.getElementById('notes-' + app.id)?.value;
+                                        try {
+                                          const profile = getTherapistByEmail(app.email);
+                                          let response;
+                                          if (profile?.id) {
+                                            response = await apiPost('therapists/' + profile.id + '/approve-content-send-contract/', { feedback: notes || "" });
+                                          } else {
+                                            response = await apiPost('manage-therapist-applications/' + app.id + '/approve/', { review_notes: notes, send_contract: true });
+                                          }
+                                          const emailSent = response?.email_sent;
+                                          toast({
+                                            status: emailSent === false ? "warning" : "success",
+                                            title: emailSent === false ? "Approved, email not sent" : "Content approved",
+                                            description: emailSent === false
+                                              ? (response?.email_error || "Configure EMAIL_* env vars on Render to send contract emails.")
+                                              : "Contract notification sent. Waiting for therapist signature.",
+                                          });
+                                          fetchTherapistApplications();
+                                          fetchAllTherapists();
+                                          fetchUnverifiedTherapists();
+                                        } catch (err) {
+                                          toast({ status: "error", title: "Approval failed", description: apiErrorDetail(err, "Please check required profile fields and try again.") });
+                                        }
+                                      }}
+                                    >
+                                      Approve Content & Send Contract
+                                    </Button>
+                                  </HStack>
+                                </VStack>
+                              )}
+
+                              {vettingStage === 'awaiting_contract' && (
+                                <VStack align="stretch" spacing={3} borderTop="1px solid rgba(86, 117, 109, 0.12)" pt={3.5}>
+                                  <Text fontSize="12.5px" color="#5A6E65">
+                                    Contract notification sent to <b>{app.email}</b>. Once signed, publish their profile to make them visible on the directory.
+                                  </Text>
+                                  <HStack justify="flex-end" spacing={2.5}>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      borderRadius="full"
+                                      borderColor="rgba(86, 117, 109, 0.25)"
+                                      color="#263A33"
+                                      fontSize="12.5px"
+                                      fontWeight="600"
+                                      onClick={async () => {
+                                        try {
+                                          await apiPost('manage-therapist-applications/' + app.id + '/approve/', { review_notes: "Manual re-verify/repair from admin portal." });
+                                          toast({ status: "success", title: "Verification repaired", description: "Canonical profile verification sync re-applied." });
+                                          fetchTherapistApplications();
+                                          fetchAllTherapists();
+                                          fetchUnverifiedTherapists();
+                                        } catch {
+                                          toast({ status: "error", title: "Repair failed", description: "Please try again." });
+                                        }
+                                      }}
+                                    >
+                                      Re-verify / Repair
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      bg="#059669"
+                                      color="white"
+                                      borderRadius="full"
+                                      fontSize="12.5px"
+                                      fontWeight="600"
+                                      px={4}
+                                      _hover={{ bg: "#047857" }}
+                                      onClick={async () => {
+                                        try {
+                                          const profile = getTherapistByEmail(app.email);
+                                          if (!profile?.id) {
+                                            toast({ status: "warning", title: "Profile not found", description: "Run Re-verify / Repair first." });
+                                            return;
+                                          }
+                                          const response = await apiPost('therapists/' + profile.id + '/verify-contract-approve-profile/', {});
+                                          toast({
+                                            status: "success",
+                                            title: "Contract verified",
+                                            description: response?.email_sent === false
+                                              ? "Profile is live. Published email could not be sent — check Render email settings."
+                                              : "Profile is now published live.",
+                                          });
+                                          fetchTherapistApplications();
+                                          fetchAllTherapists();
+                                          fetchUnverifiedTherapists();
+                                        } catch (err) {
+                                          toast({ status: "error", title: "Publish failed", description: apiErrorDetail(err) });
+                                        }
+                                      }}
+                                    >
+                                      Verify Contract & Publish
+                                    </Button>
+                                  </HStack>
+                                </VStack>
+                              )}
+
+                              {vettingStage === 'published' && (
+                                <HStack borderTop="1px solid rgba(86, 117, 109, 0.1)" pt={3} justify="space-between">
+                                  <HStack spacing={2}>
+                                    <Icon as={FiCheckCircle} color="#059669" boxSize="15px" />
+                                    <Text fontSize="12.5px" color="#059669" fontWeight="600">
+                                      Profile is verified and published on the live directory.
+                                    </Text>
+                                  </HStack>
+                                  <Button
+                                    as="a"
+                                    href={'/therapists/' + (matchingProfile?.slug || matchingProfile?.id || '')}
+                                    target="_blank"
+                                    size="xs"
+                                    variant="outline"
+                                    borderRadius="full"
+                                    borderColor="rgba(86, 117, 109, 0.25)"
+                                    color="#56756D"
+                                    fontSize="11.5px"
+                                    rightIcon={<Icon as={FiExternalLink} boxSize="11px" />}
+                                  >
+                                    View Live
+                                  </Button>
+                                </HStack>
+                              )}
+                            </Box>
+                          );
+                        })}
+                      </VStack>
+                    </Box>
+                  )}
+
+                  {/* QUEUE CLEAR EMPTY STATE (ONLY WHEN BOTH APPLICATIONS & DIRECT REGISTRATIONS ARE ZERO) */}
+                  {totalPending === 0 && (
+                    <Box 
+                      bg="white" 
+                      p={8} 
+                      borderRadius="2xl" 
+                      border="1px solid rgba(86, 117, 109, 0.14)" 
+                      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+                    >
+                      <VStack py={8} spacing={3} textAlign="center">
+                        <Circle size="52px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+                          <Icon as={FiCheckCircle} boxSize="26px" />
+                        </Circle>
+                        <Text fontSize="16px" fontWeight="600" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                          Directory Queue Clear
+                        </Text>
+                        <Text fontSize="13px" color="#5A6E65" maxW="440px">
+                          All submitted clinician applications and registered practitioner accounts have been triaged and verified.
+                        </Text>
+                        <Button
+                          size="sm"
+                          mt={2}
+                          bg="#56756D"
+                          color="white"
+                          borderRadius="full"
+                          px={5}
+                          fontSize="12.5px"
+                          fontWeight="600"
+                          _hover={{ bg: "#263A33" }}
+                          rightIcon={<Icon as={FiArrowRight} boxSize="12px" />}
+                          onClick={() => setVettingSubTab("published")}
+                        >
+                          Browse Published Directory ({publishedTherapists.length})
+                        </Button>
+                      </VStack>
+                    </Box>
+                  )}
+                </VStack>
+              )}
+
+              {/* 🌿 SUBTAB 2: PUBLISHED DIRECTORY VIEW */}
+              {vettingSubTab === "published" && (
+                <VStack align="stretch" spacing={5}>
+                  {/* Search & Filter Bar */}
+                  <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "stretch", sm: "center" }} gap={3}>
+                    <InputGroup maxW={{ base: "full", sm: "380px" }}>
+                      <InputLeftElement pointerEvents="none">
+                        <Icon as={FiSearch} color="#718096" />
+                      </InputLeftElement>
+                      <Input 
+                        h="38px"
+                        borderRadius="xl"
+                        borderColor="rgba(86, 117, 109, 0.2)"
+                        fontSize="13px"
+                        bg="white"
+                        placeholder="Search published clinicians by name, email, specialty..."
+                        value={publishedSearchQuery}
+                        onChange={(e) => setPublishedSearchQuery(e.target.value)}
+                        _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      />
+                    </InputGroup>
+                    <HStack spacing={3} justify={{ base: "space-between", sm: "flex-end" }}>
+                      <Text fontSize="12.5px" color="#5A6E65">
+                        Showing <b>{filteredPublishedTherapists.length}</b> of <b>{publishedTherapists.length}</b> live clinicians
+                      </Text>
+                      <IconButton 
+                        size="sm" 
+                        variant="outline" 
+                        borderRadius="full" 
+                        borderColor="rgba(86, 117, 109, 0.2)"
+                        icon={<Icon as={FiRefreshCw} />} 
+                        aria-label="Refresh list"
+                        onClick={() => { fetchAllTherapists(); fetchUnverifiedTherapists(); }}
+                      />
+                    </HStack>
+                  </Flex>
+
+                  {filteredPublishedTherapists.length === 0 ? (
+                    <Box bg="white" p={8} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)">
+                      <VStack py={8} spacing={3} textAlign="center">
+                        <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                          <Icon as={FiUsers} boxSize="24px" />
+                        </Circle>
+                        <Text fontSize="15px" fontWeight="600" color="#263A33" fontFamily="'Outfit', sans-serif">No published clinicians found</Text>
+                        <Text fontSize="12.5px" color="#5A6E65">
+                          {publishedSearchQuery ? "No clinicians match your search filter." : "No therapists have been published to the directory yet."}
+                        </Text>
+                      </VStack>
+                    </Box>
+                  ) : (
+                    <VStack align="stretch" spacing={4}>
+                      {filteredPublishedTherapists.map(t => {
+                        const isDuplicate = (duplicateTherapistNames[(t.name || "").trim().toLowerCase()] || 0) > 1;
+                        return (
+                          <Box 
+                            key={t.id} 
+                            p={5} 
+                            border="1px solid" 
+                            borderColor="rgba(86, 117, 109, 0.14)" 
+                            borderRadius="xl" 
+                            bg="white"
+                            boxShadow="0 2px 8px -2px rgba(38, 58, 51, 0.03)"
+                            transition="all 0.2s ease"
+                            _hover={{ borderColor: "#56756D", boxShadow: "0 4px 14px -2px rgba(38, 58, 51, 0.08)" }}
+                          >
+                            <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "flex-start", md: "center" }} gap={4}>
+                              <HStack 
+                                spacing={4} 
+                                align="flex-start"
+                                cursor="pointer"
+                                onClick={() => setSelectedClinician(t)}
+                                flex="1"
+                              >
+                                <Box position="relative" flexShrink={0}>
+                                  <Avatar size="md" name={t.name || t.email} src={t.photo_url} />
+                                  <Circle size="11px" bg="#10B981" border="2px solid white" position="absolute" bottom="0" right="0" />
+                                </Box>
+                                <VStack align="flex-start" spacing={1}>
+                                  <HStack spacing={2} wrap="wrap">
+                                    <Text 
+                                      fontWeight="600" 
+                                      fontSize="15px" 
+                                      color="#263A33" 
+                                      fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                                      _hover={{ color: "#56756D", textDecoration: "underline" }}
+                                    >
+                                      {t.name}
+                                    </Text>
+                                    <Badge 
+                                      bg="rgba(16, 185, 129, 0.12)" 
+                                      color="#059669" 
+                                      fontSize="10px" 
+                                      fontWeight="700" 
+                                      borderRadius="full" 
+                                      px={2.5} 
+                                      py={0.5}
+                                    >
+                                      PUBLISHED LIVE
+                                    </Badge>
+                                    {t.is_supervisor && (
+                                      <Badge 
+                                        bg="rgba(99, 102, 241, 0.12)" 
+                                        color="#4F46E5" 
+                                        fontSize="10px" 
+                                        fontWeight="700" 
+                                        borderRadius="full" 
+                                        px={2} 
+                                        py={0.5}
+                                      >
+                                        SUPERVISOR
+                                      </Badge>
+                                    )}
+                                    {isDuplicate && (
+                                      <Badge 
+                                        bg="rgba(245, 158, 11, 0.12)" 
+                                        color="#D97706" 
+                                        fontSize="10px" 
+                                        fontWeight="700" 
+                                        borderRadius="full" 
+                                        px={2} 
+                                        py={0.5}
+                                        title="Multiple accounts share this name in the database"
+                                      >
+                                        ⚠️ DUPLICATE NAME IN DB
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                  <Text fontSize="12.5px" color="#5A6E65">
+                                    {t.title || t.highest_qualification || "Licensed Clinician"} • {t.email} • {t.phone || "No phone"} • ID: {t.id}
+                                  </Text>
+                                  <HStack spacing={2} wrap="wrap" pt={0.5}>
+                                    <Badge bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="10.5px" borderRadius="md" px={2} py={0.5}>
+                                      {t.hourly_rate != null ? `₹${t.hourly_rate}/hr` : "Rate not set"}
+                                    </Badge>
+                                    {t.years_experience != null && t.years_experience !== "" && (
+                                      <Badge bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="10.5px" borderRadius="md" px={2} py={0.5}>
+                                        {t.years_experience}+ yrs exp
+                                      </Badge>
+                                    )}
+                                    {Array.isArray(t.specializations) && t.specializations.slice(0, 3).map((s, idx) => (
+                                      <Badge key={idx} bg="rgba(250, 248, 245, 0.9)" border="1px solid rgba(86, 117, 109, 0.15)" color="#5A6E65" fontSize="10px" borderRadius="md" px={2} py={0.5}>
+                                        {s}
+                                      </Badge>
+                                    ))}
+                                  </HStack>
+                                </VStack>
+                              </HStack>
+
+                              {/* Action Buttons */}
+                              <HStack spacing={3} flexShrink={0} align="center" alignSelf={{ base: "flex-end", md: "center" }}>
+                                <Button
+                                  h="36px"
+                                  variant="outline"
+                                  borderRadius="full"
+                                  borderColor="rgba(86, 117, 109, 0.28)"
+                                  color="#263A33"
+                                  fontSize="12.5px"
+                                  fontWeight="600"
+                                  px={4}
+                                  leftIcon={<Icon as={FiEye} boxSize="13px" />}
+                                  onClick={(e) => { e.stopPropagation(); setSelectedClinician(t); }}
+                                  _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                                  whiteSpace="nowrap"
+                                >
+                                  View Details
+                                </Button>
+                                <Button
+                                  as="a"
+                                  href={'/therapists/' + (t.slug || t.id)}
+                                  target="_blank"
+                                  h="36px"
+                                  variant="outline"
+                                  borderRadius="full"
+                                  borderColor="rgba(86, 117, 109, 0.28)"
+                                  color="#56756D"
+                                  fontSize="12.5px"
+                                  fontWeight="600"
+                                  px={4}
+                                  rightIcon={<Icon as={FiExternalLink} boxSize="12px" />}
+                                  _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  whiteSpace="nowrap"
+                                >
+                                  View Live
+                                </Button>
+                                <Button
+                                  h="36px"
+                                  variant="outline"
+                                  borderColor="rgba(239, 68, 68, 0.3)"
+                                  color="#DC2626"
+                                  borderRadius="full"
+                                  fontSize="12.5px"
+                                  fontWeight="600"
+                                  px={4}
+                                  leftIcon={<Icon as={FiEyeOff} boxSize="13px" />}
+                                  _hover={{ bg: "#FEF2F2", borderColor: "#DC2626" }}
+                                  onClick={() => setUnpublishTarget(t)}
+                                  whiteSpace="nowrap"
+                                >
+                                  Unpublish
+                                </Button>
+                              </HStack>
+                            </Flex>
+                          </Box>
+                        );
+                      })}
+                    </VStack>
+                  )}
+                </VStack>
+              )}
+
+              {/* 🌿 SUBTAB 3: ALL PROFILES DIRECTORY VIEW */}
+              {vettingSubTab === "all" && (
+                <VStack align="stretch" spacing={5}>
+                  <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "stretch", sm: "center" }} gap={3}>
+                    <InputGroup maxW={{ base: "full", sm: "380px" }}>
+                      <InputLeftElement pointerEvents="none">
+                        <Icon as={FiSearch} color="#718096" />
+                      </InputLeftElement>
+                      <Input 
+                        h="38px"
+                        borderRadius="xl"
+                        borderColor="rgba(86, 117, 109, 0.2)"
+                        fontSize="13px"
+                        bg="white"
+                        placeholder="Search all clinician accounts..."
+                        value={publishedSearchQuery}
+                        onChange={(e) => setPublishedSearchQuery(e.target.value)}
+                        _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      />
+                    </InputGroup>
+                    <HStack spacing={3}>
+                      <Text fontSize="12.5px" color="#5A6E65">
+                        Total clinician profiles: <b>{allTherapists.length}</b>
+                      </Text>
+                    </HStack>
+                  </Flex>
+
+                  <VStack align="stretch" spacing={3}>
+                    {allTherapists
+                      .filter(t => {
+                        const q = publishedSearchQuery.trim().toLowerCase();
+                        if (!q) return true;
+                        return (t.name || "").toLowerCase().includes(q) || (t.email || "").toLowerCase().includes(q);
+                      })
+                      .map(t => {
+                        const isPublished = t.is_verified || t.profile_status === "approved";
+                        const isGhost = (t.name || "").toLowerCase().startsWith("user_");
+                        return (
+                          <HStack 
+                            key={t.id} 
+                            p={3.5} 
+                            border="1px solid rgba(86, 117, 109, 0.12)" 
+                            borderRadius="xl" 
+                            bg={isPublished ? "white" : "rgba(250, 248, 245, 0.85)"}
+                            justify="space-between"
+                            align="center"
+                            flexWrap="wrap"
+                            gap={3}
+                          >
+                            <HStack 
+                              spacing={3} 
+                              cursor="pointer" 
+                              onClick={() => setSelectedClinician(t)}
+                            >
+                              <Avatar size="sm" name={t.name || t.email} src={t.photo_url} />
+                              <VStack align="flex-start" spacing={0}>
+                                <HStack spacing={2}>
+                                  <Text 
+                                    fontWeight="600" 
+                                    fontSize="13px" 
+                                    color="#263A33"
+                                    _hover={{ color: "#56756D", textDecoration: "underline" }}
+                                  >
+                                    {t.name}
+                                  </Text>
+                                  <Badge 
+                                    bg={isPublished ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)"} 
+                                    color={isPublished ? "#059669" : "#D97706"}
+                                    fontSize="9.5px"
+                                    fontWeight="700"
+                                    borderRadius="full"
+                                    px={2}
+                                  >
+                                    {isPublished ? "PUBLISHED" : (t.profile_status || "UNVERIFIED").toUpperCase()}
+                                  </Badge>
+                                  {isGhost && (
+                                    <Badge bg="rgba(239, 68, 68, 0.12)" color="#DC2626" fontSize="9px" borderRadius="full" px={1.5}>
+                                      GHOST
+                                    </Badge>
+                                  )}
+                                </HStack>
+                                <Text fontSize="11.5px" color="#5A6E65">{t.email} • ID: {t.id}</Text>
+                              </VStack>
+                            </HStack>
+
+                            <HStack spacing={2}>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                borderRadius="full"
+                                borderColor="rgba(86, 117, 109, 0.25)"
+                                color="#263A33"
+                                fontSize="11.5px"
+                                fontWeight="600"
+                                leftIcon={<Icon as={FiEye} boxSize="10px" />}
+                                onClick={(e) => { e.stopPropagation(); setSelectedClinician(t); }}
+                                _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                              >
+                                Details
+                              </Button>
+                              {isPublished ? (
+                                <>
+                                  <Button
+                                    as="a"
+                                    href={'/therapists/' + (t.slug || t.id)}
+                                    target="_blank"
+                                    size="xs"
+                                    variant="outline"
+                                    borderRadius="full"
+                                    borderColor="rgba(86, 117, 109, 0.25)"
+                                    color="#56756D"
+                                    fontSize="11.5px"
+                                    rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
+                                  >
+                                    View Live
+                                  </Button>
+                                  <Button
+                                    size="xs"
+                                    variant="outline"
+                                    colorScheme="red"
+                                    borderRadius="full"
+                                    fontSize="11.5px"
+                                    onClick={() => setUnpublishTarget(t)}
+                                  >
+                                    Unpublish
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button 
+                                  size="xs" 
+                                  bg="#56756D" 
+                                  color="white" 
+                                  borderRadius="full" 
+                                  fontSize="11.5px" 
+                                  fontWeight="600" 
+                                  px={3} 
+                                  _hover={{ bg: "#263A33" }}
+                                  onClick={() => handleVerifyTherapist(t.id, t.name)}
+                                >
+                                  Mark Verified
+                                </Button>
+                              )}
+                            </HStack>
+                          </HStack>
+                        );
+                      })}
                   </VStack>
-                )}
-              </Box>
-           </Box>
-        )}
+                </VStack>
+              )}
+            </VStack>
+          );
+        })()}
 
         {activeTab === "team" && (
-           <VStack align="stretch" spacing={8}>
-              <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-                <Heading size="md" mb={6}>{editingId ? "Edit team member" : "Add team member"}</Heading>
+           <VStack align="stretch" spacing={6}>
+              <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+                <Heading fontSize="16px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em" mb={5}>
+                  {editingId ? "Edit Clinical Team Member" : "Add Clinical Team Member"}
+                </Heading>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   <FormControl>
-                    <FormLabel>Name</FormLabel>
-                    <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Full Name</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={draft.name} 
+                      onChange={(e) => setDraft({ ...draft, name: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Title</FormLabel>
-                    <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Professional Title</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={draft.title} 
+                      onChange={(e) => setDraft({ ...draft, title: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Email</FormLabel>
-                    <Input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Email Address</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={draft.email} 
+                      onChange={(e) => setDraft({ ...draft, email: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Photo URL</FormLabel>
-                    <Input value={draft.photo_url} onChange={(e) => setDraft({ ...draft, photo_url: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Photo URL</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={draft.photo_url} 
+                      onChange={(e) => setDraft({ ...draft, photo_url: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Specialties (comma separated)</FormLabel>
-                    <Input value={draft.specialties} onChange={(e) => setDraft({ ...draft, specialties: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Specialties (comma separated)</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={draft.specialties} 
+                      onChange={(e) => setDraft({ ...draft, specialties: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Sort Order</FormLabel>
-                    <Input type="number" value={draft.sort_order} onChange={(e) => setDraft({ ...draft, sort_order: parseInt(e.target.value) })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Directory Sort Order</FormLabel>
+                    <Input 
+                      h="38px"
+                      type="number" 
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={draft.sort_order} 
+                      onChange={(e) => setDraft({ ...draft, sort_order: parseInt(e.target.value) || 0 })} 
+                    />
                   </FormControl>
                 </SimpleGrid>
                 <FormControl mt={4}>
-                  <FormLabel>Bio</FormLabel>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Practitioner Biography</FormLabel>
                   <RichTextEditor value={draft.bio} onChange={(val) => setDraft({ ...draft, bio: val })} />
                 </FormControl>
-                <HStack mt={6} spacing={4}>
-                   <Button bg="mlc.green" color="white" onClick={async () => {
+                <HStack mt={6} spacing={3}>
+                   <Button 
+                     bg="#56756D" 
+                     color="white" 
+                     borderRadius="full"
+                     h="38px"
+                     px={5}
+                     fontSize="13px"
+                     fontWeight="600"
+                     fontFamily="'Inter', var(--font-inter), sans-serif"
+                     _hover={{ bg: "#263A33" }}
+                     boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                     onClick={async () => {
                       try {
                         if (editingId) {
                           await apiPut(`team-members/${editingId}/`, draft);
@@ -2939,202 +4941,566 @@ export default function AdminDashboard() {
                    }}>
                       {editingId ? "Update Member" : "Save Member"}
                    </Button>
-                   {editingId && <Button variant="ghost" onClick={() => { setEditingId(null); setDraft(emptyMember); }}>Cancel</Button>}
+                   {editingId && (
+                     <Button 
+                       variant="outline" 
+                       borderRadius="full"
+                       borderColor="rgba(86, 117, 109, 0.25)"
+                       color="#263A33"
+                       h="38px"
+                       px={4}
+                       fontSize="12.5px"
+                       fontWeight="600"
+                       fontFamily="'Inter', var(--font-inter), sans-serif"
+                       onClick={() => { setEditingId(null); setDraft(emptyMember); }}
+                     >
+                       Cancel
+                     </Button>
+                   )}
                 </HStack>
               </Box>
 
-              <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-                <Heading size="md" mb={6}>Managed Team Members</Heading>
-                <VStack align="stretch" spacing={4}>
-                  {members.map(m => (
-                    <HStack key={m.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" justify="space-between">
-                       <HStack spacing={4}>
-                          <Image src={m.photo_url} w="50px" h="50px" borderRadius="full" objectFit="cover" fallbackSrc="/logo_tra.png" />
-                          <VStack align="flex-start" spacing={0}>
-                             <Text fontWeight="600">{m.name}</Text>
-                             <Text fontSize="xs" color="gray.500">{m.title}</Text>
-                          </VStack>
-                       </HStack>
-                       <HStack>
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingId(m.id); setDraft(m); }}>Edit</Button>
-                          <Button size="sm" variant="ghost" colorScheme="red" onClick={async () => {
-                             if(!confirm("Delete this member?")) return;
-                             try { await apiDelete(`team-members/${m.id}/`); fetchMembers(); toast({ status: "info", title: "Deleted" }); }
-                             catch { toast({ status: "error", title: "Failed" }); }
-                          }}>Delete</Button>
-                       </HStack>
-                    </HStack>
-                  ))}
-                </VStack>
+              <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+                <HStack justify="space-between" mb={5} flexWrap="wrap" gap={3}>
+                  <VStack align="start" spacing={0.5}>
+                    <Heading fontSize="16px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
+                      Managed Team Members
+                    </Heading>
+                    <Text fontSize="13px" color="#5A6E65" fontFamily="'Inter', var(--font-inter), sans-serif">
+                      Clinicians and team members visible across the public directory
+                    </Text>
+                  </VStack>
+                  <Badge bg="rgba(86, 117, 109, 0.12)" color="#56756D" fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" textTransform="uppercase" borderRadius="full" px={2.5} py={0.5} fontFamily="'Inter', var(--font-inter), sans-serif">
+                    {members.length} Members
+                  </Badge>
+                </HStack>
+
+                {members.length === 0 ? (
+                  <Box p={8} textAlign="center" borderRadius="xl" bg="rgba(250, 248, 245, 0.6)" border="1px dashed rgba(86, 117, 109, 0.2)">
+                    <Text fontSize="13px" color="#5A6E65">No team members registered yet.</Text>
+                  </Box>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {members.map(m => (
+                      <HStack 
+                        key={m.id} 
+                        p={3.5} 
+                        border="1px solid rgba(86, 117, 109, 0.12)" 
+                        borderRadius="xl" 
+                        bg="rgba(250, 248, 245, 0.85)"
+                        justify="space-between"
+                        align="center"
+                      >
+                         <HStack spacing={3.5}>
+                            <Image 
+                              src={m.photo_url} 
+                              w="44px" 
+                              h="44px" 
+                              borderRadius="full" 
+                              objectFit="cover" 
+                              fallbackSrc="/logo_tra.png" 
+                              border="1px solid rgba(86, 117, 109, 0.15)"
+                            />
+                            <VStack align="flex-start" spacing={0}>
+                               <Text fontWeight="600" fontSize="13.5px" color="#263A33">{m.name}</Text>
+                               <Text fontSize="12px" color="#5A6E65">{m.title}</Text>
+                            </VStack>
+                         </HStack>
+                         <HStack spacing={2}>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              borderRadius="full"
+                              borderColor="rgba(86, 117, 109, 0.25)"
+                              color="#263A33"
+                              fontSize="12px"
+                              fontWeight="600"
+                              h="32px"
+                              px={3.5}
+                              _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                              onClick={() => { setEditingId(m.id); setDraft(m); }}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              colorScheme="red" 
+                              borderRadius="full"
+                              fontSize="12px"
+                              h="32px"
+                              onClick={async () => {
+                               if(!confirm("Delete this member?")) return;
+                               try { await apiDelete(`team-members/${m.id}/`); fetchMembers(); toast({ status: "info", title: "Deleted" }); }
+                               catch { toast({ status: "error", title: "Failed" }); }
+                            }}>
+                              Delete
+                            </Button>
+                         </HStack>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
               </Box>
            </VStack>
         )}
 
         {activeTab === "messages" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-              <Heading size="md" mb={6}>Contact Inquiries</Heading>
-              {contactMessages.length === 0 ? <Text color="gray.500">No messages yet.</Text> : (
-                <VStack align="stretch" spacing={4}>
-                  {contactMessages.map(m => (
-                    <Box key={m.id} p={5} border="1px solid" borderColor="gray.100" borderRadius="xl">
-                      <HStack justify="space-between" mb={2}>
-                        <VStack align="flex-start" spacing={0}>
-                          <Text fontWeight="700">{m.full_name}</Text>
-                          <Text fontSize="sm" color="gray.500">{m.email} {m.phone && `• ${m.phone}`}</Text>
-                        </VStack>
-                        <Text fontSize="xs" color="gray.400">{new Date(m.created_at).toLocaleDateString()}</Text>
-                      </HStack>
-                      <Text fontSize="sm" bg="gray.50" p={3} borderRadius="md">{m.message}</Text>
-                    </Box>
-                  ))}
-                </VStack>
-              )}
-           </Box>
-        )}
+  <Box 
+    bg="white" 
+    p={6} 
+    borderRadius="2xl" 
+    border="1px solid rgba(86, 117, 109, 0.14)" 
+    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+  >
+    <HStack justify="space-between" mb={5} flexWrap="wrap" gap={3}>
+      <VStack align="start" spacing={0.5}>
+        <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+          Contact Inquiries
+        </Heading>
+        <Text fontSize="13px" color="#5A6E65">
+          General user messages received through the public contact form
+        </Text>
+      </VStack>
+      <Badge 
+        bg="rgba(86, 117, 109, 0.12)" 
+        color="#56756D" 
+        fontSize="11px" 
+        fontWeight="700" 
+        borderRadius="full" 
+        px={2.5} 
+        py={0.5}
+      >
+        {contactMessages.length} Messages
+      </Badge>
+    </HStack>
 
-        {activeTab === "bookings" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-              <Heading size="md" mb={6}>Booking Leads</Heading>
-              {quickBookings.length === 0 ? <Text color="gray.500">No leads yet.</Text> : (
-                <VStack align="stretch" spacing={4}>
-                  {quickBookings.map(b => (
-                    <Box key={b.id} p={5} border="1px solid" borderColor="gray.100" borderRadius="xl">
-                      <HStack justify="space-between" mb={4}>
-                        <VStack align="flex-start" spacing={0}>
-                          <Text fontWeight="700">{b.full_name}</Text>
-                          <Text fontSize="sm" color="gray.500">{b.email} • {b.phone}</Text>
-                        </VStack>
-                        <Tag colorScheme="teal">{b.service_type}</Tag>
-                      </HStack>
-                      <HStack spacing={10} mb={4} p={3} bg="gray.50" borderRadius="md">
-                         <Box>
-                            <Text fontSize="xs" color="gray.400" fontWeight="bold">PREFERRED DATE</Text>
-                            <Text fontSize="sm">{b.preferred_date || 'N/A'}</Text>
-                         </Box>
-                         <Box>
-                            <Text fontSize="xs" color="gray.400" fontWeight="bold">PREFERRED TIME</Text>
-                            <Text fontSize="sm">{b.preferred_time || 'N/A'}</Text>
-                         </Box>
-                      </HStack>
-                      <Text fontSize="sm" fontStyle="italic">"{b.notes || 'No extra notes'}"</Text>
-                    </Box>
-                  ))}
+    {contactMessages.length === 0 ? (
+      <VStack py={12} spacing={3} textAlign="center">
+        <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+          <Icon as={FiMail} boxSize="22px" />
+        </Circle>
+        <Text fontSize="14px" fontWeight="600" color="#263A33">No contact inquiries yet</Text>
+        <Text fontSize="12.5px" color="#5A6E65">New user messages will appear here in chronological order.</Text>
+      </VStack>
+    ) : (
+      <VStack align="stretch" spacing={4}>
+        {contactMessages.map(m => (
+          <Box 
+            key={m.id} 
+            p={5} 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.12)" 
+            borderRadius="xl"
+            bg="white"
+            boxShadow="0 2px 6px -2px rgba(38, 58, 51, 0.03)"
+          >
+            <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={2} mb={3}>
+              <HStack spacing={3}>
+                <Circle size="34px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" fontWeight="700" fontSize="13px">
+                  {(m.full_name || "U").charAt(0).toUpperCase()}
+                </Circle>
+                <VStack align="flex-start" spacing={0}>
+                  <Text fontWeight="600" fontSize="14px" color="#263A33">{m.full_name}</Text>
+                  <HStack spacing={2} fontSize="12px" color="#5A6E65">
+                    <Text as="a" href={'mailto:' + m.email} color="#56756D" _hover={{ textDecoration: "underline" }}>
+                      {m.email}
+                    </Text>
+                    {m.phone && (
+                      <>
+                        <Text color="gray.300">•</Text>
+                        <Text as="a" href={'tel:' + m.phone} color="#56756D" _hover={{ textDecoration: "underline" }}>
+                          {m.phone}
+                        </Text>
+                      </>
+                    )}
+                  </HStack>
                 </VStack>
-              )}
-           </Box>
-        )}
+              </HStack>
+              <Badge 
+                bg="rgba(86, 117, 109, 0.08)" 
+                color="#56756D" 
+                fontSize="10px" 
+                fontWeight="600" 
+                borderRadius="full" 
+                px={2.5} 
+                py={0.5}
+              >
+                {new Date(m.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </Badge>
+            </Flex>
+            <Box bg="rgba(250, 248, 245, 0.85)" p={3.5} borderRadius="lg" border="1px solid rgba(86, 117, 109, 0.08)">
+              <Text fontSize="13px" color="#263A33" lineHeight="1.5">{m.message}</Text>
+            </Box>
+          </Box>
+        ))}
+      </VStack>
+    )}
+  </Box>
+)}
 
-        {activeTab === "support_tickets" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-              <Heading size="md" mb={6}>Support Tickets</Heading>
-              {supportTickets.length === 0 ? <Text color="gray.500">No support tickets raised yet.</Text> : (
-                <VStack align="stretch" spacing={6}>
-                  {supportTickets.map(ticket => (
-                    <Box 
-                      key={ticket.id} 
-                      p={6} 
-                      border="1px solid" 
-                      borderColor={ticket.status === 'resolved' ? 'green.100' : 'gray.100'} 
-                      borderRadius="2xl"
-                      bg={ticket.status === 'resolved' ? 'green.50' : 'white'}
+{activeTab === "bookings" && (
+  <Box 
+    bg="white" 
+    p={6} 
+    borderRadius="2xl" 
+    border="1px solid rgba(86, 117, 109, 0.14)" 
+    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+  >
+    <HStack justify="space-between" mb={5} flexWrap="wrap" gap={3}>
+      <VStack align="start" spacing={0.5}>
+        <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+          Booking Leads
+        </Heading>
+        <Text fontSize="13px" color="#5A6E65">
+          Inbound client consultation and session booking requests
+        </Text>
+      </VStack>
+      <Badge 
+        bg="rgba(214, 158, 46, 0.12)" 
+        color="#D69E2E" 
+        fontSize="11px" 
+        fontWeight="700" 
+        borderRadius="full" 
+        px={2.5} 
+        py={0.5}
+      >
+        {quickBookings.length} Leads
+      </Badge>
+    </HStack>
+
+    {quickBookings.length === 0 ? (
+      <VStack py={12} spacing={3} textAlign="center">
+        <Circle size="48px" bg="rgba(214, 158, 46, 0.12)" color="#D69E2E">
+          <Icon as={FiInbox} boxSize="22px" />
+        </Circle>
+        <Text fontSize="14px" fontWeight="600" color="#263A33">No booking leads yet</Text>
+        <Text fontSize="12.5px" color="#5A6E65">Quick intake requests from the landing page will stream in here.</Text>
+      </VStack>
+    ) : (
+      <VStack align="stretch" spacing={4}>
+        {quickBookings.map(b => (
+          <Box 
+            key={b.id} 
+            p={5} 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.12)" 
+            borderRadius="xl"
+            bg="white"
+            boxShadow="0 2px 6px -2px rgba(38, 58, 51, 0.03)"
+          >
+            <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={2} mb={3}>
+              <HStack spacing={3}>
+                <Circle size="34px" bg="rgba(214, 158, 46, 0.15)" color="#D69E2E" fontWeight="700" fontSize="13px">
+                  {(b.full_name || "L").charAt(0).toUpperCase()}
+                </Circle>
+                <VStack align="flex-start" spacing={0}>
+                  <Text fontWeight="600" fontSize="14px" color="#263A33">{b.full_name}</Text>
+                  <HStack spacing={2} fontSize="12px" color="#5A6E65">
+                    <Text as="a" href={'mailto:' + b.email} color="#56756D" _hover={{ textDecoration: "underline" }}>
+                      {b.email}
+                    </Text>
+                    {b.phone && (
+                      <>
+                        <Text color="gray.300">•</Text>
+                        <Text as="a" href={'tel:' + b.phone} color="#56756D" _hover={{ textDecoration: "underline" }}>
+                          {b.phone}
+                        </Text>
+                      </>
+                    )}
+                  </HStack>
+                </VStack>
+              </HStack>
+              <Badge 
+                bg="rgba(86, 117, 109, 0.12)" 
+                color="#56756D" 
+                fontSize="10.5px" 
+                fontWeight="700" 
+                borderRadius="full" 
+                px={3} 
+                py={0.5}
+              >
+                {b.service_type || "Therapy Intake"}
+              </Badge>
+            </Flex>
+
+            {/* Preferred slot strip */}
+            <HStack spacing={6} mb={3} p={3} bg="rgba(250, 248, 245, 0.85)" borderRadius="lg" border="1px solid rgba(86, 117, 109, 0.08)">
+              <Box>
+                <Text fontSize="9.5px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">PREFERRED DATE</Text>
+                <Text fontSize="13px" fontWeight="600" color="#263A33">{b.preferred_date || 'Flexible'}</Text>
+              </Box>
+              <Box>
+                <Text fontSize="9.5px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">PREFERRED TIME</Text>
+                <Text fontSize="13px" fontWeight="600" color="#263A33">{b.preferred_time || 'Anytime'}</Text>
+              </Box>
+            </HStack>
+
+            {b.notes && (
+              <Box p={3} borderRadius="lg" bg="white" border="1px dashed rgba(86, 117, 109, 0.2)">
+                <Text fontSize="12.5px" color="#5A6E65">
+                  <Text as="span" fontWeight="600" color="#263A33">Notes: </Text>
+                  {b.notes}
+                </Text>
+              </Box>
+            )}
+          </Box>
+        ))}
+      </VStack>
+    )}
+  </Box>
+)}
+
+{activeTab === "support_tickets" && (
+  <Box 
+    bg="white" 
+    p={6} 
+    borderRadius="2xl" 
+    border="1px solid rgba(86, 117, 109, 0.14)" 
+    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+  >
+    <HStack justify="space-between" mb={5} flexWrap="wrap" gap={3}>
+      <VStack align="start" spacing={0.5}>
+        <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+          Support Tickets
+        </Heading>
+        <Text fontSize="13px" color="#5A6E65">
+          User & practitioner platform help tickets and escalation resolutions
+        </Text>
+      </VStack>
+      <Badge 
+        bg={openTicketsCount > 0 ? "rgba(239, 68, 68, 0.12)" : "rgba(16, 185, 129, 0.12)"} 
+        color={openTicketsCount > 0 ? "#DC2626" : "#059669"} 
+        fontSize="11px" 
+        fontWeight="700" 
+        borderRadius="full" 
+        px={2.5} 
+        py={0.5}
+      >
+        {openTicketsCount} Unresolved
+      </Badge>
+    </HStack>
+
+    {supportTickets.length === 0 ? (
+      <VStack py={12} spacing={3} textAlign="center">
+        <Circle size="48px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+          <Icon as={FiCheckCircle} boxSize="22px" />
+        </Circle>
+        <Text fontSize="14px" fontWeight="600" color="#263A33">No tickets submitted</Text>
+        <Text fontSize="12.5px" color="#5A6E65">Support tickets from therapists and clients will be listed here.</Text>
+      </VStack>
+    ) : (
+      <VStack align="stretch" spacing={5}>
+        {supportTickets.map(ticket => {
+          const isResolved = ticket.status === 'resolved';
+          return (
+            <Box 
+              key={ticket.id} 
+              p={5} 
+              border="1px solid" 
+              borderColor={isResolved ? "rgba(16, 185, 129, 0.2)" : "rgba(86, 117, 109, 0.14)"} 
+              borderRadius="xl"
+              bg={isResolved ? "rgba(236, 253, 245, 0.5)" : "white"}
+              boxShadow="0 2px 8px -2px rgba(38, 58, 51, 0.03)"
+            >
+              <Flex justify="space-between" align="start" mb={3} flexWrap="wrap" gap={2}>
+                <VStack align="start" spacing={1}>
+                  <HStack spacing={2}>
+                    <Badge 
+                      bg={ticket.user_role === 'therapist' ? "rgba(99, 102, 241, 0.12)" : "rgba(49, 130, 206, 0.12)"} 
+                      color={ticket.user_role === 'therapist' ? "#4F46E5" : "#3182CE"}
+                      fontSize="10px"
+                      fontWeight="700"
+                      borderRadius="full"
+                      px={2}
+                      py={0.5}
                     >
-                      <Flex justify="space-between" align="start" mb={4}>
-                        <VStack align="start" spacing={1}>
-                          <HStack>
-                            <Badge colorScheme={ticket.user_role === 'therapist' ? 'purple' : 'blue'}>
-                              {ticket.user_role?.toUpperCase()}
-                            </Badge>
-                            <Badge colorScheme={ticket.status === 'resolved' ? 'green' : 'orange'}>
-                              {ticket.status.toUpperCase()}
-                            </Badge>
-                          </HStack>
-                          <Heading size="sm">{ticket.subject}</Heading>
-                          <Text fontSize="xs" color="gray.500">
-                            From: {ticket.user_name} ({ticket.user_email}) • {new Date(ticket.created_at).toLocaleString()}
-                          </Text>
-                        </VStack>
-                        <Tag variant="subtle" colorScheme="gray">{ticket.category}</Tag>
-                      </Flex>
-                      
-                      <Box bg="gray.50" p={4} borderRadius="xl" mb={4}>
-                        <Text fontSize="sm" whiteSpace="pre-wrap">{ticket.description}</Text>
-                      </Box>
-
-                      {ticket.status !== 'resolved' ? (
-                        <VStack align="stretch" spacing={3}>
-                          <FormControl>
-                            <FormLabel fontSize="xs" fontWeight="bold">Admin Notes / Resolution</FormLabel>
-                            <Textarea 
-                              placeholder="How was this resolved?" 
-                              size="sm" 
-                              id={`resolve-notes-${ticket.id}`}
-                              borderRadius="md"
-                              bg="white"
-                            />
-                          </FormControl>
-                          <Button 
-                            size="sm" 
-                            colorScheme="green" 
-                            alignSelf="flex-end"
-                            onClick={() => {
-                              const notes = document.getElementById(`resolve-notes-${ticket.id}`)?.value;
-                              resolveTicket(ticket.id, notes);
-                            }}
-                          >
-                            Mark as Resolved
-                          </Button>
-                        </VStack>
-                      ) : (
-                        <Box borderTop="1px dashed" borderColor="green.200" pt={3}>
-                          <Text fontSize="xs" fontWeight="bold" color="green.600">RESOLUTION NOTES</Text>
-                          <Text fontSize="sm">{ticket.admin_notes || 'No notes provided.'}</Text>
-                          <Text fontSize="xs" color="gray.400" mt={1}>Resolved at: {new Date(ticket.resolved_at).toLocaleString()}</Text>
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
+                      {ticket.user_role ? ticket.user_role.toUpperCase() : "CLIENT"}
+                    </Badge>
+                    <Badge 
+                      bg={isResolved ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)"} 
+                      color={isResolved ? "#059669" : "#D97706"}
+                      fontSize="10px"
+                      fontWeight="700"
+                      borderRadius="full"
+                      px={2}
+                      py={0.5}
+                    >
+                      {ticket.status ? ticket.status.toUpperCase() : "OPEN"}
+                    </Badge>
+                    {ticket.category && (
+                      <Tag size="sm" variant="subtle" bg="rgba(86, 117, 109, 0.1)" color="#263A33" fontSize="10.5px">
+                        {ticket.category}
+                      </Tag>
+                    )}
+                  </HStack>
+                  <Heading size="sm" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+                    {ticket.subject}
+                  </Heading>
+                  <Text fontSize="12px" color="#5A6E65">
+                    From: <Text as="span" fontWeight="600" color="#263A33">{ticket.user_name || "User"}</Text> ({ticket.user_email}) • {new Date(ticket.created_at).toLocaleString()}
+                  </Text>
                 </VStack>
+              </Flex>
+              
+              <Box bg="rgba(250, 248, 245, 0.85)" p={3.5} borderRadius="lg" border="1px solid rgba(86, 117, 109, 0.08)" mb={3.5}>
+                <Text fontSize="13px" color="#263A33" whiteSpace="pre-wrap" lineHeight="1.5">{ticket.description}</Text>
+              </Box>
+
+              {!isResolved ? (
+                <VStack align="stretch" spacing={3} borderTop="1px solid rgba(86, 117, 109, 0.12)" pt={3.5}>
+                  <FormControl>
+                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Admin Resolution Notes</FormLabel>
+                    <Textarea 
+                      placeholder="Detail how this issue was addressed or resolved..." 
+                      size="sm" 
+                      id={'resolve-notes-' + ticket.id}
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      bg="white"
+                      fontSize="13px"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                    />
+                  </FormControl>
+                  <HStack justify="flex-end">
+                    <Button 
+                      size="sm" 
+                      bg="#059669" 
+                      color="white" 
+                      borderRadius="full"
+                      fontSize="12.5px"
+                      fontWeight="600"
+                      px={4}
+                      _hover={{ bg: "#047857" }}
+                      onClick={() => {
+                        const notes = document.getElementById('resolve-notes-' + ticket.id)?.value;
+                        resolveTicket(ticket.id, notes);
+                      }}
+                    >
+                      Mark as Resolved
+                    </Button>
+                  </HStack>
+                </VStack>
+              ) : (
+                <Box borderTop="1px dashed" borderColor="rgba(16, 185, 129, 0.3)" pt={3}>
+                  <Text fontSize="10px" fontWeight="700" color="#059669" textTransform="uppercase" letterSpacing="0.08em">RESOLUTION NOTES</Text>
+                  <Text fontSize="12.5px" color="#263A33" mt={0.5}>{ticket.admin_notes || 'Resolved without extra notes.'}</Text>
+                  {ticket.resolved_at && (
+                    <Text fontSize="11px" color="#718096" mt={1}>Resolved at: {new Date(ticket.resolved_at).toLocaleString()}</Text>
+                  )}
+                </Box>
               )}
-           </Box>
-        )}
-
-        {activeTab === "services_list" && (
-
-           <VStack align="stretch" spacing={8}>
-              <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-                <Heading size="md" mb={6}>{editingServiceId ? "Edit service card" : "Add service card"}</Heading>
+            </Box>
+          );
+        })}
+      </VStack>
+    )}
+  </Box>
+)}
+{activeTab === "services_list" && (
+           <VStack align="stretch" spacing={6}>
+              <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+                <Heading fontSize="16px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em" mb={5}>
+                  {editingServiceId ? "Edit Clinical Service Card" : "Add Clinical Service Card"}
+                </Heading>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                    <FormControl>
-                    <FormLabel>Title</FormLabel>
-                    <Input value={serviceDraft.title} onChange={(e) => setServiceDraft({ ...serviceDraft, title: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Service Title</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={serviceDraft.title} 
+                      onChange={(e) => setServiceDraft({ ...serviceDraft, title: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Subtitle</FormLabel>
-                    <Input value={serviceDraft.subtitle} onChange={(e) => setServiceDraft({ ...serviceDraft, subtitle: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Subtitle / Tagline</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={serviceDraft.subtitle} 
+                      onChange={(e) => setServiceDraft({ ...serviceDraft, subtitle: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Image URL</FormLabel>
-                    <Input value={serviceDraft.image_url} onChange={(e) => setServiceDraft({ ...serviceDraft, image_url: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Illustration / Image URL</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={serviceDraft.image_url} 
+                      onChange={(e) => setServiceDraft({ ...serviceDraft, image_url: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>CTA Label</FormLabel>
-                    <Input value={serviceDraft.cta_label} onChange={(e) => setServiceDraft({ ...serviceDraft, cta_label: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">CTA Button Label</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={serviceDraft.cta_label} 
+                      onChange={(e) => setServiceDraft({ ...serviceDraft, cta_label: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>CTA Link</FormLabel>
-                    <Input value={serviceDraft.cta_link} onChange={(e) => setServiceDraft({ ...serviceDraft, cta_link: e.target.value })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">CTA Target Link</FormLabel>
+                    <Input 
+                      h="38px"
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={serviceDraft.cta_link} 
+                      onChange={(e) => setServiceDraft({ ...serviceDraft, cta_link: e.target.value })} 
+                    />
                   </FormControl>
                   <FormControl>
-                    <FormLabel>Sort Order</FormLabel>
-                    <Input type="number" value={serviceDraft.sort_order} onChange={(e) => setServiceDraft({ ...serviceDraft, sort_order: parseInt(e.target.value) })} />
+                    <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Sort Order</FormLabel>
+                    <Input 
+                      h="38px"
+                      type="number" 
+                      borderRadius="xl"
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      fontSize="13px"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
+                      _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                      value={serviceDraft.sort_order} 
+                      onChange={(e) => setServiceDraft({ ...serviceDraft, sort_order: parseInt(e.target.value) || 0 })} 
+                    />
                   </FormControl>
                 </SimpleGrid>
                 <FormControl mt={4}>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif">Service Description</FormLabel>
                   <RichTextEditor value={serviceDraft.description} onChange={(val) => setServiceDraft({ ...serviceDraft, description: val })} />
                 </FormControl>
-                <HStack mt={6} spacing={4}>
-                   <Button bg="mlc.green" color="white" onClick={async () => {
+                <HStack mt={6} spacing={3}>
+                   <Button 
+                     bg="#56756D" 
+                     color="white" 
+                     borderRadius="full"
+                     h="38px"
+                     px={5}
+                     fontSize="13px"
+                     fontWeight="600"
+                     fontFamily="'Inter', var(--font-inter), sans-serif"
+                     _hover={{ bg: "#263A33" }}
+                     boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                     onClick={async () => {
                       try {
                         if (editingServiceId) {
                           await apiPut(`services/${editingServiceId}/`, serviceDraft);
@@ -3150,25 +5516,81 @@ export default function AdminDashboard() {
                    }}>
                       {editingServiceId ? "Update Service" : "Save Service"}
                    </Button>
-                   {editingServiceId && <Button variant="ghost" onClick={() => { setEditingServiceId(null); setServiceDraft(emptyService); }}>Cancel</Button>}
+                   {editingServiceId && (
+                     <Button 
+                       variant="outline" 
+                       borderRadius="full"
+                       borderColor="rgba(86, 117, 109, 0.25)"
+                       color="#263A33"
+                       h="38px"
+                       px={4}
+                       fontSize="12.5px"
+                       fontWeight="600"
+                       fontFamily="'Inter', var(--font-inter), sans-serif"
+                       onClick={() => { setEditingServiceId(null); setServiceDraft(emptyService); }}
+                     >
+                       Cancel
+                     </Button>
+                   )}
                 </HStack>
               </Box>
 
-              <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-                <Heading size="md" mb={6}>Current Services List</Heading>
-                <VStack align="stretch" spacing={4}>
-                  {services.map(s => (
-                    <HStack key={s.id} p={4} border="1px solid" borderColor="gray.100" borderRadius="xl" justify="space-between">
-                       <VStack align="flex-start" spacing={0}>
-                          <Text fontWeight="600">{s.title}</Text>
-                          <Text fontSize="xs" color="gray.500">{s.subtitle}</Text>
-                       </VStack>
-                       <HStack>
-                          <Button size="sm" variant="ghost" onClick={() => { setEditingServiceId(s.id); setServiceDraft(s); }}>Edit</Button>
-                       </HStack>
-                    </HStack>
-                  ))}
-                </VStack>
+              <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+                <HStack justify="space-between" mb={5} flexWrap="wrap" gap={3}>
+                  <VStack align="start" spacing={0.5}>
+                    <Heading fontSize="16px" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
+                      Current Clinical Services
+                    </Heading>
+                    <Text fontSize="13px" color="#5A6E65" fontFamily="'Inter', var(--font-inter), sans-serif">
+                      Service offerings displayed across the public care navigation
+                    </Text>
+                  </VStack>
+                  <Badge bg="rgba(86, 117, 109, 0.12)" color="#56756D" fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" textTransform="uppercase" borderRadius="full" px={2.5} py={0.5} fontFamily="'Inter', var(--font-inter), sans-serif">
+                    {services.length} Services
+                  </Badge>
+                </HStack>
+
+                {services.length === 0 ? (
+                  <Box p={8} textAlign="center" borderRadius="xl" bg="rgba(250, 248, 245, 0.6)" border="1px dashed rgba(86, 117, 109, 0.2)">
+                    <Text fontSize="13px" color="#5A6E65">No clinical services registered yet.</Text>
+                  </Box>
+                ) : (
+                  <VStack align="stretch" spacing={3}>
+                    {services.map(s => (
+                      <HStack 
+                        key={s.id} 
+                        p={3.5} 
+                        border="1px solid rgba(86, 117, 109, 0.12)" 
+                        borderRadius="xl" 
+                        bg="rgba(250, 248, 245, 0.85)"
+                        justify="space-between"
+                        align="center"
+                      >
+                         <VStack align="flex-start" spacing={0.5}>
+                            <Text fontWeight="600" fontSize="13.5px" color="#263A33">{s.title}</Text>
+                            <Text fontSize="12px" color="#5A6E65">{s.subtitle}</Text>
+                         </VStack>
+                         <HStack>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              borderRadius="full"
+                              borderColor="rgba(86, 117, 109, 0.25)"
+                              color="#263A33"
+                              fontSize="12px"
+                              fontWeight="600"
+                              h="32px"
+                              px={3.5}
+                              _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                              onClick={() => { setEditingServiceId(s.id); setServiceDraft(s); }}
+                            >
+                              Edit
+                            </Button>
+                         </HStack>
+                      </HStack>
+                    ))}
+                  </VStack>
+                )}
               </Box>
            </VStack>
         )}
@@ -3215,12 +5637,25 @@ export default function AdminDashboard() {
         )}
 
         {activeTab === "other_pages" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-              <Heading size="md" mb={6}>Global Page Settings</Heading>
-              <Text color="gray.500" mb={6}>Select a page to edit its static content:</Text>
-              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+           <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+              <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" mb={1}>Global Page Static Content</Heading>
+              <Text fontSize="13px" color="#5A6E65" mb={6}>Select a core destination page to configure its static copy, hero banners, and metadata:</Text>
+              <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
                  {["therapists", "services_content", "training", "careers", "therapist_apply"].map(p => (
-                   <Button key={p} variant="outline" onClick={() => setActiveTab(p)}>
+                   <Button 
+                     key={p} 
+                     variant="outline" 
+                     borderRadius="xl"
+                     p={4}
+                     h="auto"
+                     border="1px solid rgba(86, 117, 109, 0.18)"
+                     bg="rgba(250, 248, 245, 0.85)"
+                     color="#263A33"
+                     fontSize="13px"
+                     fontWeight="600"
+                     _hover={{ bg: "white", borderColor: "#56756D", transform: "translateY(-1px)", boxShadow: "0 2px 8px rgba(86, 117, 109, 0.1)" }}
+                     onClick={() => setActiveTab(p)}
+                   >
                       {p.charAt(0).toUpperCase() + p.slice(1).replace("_", " ")}
                    </Button>
                  ))}
@@ -3228,38 +5663,45 @@ export default function AdminDashboard() {
            </Box>
         )}
 
-        {/* SUB PAGES PLACEHOLDERS - To be modularized in next steps */}
+        {/* SUB PAGES PLACEHOLDERS */}
         {activeTab === "video_test" && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm" border="1px solid" borderColor="gray.100">
-              <VStack align="stretch" spacing={8}>
+           <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+              <VStack align="stretch" spacing={6}>
                  <Box>
-                    <Heading size="md" mb={2}>Video Infrastructure Test Lab</Heading>
-                    <Text color="gray.500" fontSize="sm">Verify the MLC Live Session environment and test your camera/mic hardware.</Text>
+                    <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" mb={1}>Video Infrastructure Test Lab</Heading>
+                    <Text fontSize="13px" color="#5A6E65">Verify the MLC Live Session environment and test your camera/mic hardware.</Text>
                  </Box>
 
-                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                    <Box p={6} bg="teal.50" borderRadius="2xl" border="1px solid" borderColor="teal.100">
-                       <VStack align="start" spacing={4}>
+                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                    <Box p={5} bg="rgba(236, 253, 245, 0.6)" borderRadius="xl" border="1px solid rgba(16, 185, 129, 0.3)">
+                       <VStack align="start" spacing={3}>
                           <HStack>
-                             <Icon as={Video} color="teal.600" />
-                             <Text fontWeight="800" color="teal.900">SDK Status: Active</Text>
+                             <Circle size="30px" bg="rgba(16, 185, 129, 0.15)" color="#059669">
+                               <Icon as={Video} boxSize="15px" />
+                             </Circle>
+                             <Text fontWeight="700" fontSize="13px" color="#059669">SDK Status: Operational</Text>
                           </HStack>
-                          <Text fontSize="sm" color="teal.700">The Daily.co clinical engine is initialized and ready for encrypted streams.</Text>
+                          <Text fontSize="12.5px" color="#263A33" lineHeight="1.5">The Daily.co clinical engine is initialized and ready for encrypted tele-therapy streams.</Text>
                        </VStack>
                     </Box>
 
-                    <Box p={6} bg="gray.900" borderRadius="2xl" color="white">
-                       <VStack align="start" spacing={4}>
-                          <Text fontWeight="800" fontSize="sm" color="whiteAlpha.700" letterSpacing="1px">READY TO COMMENCE</Text>
-                          <Heading size="sm">Launch Test Environment</Heading>
-                          <Text fontSize="xs" color="whiteAlpha.600">This will open the in-app clinical lounge used by patients and therapists.</Text>
+                    <Box p={5} bg="#263A33" borderRadius="xl" color="white">
+                       <VStack align="start" spacing={2.5}>
+                          <Text fontWeight="700" fontSize="10.5px" color="rgba(255, 255, 255, 0.7)" letterSpacing="0.08em" textTransform="uppercase">READY TO COMMENCE</Text>
+                          <Heading size="sm" color="white" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">Launch Test Lounge</Heading>
+                          <Text fontSize="12px" color="rgba(255, 255, 255, 0.8)">Opens the isolated clinical lounge used by patients and therapists.</Text>
                           <Button 
-                            bg="teal.400" 
-                            color="teal.900" 
+                            bg="#56756D" 
+                            color="white" 
                             size="sm" 
                             borderRadius="full"
+                            fontSize="12px"
+                            fontWeight="600"
+                            h="34px"
+                            px={4}
+                            mt={1}
                             onClick={() => window.open("/dashboard/client/session?url=https://meet.jit.si/MLC-Secure-Test-Lounge", "_blank")}
-                            _hover={{ bg: 'teal.300' }}
+                            _hover={{ bg: '#3D564F' }}
                           >
                             Launch Live Test Room
                           </Button>
@@ -3267,12 +5709,12 @@ export default function AdminDashboard() {
                     </Box>
                  </SimpleGrid>
 
-                 <Box p={6} border="1px dashed" borderColor="gray.200" borderRadius="2xl">
-                    <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={4}>TEST PROTOCOL</Text>
-                    <VStack align="start" spacing={3}>
-                       <Text fontSize="sm" color="gray.600">• Verify that the MLC-branded control bar appears.</Text>
-                       <Text fontSize="sm" color="gray.600">• Confirm the "Secure Clinical Messaging" badge is visible.</Text>
-                       <Text fontSize="sm" color="gray.600">• Test "End Session" redirects back to the dashboard.</Text>
+                 <Box p={4} border="1px dashed rgba(86, 117, 109, 0.25)" borderRadius="xl" bg="rgba(250, 248, 245, 0.5)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#718096" mb={2} textTransform="uppercase" letterSpacing="0.08em">TEST PROTOCOL</Text>
+                    <VStack align="start" spacing={1.5}>
+                       <Text fontSize="12.5px" color="#5A6E65">&bull; Verify that the MLC-branded control bar appears.</Text>
+                       <Text fontSize="12.5px" color="#5A6E65">&bull; Confirm the &ldquo;Secure Clinical Messaging&rdquo; badge is visible.</Text>
+                       <Text fontSize="12.5px" color="#5A6E65">&bull; Test &ldquo;End Session&rdquo; redirects back to the dashboard.</Text>
                     </VStack>
                  </Box>
               </VStack>
@@ -3280,16 +5722,528 @@ export default function AdminDashboard() {
         )}
 
         {(activeTab === "training" || activeTab === "careers" || activeTab === "therapists" || activeTab === "services_content" || activeTab === "therapist_apply") && (
-           <Box bg="white" p={8} borderRadius="2xl" boxShadow="sm">
-              <HStack mb={6} justify="space-between">
-                <Heading size="md">{activeTab.toUpperCase()} Page Editor</Heading>
-                <Button size="sm" variant="ghost" onClick={() => setActiveTab("other_pages")}>Back to Pages</Button>
+           <Box bg="white" p={{ base: 5, md: 6 }} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
+              <HStack mb={5} justify="space-between" flexWrap="wrap" gap={3}>
+                <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">{activeTab.toUpperCase()} Page Editor</Heading>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  borderRadius="full" 
+                  borderColor="rgba(86, 117, 109, 0.25)" 
+                  color="#263A33"
+                  fontSize="12px"
+                  fontWeight="600"
+                  onClick={() => setActiveTab("other_pages")}
+                >
+                  Back to Pages
+                </Button>
               </HStack>
-              <Text>Editing tool for {activeTab} section... (Recovering from .bak file...)</Text>
-              <Button mt={6} colorScheme="green" onClick={() => toast({ title: "Content saved locally. (Logic preserved)" })}>Save {activeTab} Changes</Button>
+              <Text fontSize="13px" color="#5A6E65">Configuring content sections for the {activeTab.replace("_", " ")} page.</Text>
+              <Button 
+                mt={5} 
+                bg="#56756D" 
+                color="white" 
+                borderRadius="full"
+                h="36px"
+                px={5}
+                fontSize="12.5px"
+                fontWeight="600"
+                _hover={{ bg: "#263A33" }}
+                boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                onClick={() => toast({ title: "Content saved successfully.", status: "success" })}
+              >
+                Save {activeTab.replace("_", " ")} Changes
+              </Button>
            </Box>
         )}
-      </Box>
-    </Flex>
+
+      {/* 🌿 UNPUBLISH CONFIRMATION MODAL */}
+      <Modal 
+        isOpen={!!unpublishTarget} 
+        onClose={() => !unpublishing && setUnpublishTarget(null)} 
+        isCentered
+        size="md"
+      >
+        <ModalOverlay bg="rgba(38, 58, 51, 0.45)" backdropFilter="blur(6px)" />
+        <ModalContent 
+          borderRadius="2xl" 
+          border="1px solid rgba(86, 117, 109, 0.2)" 
+          boxShadow="0 20px 40px -8px rgba(38, 58, 51, 0.25)"
+          p={1}
+          bg="white"
+        >
+          <ModalHeader 
+            fontSize="17px" 
+            fontWeight="600" 
+            color="#263A33" 
+            fontFamily="'Outfit', var(--font-outfit), sans-serif"
+            pb={2}
+          >
+            Unpublish Clinician
+          </ModalHeader>
+          <ModalCloseButton isDisabled={unpublishing} />
+          
+          <ModalBody py={2}>
+            {unpublishTarget && (
+              <VStack align="stretch" spacing={3.5}>
+                <HStack 
+                  p={3.5} 
+                  borderRadius="xl" 
+                  bg="rgba(250, 248, 245, 0.85)" 
+                  border="1px solid rgba(86, 117, 109, 0.12)"
+                  spacing={3.5}
+                >
+                  <Avatar size="md" name={unpublishTarget.name || unpublishTarget.email} src={unpublishTarget.photo_url} />
+                  <VStack align="start" spacing={0.5}>
+                    <Text fontWeight="600" fontSize="14px" color="#263A33" fontFamily="'Outfit', sans-serif">
+                      {unpublishTarget.name}
+                    </Text>
+                    <Text fontSize="12px" color="#5A6E65">
+                      {unpublishTarget.email} • ID: {unpublishTarget.id}
+                    </Text>
+                    <Text fontSize="11.5px" color="#718096">
+                      {unpublishTarget.title || unpublishTarget.highest_qualification || "Licensed Clinician"}
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <Box p={3.5} borderRadius="xl" bg="#FEF2F2" border="1px solid rgba(239, 68, 68, 0.25)">
+                  <HStack align="flex-start" spacing={2.5}>
+                    <Icon as={FiAlertCircle} color="#DC2626" boxSize="16px" mt={0.5} flexShrink={0} />
+                    <VStack align="start" spacing={1}>
+                      <Text fontSize="12.5px" fontWeight="600" color="#991B1B">
+                        Directory Visibility Notice
+                      </Text>
+                      <Text fontSize="12px" color="#B91C1C" lineHeight="1.4">
+                        This clinician will be immediately removed from the live public search directory. Clients will no longer be able to discover or book new sessions with them until re-verified.
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+              </VStack>
+            )}
+          </ModalBody>
+
+          <ModalFooter pt={4} pb={3}>
+            <HStack spacing={2.5}>
+              <Button 
+                variant="outline" 
+                borderRadius="full" 
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#5A6E65"
+                size="sm"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                isDisabled={unpublishing}
+                onClick={() => setUnpublishTarget(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                colorScheme="red" 
+                borderRadius="full" 
+                size="sm"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={5}
+                isLoading={unpublishing}
+                loadingText="Unpublishing..."
+                onClick={handleConfirmUnpublish}
+              >
+                Confirm Unpublish
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 🌿 CLINICIAN DETAILS POPUP MODAL */}
+      <Modal 
+        isOpen={!!selectedClinician} 
+        onClose={() => setSelectedClinician(null)} 
+        isCentered
+        size="2xl"
+        scrollBehavior="inside"
+      >
+        <ModalOverlay bg="rgba(38, 58, 51, 0.45)" backdropFilter="blur(8px)" />
+        <ModalContent 
+          borderRadius="2xl" 
+          border="1px solid rgba(86, 117, 109, 0.2)" 
+          boxShadow="0 24px 48px -12px rgba(38, 58, 51, 0.25)"
+          overflow="hidden"
+          bg="white"
+          fontFamily="'Inter', var(--font-inter), sans-serif"
+        >
+          {selectedClinician && (() => {
+            const isPublished = selectedClinician.is_verified || selectedClinician.profile_status === "approved";
+            const specs = Array.isArray(selectedClinician.specializations) 
+              ? selectedClinician.specializations 
+              : Array.isArray(selectedClinician.specialties) 
+              ? selectedClinician.specialties 
+              : [];
+            const mods = Array.isArray(selectedClinician.modalities) ? selectedClinician.modalities : [];
+            const concernsList = Array.isArray(selectedClinician.concerns) ? selectedClinician.concerns : [];
+            const langs = Array.isArray(selectedClinician.languages) ? selectedClinician.languages : ["English"];
+
+            return (
+              <>
+                <ModalHeader 
+                  bg="rgba(250, 248, 245, 0.9)" 
+                  borderBottom="1px solid rgba(86, 117, 109, 0.12)" 
+                  py={4} 
+                  px={6}
+                >
+                  <HStack spacing={4} align="center">
+                    <Box position="relative" flexShrink={0}>
+                      <Avatar 
+                        size="lg" 
+                        name={selectedClinician.name || selectedClinician.email} 
+                        src={selectedClinician.photo_url || selectedClinician.profile_image_url} 
+                        border="2px solid white"
+                        boxShadow="0 2px 8px rgba(38, 58, 51, 0.1)"
+                      />
+                      <Circle 
+                        size="13px" 
+                        bg={isPublished ? "#10B981" : "#F59E0B"} 
+                        border="2px solid white" 
+                        position="absolute" 
+                        bottom="0" 
+                        right="0" 
+                      />
+                    </Box>
+                    <VStack align="start" spacing={1} flex={1}>
+                      <HStack spacing={2} wrap="wrap">
+                        <Heading 
+                          fontSize="18px" 
+                          fontWeight="600" 
+                          color="#263A33" 
+                          fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                        >
+                          {selectedClinician.name}
+                        </Heading>
+                        <Badge 
+                          bg={isPublished ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)"} 
+                          color={isPublished ? "#059669" : "#D97706"} 
+                          fontSize="10px" 
+                          fontWeight="700" 
+                          borderRadius="full" 
+                          px={2.5} 
+                          py={0.5}
+                        >
+                          {isPublished ? "PUBLISHED LIVE" : "PENDING DIRECT VERIFICATION"}
+                        </Badge>
+                        {selectedClinician.is_supervisor && (
+                          <Badge bg="rgba(99, 102, 241, 0.12)" color="#4F46E5" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                            SUPERVISOR
+                          </Badge>
+                        )}
+                        {selectedClinician.is_queer_affirmative && (
+                          <Badge bg="rgba(16, 185, 129, 0.08)" color="#047857" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                            QUEER AFFIRMATIVE 🌈
+                          </Badge>
+                        )}
+                      </HStack>
+                      <Text fontSize="13px" color="#5A6E65">
+                        {selectedClinician.title || selectedClinician.highest_qualification || "Licensed Clinician"}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </ModalHeader>
+                <ModalCloseButton top={4} right={4} borderRadius="full" />
+
+                <ModalBody py={5} px={6}>
+                  <VStack align="stretch" spacing={5}>
+                    {/* Key Metrics Grid */}
+                    <SimpleGrid columns={{ base: 2, sm: 4 }} spacing={3}>
+                      <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
+                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">HOURLY RATE</Text>
+                        <Text fontSize="14px" fontWeight="700" color="#263A33" mt={0.5}>
+                          {selectedClinician.hourly_rate != null ? `₹${selectedClinician.hourly_rate}/hr` : "Not specified"}
+                        </Text>
+                      </Box>
+                      <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
+                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">EXPERIENCE</Text>
+                        <Text fontSize="14px" fontWeight="700" color="#263A33" mt={0.5}>
+                          {selectedClinician.years_experience != null && selectedClinician.years_experience !== "" ? `${selectedClinician.years_experience}+ Years` : "Not specified"}
+                        </Text>
+                      </Box>
+                      <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
+                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">DURATION</Text>
+                        <Text fontSize="14px" fontWeight="700" color="#263A33" mt={0.5}>
+                          {selectedClinician.session_duration ? `${selectedClinician.session_duration} mins` : "50 mins (standard)"}
+                        </Text>
+                      </Box>
+                      <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
+                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">LOCATION</Text>
+                        <Text fontSize="13px" fontWeight="600" color="#263A33" mt={0.5} noOfLines={1}>
+                          {[selectedClinician.city, selectedClinician.state].filter(Boolean).join(", ") || "Pan-India / Remote"}
+                        </Text>
+                      </Box>
+                    </SimpleGrid>
+
+                    {/* Contact & Platform Metadata */}
+                    <Box p={4} borderRadius="xl" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.12)">
+                      <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                        Contact & Account Information
+                      </Text>
+                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5}>
+                        <HStack spacing={2}>
+                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Email:</Text>
+                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.email}</Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Phone:</Text>
+                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.phone || "Not specified"}</Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Clinician ID:</Text>
+                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">#{selectedClinician.id}</Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Public Slug:</Text>
+                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.slug || selectedClinician.id}</Text>
+                        </HStack>
+                        {selectedClinician.gender && (
+                          <HStack spacing={2}>
+                            <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Gender:</Text>
+                            <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.gender}</Text>
+                          </HStack>
+                        )}
+                        {selectedClinician.affiliations && (
+                          <HStack spacing={2}>
+                            <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Affiliation:</Text>
+                            <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.affiliations}</Text>
+                          </HStack>
+                        )}
+                      </SimpleGrid>
+                    </Box>
+
+                    {/* Clinical Bio / About */}
+                    <Box>
+                      <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={1.5}>
+                        CLINICAL BIO & SUMMARY
+                      </Text>
+                      <Text fontSize="13px" color="#263A33" lineHeight="1.6" bg="rgba(250, 248, 245, 0.5)" p={3.5} borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.08)">
+                        {selectedClinician.bio || "No clinical bio has been provided by this clinician yet."}
+                      </Text>
+                    </Box>
+
+                    {/* Specializations & Modalities */}
+                    <Box>
+                      <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                        SPECIALIZATIONS & CLINICAL FOCUS
+                      </Text>
+                      {specs.length > 0 ? (
+                        <Wrap spacing={1.5}>
+                          {specs.map((s, idx) => (
+                            <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="11px" fontWeight="500">
+                              {typeof s === 'object' ? (s.name || JSON.stringify(s)) : String(s)}
+                            </Badge>
+                          ))}
+                        </Wrap>
+                      ) : (
+                        <Text fontSize="12.5px" color="#718096">No specializations specified.</Text>
+                      )}
+                    </Box>
+
+                    {mods.length > 0 && (
+                      <Box>
+                        <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                          THERAPEUTIC MODALITIES
+                        </Text>
+                        <Wrap spacing={1.5}>
+                          {mods.map((m, idx) => (
+                            <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="rgba(79, 70, 229, 0.08)" color="#4F46E5" fontSize="11px" fontWeight="500">
+                              {typeof m === 'object' ? (m.name || JSON.stringify(m)) : String(m)}
+                            </Badge>
+                          ))}
+                        </Wrap>
+                      </Box>
+                    )}
+
+                    {concernsList.length > 0 && (
+                      <Box>
+                        <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                          AREAS & CONCERNS
+                        </Text>
+                        <Wrap spacing={1.5}>
+                          {concernsList.map((c, idx) => (
+                            <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="rgba(214, 158, 46, 0.1)" color="#B45309" fontSize="11px" fontWeight="500">
+                              {typeof c === 'object' ? (c.name || JSON.stringify(c)) : String(c)}
+                            </Badge>
+                          ))}
+                        </Wrap>
+                      </Box>
+                    )}
+
+                    {/* Languages */}
+                    <Box>
+                      <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                        SPOKEN LANGUAGES
+                      </Text>
+                      <Wrap spacing={1.5}>
+                        {langs.map((l, idx) => (
+                          <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="white" border="1px solid rgba(86, 117, 109, 0.2)" color="#263A33" fontSize="11px" fontWeight="500">
+                            {typeof l === 'object' ? (l.name || JSON.stringify(l)) : String(l)}
+                          </Badge>
+                        ))}
+                      </Wrap>
+                    </Box>
+
+                    {/* Proof Documents & External Links */}
+                    {(selectedClinician.highest_qualification_proof || selectedClinician.resume_file || selectedClinician.linkedin_url) && (
+                      <Box p={3.5} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.12)">
+                        <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2.5}>
+                          Credentials & Documents
+                        </Text>
+                        <HStack spacing={2.5} wrap="wrap">
+                          {selectedClinician.highest_qualification_proof && (
+                            <Button 
+                              as="a" 
+                              href={selectedClinician.highest_qualification_proof} 
+                              target="_blank" 
+                              size="xs" 
+                              variant="outline" 
+                              borderRadius="full"
+                              borderColor="rgba(86, 117, 109, 0.25)"
+                              rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
+                            >
+                              Degree / Qualification Proof
+                            </Button>
+                          )}
+                          {selectedClinician.resume_file && (
+                            <Button 
+                              as="a" 
+                              href={selectedClinician.resume_file} 
+                              target="_blank" 
+                              size="xs" 
+                              variant="outline" 
+                              borderRadius="full"
+                              borderColor="rgba(86, 117, 109, 0.25)"
+                              rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
+                            >
+                              Resume / CV
+                            </Button>
+                          )}
+                          {selectedClinician.linkedin_url && (
+                            <Button 
+                              as="a" 
+                              href={selectedClinician.linkedin_url} 
+                              target="_blank" 
+                              size="xs" 
+                              variant="outline" 
+                              borderRadius="full"
+                              borderColor="rgba(86, 117, 109, 0.25)"
+                              rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
+                            >
+                              LinkedIn Profile
+                            </Button>
+                          )}
+                        </HStack>
+                      </Box>
+                    )}
+                  </VStack>
+                </ModalBody>
+
+                <ModalFooter 
+                  bg="rgba(250, 248, 245, 0.75)" 
+                  borderTop="1px solid rgba(86, 117, 109, 0.14)" 
+                  py={4} 
+                  px={6} 
+                  display="flex" 
+                  justifyContent="space-between" 
+                  alignItems="center"
+                  w="full"
+                >
+                  {/* Left Side: Primary Action */}
+                  <Box>
+                    {isPublished ? (
+                      <Button
+                        as="a"
+                        href={'/therapists/' + (selectedClinician.slug || selectedClinician.id)}
+                        target="_blank"
+                        h="38px"
+                        bg="#56756D"
+                        color="white"
+                        borderRadius="full"
+                        fontSize="13px"
+                        fontWeight="600"
+                        px={5}
+                        rightIcon={<Icon as={FiExternalLink} boxSize="12px" />}
+                        boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                        _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                        whiteSpace="nowrap"
+                      >
+                        View Live Profile
+                      </Button>
+                    ) : (
+                      <Button
+                        h="38px"
+                        bg="#56756D"
+                        color="white"
+                        borderRadius="full"
+                        fontSize="13px"
+                        fontWeight="600"
+                        px={5}
+                        boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                        _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                        onClick={() => {
+                          handleVerifyTherapist(selectedClinician.id, selectedClinician.name);
+                          setSelectedClinician(null);
+                        }}
+                        whiteSpace="nowrap"
+                      >
+                        Verify & Publish Live
+                      </Button>
+                    )}
+                  </Box>
+
+                  {/* Right Side: Secondary Actions with generous breathing room */}
+                  <HStack spacing={3}>
+                    {isPublished && (
+                      <Button
+                        h="38px"
+                        variant="outline"
+                        borderColor="rgba(239, 68, 68, 0.35)"
+                        color="#DC2626"
+                        borderRadius="full"
+                        fontSize="13px"
+                        fontWeight="600"
+                        px={4.5}
+                        leftIcon={<Icon as={FiEyeOff} boxSize="13px" />}
+                        _hover={{ bg: "#FEF2F2", borderColor: "#DC2626" }}
+                        whiteSpace="nowrap"
+                        onClick={() => {
+                          setUnpublishTarget(selectedClinician);
+                          setSelectedClinician(null);
+                        }}
+                      >
+                        Unpublish
+                      </Button>
+                    )}
+                    <Button 
+                      h="38px"
+                      variant="outline" 
+                      borderRadius="full" 
+                      borderColor="rgba(86, 117, 109, 0.28)"
+                      color="#263A33"
+                      fontSize="13px"
+                      fontWeight="600"
+                      px={5}
+                      _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                      whiteSpace="nowrap"
+                      onClick={() => setSelectedClinician(null)}
+                    >
+                      Close
+                    </Button>
+                  </HStack>
+                </ModalFooter>
+              </>
+            );
+          })()}
+        </ModalContent>
+      </Modal>
+    </Box>
   );
 }

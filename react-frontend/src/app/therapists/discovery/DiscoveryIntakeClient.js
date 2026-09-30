@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, Progress,
-  Radio, RadioGroup, Checkbox, Input, Select, useToast, Icon,
+  Radio, RadioGroup, Checkbox, Input, useToast, Icon,
   Tag, Textarea, FormControl, FormLabel, Center, Spinner, Flex,
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,7 @@ import { useAuth } from '../../../context/AuthContext';
 import NextLink from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { Select as ChakraReactSelect } from 'chakra-react-select';
+import ModernSelect from '../../../components/ModernSelect';
 
 const MotionBox = motion(Box);
 
@@ -185,7 +186,7 @@ export default function DiscoveryIntakeClient() {
         return (
           <VStack spacing={6} align="start">
             <VStack align="start" spacing={2}>
-              <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+              <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
                 Privacy & Confidentiality
               </Heading>
               <Text color="#5A6E65" fontSize="14px" lineHeight="1.65">
@@ -218,24 +219,36 @@ export default function DiscoveryIntakeClient() {
 
       case 1:
         return (
-          <VStack spacing={5} align="stretch">
-            <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+          <VStack spacing={4} align="stretch">
+            <Heading fontSize={{ base: "18px", md: "20px" }} color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
               About You
             </Heading>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
               <FormControl isRequired>
-                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">First Name</FormLabel>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">First Name</FormLabel>
                 <Input
+                  h="40px"
                   borderRadius="xl"
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                   value={formData.first_name}
                   onChange={(e) => setFormData((p) => ({ ...p, first_name: e.target.value }))}
                   placeholder="e.g. Priya"
                 />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Last Name</FormLabel>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Last Name</FormLabel>
                 <Input
+                  h="40px"
                   borderRadius="xl"
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                   value={formData.last_name}
                   onChange={(e) => setFormData((p) => ({ ...p, last_name: e.target.value }))}
                   placeholder="e.g. Sharma"
@@ -243,11 +256,17 @@ export default function DiscoveryIntakeClient() {
               </FormControl>
             </SimpleGrid>
 
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
               <FormControl>
-                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Age</FormLabel>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Age</FormLabel>
                 <Input
+                  h="40px"
                   borderRadius="xl"
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                   type="number"
                   value={formData.age}
                   onChange={(e) => setFormData((p) => ({ ...p, age: e.target.value }))}
@@ -255,9 +274,15 @@ export default function DiscoveryIntakeClient() {
                 />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="13px" fontWeight="600" color="#374A43">City / Location</FormLabel>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">City / Location</FormLabel>
                 <Input
+                  h="40px"
                   borderRadius="xl"
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                   value={formData.location.city}
                   onChange={(e) => setFormData((p) => ({ ...p, location: { ...p.location, city: e.target.value } }))}
                   placeholder="e.g. Mumbai, Bangalore, Online"
@@ -266,7 +291,7 @@ export default function DiscoveryIntakeClient() {
             </SimpleGrid>
 
             <FormControl>
-              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Preferred Languages</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Preferred Languages</FormLabel>
               <ChakraReactSelect
                 isMulti
                 options={LANGUAGE_OPTIONS}
@@ -280,11 +305,11 @@ export default function DiscoveryIntakeClient() {
 
       case 2:
         return (
-          <VStack spacing={5} align="stretch">
-            <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+          <VStack spacing={4} align="stretch">
+            <Heading fontSize={{ base: "18px", md: "20px" }} color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
               What brings you to therapy?
             </Heading>
-            <Text color="#5A6E65" fontSize="13.5px">Select any areas you would like to explore or focus on:</Text>
+            <Text color="#5A6E65" fontSize="13px">Select any areas you would like to explore or focus on:</Text>
             <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5}>
               {CONCERNS.map((c) => {
                 const active = formData.presenting_concerns.includes(c);
@@ -292,16 +317,16 @@ export default function DiscoveryIntakeClient() {
                   <Button
                     key={c}
                     variant={active ? 'solid' : 'outline'}
-                    bg={active ? '#56756D' : 'white'}
-                    color={active ? 'white' : '#374A43'}
-                    borderColor={active ? '#56756D' : 'gray.200'}
+                    bg={active ? '#56756D' : 'rgba(250, 248, 245, 0.85)'}
+                    color={active ? 'white' : '#263A33'}
+                    borderColor={active ? '#56756D' : 'rgba(86, 117, 109, 0.2)'}
                     borderRadius="xl"
                     justifyContent="flex-start"
-                    fontSize="13px"
+                    fontSize="12.5px"
                     fontWeight="500"
-                    h="44px"
+                    h="40px"
                     onClick={() => toggleConcern(c)}
-                    _hover={{ bg: active ? '#425C55' : '#F4F7F5' }}
+                    _hover={{ bg: active ? '#263A33' : 'white' }}
                   >
                     {c}
                   </Button>
@@ -309,11 +334,16 @@ export default function DiscoveryIntakeClient() {
               })}
             </SimpleGrid>
 
-            <FormControl mt={3}>
-              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Tell us a little more (in your own words)</FormLabel>
+            <FormControl mt={2}>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Tell us a little more (in your own words)</FormLabel>
               <Textarea
                 borderRadius="xl"
-                rows={4}
+                borderColor="rgba(86, 117, 109, 0.2)"
+                bg="white"
+                fontSize="13px"
+                color="#263A33"
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                rows={3}
                 value={formData.problem_description}
                 onChange={(e) => setFormData((p) => ({ ...p, problem_description: e.target.value }))}
                 placeholder="What have you been feeling or experiencing recently? (Optional, but helps us match you accurately)"
@@ -324,14 +354,20 @@ export default function DiscoveryIntakeClient() {
 
       case 3:
         return (
-          <VStack spacing={5} align="stretch">
-            <Heading size="md" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+          <VStack spacing={4} align="stretch">
+            <Heading fontSize={{ base: "18px", md: "20px" }} color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
               How can our team reach you?
             </Heading>
             <FormControl isRequired>
-              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Email Address</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Email Address</FormLabel>
               <Input
+                h="40px"
                 borderRadius="xl"
+                borderColor="rgba(86, 117, 109, 0.2)"
+                bg="white"
+                fontSize="13px"
+                color="#263A33"
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
@@ -339,25 +375,28 @@ export default function DiscoveryIntakeClient() {
               />
             </FormControl>
             <FormControl>
-              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">Phone / WhatsApp Number</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Phone / WhatsApp Number</FormLabel>
               <Input
+                h="40px"
                 borderRadius="xl"
+                borderColor="rgba(86, 117, 109, 0.2)"
+                bg="white"
+                fontSize="13px"
+                color="#263A33"
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
                 value={formData.phone}
                 onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
                 placeholder="+91 98765 43210"
               />
             </FormControl>
             <FormControl>
-              <FormLabel fontSize="13px" fontWeight="600" color="#374A43">How soon do you hope to begin?</FormLabel>
-              <Select
-                borderRadius="xl"
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">How soon do you hope to begin?</FormLabel>
+              <ModernSelect
                 value={formData.urgency}
-                onChange={(e) => setFormData((p) => ({ ...p, urgency: e.target.value }))}
-              >
-                {['Within the next few days', 'Within the next week', 'Within this month', 'Just exploring options'].map((o) => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </Select>
+                onChange={(val) => setFormData((p) => ({ ...p, urgency: val }))}
+                h="40px"
+                options={['Within the next few days', 'Within the next week', 'Within this month', 'Just exploring options']}
+              />
             </FormControl>
           </VStack>
         );
@@ -374,7 +413,7 @@ export default function DiscoveryIntakeClient() {
           <Icon as={FiCheck} w={9} h={9} color="#56756D" />
         </Center>
         <VStack spacing={3}>
-          <Heading size="lg" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+          <Heading size="lg" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
             Thank you for reaching out
           </Heading>
           <Text color="#5A6E65" fontSize="15px" lineHeight="1.65" maxW="480px">
@@ -439,7 +478,7 @@ export default function DiscoveryIntakeClient() {
         </Box>
 
         <VStack spacing={2} mb={8} textAlign="center">
-          <Heading size="xl" color="#263A33" fontFamily="'Playfair Display', var(--font-playfair), serif">
+          <Heading size="xl" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" letterSpacing="-0.015em">
             Find Your Therapist
           </Heading>
           <Text color="#5A6E65" fontSize="15px">
@@ -456,7 +495,7 @@ export default function DiscoveryIntakeClient() {
                 </Text>
                 <Text fontSize="12px" color="gray.400" fontWeight="600">{Math.round(progress)}%</Text>
               </HStack>
-              <Progress value={progress} size="xs" colorScheme="teal" borderRadius="full" />
+              <Progress value={progress} size="xs" borderRadius="full" sx={{ '& > div': { bg: '#56756D' } }} />
             </Box>
 
             <AnimatePresence mode="wait">
@@ -465,19 +504,35 @@ export default function DiscoveryIntakeClient() {
               </MotionBox>
             </AnimatePresence>
 
-            <Flex justify="space-between" pt={4} borderTop="1px solid" borderColor="gray.100">
-              <Button variant="ghost" leftIcon={<FiArrowLeft />} onClick={prevStep} isDisabled={currentSection === 0} borderRadius="full">
+            <Flex justify="space-between" pt={4} borderTop="1px solid" borderColor="rgba(86, 117, 109, 0.12)" align="center">
+              <Button
+                variant="ghost"
+                leftIcon={<FiArrowLeft />}
+                onClick={prevStep}
+                isDisabled={currentSection === 0}
+                borderRadius="full"
+                h="38px"
+                fontSize="13px"
+                fontWeight="600"
+                color="#5A6E65"
+                px={4}
+                _hover={{ bg: "rgba(86, 117, 109, 0.08)", color: "#263A33" }}
+              >
                 Back
               </Button>
               <Button
                 bg="#56756D"
                 color="white"
                 borderRadius="full"
-                px={7}
+                px={6}
+                h="38px"
+                fontSize="13px"
+                fontWeight="600"
+                boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
                 rightIcon={currentSection === SECTIONS.length - 1 ? <FiHeart /> : <FiArrowRight />}
                 onClick={nextStep}
                 isLoading={isLoading}
-                _hover={{ bg: "#425C55" }}
+                _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
               >
                 {currentSection === SECTIONS.length - 1 ? 'Submit Enquiry' : 'Continue'}
               </Button>

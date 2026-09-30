@@ -70,6 +70,7 @@ from therapy.views import (
     ClientFormAssignmentViewSet,
     RazorpayCreateOrderView,
     RazorpayVerifyPaymentView,
+    SimulatePaymentBookingView,
     RazorpayWebhookView,
     RazorpayCreateTherapistSubscriptionView,
     RazorpayVerifyTherapistSubscriptionView,
@@ -85,6 +86,8 @@ from therapy.views import (
     CommunityCommentViewSet,
     ReferralViewSet,
     PlatformFeedbackViewSet,
+    TherapistEarningsView,
+    MessageThreadsView,
 )
 
 # ----------------------------
@@ -232,9 +235,7 @@ def whoami(request):
     if is_admin:
         canonical_roles.append("admin")
     # Strict role separation: non-admin identities are either therapist OR client.
-    if not is_admin and client_profile:
-        canonical_roles.append("client")
-    elif therapist_profile:
+    if therapist_profile:
         canonical_roles.append("therapist")
     elif client_profile:
         canonical_roles.append("client")
@@ -304,6 +305,7 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/payments/razorpay/create-order/", RazorpayCreateOrderView.as_view(), name="razorpay-create-order"),
     path("api/payments/razorpay/verify/", RazorpayVerifyPaymentView.as_view(), name="razorpay-verify"),
+    path("api/payments/simulate-booking/", SimulatePaymentBookingView.as_view(), name="simulate-payment-booking"),
     path(
         "api/payments/razorpay/subscriptions/create/",
         RazorpayCreateTherapistSubscriptionView.as_view(),
@@ -326,6 +328,8 @@ urlpatterns = [
     ),
     path("api/payments/razorpay/webhook/", RazorpayWebhookView.as_view(), name="razorpay-webhook"),
     path("api/therapist-applications/", TherapistApplicationCreateView.as_view(), name="therapist_applications"),
+    path("api/therapist/earnings/", TherapistEarningsView.as_view(), name="therapist-earnings"),
+    path("api/messages/threads/", MessageThreadsView.as_view(), name="message-threads"),
 
     # Simple health check
     path("healthz", healthz, name="healthz"),

@@ -12,8 +12,14 @@ import {
   useToast,
   Spinner,
   Center,
+  Flex,
+  Icon,
+  Circle,
+  Avatar,
+  Divider,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
+import { FiCalendar, FiClock, FiInbox, FiArrowRight, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
 import { schedulingApi } from "../../../../../api/scheduling";
 import { getSchedulingErrorMessage } from "../../../../../utils/schedulingErrors";
 
@@ -64,16 +70,26 @@ export default function ClientBookingRequestsPage() {
   if (loading) {
     return (
       <Center minH="40vh">
-        <Spinner size="lg" color="#56756C" />
+        <Spinner size="lg" color="#56756D" />
       </Center>
     );
   }
 
   if (error) {
     return (
-      <VStack spacing={4} align="stretch" py={8}>
-        <Text color="red.600">{error}</Text>
-        <Button onClick={() => void loadRequests()}>Retry</Button>
+      <VStack spacing={4} align="stretch" py={8} fontFamily="'Inter', var(--font-inter), sans-serif">
+        <Text color="red.600" fontSize="14px">{error}</Text>
+        <Button 
+          onClick={() => void loadRequests()}
+          bg="#56756D"
+          color="white"
+          borderRadius="full"
+          size="sm"
+          w="fit-content"
+          _hover={{ bg: "#263A33" }}
+        >
+          Retry
+        </Button>
       </VStack>
     );
   }
@@ -81,86 +97,395 @@ export default function ClientBookingRequestsPage() {
   const pending = requests.filter((r) => r.status === "pending");
 
   return (
-    <VStack align="stretch" spacing={8} w="100%" p={{ base: 4, md: 0 }}>
-      <VStack align="start" spacing={1}>
-        <Heading size="lg" color="#2E2E2E" fontWeight="800">
-          Your booking requests
-        </Heading>
-        <Text color="gray.500" fontSize="sm">
-          Track pending requests and past outcomes. If a request{" "}
-          <strong>expires</strong> before your therapist responds, it will show as expired below.
-        </Text>
-      </VStack>
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* 🌿 1. UNIFIED HERO BANNER CARD (Golden Benchmark) */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', lg: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', lg: 'center' }}
+          gap={4}
+        >
+          {/* Identity & Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiInbox} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg={pending.length > 0 ? "#F59E0B" : "#10B981"} 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0"
+              />
+            </Box>
 
-      {requests.length === 0 ? (
-        <Text color="gray.500" py={6}>
-          No requests yet. When you book a session, it will show here.
-        </Text>
-      ) : (
-        <VStack spacing={4} align="stretch">
-          {requests.map((req) => (
-            <Box
-              key={req.id}
-              p={4}
-              borderRadius="2xl"
-              border="1px solid"
-              borderColor="gray.100"
-              bg="white"
-              shadow="sm"
-            >
-              <HStack justify="space-between" mb={2} flexWrap="wrap" gap={2}>
-                <Text fontWeight="700">{req.therapist_display_name || `Therapist #${req.therapist}`}</Text>
-                {req.status_label && (
-                  <Badge colorScheme={req.status === "pending" ? "orange" : "gray"} borderRadius="full" px={2}>
-                    {req.status_label}
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2} wrap="wrap">
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.1)" 
+                  color="#263A33" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.06em"
+                  textTransform="uppercase"
+                >
+                  Client Portal · Appointments
+                </Badge>
+                {pending.length > 0 && (
+                  <Badge 
+                    bg="#FEF3C7" 
+                    color="#92400E" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full"
+                    px={2.5}
+                    py={0.5}
+                  >
+                    Awaiting Confirmation
                   </Badge>
                 )}
               </HStack>
-              {req.slot_start_time && (
-                <Text fontSize="sm" color="gray.600" mb={2}>
-                  {new Date(req.slot_start_time).toLocaleString()}
-                </Text>
-                )}
-              {req.message_from_client ? (
-                <Text fontSize="sm" color="gray.500" mb={2}>
-                  Your message: {req.message_from_client}
-                </Text>
-              ) : null}
-              {req.therapist_response_note ? (
-                <Text fontSize="sm" color="gray.600" mb={2}>
-                  From therapist: {req.therapist_response_note}
-                </Text>
-              ) : null}
-              {req.status === "pending" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  colorScheme="red"
-                  borderRadius="full"
-                  onClick={() => void handleCancel(req.id)}
+
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33" 
+                fontWeight="600"
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                Booking Requests
+              </Heading>
+
+              <Text 
+                fontSize="13px" 
+                color="#5A6E65"
+                fontWeight="400"
+              >
+                Track pending session requests and therapist confirmations in real time.
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Right: Metric Strip + Book Action */}
+          <HStack 
+            spacing={3} 
+            wrap={{ base: 'wrap', sm: 'nowrap' }} 
+            w={{ base: 'full', lg: 'auto' }} 
+            justify={{ base: 'flex-start', lg: 'flex-end' }}
+          >
+            <HStack 
+              spacing={3} 
+              p={1.5} 
+              px={2.5}
+              borderRadius="xl" 
+              bg="rgba(250, 248, 245, 0.9)"
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)"
+            >
+              <HStack spacing={2} px={2} py={1}>
+                <Circle size="28px" bg={pending.length > 0 ? "rgba(245, 158, 11, 0.14)" : "rgba(86, 117, 109, 0.1)"} color={pending.length > 0 ? "#D97706" : "#56756D"}>
+                  <Icon as={FiClock} boxSize="13px" />
+                </Circle>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                    PENDING
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33">
+                    {pending.length}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+              <HStack spacing={2} px={2} py={1}>
+                <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+                  <Icon as={FiCheckCircle} boxSize="13px" />
+                </Circle>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                    TOTAL
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33">
+                    {requests.length}
+                  </Text>
+                </VStack>
+              </HStack>
+            </HStack>
+
+            <Button 
+              as={NextLink}
+              href="/therapists/discovery"
+              bg="#56756D" 
+              color="white" 
+              borderRadius="full" 
+              height="38px"
+              fontSize="13px"
+              fontWeight="600"
+              px={5} 
+              leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+              _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+              transition="all 0.2s"
+              flexShrink={0}
+              boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)"
+            >
+              Book New Session
+            </Button>
+          </HStack>
+        </Flex>
+      </Box>
+
+      {/* 🏛️ Main Content Area */}
+      {requests.length === 0 ? (
+        /* Empty State Card */
+        <Box 
+          bg="white" 
+          p={{ base: 8, md: 12 }} 
+          borderRadius="2xl" 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.14)"
+          boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+          textAlign="center"
+        >
+          <VStack spacing={4} maxW="420px" mx="auto">
+            <Circle size="52px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+              <Icon as={FiInbox} boxSize="22px" />
+            </Circle>
+            
+            <VStack spacing={1}>
+              <Heading 
+                fontSize="17px" 
+                fontWeight="600" 
+                color="#263A33"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                letterSpacing="-0.01em"
+              >
+                No Active Booking Requests
+              </Heading>
+              <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
+                When you schedule a session with a therapist, your pending confirmation and therapist response notes will appear here.
+              </Text>
+            </VStack>
+
+            <Button
+              as={NextLink}
+              href="/therapists/discovery"
+              bg="#263A33"
+              color="white"
+              borderRadius="full"
+              height="38px"
+              fontSize="13px"
+              fontWeight="600"
+              px={6}
+              rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+              _hover={{ bg: "#182722", transform: "translateY(-1px)" }}
+              transition="all 0.2s"
+              boxShadow="0 4px 12px rgba(38, 58, 51, 0.12)"
+              mt={2}
+            >
+              Meet Our Clinicians
+            </Button>
+          </VStack>
+        </Box>
+      ) : (
+        /* Requests List */
+        <VStack spacing={4} align="stretch">
+          {requests.map((req) => {
+            const isPending = req.status === "pending";
+            const isConfirmed = req.status === "confirmed";
+            const isCancelled = req.status === "cancelled" || req.status === "expired";
+
+            return (
+              <Box
+                key={req.id}
+                p={{ base: 4, md: 5 }}
+                borderRadius="2xl"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.14)"
+                bg="white"
+                boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+                transition="all 0.2s"
+                _hover={{ borderColor: "rgba(86, 117, 109, 0.25)" }}
+              >
+                <Flex 
+                  direction={{ base: "column", sm: "row" }} 
+                  justify="space-between" 
+                  align={{ base: "start", sm: "center" }}
+                  gap={3}
+                  mb={3}
                 >
-                  Cancel request
-                </Button>
-              )}
-              {req.status === "confirmed" && (
-                <Text fontSize="xs" color="teal.700" mt={1}>
-                  Open{" "}
-                  <Button as={NextLink} href="/dashboard/client/appointments" variant="link" size="xs" color="teal.600">
-                    Appointments
-                  </Button>{" "}
-                  for session details. To cancel the session, use options there (if enabled).
-                </Text>
-              )}
-            </Box>
-          ))}
+                  <HStack spacing={3}>
+                    <Avatar 
+                      size="sm" 
+                      name={req.therapist_display_name || "Therapist"} 
+                      src={req.therapist_profile_image}
+                      border="1.5px solid white"
+                      boxShadow="xs"
+                    />
+                    <VStack align="start" spacing={0}>
+                      <Text 
+                        fontSize="14px" 
+                        fontWeight="600" 
+                        color="#263A33"
+                        fontFamily="'Inter', var(--font-inter), sans-serif"
+                      >
+                        {req.therapist_display_name || `Therapist #${req.therapist}`}
+                      </Text>
+                      <Text fontSize="11.5px" color="#718096">
+                        Virtual 1-on-1 Consultation
+                      </Text>
+                    </VStack>
+                  </HStack>
+
+                  <Badge 
+                    bg={
+                      isConfirmed 
+                        ? "rgba(16, 185, 129, 0.12)" 
+                        : isPending 
+                        ? "rgba(245, 158, 11, 0.12)" 
+                        : "rgba(86, 117, 109, 0.1)"
+                    }
+                    color={
+                      isConfirmed 
+                        ? "#047857" 
+                        : isPending 
+                        ? "#B45309" 
+                        : "#4A5568"
+                    }
+                    border="1px solid"
+                    borderColor={
+                      isConfirmed 
+                        ? "rgba(16, 185, 129, 0.25)" 
+                        : isPending 
+                        ? "rgba(245, 158, 11, 0.25)" 
+                        : "rgba(86, 117, 109, 0.18)"
+                    }
+                    borderRadius="full"
+                    px={2.5}
+                    py={0.5}
+                    fontSize="10px"
+                    fontWeight="700"
+                    letterSpacing="0.04em"
+                  >
+                    {(req.status_label || req.status || "Pending").toUpperCase()}
+                  </Badge>
+                </Flex>
+
+                {req.slot_start_time && (
+                  <HStack spacing={2} mb={2.5} color="#5A6E65">
+                    <Icon as={FiClock} boxSize="13px" color="#56756D" />
+                    <Text fontSize="12.5px" fontWeight="500">
+                      {new Date(req.slot_start_time).toLocaleString(undefined, { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  </HStack>
+                )}
+
+                {req.message_from_client && (
+                  <Box 
+                    p={3} 
+                    bg="rgba(250, 248, 245, 0.75)" 
+                    borderRadius="xl" 
+                    border="1px solid"
+                    borderColor="rgba(86, 117, 109, 0.08)"
+                    mb={2.5}
+                  >
+                    <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" mb={0.5}>
+                      Your Note
+                    </Text>
+                    <Text fontSize="12.5px" color="#263A33" lineHeight="1.4">
+                      {req.message_from_client}
+                    </Text>
+                  </Box>
+                )}
+
+                {req.therapist_response_note && (
+                  <Box 
+                    p={3} 
+                    bg="rgba(169, 203, 183, 0.12)" 
+                    borderRadius="xl" 
+                    border="1px solid"
+                    borderColor="rgba(16, 185, 129, 0.15)"
+                    mb={2.5}
+                  >
+                    <Text fontSize="11px" fontWeight="700" color="#047857" textTransform="uppercase" mb={0.5}>
+                      From Therapist
+                    </Text>
+                    <Text fontSize="12.5px" color="#263A33" lineHeight="1.4">
+                      {req.therapist_response_note}
+                    </Text>
+                  </Box>
+                )}
+
+                <HStack justify="space-between" pt={1} flexWrap="wrap" gap={2}>
+                  {isPending && (
+                    <Button
+                      size="sm"
+                      height="32px"
+                      variant="outline"
+                      borderColor="rgba(239, 68, 68, 0.3)"
+                      color="#B91C1C"
+                      borderRadius="full"
+                      fontSize="12px"
+                      fontWeight="600"
+                      px={4}
+                      onClick={() => void handleCancel(req.id)}
+                      _hover={{ bg: "rgba(239, 68, 68, 0.06)" }}
+                    >
+                      Cancel Request
+                    </Button>
+                  )}
+
+                  {isConfirmed && (
+                    <Button 
+                      as={NextLink} 
+                      href="/dashboard/client/appointments" 
+                      size="sm"
+                      height="32px"
+                      bg="#263A33"
+                      color="white"
+                      borderRadius="full"
+                      fontSize="12px"
+                      fontWeight="600"
+                      px={4}
+                      _hover={{ bg: "#182722" }}
+                    >
+                      View in Appointments ➔
+                    </Button>
+                  )}
+                </HStack>
+              </Box>
+            );
+          })}
         </VStack>
       )}
 
       {pending.length > 0 && (
-        <Text fontSize="xs" color="gray.500">
-          You can cancel a <strong>pending</strong> request here. If it expired or was processed, use the status above.
+        <Text fontSize="12px" color="#718096" mt={4} textAlign="center">
+          You can cancel a pending request anytime before the therapist accepts.
         </Text>
       )}
-    </VStack>
+    </Box>
   );
 }

@@ -1,6 +1,6 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { Providers } from './providers'
-import { Inter, Playfair_Display, Forum } from 'next/font/google'
+import { Inter, Playfair_Display, Forum, Plus_Jakarta_Sans, Outfit, DM_Sans } from 'next/font/google'
 import ClientWrapper from '../components/ClientWrapper'
 import CookieConsent from '../components/CookieConsent'
 import GoogleAnalytics from '../components/GoogleAnalytics'
@@ -8,6 +8,24 @@ import GoogleAnalytics from '../components/GoogleAnalytics'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
 const forum = Forum({ weight: '400', subsets: ['latin'], variable: '--font-forum' })
+const plusJakarta = Plus_Jakarta_Sans({ 
+  subsets: ['latin'], 
+  variable: '--font-plus-jakarta',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap'
+})
+const outfit = Outfit({ 
+  subsets: ['latin'], 
+  variable: '--font-outfit',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap'
+})
+const dmSans = DM_Sans({ 
+  subsets: ['latin'], 
+  variable: '--font-dmsans',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap'
+})
 
 export const metadata = {
   metadataBase: new URL('https://www.mlchealth.in'),
@@ -78,7 +96,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${playfair.variable} ${forum.variable}`}
+      className={`${inter.variable} ${playfair.variable} ${forum.variable} ${plusJakarta.variable} ${outfit.variable} ${dmSans.variable}`}
       suppressHydrationWarning
     >
       <head>

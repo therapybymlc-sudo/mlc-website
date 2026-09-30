@@ -2508,3 +2508,54 @@ class PlatformFeedback(models.Model):
 
     def __str__(self):
         return f"Feedback from {self.user_type} on {self.page_path}"
+
+
+# ===========================
+# 💬 Clinical Messaging Hub Models
+# ===========================
+class MessageThread(models.Model):
+    therapist = models.ForeignKey(
+        TherapistProfile, on_delete=models.CASCADE, related_name="message_threads"
+    )
+    client = models.ForeignKey(
+        ClientProfile, on_delete=models.CASCADE, related_name="message_threads"
+    )
+    clinical_track = models.CharField(max_length=255, blank=True, default="Standard Clinical Protocol")
+    last_message_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-last_message_at"]
+        unique_together = ("therapist", "client")
+
+    def __str__(self):
+        return f"Thread: {self.therapist.name} & {self.client.name}"
+
+
+class ChatMessage(models.Model):
+    class SenderType(models.TextChoices):
+        THERAPIST = "therapist", "Therapist"
+        CLIENT = "client", "Client"
+        SYSTEM = "system", "System"
+
+    thread = models.ForeignKey(
+        MessageThread, on_delete=models.CASCADE, related_name="messages"
+    )
+    sender_type = models.CharField(
+        max_length=20, choices=SenderType.choices, default=SenderType.CLIENT
+    )
+    sender_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    text = models.TextField()
+    attachment_name = models.CharField(max_length=255, blank=True, default="")
+    attachment_url = models.CharField(max_length=500, blank=True, default="")
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"[{self.sender_type}] {self.text[:30]}"
+

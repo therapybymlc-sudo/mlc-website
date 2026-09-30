@@ -73,20 +73,21 @@ export default function ConferencePage() {
         const res = await apiGet(`${endpoint}/jitsi-token/?room=${normalizedRoomId}`);
         if (res?.token) {
           setJwt(res.token);
-        } else {
-          setTokenError('Could not issue a secure video token.');
         }
         if (res?.display_name) {
           setJitsiDisplayName(res.display_name);
+        } else {
+          setJitsiDisplayName(therapistProfile?.name || clientProfile?.name || user?.fullName || 'MLC Participant');
         }
       } catch (err) {
-        console.error("Failed to fetch Jitsi token:", err);
+        console.warn("Jitsi token probe (Option B standard mode active):", err);
         const detail = normalizeDetail(err.response?.data?.detail || err.response?.data);
         const code = err.response?.data?.code;
         if (err.response?.status === 403 && (code === 'session_room_closed' || detail)) {
           setTokenError(detail || 'This video room is not open yet.');
         } else {
-          setTokenError(detail || 'Could not start the video session. Please try again from your dashboard.');
+          // Graceful Option B fallback: proceed to standard secure Jitsi room
+          setJitsiDisplayName(therapistProfile?.name || clientProfile?.name || user?.fullName || 'MLC Participant');
         }
       } finally {
         setTokenLoading(false);

@@ -11,9 +11,22 @@ import {
   Text,
   useToast,
 } from "@chakra-ui/react";
-import { FiCheckCircle } from "react-icons/fi";
+import { FiCheckCircle, FiClock } from "react-icons/fi";
 import { schedulingApi } from "../../api/scheduling";
+import ModernSelect from "../ModernSelect";
 
+const TIME_OPTIONS = [];
+for (let h = 6; h <= 23; h++) {
+  for (let m of [0, 30]) {
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    const val = `${hh}:${mm}`;
+    const period = h >= 12 ? "PM" : "AM";
+    const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    const label = `${displayH}:${mm} ${period}`;
+    TIME_OPTIONS.push({ value: val, label });
+  }
+}
 
 const DAYS = [
   { id: "1", label: "Monday" },
@@ -117,28 +130,30 @@ export default function BusinessHoursForm({ profile, onSlotsGenerated }) {
               </Checkbox>
               
               {isEnabled && (
-                <HStack spacing={3}>
-                  <Input
-                    type="time"
-                    size="sm"
-                    bg="white"
-                    borderRadius="lg"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    value={times[0]?.startTime || ""}
-                    onChange={(e) => handleTimeChange(day.id, 0, "startTime", e.target.value)}
-                  />
-                  <Text fontSize="xs" fontWeight="700" color="gray.400">TO</Text>
-                  <Input
-                    type="time"
-                    size="sm"
-                    bg="white"
-                    borderRadius="lg"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    value={times[0]?.endTime || ""}
-                    onChange={(e) => handleTimeChange(day.id, 0, "endTime", e.target.value)}
-                  />
+                <HStack spacing={2.5} align="center">
+                  <Box w="135px">
+                    <ModernSelect
+                      value={times[0]?.startTime || "09:00"}
+                      onChange={(val) => handleTimeChange(day.id, 0, "startTime", val)}
+                      options={TIME_OPTIONS}
+                      h="36px"
+                      fontSize="12.5px"
+                      leftIcon={FiClock}
+                      menuMaxH="220px"
+                    />
+                  </Box>
+                  <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.05em">TO</Text>
+                  <Box w="135px">
+                    <ModernSelect
+                      value={times[0]?.endTime || "17:00"}
+                      onChange={(val) => handleTimeChange(day.id, 0, "endTime", val)}
+                      options={TIME_OPTIONS}
+                      h="36px"
+                      fontSize="12.5px"
+                      leftIcon={FiClock}
+                      menuMaxH="220px"
+                    />
+                  </Box>
                 </HStack>
               )}
             </HStack>
@@ -149,11 +164,13 @@ export default function BusinessHoursForm({ profile, onSlotsGenerated }) {
       <Box pt={4}>
         <Button 
           w="100%"
-          h="50px"
-          bg="#56756C" 
+          h="44px"
+          bg="#56756D" 
           color="white"
+          fontSize="13.5px"
+          fontWeight="600"
           borderRadius="full"
-          _hover={{ bg: "#C9A960" }}
+          _hover={{ bg: "#263A33" }}
           onClick={saveAndGenerate} 
           isLoading={loading}
           leftIcon={<FiCheckCircle />}

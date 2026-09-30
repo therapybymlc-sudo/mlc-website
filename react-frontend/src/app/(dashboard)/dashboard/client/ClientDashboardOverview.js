@@ -18,6 +18,10 @@ import {
   Skeleton,
   IconButton,
   Tooltip,
+  Badge,
+  Circle,
+  Grid,
+  GridItem
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { 
@@ -26,11 +30,19 @@ import {
   FiEdit3, 
   FiActivity, 
   FiArrowRight, 
-  FiHeart,
-  FiZap,
-  FiMoon,
-  FiSun,
-  FiUsers
+  FiHeart, 
+  FiZap, 
+  FiMoon, 
+  FiSun, 
+  FiUsers,
+  FiVideo,
+  FiClock,
+  FiTarget,
+  FiAward,
+  FiBookOpen,
+  FiCompass,
+  FiMessageSquare,
+  FiX
 } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
 import { apiGet, apiPost } from "../../../../api.js";
@@ -38,6 +50,9 @@ import NextLink from 'next/link';
 import { useClientData } from "./useClientData";
 import { useAuth } from "../../../../context/AuthContext";
 import OnboardingModal from "./OnboardingModal";
+import { motion } from "framer-motion";
+
+const MotionBox = motion(Box);
 
 export default function ClientDashboardOverview() {
   const [isMounted, setIsMounted] = useState(false);
@@ -60,13 +75,11 @@ export default function ClientDashboardOverview() {
 
   useEffect(() => {
     if (!loading) {
-       // Update mood from latest checkin if available
        if (checkins.length > 0) {
           const latestMood = checkins[0].mood;
           if (moodColors[latestMood]) setMood(latestMood);
        }
 
-       // Real streak calculation
        const calculateStreak = () => {
          const allActivities = [
            ...journals.map(j => new Date(j.created_at)),
@@ -92,7 +105,6 @@ export default function ClientDashboardOverview() {
          let yesterday = new Date(today);
          yesterday.setDate(yesterday.getDate() - 1);
 
-         // If latest activity is not today or yesterday, streak is broken
          if (uniqueDates[0] < yesterday) return 0;
 
          let currentCheck = uniqueDates[0];
@@ -127,10 +139,10 @@ export default function ClientDashboardOverview() {
   if (!isMounted) return null;
 
   const moodColors = {
-    'Calm': { bg: '#E9F2ED', text: '#56756D', icon: FiHeart },
-    'Balanced': { bg: '#F2F1ED', text: '#2E2E2E', icon: FiActivity },
-    'Low': { bg: '#F8F4F1', text: '#D68C45', icon: FiMoon },
-    'Anxious': { bg: '#FDF2F2', text: '#E53E3E', icon: FiZap },
+    'Calm': { bg: '#EBF5F0', border: 'rgba(56, 161, 105, 0.3)', text: '#26543E', icon: FiHeart, emoji: '🌿' },
+    'Balanced': { bg: '#EEF4FF', border: 'rgba(59, 130, 246, 0.3)', text: '#1E40AF', icon: FiActivity, emoji: '⚖️' },
+    'Low': { bg: '#FFF7ED', border: 'rgba(245, 158, 11, 0.3)', text: '#C2410C', icon: FiMoon, emoji: '🌧️' },
+    'Anxious': { bg: '#FEF2F2', border: 'rgba(239, 68, 68, 0.3)', text: '#B91C1C', icon: FiZap, emoji: '⚡' },
   };
 
   const progressValue = goals.length > 0 
@@ -151,22 +163,22 @@ export default function ClientDashboardOverview() {
     {
       quote: "Self-compassion is simply giving ourselves the same kindness we would give others.",
       author: "Christopher Germer",
-      tip: "Take 3 minutes to notice five things you see, four things you feel, three things you hear, two things you smell, and one thing you taste."
+      tip: "Notice 5 things you see, 4 things you feel, 3 things you hear, 2 things you smell, and 1 thing you taste."
     },
     {
       quote: "You don't have to see the whole staircase, just take the first step.",
       author: "Martin Luther King Jr.",
-      tip: "Identify one small, manageable task you can complete today that aligns with your healing goals."
+      tip: "Identify one small, manageable intention you can fulfill today."
     },
     {
       quote: "The curious paradox is that when I accept myself just as I am, then I can change.",
       author: "Carl Rogers",
-      tip: "Write down three things you appreciate about yourself today, no matter how small they may seem."
+      tip: "Write down three things you appreciate about yourself today."
     },
     {
-      quote: "Healing is not linear. It's a journey of layers, not a straight path to the finish line.",
+      quote: "Healing is not linear. It's a journey of layers, not a straight sprint.",
       author: "Anonymous",
-      tip: "If you're feeling a setback today, remind yourself that it's a natural part of progress. Practice gentle breathing for 5 minutes."
+      tip: "Take 60 seconds of gentle, unhurried box breathing to reset your nervous system."
     }
   ];
 
@@ -191,14 +203,53 @@ export default function ClientDashboardOverview() {
       });
       refreshData();
       toast({
-        title: "Mood tracked",
-        description: `Feeling ${newMood.toLowerCase()} today. We've noted that for your next session.`,
-        status: "success",
-        duration: 3000,
-        variant: "subtle"
+        duration: 3500,
+        isClosable: true,
+        position: "bottom-right",
+        render: ({ onClose }) => (
+          <HStack
+            spacing={3}
+            p={3.5}
+            bg="linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)"
+            borderRadius="2xl"
+            border="1px solid"
+            borderColor="rgba(16, 185, 129, 0.35)"
+            boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.16), 0 2px 8px rgba(0, 0, 0, 0.04)"
+            backdropFilter="blur(16px)"
+            fontFamily="'Inter', var(--font-inter), sans-serif"
+            maxW="360px"
+          >
+            <Circle size="30px" bg="rgba(16, 185, 129, 0.22)" color="#047857" flexShrink={0}>
+              <Icon as={FiCheckCircle} boxSize="16px" />
+            </Circle>
+            <VStack align="start" spacing={0.5} flex="1">
+              <Text 
+                fontSize="13px" 
+                fontWeight="700" 
+                color="#064E3B" 
+                lineHeight="1.3"
+                fontFamily="'Plus Jakarta Sans', var(--font-plus-jakarta), 'Inter', sans-serif"
+              >
+                Mood recorded
+              </Text>
+              <Text fontSize="12px" color="#065F46" fontWeight="500" lineHeight="1.4">
+                Feeling {newMood.toLowerCase()} today. Logged to your journey.
+              </Text>
+            </VStack>
+            <IconButton
+              icon={<FiX size={13} />}
+              size="xs"
+              variant="ghost"
+              color="#065F46"
+              borderRadius="full"
+              onClick={onClose}
+              aria-label="Close"
+              _hover={{ color: '#064E3B', bg: 'rgba(16, 185, 129, 0.2)' }}
+            />
+          </HStack>
+        )
       });
     } catch (err) {
-      // Fallback if no client profile or unverified
       console.warn("Mood sync failed", err);
     }
   };
@@ -209,468 +260,819 @@ export default function ClientDashboardOverview() {
     clientProfile?.email?.includes("@example.invalid")
   );
 
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  const hasLoggedToday = 
+    journals.some(j => new Date(j.created_at).toDateString() === new Date().toDateString()) ||
+    checkins.some(c => new Date(c.checkin_date).toDateString() === new Date().toDateString());
+
   return (
-    <Box maxW="1200px" mx="auto">
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
       <OnboardingModal 
         isOpen={showOnboarding} 
         onClose={() => {}} 
         profileId={clientProfile?.id}
         currentEmail={clientProfile?.email}
       />
-      {/* HEADER SECTION */}
-      <Flex 
-        direction={{ base: 'column', lg: 'row' }} 
-        justify="space-between" 
-        align={{ base: 'stretch', lg: 'flex-end' }}
-        mb={10}
-        gap={6}
+
+      {/* 🌿 1. UNIFIED, AIRY HERO SANCTUARY HEADER */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
       >
-        <Flex direction={{ base: "column", sm: "row" }} align={{ base: "center", sm: "center" }} gap={5}>
-          <Box position="relative">
-            <Avatar 
-              size="xl" 
-              name={user?.fullName} 
-              src={user?.imageUrl} 
-              border="4px solid white" 
-              shadow="xl" 
-            />
-            <Box 
-              position="absolute" 
-              bottom="2" 
-              right="0" 
-              bg={moodColors[mood]?.bg || '#F2F1ED'} 
-              p={1.5} 
-              borderRadius="full" 
-              shadow="md"
-              border="2px solid white"
-            >
-              <Icon as={moodColors[mood]?.icon || FiActivity} color={moodColors[mood]?.text || '#2E2E2E'} boxSize={3} />
+        <Flex 
+          direction={{ base: 'column', lg: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', lg: 'center' }}
+          gap={4}
+        >
+          {/* Identity & Space Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative">
+              <Avatar 
+                size="md" 
+                name={user?.fullName || "Client"} 
+                src={user?.imageUrl} 
+                border="2px solid white" 
+                boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)" 
+              />
+              <Circle 
+                size="11px" 
+                bg="#38A169" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0"
+              />
             </Box>
-          </Box>
-          <VStack align={{ base: "center", sm: "start" }} spacing={1}>
-            <Tag size="sm" variant="subtle" colorScheme="teal" borderRadius="full">
-              {new Date().getHours() < 12 ? 'Good Morning' : 'Good Evening'}, {user?.firstName} 🌿
-            </Tag>
-            <Heading as="h1" size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif" textAlign={{ base: "center", sm: "left" }} noOfLines={1}>
-                Your Healing Space
-            </Heading>
-            <Text color="gray.500" fontSize="sm" textAlign={{ base: "center", sm: "left" }}>Take a breath.</Text>
-          </VStack>
-        </Flex>
 
-        <HStack spacing={6} justify={{ base: "center", lg: "flex-end" }} bg="white" p={4} borderRadius="2xl" shadow="sm">
-           <Box textAlign="center">
-              <Text fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="wider">STREAK</Text>
-              <Text fontSize="lg" fontWeight="700" color="#56756D" whiteSpace="nowrap">{stats.journalStreak} Days</Text>
-           </Box>
-           <Divider orientation="vertical" h="30px" />
-           <Box textAlign="center">
-              <Text fontSize="xs" fontWeight="bold" color="gray.400" letterSpacing="wider">GOALS</Text>
-              <Text fontSize="lg" fontWeight="700" color="#C9A960" whiteSpace="nowrap">{stats.activeGoals} Active</Text>
-           </Box>
-        </HStack>
-      </Flex>
-
-      {/* STREAK NUDGE */}
-      {!loading && !journals.some(j => new Date(j.created_at).toDateString() === new Date().toDateString()) && !checkins.some(c => new Date(c.checkin_date).toDateString() === new Date().toDateString()) && (
-        <Box 
-          bgGradient="linear(to-r, #C9A960, #D68C45)" 
-          p={{ base: 4, md: 6 }} 
-          borderRadius="3xl" 
-          mb={10} 
-          color="white" 
-          shadow="lg"
-        >
-          <Flex direction={{ base: "column", md: "row" }} justify="space-between" align="center" gap={4}>
-            <HStack spacing={6}>
-              <Box bg="white" p={3} borderRadius="2xl" display={{ base: "none", sm: "block" }}>
-                <Icon as={FiZap} color="#D68C45" boxSize={6} />
-              </Box>
-              <VStack align={{ base: "center", md: "start" }} spacing={0} textAlign={{ base: "center", md: "left" }}>
-                <Heading size="sm">Protect your {stats.journalStreak}-day streak!</Heading>
-                <Text fontSize="sm" opacity={0.9} noOfLines={{ base: 2, md: 1 }}>Log your daily reflection to stay on path.</Text>
-              </VStack>
-            </HStack>
-            <Button 
-              as={NextLink}
-              href="/dashboard/client/journal"
-              bg="white" 
-              color="#D68C45" 
-              borderRadius="full" 
-              px={8}
-              w={{ base: "full", md: "auto" }}
-              _hover={{ bg: 'whiteAlpha.900' }}
-            >
-              Log Reflection
-            </Button>
-          </Flex>
-        </Box>
-      )}
-
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} mb={10}>
-        {/* Mood Card */}
-        <Box 
-          bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100"
-        >
-          <HStack justify="space-between" mb={6}>
-            <Heading size="sm" color="#2E2E2E" fontWeight="600">Arriving today</Heading>
-            <Icon as={FiSun} color="#C9A960" />
-          </HStack>
-          <SimpleGrid columns={2} spacing={3}>
-            {Object.keys(moodColors).map(m => (
-              <Button 
-                key={m} 
-                size="md" h="50px" variant="outline" 
-                bg={mood === m ? moodColors[m].bg : 'transparent'}
-                borderColor={mood === m ? moodColors[m].text : 'gray.100'}
-                color={mood === m ? moodColors[m].text : 'gray.600'}
-                onClick={() => handleMoodUpdate(m)}
-                borderRadius="xl"
-                display="flex" gap={1}
-              >
-                <Icon as={moodColors[m].icon} boxSize={3} />
-                <Text fontSize="xs" fontWeight="700">{m}</Text>
-              </Button>
-            ))}
-          </SimpleGrid>
-        </Box>
-
-        {/* Goals Progress */}
-        <Box 
-          bg="white" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100"
-        >
-           <HStack justify="space-between" mb={6}>
-            <Heading size="sm" color="#2E2E2E">Progress</Heading>
-            <Icon as={FiCheckCircle} color="#56756C" />
-          </HStack>
-          <VStack align="stretch" spacing={5}>
-            <Box>
-                <HStack justify="space-between" mb={2}>
-                    <Text fontSize="xs" fontWeight="700" color="gray.500">OVERALL</Text>
-                    <Text fontSize="sm" fontWeight="800" color="#56756D">{Math.round(progressValue)}%</Text>
-                </HStack>
-                <Progress value={progressValue} bg="#E9F2ED" colorScheme="teal" borderRadius="full" size="sm" />
-            </Box>
-            <VStack align="start" spacing={3}>
-                {goals.slice(0, 2).map(goal => (
-                    <HStack key={goal.id} spacing={3} w="full">
-                        <Icon as={FiArrowRight} color="#56756D" boxSize={3} flexShrink={0} />
-                        <Text fontSize="sm" color="gray.600" noOfLines={1} flex={1}>{goal.title}</Text>
-                    </HStack>
-                ))}
-            </VStack>
-          </VStack>
-        </Box>
-
-        {/* Next Appointment */}
-        <Box 
-          bg="#56756D" p={{ base: 6, md: 8 }} borderRadius="3xl" shadow="xl" color="white" position="relative" overflow="hidden"
-        >
-            <HStack justify="space-between" mb={6}>
-                <VStack align="start" spacing={0}>
-                   <Heading size="sm" noOfLines={1}>Next Session</Heading>
-                </VStack>
-                <Icon as={FiCalendar} boxSize={5} />
-            </HStack>
-
-            {nextAppt ? (
-                <VStack align="start" spacing={4}>
-                    <HStack spacing={4}>
-                        <VStack align="center" spacing={0} bg="rgba(255,255,255,0.1)" p={3} borderRadius="2xl" minW="60px">
-                            <Text fontSize="xl" fontWeight="800">{new Date(nextAppt.start_time).getDate()}</Text>
-                            <Text fontSize="xs" fontWeight="bold" opacity={0.8}>{new Date(nextAppt.start_time).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}</Text>
-                        </VStack>
-                        <VStack align="start" spacing={0}>
-                            <Text fontWeight="700" fontSize="md">{new Date(nextAppt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                            <Text fontSize="xs" opacity={0.8} noOfLines={1}>With {nextAppt.therapist_name || 'Therapist'}</Text>
-                        </VStack>
-                    </HStack>
-                    <Button 
-                        as={NextLink}
-                        href={`/conference/MLC_${nextAppt.id}`}
-                        w="full" 
-                        bg="white" 
-                        color="#56756D" 
-                        borderRadius="xl" 
-                        fontSize="sm" 
-                        fontWeight="800"
-                        _hover={{ bg: 'teal.50' }}
-                    >
-                        Join Session
-                    </Button>
-                </VStack>
-            ) : (
-                <VStack align="start" spacing={6}>
-                    <Text fontSize="sm" opacity={0.9}>No pending sessions.</Text>
-                    <Button
-                      as={NextLink}
-                      href={preferredTherapistId ? `/therapists/${preferredTherapistId}#booking-calendar` : "/therapists/discovery"}
-                      size="md"
-                      bg="white"
-                      color="#56756D"
-                      borderRadius="full"
-                      w="full"
-                    >
-                      Schedule
-                    </Button>
-                </VStack>
-            )}
-        </Box>
-      </SimpleGrid>
-
-      {/* 🩺 Your Therapeutic Guide Section */}
-      {(relationships.length > 0 || appointments.length > 0) && (
-        <Box mb={10}>
-          <Heading size="md" color="#2E2E2E" mb={6} fontFamily="'Playfair Display', serif">Your Therapeutic Team</Heading>
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-            {relationships.map((rel) => (
-              <Box 
-                key={rel.id} 
-                bg="white" 
-                p={6} 
-                borderRadius="3xl" 
-                shadow="sm" 
-                border="1px solid" 
-                borderColor="gray.100"
-                transition="all 0.3s"
-                _hover={{ shadow: 'md', transform: 'translateY(-4px)' }}
-              >
-                <HStack spacing={4} mb={4}>
-                  <Avatar 
-                    size="lg" 
-                    name={rel.therapist_name} 
-                    src={rel.therapist_profile_image} 
-                    border="2px solid" 
-                    borderColor="teal.50"
-                  />
-                  <VStack align="start" spacing={0}>
-                    <Heading size="sm" color="#2E2E2E">{rel.therapist_name}</Heading>
-                    <Text fontSize="xs" color="gray.500" noOfLines={1}>{rel.therapist_title || 'Clinical Associate'}</Text>
-                    {rel.is_primary && (
-                      <Tag size="sm" mt={2} variant="subtle" colorScheme="teal" borderRadius="full">Primary Guide</Tag>
-                    )}
-                  </VStack>
-                </HStack>
-                
-                {rel.therapist_specialties && rel.therapist_specialties.length > 0 && (
-                  <HStack spacing={2} mb={6} wrap="wrap">
-                    {rel.therapist_specialties.slice(0, 2).map((s, idx) => (
-                      <Tag key={idx} size="sm" variant="ghost" color="#56756D" bg="rgba(86, 117, 109, 0.05)" borderRadius="full">
-                        {s}
-                      </Tag>
-                    ))}
-                  </HStack>
-                )}
-
-                <HStack spacing={3}>
-                  <Button 
-                    flex="1" 
-                    size="sm" 
-                    bg="#56756D" 
-                    color="white" 
-                    borderRadius="full"
-                    as={NextLink}
-                    href={appointments && appointments[0] && appointments[0].therapist_id === rel.therapist_id 
-                      ? `/conference/MLC_${appointments[0].id}` 
-                      : `/conference/MLC_Session_${rel.id}`}
-                    _hover={{ bg: '#455c56' }}
-                  >
-                    Enter Room
-                  </Button>
-                  <Button 
-                    flex="1" 
-                    size="sm" 
-                    variant="outline" 
-                    colorScheme="teal" 
-                    borderRadius="full"
-                    as={NextLink}
-                    href="/therapists/discovery"
-                  >
-                    Reschedule
-                  </Button>
-                </HStack>
-              </Box>
-            ))}
-          </SimpleGrid>
-        </Box>
-      )}
-
-      {/* 📊 Clinical Snapshot Section */}
-      {clientProfile?.dass_scores && (
-        <Box mb={10} bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="teal.50">
-          <HStack justify="space-between" mb={6}>
-            <VStack align="start" spacing={1}>
-              <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">
-                {clientProfile?.name || 'Clinical Snapshot'}
-              </Heading>
-              <Text fontSize="xs" color="gray.500">
-                {clientProfile?.email || 'No email'} • Profile ID: {clientProfile?.id}
-              </Text>
-            </VStack>
-            <Icon as={FiActivity} color="teal.400" boxSize={6} />
-          </HStack>
-          
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-            {['depression', 'anxiety', 'stress'].map((type) => {
-              const score = clientProfile.dass_scores[type];
-              const level = clientProfile.dass_scores[`${type}_level`] || 'Normal';
-              const color = level === 'Normal' ? 'teal.400' : level.includes('Mild') ? 'orange.300' : 'red.400';
-              
-              return (
-                <VStack key={type} align="start" p={4} borderRadius="2xl" bg="gray.50" borderLeft="4px solid" borderLeftColor={color}>
-                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">{type}</Text>
-                  <HStack justify="space-between" w="full">
-                    <Text fontSize="lg" fontWeight="800" color="#2E2E2E">{score}</Text>
-                    <Tag size="sm" variant="subtle" colorScheme={level === 'Normal' ? 'teal' : 'orange'}>{level}</Tag>
-                  </HStack>
-                </VStack>
-              );
-            })}
-          </SimpleGrid>
-        </Box>
-      )}
-
-      {relationships.length === 0 && !loading && (
-        <Box 
-            bgGradient="linear(to-br, #F2F8F5, #FFFFFF)" 
-            p={10} 
-            borderRadius="3xl" 
-            border="1px solid" 
-            borderColor="teal.100" 
-            mb={10}
-            textAlign="center"
-        >
-            <VStack spacing={6} maxW="600px" mx="auto">
-                <Box bg="white" p={4} borderRadius="full" shadow="md">
-                    <Icon as={FiUsers} color="#56756D" boxSize={8} />
-                </Box>
-                <VStack spacing={2}>
-                    <Heading size="md" color="#2E2E2E">Find Your Therapeutic Guide</Heading>
-                    <Text color="gray.600">
-                        You haven't been matched with a therapist yet. Our matching process prioritizes relational safety and clinical alignment.
-                    </Text>
-                </VStack>
-                <Button 
-                    as={NextLink}
-                    href="/therapists/discovery"
-                    bg="#56756D" 
-                    color="white" 
-                    size="lg" 
-                    px={10} 
-                    borderRadius="2xl"
-                    _hover={{ bg: '#C9A960' }}
-                    rightIcon={<FiArrowRight />}
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2}>
+                <Badge 
+                  bg="rgba(169, 203, 183, 0.2)" 
+                  color="#263A33" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.04em"
+                  textTransform="uppercase"
                 >
-                    Meet Our Clinicians
-                </Button>
-            </VStack>
-        </Box>
-      )}
-
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-        {/* Recent Activity */}
-        <VStack align="stretch" spacing={6}>
-            <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">Relational Activity</Heading>
-            <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-                <VStack align="stretch" spacing={6}>
-                    {journals.slice(0, 2).map(j => (
-                        <ActivityItem 
-                            key={`j-${j.id}`}
-                            icon={FiEdit3} 
-                            title="Reflection Captured" 
-                            desc={j.entry} 
-                            time={new Date(j.created_at).toLocaleDateString()} 
-                        />
-                    ))}
-                    {goals.filter(g => g.is_completed).slice(0, 1).map(g => (
-                        <ActivityItem 
-                            key={`g-${g.id}`}
-                            icon={FiCheckCircle} 
-                            title="Milestone Reached" 
-                            desc={`Completed: ${g.title}`} 
-                            time={new Date(g.updated_at).toLocaleDateString()} 
-                        />
-                    ))}
-                    {(journals.length === 0 && goals.filter(g => g.is_completed).length === 0) && (
-                        <Text color="gray.400" fontSize="sm" py={4}>No recent activity yet. Your healing journey starts here.</Text>
-                    )}
-                </VStack>
-                <Button 
+                  {timeGreeting}, {user?.firstName || 'Friend'} 🌿
+                </Badge>
+                {!hasLoggedToday && (
+                  <Badge 
                     as={NextLink}
                     href="/dashboard/client/journal"
-                    mt={8} 
-                    w="full" 
-                    variant="outline" 
-                    borderRadius="2xl" 
-                    color="gray.600"
-                    rightIcon={<FiArrowRight />}
+                    bg="#FEF3C7" 
+                    color="#92400E" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full"
+                    px={2.5}
+                    py={0.5}
+                    _hover={{ bg: "#FDE68A" }}
+                    cursor="pointer"
+                  >
+                    ⚡ Protect {stats.journalStreak}d Streak
+                  </Badge>
+                )}
+              </HStack>
+
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33" 
+                fontWeight="600"
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                Your Healing Space
+              </Heading>
+
+              <Text 
+                fontSize="13px" 
+                color="#5A6E65"
+                fontWeight="400"
+              >
+                Take a gentle breath. You are in a safe, intentional space.
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Compact Metric Strip */}
+          <HStack 
+            spacing={3} 
+            p={1.5} 
+            px={2.5}
+            borderRadius="xl" 
+            bg="rgba(250, 248, 245, 0.9)"
+            border="1px solid"
+            borderColor="rgba(86, 117, 109, 0.1)"
+            alignSelf={{ base: 'stretch', lg: 'auto' }}
+            justify="space-between"
+          >
+            <HStack spacing={2} px={2} py={1}>
+              <Circle size="28px" bg="rgba(245, 158, 11, 0.12)" color="#D97706">
+                <Icon as={FiZap} boxSize="14px" />
+              </Circle>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                  STREAK
+                </Text>
+                <Text fontSize="14px" fontWeight="700" color="#263A33">
+                  {stats.journalStreak}d
+                </Text>
+              </VStack>
+            </HStack>
+
+            <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+            <HStack spacing={2} px={2} py={1}>
+              <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+                <Icon as={FiTarget} boxSize="14px" />
+              </Circle>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                  GOALS
+                </Text>
+                <Text fontSize="14px" fontWeight="700" color="#263A33">
+                  {stats.activeGoals} Active
+                </Text>
+              </VStack>
+            </HStack>
+
+            <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+            <HStack spacing={2} px={2} py={1}>
+              <Circle size="28px" bg={moodColors[mood]?.bg} color={moodColors[mood]?.text}>
+                <Icon as={moodColors[mood]?.icon || FiActivity} boxSize="14px" />
+              </Circle>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                  PRESENCE
+                </Text>
+                <Text fontSize="14px" fontWeight="700" color="#263A33">
+                  {mood}
+                </Text>
+              </VStack>
+            </HStack>
+          </HStack>
+        </Flex>
+      </Box>
+
+      {/* 🏛️ 2. BALANCED TWO-COLUMN SANCTUARY ARCHITECTURE */}
+      <Grid 
+        templateColumns={{ base: "1fr", lg: "7fr 5fr" }} 
+        gap={6} 
+        alignItems="start"
+      >
+        {/* ================= LEFT COLUMN: Clinical Care & Journey (7fr) ================= */}
+        <VStack align="stretch" spacing={5}>
+          
+          {/* Card 1: Next Session Spotlight (Unifies Session + Guide cleanly) */}
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={4}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                  <Icon as={FiCalendar} boxSize="14px" />
+                </Circle>
+                <Text fontSize="11px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  {nextAppt ? "UPCOMING THERAPY SESSION" : "THERAPEUTIC APPOINTMENT"}
+                </Text>
+              </HStack>
+              {nextAppt && (
+                <Badge bg="rgba(16, 185, 129, 0.15)" color="#047857" fontSize="10.5px" fontWeight="700" borderRadius="full" px={2.5}>
+                  CONFIRMED
+                </Badge>
+              )}
+            </Flex>
+
+            {nextAppt ? (
+              <VStack align="stretch" spacing={4}>
+                {/* Session DateTime & Practitioner Identity */}
+                <Flex 
+                  direction={{ base: "column", sm: "row" }} 
+                  justify="space-between" 
+                  align={{ base: "start", sm: "center" }} 
+                  gap={3.5}
+                  p={3.5}
+                  borderRadius="xl"
+                  bg="rgba(250, 248, 245, 0.85)"
+                  border="1px solid"
+                  borderColor="rgba(86, 117, 109, 0.1)"
                 >
-                    View History
+                  <HStack spacing={3}>
+                    <VStack 
+                      align="center" 
+                      justify="center"
+                      bg="white" 
+                      p={2} 
+                      borderRadius="lg" 
+                      minW="48px"
+                      boxShadow="0 2px 6px rgba(0,0,0,0.04)"
+                      border="1px solid"
+                      borderColor="rgba(86, 117, 109, 0.1)"
+                    >
+                      <Text fontSize="18px" fontWeight="800" color="#263A33" lineHeight="1">
+                        {new Date(nextAppt.start_time).getDate()}
+                      </Text>
+                      <Text fontSize="9.5px" fontWeight="700" color="#56756D" letterSpacing="0.05em">
+                        {new Date(nextAppt.start_time).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
+                      </Text>
+                    </VStack>
+
+                    <VStack align="start" spacing={0}>
+                      <HStack spacing={2}>
+                        <Circle size="6px" bg="#10B981" />
+                        <Text fontWeight="700" fontSize="14.5px" color="#263A33">
+                          {new Date(nextAppt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </HStack>
+                      <Text fontSize="12.5px" color="#5A6E65">
+                        Virtual 1-on-1 Session
+                      </Text>
+                    </VStack>
+                  </HStack>
+
+                  {/* Practitioner info inline */}
+                  <HStack spacing={2.5} pt={{ base: 1, sm: 0 }}>
+                    <Avatar 
+                      size="sm" 
+                      name={nextAppt.therapist_name || "Therapist"} 
+                      src={primaryRelationship?.therapist_profile_image} 
+                      border="1.5px solid white"
+                      boxShadow="xs"
+                    />
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="13px" fontWeight="600" color="#263A33" noOfLines={1}>
+                        {nextAppt.therapist_name || "Your Practitioner"}
+                      </Text>
+                      <Text fontSize="11px" color="#718096">
+                        {primaryRelationship?.therapist_title || "Clinical Associate"}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </Flex>
+
+                {/* Session Actions Strip */}
+                <HStack spacing={2.5}>
+                  <Button 
+                    as={NextLink}
+                    href={`/conference/MLC_${nextAppt.id}`}
+                    flex="1" 
+                    bg="#263A33" 
+                    color="white" 
+                    borderRadius="full" 
+                    fontSize="13px" 
+                    fontWeight="600"
+                    height="38px"
+                    leftIcon={<Icon as={FiVideo} boxSize="14px" color="#A9CBB7" />}
+                    _hover={{ bg: '#182722', transform: 'translateY(-1px)' }}
+                    transition="all 0.2s"
+                    boxShadow="0 4px 12px rgba(38, 58, 51, 0.12)"
+                  >
+                    Enter Video Room
+                  </Button>
+                  <Button
+                    as={NextLink}
+                    href="/dashboard/client/messages"
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    height="38px"
+                    px={4}
+                    leftIcon={<Icon as={FiMessageSquare} boxSize="13px" />}
+                    _hover={{ bg: 'rgba(169, 203, 183, 0.1)' }}
+                  >
+                    Message
+                  </Button>
+                </HStack>
+              </VStack>
+            ) : primaryRelationship ? (
+              <VStack align="stretch" spacing={3.5}>
+                <HStack spacing={3}>
+                  <Avatar 
+                    size="md" 
+                    name={primaryRelationship.therapist_name} 
+                    src={primaryRelationship.therapist_profile_image} 
+                    border="2px solid white" 
+                    boxShadow="sm"
+                  />
+                  <VStack align="start" spacing={0}>
+                    <HStack spacing={2}>
+                      <Text fontSize="15px" fontWeight="700" color="#263A33">
+                        {primaryRelationship.therapist_name}
+                      </Text>
+                      <Badge bg="rgba(16, 185, 129, 0.14)" color="#047857" fontSize="9.5px" fontWeight="700" borderRadius="full">
+                        YOUR GUIDE
+                      </Badge>
+                    </HStack>
+                    <Text fontSize="12.5px" color="#5A6E65">
+                      {primaryRelationship.therapist_title || 'Clinical Associate'} • Ready for next booking
+                    </Text>
+                  </VStack>
+                </HStack>
+                <HStack spacing={2.5}>
+                  <Button 
+                    as={NextLink}
+                    href={`/therapists/${preferredTherapistId}#booking-calendar`}
+                    flex="1" 
+                    bg="#56756D" 
+                    color="white" 
+                    size="sm" 
+                    height="38px"
+                    borderRadius="full"
+                    fontSize="13px"
+                    fontWeight="600"
+                    leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+                    _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                  >
+                    Schedule Next Session
+                  </Button>
+                  <Button 
+                    as={NextLink}
+                    href="/dashboard/client/messages"
+                    size="sm" 
+                    height="38px"
+                    variant="outline" 
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33" 
+                    borderRadius="full"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    px={4}
+                    leftIcon={<Icon as={FiMessageSquare} boxSize="13px" />}
+                    _hover={{ bg: 'rgba(169, 203, 183, 0.1)' }}
+                  >
+                    Message
+                  </Button>
+                </HStack>
+              </VStack>
+            ) : (
+              <VStack align="start" spacing={2.5}>
+                <Text fontSize="13px" color="#5A6E65">
+                  You haven't been matched with a practitioner yet. Match based on personal alignment and safety.
+                </Text>
+                <Button 
+                  as={NextLink}
+                  href="/therapists/discovery"
+                  bg="#56756D" 
+                  color="white" 
+                  size="sm" 
+                  height="36px"
+                  borderRadius="full"
+                  px={5}
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  rightIcon={<FiArrowRight />}
+                  _hover={{ bg: '#263A33' }}
+                >
+                  Meet Our Clinicians
                 </Button>
+              </VStack>
+            )}
+          </Box>
+
+          {/* Card 2: Healing Intentions & Growth Progress */}
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={3.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+                  <Icon as={FiCheckCircle} boxSize="14px" />
+                </Circle>
+                <Heading 
+                  fontSize="15.5px" 
+                  fontWeight="600" 
+                  color="#263A33"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  Healing Intentions
+                </Heading>
+              </HStack>
+              <HStack spacing={2}>
+                <Text fontSize="12px" fontWeight="700" color="#059669">
+                  {Math.round(progressValue)}% Complete
+                </Text>
+                <Button
+                  as={NextLink}
+                  href="/dashboard/client/goals"
+                  variant="ghost"
+                  size="xs"
+                  color="#56756D"
+                  fontSize="11.5px"
+                  fontWeight="600"
+                  _hover={{ color: '#263A33' }}
+                >
+                  View All ➔
+                </Button>
+              </HStack>
+            </Flex>
+
+            {/* Smooth Progress Bar */}
+            <Box mb={3.5}>
+              <Progress 
+                value={progressValue} 
+                bg="rgba(169, 203, 183, 0.2)" 
+                borderRadius="full" 
+                size="xs" 
+                sx={{
+                  '& > div': {
+                    background: 'linear-gradient(90deg, #319795 0%, #38A169 100%)'
+                  }
+                }}
+              />
             </Box>
+
+            {/* Goals Checklist */}
+            <VStack align="stretch" spacing={2}>
+              {goals.slice(0, 3).map(goal => (
+                <HStack 
+                  key={goal.id} 
+                  spacing={2.5} 
+                  p={2.5} 
+                  borderRadius="lg" 
+                  bg="rgba(250, 248, 245, 0.75)"
+                  border="1px solid"
+                  borderColor="rgba(86, 117, 109, 0.08)"
+                >
+                  <Circle 
+                    size="18px" 
+                    bg={goal.is_completed ? "rgba(16, 185, 129, 0.15)" : "white"} 
+                    color={goal.is_completed ? "#059669" : "#A0AEC0"}
+                    border="1px solid"
+                    borderColor={goal.is_completed ? "#059669" : "rgba(86, 117, 109, 0.2)"}
+                    flexShrink={0}
+                  >
+                    <Icon as={goal.is_completed ? FiCheckCircle : FiArrowRight} boxSize="10px" />
+                  </Circle>
+                  <Text fontSize="13px" color="#334155" fontWeight="500" noOfLines={1} flex={1}>
+                    {goal.title}
+                  </Text>
+                </HStack>
+              ))}
+              {goals.length === 0 && (
+                <Text fontSize="12.5px" color="#718096" py={2} textAlign="center">
+                  No active goals set yet. Add an intention in your roadmap.
+                </Text>
+              )}
+            </VStack>
+          </Box>
+
+          {/* Card 3: Recent Reflections / Activity Timeline */}
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={3.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(201, 169, 96, 0.15)" color="#C9A960">
+                  <Icon as={FiEdit3} boxSize="14px" />
+                </Circle>
+                <Heading 
+                  fontSize="15.5px" 
+                  fontWeight="600" 
+                  color="#263A33"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  Recent Reflections
+                </Heading>
+              </HStack>
+              <Button 
+                as={NextLink}
+                href="/dashboard/client/journal"
+                variant="ghost"
+                size="xs"
+                color="#56756D"
+                fontSize="11.5px"
+                fontWeight="600"
+                rightIcon={<FiArrowRight />}
+                _hover={{ color: '#263A33' }}
+              >
+                Journal
+              </Button>
+            </Flex>
+
+            <VStack align="stretch" spacing={2.5}>
+              {journals.slice(0, 2).map(j => (
+                <ActivityItem 
+                  key={`j-${j.id}`}
+                  icon={FiEdit3} 
+                  title="Reflection Captured" 
+                  desc={j.entry} 
+                  time={new Date(j.created_at).toLocaleDateString()} 
+                />
+              ))}
+              {(journals.length === 0 && goals.filter(g => g.is_completed).length === 0) && (
+                <Text color="#718096" fontSize="12.5px" py={2}>
+                  No entries recorded yet. Write your first reflection today.
+                </Text>
+              )}
+            </VStack>
+          </Box>
         </VStack>
 
-        {/* Tip of the Day / Mindfulness */}
-        <VStack align="stretch" spacing={6}>
-            <Heading size="md" color="#2E2E2E" fontFamily="'Playfair Display', serif">The Care Space</Heading>
-            <Box 
-                bgGradient="linear(to-br, #56756D, #3E5B54)" 
-                p={8} 
-                borderRadius="3xl" 
-                shadow="xl" 
-                color="white"
+        {/* ================= RIGHT COLUMN: Self-Care & Mindful Resonance (5fr) ================= */}
+        <VStack align="stretch" spacing={5}>
+          
+          {/* Card 1: Daily Emotional Pulse */}
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={2}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(245, 158, 11, 0.12)" color="#D97706">
+                  <Icon as={FiSun} boxSize="14px" />
+                </Circle>
+                <Text fontSize="11px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  DAILY EMOTIONAL PULSE
+                </Text>
+              </HStack>
+              <Badge 
+                bg={moodColors[mood]?.bg} 
+                color={moodColors[mood]?.text} 
+                border="1px solid"
+                borderColor={moodColors[mood]?.border}
+                borderRadius="full"
+                fontSize="10.5px"
+                fontWeight="700"
+                px={2.5}
+                py={0.5}
+              >
+                {mood}
+              </Badge>
+            </Flex>
+
+            <Heading 
+              fontSize="15.5px" 
+              fontWeight="600" 
+              color="#263A33" 
+              mb={3}
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              letterSpacing="-0.01em"
             >
-                <VStack align="start" spacing={6}>
-                    <Icon as={FiHeart} boxSize={8} opacity={0.3} />
-                    <VStack align="start" spacing={2}>
-                        <Text fontSize="xl" fontWeight="700" lineHeight="1.4">
-                            "{currentPrompt.quote}"
-                        </Text>
-                        <Text fontSize="sm" opacity={0.7}>— {currentPrompt.author}</Text>
-                    </VStack>
-                    <Box w="full" bg="rgba(255,255,255,0.1)" p={5} borderRadius="2xl">
-                        <Text fontWeight="600" mb={2} fontSize="sm">Try this today:</Text>
-                        <Text fontSize="sm" opacity={0.9}>
-                            {currentPrompt.tip}
-                        </Text>
-                    </Box>
-                    <Button 
-                        bg="white" 
-                        color="#56756D" 
-                        size="sm" 
-                        borderRadius="full" 
-                        px={6}
-                        as={NextLink}
-                        href="/dashboard/client/resources"
-                    >
-                        Explore More Tools
-                    </Button>
-                </VStack>
+              How are you arriving today?
+            </Heading>
+
+            <SimpleGrid columns={2} spacing={2.5}>
+              {Object.keys(moodColors).map(m => {
+                const isSelected = mood === m;
+                const meta = moodColors[m];
+                return (
+                  <Button 
+                    key={m} 
+                    size="sm" 
+                    height="40px"
+                    variant="outline" 
+                    bg={isSelected ? meta.bg : '#FAFAFA'}
+                    borderColor={isSelected ? meta.border : 'rgba(86, 117, 109, 0.15)'}
+                    color={isSelected ? meta.text : '#4A5568'}
+                    fontWeight={isSelected ? "700" : "600"}
+                    onClick={() => handleMoodUpdate(m)}
+                    borderRadius="xl"
+                    display="flex" 
+                    gap={2}
+                    justifyContent="center"
+                    alignItems="center"
+                    boxShadow={isSelected ? "0 2px 8px rgba(0,0,0,0.06)" : "none"}
+                    _hover={{
+                      borderColor: meta.border,
+                      bg: meta.bg,
+                      transform: 'translateY(-1px)'
+                    }}
+                    transition="all 0.18s"
+                  >
+                    <Text fontSize="13.5px">{meta.emoji}</Text>
+                    <Text fontSize="12px">{m}</Text>
+                  </Button>
+                );
+              })}
+            </SimpleGrid>
+          </Box>
+
+          {/* Card 2: Mindful Practice & Care Space (Soothing Warm Light Card) */}
+          <Box 
+            bg="linear-gradient(135deg, #FAF8F5 0%, #F4F8F6 100%)" 
+            p={5} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.16)"
+          >
+            <Flex justify="space-between" align="center" mb={3}>
+              <Badge 
+                bg="rgba(86, 117, 109, 0.12)" 
+                color="#263A33" 
+                fontSize="10px" 
+                fontWeight="700" 
+                borderRadius="full"
+                px={2.5}
+                py={0.5}
+                letterSpacing="0.08em"
+                textTransform="uppercase"
+              >
+                MINDFUL GROUNDING
+              </Badge>
+              <Icon as={FiHeart} boxSize="15px" color="#56756D" />
+            </Flex>
+
+            <Text 
+              fontSize="14.5px" 
+              fontWeight="600" 
+              color="#263A33"
+              lineHeight="1.45"
+              mb={1}
+            >
+              "{currentPrompt.quote}"
+            </Text>
+            <Text 
+              fontSize="12px" 
+              color="#718096"
+              fontWeight="500"
+              mb={3.5}
+            >
+              — {currentPrompt.author}
+            </Text>
+
+            <Box 
+              bg="white" 
+              p={3.5} 
+              borderRadius="xl" 
+              mb={4} 
+              border="1px solid" 
+              borderColor="rgba(86, 117, 109, 0.12)"
+              boxShadow="xs"
+            >
+              <Text fontSize="10.5px" fontWeight="700" color="#56756D" letterSpacing="0.05em" textTransform="uppercase" mb={1}>
+                PRACTICE TODAY
+              </Text>
+              <Text fontSize="12.5px" color="#4A5568" lineHeight="1.45" fontWeight="400">
+                {currentPrompt.tip}
+              </Text>
             </Box>
+
+            <HStack justify="space-between">
+              <Button 
+                as={NextLink}
+                href="/dashboard/client/resources"
+                bg="#56756D" 
+                color="white" 
+                size="sm" 
+                height="34px"
+                borderRadius="full" 
+                px={4}
+                fontSize="12px"
+                fontWeight="600"
+                _hover={{ bg: '#263A33' }}
+              >
+                Explore Care Tools
+              </Button>
+              <Button
+                as={NextLink}
+                href="/feelings-wheel"
+                variant="link"
+                color="#56756D"
+                fontSize="12px"
+                fontWeight="600"
+                _hover={{ color: '#263A33', textDecoration: 'underline' }}
+              >
+                Feelings Wheel ➔
+              </Button>
+            </HStack>
+          </Box>
+
+          {/* Card 3: Clinical Baseline DASS-21 (if available) */}
+          {clientProfile?.dass_scores && (
+            <Box 
+              bg="white" 
+              p={5} 
+              borderRadius="2xl" 
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+              border="1px solid" 
+              borderColor="rgba(86, 117, 109, 0.14)"
+            >
+              <Flex justify="space-between" align="center" mb={3}>
+                <Heading 
+                  fontSize="15.5px" 
+                  fontWeight="600" 
+                  color="#263A33"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  Clinical Baseline (DASS-21)
+                </Heading>
+                <Circle size="26px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                  <Icon as={FiActivity} boxSize="13px" />
+                </Circle>
+              </Flex>
+
+              <SimpleGrid columns={3} spacing={2.5}>
+                {['depression', 'anxiety', 'stress'].map((type) => {
+                  const score = clientProfile.dass_scores[type];
+                  const level = clientProfile.dass_scores[`${type}_level`] || 'Normal';
+                  const isNormal = level === 'Normal';
+                  
+                  return (
+                    <VStack 
+                      key={type} 
+                      align="start" 
+                      p={2.5} 
+                      borderRadius="lg" 
+                      bg={isNormal ? "rgba(16, 185, 129, 0.06)" : "rgba(245, 158, 11, 0.06)"} 
+                      border="1px solid"
+                      borderColor={isNormal ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)"}
+                    >
+                      <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase">
+                        {type}
+                      </Text>
+                      <HStack justify="space-between" w="full" mt={0.5}>
+                        <Text fontSize="16px" fontWeight="800" color="#263A33">
+                          {score}
+                        </Text>
+                        <Badge 
+                          fontSize="8.5px" 
+                          fontWeight="700"
+                          borderRadius="full"
+                          bg={isNormal ? 'rgba(16, 185, 129, 0.16)' : 'rgba(245, 158, 11, 0.16)'}
+                          color={isNormal ? '#047857' : '#B45309'}
+                        >
+                          {level}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  );
+                })}
+              </SimpleGrid>
+            </Box>
+          )}
+
         </VStack>
-      </SimpleGrid>
+      </Grid>
     </Box>
   );
 }
 
 function ActivityItem({ icon, title, desc, time }) {
-    // Basic HTML tag stripping for preview if it's too long
-    const cleanDesc = desc?.replace(/<[^>]*>?/gm, '').substring(0, 100) + (desc?.length > 100 ? '...' : '');
-    
-    return (
-        <HStack spacing={4} align="start" w="full">
-            <Box bg="#F2F1ED" p={3} borderRadius="xl">
-                <Icon as={icon} color="#56756D" />
-            </Box>
-            <VStack align="start" spacing={0} flex="1" overflow="hidden">
-                <HStack justify="space-between" w="full">
-                    <Text fontWeight="700" color="#2E2E2E" fontSize="sm">{title}</Text>
-                    <Text fontSize="xs" color="gray.400">{time}</Text>
-                </HStack>
-                <Text fontSize="sm" color="gray.500" noOfLines={2} title={cleanDesc}>
-                    {cleanDesc}
-                </Text>
-            </VStack>
+  const cleanDesc = desc?.replace(/<[^>]*>?/gm, '').substring(0, 90) + (desc?.length > 90 ? '...' : '');
+  
+  return (
+    <HStack 
+      spacing={3} 
+      align="start" 
+      p={2.5}
+      borderRadius="xl"
+      bg="rgba(250, 248, 245, 0.85)"
+      border="1px solid"
+      borderColor="rgba(86, 117, 109, 0.08)"
+    >
+      <Circle size="30px" bg="white" color="#56756D" boxShadow="0 1px 3px rgba(0,0,0,0.06)" flexShrink={0} mt={0.5}>
+        <Icon as={icon} boxSize="13.5px" />
+      </Circle>
+      <VStack align="start" spacing={0} flex="1" overflow="hidden">
+        <HStack justify="space-between" w="full">
+          <Text fontWeight="600" color="#263A33" fontSize="12.5px">{title}</Text>
+          <Text fontSize="10.5px" color="gray.400">{time}</Text>
         </HStack>
-    );
+        <Text fontSize="12px" color="#5A6E65" noOfLines={1} title={cleanDesc} fontWeight="400">
+          {cleanDesc}
+        </Text>
+      </VStack>
+    </HStack>
+  );
 }

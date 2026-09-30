@@ -15,8 +15,8 @@ const ProfileClient = dynamic(() => import('./ProfileClient'), {
       flexDirection: 'column',
       alignItems: 'center', 
       justifyContent: 'center', 
-      backgroundColor: '#FAFAFA',
-      fontFamily: 'serif'
+      backgroundColor: '#FAF8F5',
+      fontFamily: "'Inter', sans-serif"
     }}>
       <div style={{
         width: '40px',

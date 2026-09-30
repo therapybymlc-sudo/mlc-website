@@ -50,12 +50,16 @@ export const AuthProvider = ({ children }) => {
   const isLikelyJwt = (token) => typeof token === "string" && token.split(".").length === 3;
 
   const getApiToken = async () => {
-    let token = await getToken();
-    if (isLikelyJwt(token)) return token;
     if (tokenTemplate) {
-      token = await getToken({ template: tokenTemplate });
-      if (isLikelyJwt(token)) return token;
+      try {
+        const templated = await getToken({ template: tokenTemplate });
+        if (isLikelyJwt(templated)) return templated;
+      } catch (e) {
+        console.warn("Clerk templated token fetch failed, falling back to default token", e);
+      }
     }
+    const token = await getToken();
+    if (isLikelyJwt(token)) return token;
     return null;
   };
 
@@ -80,11 +84,11 @@ export const AuthProvider = ({ children }) => {
         const who = await apiGet("whoami/").catch(() => null);
         const canonicalRoles = Array.isArray(who?.canonical_roles) ? who.canonical_roles : [];
         const hasTherapistCanonical = canonicalRoles.includes("therapist") || !!who?.has_therapist_profile;
-        const hasClientCanonical = canonicalRoles.includes("client") || !!who?.has_client_profile;
+        const hasClientCanonical = (canonicalRoles.includes("client") || !!who?.has_client_profile) && !hasTherapistCanonical;
         const hasAdminCanonical = canonicalRoles.includes("admin") || !!who?.admin_by_email || !!who?.admin_by_user_id;
 
-        const metadataIsTherapist = metadataRoles.includes("therapist");
-        const metadataIsClient = metadataRoles.includes("client");
+        const metadataIsTherapist = metadataRoles.includes("therapist") || (Array.isArray(who?.roles) && who.roles.includes("therapist"));
+        const metadataIsClient = metadataRoles.includes("client") && !metadataIsTherapist;
         const metadataIsAdmin = metadataRoles.includes("admin");
 
         const userEmail = (
@@ -94,19 +98,50 @@ export const AuthProvider = ({ children }) => {
         ).toLowerCase().trim();
         const isPureAdminEmail = userEmail === "therapybymlc@gmail.com" || userEmail === "therapy@mlchealth.in";
 
-        // Avoid noisy 404s on client pages by preferring canonical role signals
-        // and current route intent over stale metadata.
+        // Avoid noisy 403s / 404s by preferring canonical role signals.
+        // When whoami itself failed (`who` is null), all canonical flags are false;
+        // in that scenario only attempt the therapist probe when the URL explicitly
+        // requests the therapist dashboard, AND we're NOT on a client route.
+        const isClientOnly =
+          (hasClientCanonical || metadataIsClient) &&
+          !hasAdminCanonical &&
+          !hasTherapistCanonical &&
+          !metadataIsTherapist;
+        const whoamiFailed = !who;
         const shouldFetchTherapist =
-          !isPureAdminEmail && (wantsTherapistOnly || (hasTherapistCanonical && !onClientRoute) || (hasAdminCanonical && userEmail === "therapy.aditya@gmail.com"));
-        const shouldFetchClient = !wantsTherapistOnly && (hasClientCanonical || metadataIsClient);
+          !isPureAdminEmail && 
+          !isClientOnly && 
+          !onClientRoute &&  // never probe therapist when we're on a client route
+          !(whoamiFailed && !wantsTherapistOnly) &&  // if whoami failed, only probe if URL says therapist
+          (wantsTherapistOnly || (hasTherapistCanonical && !onClientRoute) || (hasAdminCanonical && userEmail === "therapy.aditya@gmail.com"));
+        const shouldFetchClient = !hasTherapistCanonical && !metadataIsTherapist && !wantsTherapistOnly && (hasClientCanonical || metadataIsClient || onClientRoute);
         const fetchTherapistProfile = async () => {
           if (!shouldFetchTherapist) return null;
           try {
             return await apiGet("therapists/me/");
           } catch (err) {
             const status = err?.response?.status;
-            // Self-heal canonical therapist profile on first-login race conditions (clinicians only, never admins).
-            if (status === 404 && !hasAdminCanonical && !metadataIsAdmin && (metadataIsTherapist || wantsTherapistOnly)) {
+            const isKnownClientOnly = (hasClientCanonical || metadataIsClient) && !hasTherapistCanonical && !metadataIsTherapist && !hasAdminCanonical;
+            if (isKnownClientOnly && wantsTherapistOnly) {
+              if (mounted) {
+                setRoleDashboardMismatch({
+                  code: "onboard_blocked_has_client",
+                  correctHref: "/dashboard/client",
+                  title: "You're signed in with a client account",
+                  description:
+                    "This login is linked to the client portal. Practitioner tools use a separate practitioner account. Use the client dashboard below, or sign out and sign in with the email you used when you joined as a practitioner.",
+                });
+              }
+              return null;
+            }
+            // Self-heal canonical therapist profile on first-login race conditions (clinicians only, never admins, never clients).
+            if (
+              status === 404 &&
+              !hasAdminCanonical &&
+              !metadataIsAdmin &&
+              !isKnownClientOnly &&
+              (metadataIsTherapist || (wantsTherapistOnly && !metadataRoles.length))
+            ) {
               try {
                 await apiPost("onboard/", { role: "therapist" });
                 return await apiGet("therapists/me/").catch(() => null);
@@ -189,15 +224,29 @@ export const AuthProvider = ({ children }) => {
       normalized = normalized.filter((r) => r !== "admin");
     }
 
+    // Practitioner verification & metadata override:
+    // If the account has a therapist profile, active clinician data, or therapist metadata:
+    const hasTherapistProfile = !!whoami?.has_therapist_profile || !!therapistProfile;
+    const metadataIsTherapist =
+      metadataRoles.includes("therapist") ||
+      (Array.isArray(whoami?.roles) && whoami.roles.includes("therapist"));
+    if (hasTherapistProfile || metadataIsTherapist) {
+      if (!normalized.includes("therapist")) normalized.push("therapist");
+      // Clinicians must never be treated as clients, even if an incidental client profile exists in DB
+      normalized = normalized.filter((r) => r !== "client");
+    }
+
     if (normalized.length > 0) return Array.from(new Set(normalized));
     let fallback = metadataRoles.map((r) => String(r).toLowerCase());
     if (userEmail && (userEmail === "therapybymlc@gmail.com" || userEmail === "therapy@mlchealth.in")) {
       fallback = ["admin"];
     } else if (userEmail && asmaEmails.includes(userEmail)) {
       fallback = ["therapist"];
+    } else if (hasTherapistProfile || metadataIsTherapist) {
+      fallback = ["therapist"];
     }
     return fallback;
-  }, [whoami, metadataRoles, user]);
+  }, [whoami, metadataRoles, user, therapistProfile]);
 
   const isAdmin = canonicalRoles.includes("admin");
   const isTherapist = canonicalRoles.includes("therapist");
@@ -230,6 +279,37 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const userEmail = (
+    user?.primaryEmailAddress?.emailAddress || 
+    user?.emailAddresses?.[0]?.emailAddress || 
+    ""
+  ).toLowerCase().trim();
+  const userName = (user?.fullName || "").toLowerCase().trim();
+
+  const isDummyClient = useMemo(() => {
+    return isClient && (
+      userEmail.includes("dummy") || 
+      userEmail.includes("test") || 
+      userName.includes("dummy") || 
+      (clientProfile?.name && String(clientProfile.name).toLowerCase().includes("dummy")) ||
+      (clientProfile?.email && String(clientProfile.email).toLowerCase().includes("dummy"))
+    );
+  }, [isClient, userEmail, userName, clientProfile]);
+
+  const isDummyTherapist = useMemo(() => {
+    return isTherapist && (
+      userEmail.includes("dummy") || 
+      userEmail.includes("test") || 
+      userName.includes("dummy") || 
+      (therapistProfile?.name && String(therapistProfile.name).toLowerCase().includes("dummy")) ||
+      (therapistProfile?.email && String(therapistProfile.email).toLowerCase().includes("dummy"))
+    );
+  }, [isTherapist, userEmail, userName, therapistProfile]);
+
+  const isAdityaAdmin = useMemo(() => {
+    return isAdmin && userEmail === "therapy.aditya@gmail.com";
+  }, [isAdmin, userEmail]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -252,6 +332,9 @@ export const AuthProvider = ({ children }) => {
         isVerifiedTherapist: !!therapistProfile?.is_verified,
         isTherapistPremium: !!therapistProfile?.is_premium,
         isTherapistPreview,
+        isDummyClient,
+        isDummyTherapist,
+        isAdityaAdmin,
         previewRole: null,
         whoami,
         clerk,

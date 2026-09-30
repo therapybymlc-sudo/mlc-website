@@ -48,9 +48,9 @@ export default function SessionPage() {
           if (cancelled) return;
           if (response?.token) {
             setSessionToken(response.token);
-            if (response?.display_name) {
-              setJitsiDisplayName(response.display_name);
-            }
+          }
+          setJitsiDisplayName(response?.display_name || clientProfile?.name || therapistProfile?.name || user?.fullName || 'MLC Participant');
+          if (!cancelled) {
             setSessionGateError(null);
             return;
           }
@@ -66,8 +66,11 @@ export default function SessionPage() {
           }
         }
       }
-      if (!cancelled && lastErr?.response?.data?.detail) {
-        setSessionGateError(lastErr.response.data.detail);
+      if (!cancelled && lastErr?.response?.status === 403 && lastErr?.response?.data?.code === 'session_room_closed') {
+        setSessionGateError(lastErr.response.data.detail || 'This video room is not open yet.');
+      } else if (!cancelled) {
+        // Option B graceful fallback
+        setJitsiDisplayName(clientProfile?.name || therapistProfile?.name || user?.fullName || 'MLC Participant');
       }
     };
 

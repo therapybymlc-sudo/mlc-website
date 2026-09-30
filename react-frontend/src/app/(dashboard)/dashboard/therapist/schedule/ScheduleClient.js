@@ -7,6 +7,7 @@ import {
   VStack,
   HStack,
   Flex,
+  Stack,
   Button,
   useToast,
   Spinner,
@@ -35,6 +36,7 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Tooltip,
+  Circle,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
@@ -48,6 +50,8 @@ import NextLink from "next/link";
 import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
 import SubscriptionWall from "../../../../../components/SubscriptionWall";
 import { useTherapistSubscriptionGate } from "../../../../../hooks/useTherapistSubscriptionGate";
+import ModernSelect from "../../../../../components/ModernSelect";
+import MiniCalendarPicker from "../../../../../components/scheduling/MiniCalendarPicker";
 
 // Dynamic import for FullCalendar to avoid SSR hydration issues
 const FullCalendarComponent = dynamic(() => import("./FullCalendarWrapper"), {
@@ -244,16 +248,35 @@ export default function ScheduleClient() {
 
   const [slotHeight, setSlotHeight] = useState(2); 
 
-  if (!mounted) {
-      return (
-          <Center minH="100vh" bg="#FDFDFD">
-              <VStack spacing={4}>
-                  <Spinner size="xl" color="#56756C" thickness="4px" />
-                  <Text color="gray.500" fontWeight="600">Initializing Workspace...</Text>
-              </VStack>
-          </Center>
-      );
-  }
+  const upcomingEventsCount = useMemo(() => {
+    const now = new Date();
+    return events.filter(e => {
+      const start = new Date(e.start || e.start_time);
+      return !isNaN(start.getTime()) && start >= now;
+    }).length;
+  }, [events]);
+
+  const eventTypeOptions = useMemo(() => {
+    return eventTypes.map(t => ({
+      value: String(t.id),
+      label: t.name,
+      colorDot: t.color || "#56756D",
+      badge: `${t.default_duration || 50}m`,
+      subtext: t.group && t.group !== "General" ? `Group: ${t.group}` : undefined,
+    }));
+  }, [eventTypes]);
+
+  const clientOptions = useMemo(() => {
+    return [
+      { value: "", label: "No Patient (Internal block / Private time)", icon: FiUser },
+      ...clients.map(c => ({
+        value: String(c.id),
+        label: c.name,
+        icon: FiUser,
+        subtext: c.email || c.phone_number || undefined,
+      }))
+    ];
+  }, [clients]);
 
   const toLocalISO = (date) => {
       if (!date) return "";
@@ -309,315 +332,502 @@ export default function ScheduleClient() {
   const SessionSummaryView = () => {
     const selectedClientObj = clients.find(c => String(c.id) === String(form.client));
     const typeObj = eventTypes.find(t => String(t.id) === String(form.event_type));
-    const displayDate = form.start_time ? new Date(form.start_time).toLocaleString() : "";
+    const displayDate = form.start_time ? new Date(form.start_time).toLocaleString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }) : "";
 
     return (
-        <VStack spacing={0} align="stretch" bg="white" borderRadius="3xl" overflow="hidden">
-            {/* Command Header */}
-            <Box bg="#2C8B9A" p={10} color="white">
-                <VStack align="start" spacing={1}>
-                    <Heading size="md" fontWeight="800" letterSpacing="tight">{typeObj?.name || form.title || "Clinical Session"}</Heading>
-                    <Divider borderColor="whiteAlpha.400" my={4} />
-                    <HStack spacing={4}>
-                        <Avatar size="md" name={selectedClientObj?.name} bg="whiteAlpha.200" />
-                        <VStack align="start" spacing={0}>
-                            <Text fontSize="lg" fontWeight="bold">{selectedClientObj?.name || "Patient Unknown"}</Text>
-                            <Text fontSize="sm" opacity={0.9}>{displayDate}</Text>
-                        </VStack>
-                    </HStack>
-                    <Button 
-                        mt={6} 
-                        leftIcon={<FiVideo />} 
-                        bg="#E74C3C" 
-                        color="white" 
-                        size="md" 
-                        px={10} 
-                        borderRadius="full"
-                        onClick={() => {
-                            const rawId = selectedEvent.extendedProps?.originalId || selectedEvent.id.replace(/^(apt|event)-/, "");
-                            const room = `MLC_${rawId}`;
-                            console.log("🌿 [Schedule] Joining video room:", room);
-                            window.open(`/conference/${room}`, '_blank');
-                        }}
-                        _hover={{ bg: '#C0392B' }}
-                    >
-                        Join video call
-                    </Button>
-                </VStack>
-            </Box>
+      <VStack spacing={0} align="stretch" bg="white" borderRadius="3xl" overflow="hidden">
+        {/* Command Header */}
+        <Box bg="linear-gradient(135deg, #263A33 0%, #1E2E28 100%)" p={{ base: 6, md: 8 }} color="white">
+          <VStack align="start" spacing={3}>
+            <HStack spacing={2} wrap="wrap">
+              <Badge
+                bg="rgba(255, 255, 255, 0.14)"
+                color="#A9CBB7"
+                fontSize="10px"
+                fontWeight="700"
+                borderRadius="full"
+                px={2.5}
+                py={0.5}
+                letterSpacing="0.08em"
+                textTransform="uppercase"
+              >
+                {typeObj?.name || "CLINICAL SESSION"}
+              </Badge>
+              {form.status === "completed" && (
+                <Badge bg="rgba(16, 185, 129, 0.2)" color="#6EE7B7" fontSize="10px" fontWeight="700" borderRadius="full" px={2.5} py={0.5}>
+                  COMPLETED
+                </Badge>
+              )}
+            </HStack>
 
-            <ModalBody p={10}>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={10}>
-                    {/* Patient Details */}
-                    <VStack align="start" spacing={4}>
-                        <Box>
-                            <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={2}>PATIENT CONTACT</Text>
-                            <VStack align="start" spacing={2}>
-                                <HStack color="#2C8B9A"><Icon as={FiUser} /><Text fontWeight="bold">{selectedClientObj?.name}</Text></HStack>
-                                <HStack color="gray.600" fontSize="sm"><Icon as={FiClock} /><Text>{selectedClientObj?.phone_number || "No Phone Registered"}</Text></HStack>
-                                <HStack color="gray.600" fontSize="sm"><Icon as={FiGlobe} /><Text>{selectedClientObj?.email || "No Email Registered"}</Text></HStack>
-                            </VStack>
-                        </Box>
-                        
-                        <Box pt={4}>
-                            <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={2}>SESSION NOTES</Text>
-                            <Text fontSize="sm" color="gray.700" fontStyle={!form.notes ? "italic" : "normal"}>
-                                {form.notes || "No private notes for this session."}
-                            </Text>
-                        </Box>
-                    </VStack>
+            <Heading
+              as="h2"
+              fontSize={{ base: "19px", sm: "22px" }}
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              fontWeight="600"
+              color="white"
+              letterSpacing="-0.015em"
+              lineHeight="1.3"
+            >
+              {form.title || typeObj?.name || "Clinical Session"}
+            </Heading>
 
-                    {/* Operational Toggles */}
-                    <VStack align="stretch" spacing={4}>
-                        <Box bg="gray.50" p={5} borderRadius="2xl" border="1px solid" borderColor="gray.100">
-                             <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest" mb={4}>ATTENDANCE</Text>
-                             <VStack align="stretch" spacing={2}>
-                                <Button
-                                  size="sm"
-                                  colorScheme="teal"
-                                  variant={selectedEvent?.extendedProps?.attendance_status === 'arrived' ? 'solid' : 'outline'}
-                                  borderRadius="xl"
-                                  onClick={() => handleUpdate({ attendance_status: "arrived" }, { closeAfterSave: false })}
-                                >
-                                  Mark as Arrived
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  colorScheme="red"
-                                  variant={selectedEvent?.extendedProps?.attendance_status === 'did_not_arrive' ? 'solid' : 'outline'}
-                                  borderRadius="xl"
-                                  onClick={() => handleUpdate({ attendance_status: "did_not_arrive" }, { closeAfterSave: false })}
-                                >
-                                  No Show
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  colorScheme="green"
-                                  variant={form.status === 'completed' ? 'solid' : 'outline'}
-                                  borderRadius="xl"
-                                  onClick={async () => {
-                                    const linkedAppointmentId = selectedEvent?.extendedProps?.appointment_id;
-                                    if (!linkedAppointmentId) {
-                                      toast({ title: "No linked appointment to complete", status: "warning" });
-                                      return;
-                                    }
-                                    try {
-                                      await apiPost(`appointments/${linkedAppointmentId}/mark_completed/`, {});
-                                      setForm((prev) => ({ ...prev, status: "completed" }));
-                                      setEvents((prev) =>
-                                        prev.map((ev) =>
-                                          ev.id === selectedEvent.id
-                                            ? {
-                                                ...ev,
-                                                extendedProps: {
-                                                  ...ev.extendedProps,
-                                                  appointment_status: "completed",
-                                                },
-                                              }
-                                            : ev
-                                        )
-                                      );
-                                      toast({ title: "Session marked completed", status: "success" });
-                                    } catch (_e) {
-                                      toast({ title: "Could not mark completed", status: "error" });
-                                    }
-                                  }}
-                                >
-                                  Session Completed
-                                </Button>
-                             </VStack>
-                        </Box>
-                        
-                        <Button 
-                            leftIcon={<FiFileText />} 
-                            variant="outline" 
-                            borderColor="#2C8B9A" 
-                            color="#2C8B9A"
-                            borderRadius="xl"
-                            onClick={() => {
-                                const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
-                                router.push(`/dashboard/therapist/clients?id=${form.client}&section=notes&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
-                            }}
-                        >
-                            Treatment notes
-                        </Button>
-                        <Button 
-                            leftIcon={<FiCopy />} 
-                            variant="ghost" 
-                            size="sm" 
-                            color="gray.500"
-                            onClick={() => {
-                                const room = `https://mlchealth.in/conference/MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
-                                navigator.clipboard.writeText(room);
-                                toast({ title: "Invite link copied", status: "success" });
-                            }}
-                        >
-                            Copy video invite link
-                        </Button>
-                    </VStack>
-                </SimpleGrid>
-            </ModalBody>
+            <Divider borderColor="rgba(255, 255, 255, 0.15)" />
 
-            <ModalFooter bg="gray.100" p={6} borderBottomRadius="3xl">
-                <HStack w="full" justify="space-between">
-                    <HStack spacing={4}>
-                       <Button size="sm" variant="ghost" color="gray.600" onClick={() => setIsFormView(true)}>Edit Details</Button>
-                       <Button size="sm" variant="ghost" color="red.500" onClick={handleDelete}>Cancel Session</Button>
-                    </HStack>
-                    <Button px={8} borderRadius="full" bg="#56756C" color="white" onClick={onClose}>Close</Button>
+            <HStack spacing={3.5} pt={1} align="center">
+              <Avatar size="md" name={selectedClientObj?.name} bg="rgba(255, 255, 255, 0.16)" color="white" />
+              <VStack align="start" spacing={0.5}>
+                <Text fontSize="15px" fontWeight="600" fontFamily="'Outfit', sans-serif" color="white">
+                  {selectedClientObj?.name || "Patient Unknown"}
+                </Text>
+                <HStack spacing={1.5} color="rgba(255, 255, 255, 0.75)" fontSize="12.5px" fontWeight="500">
+                  <Icon as={FiClock} boxSize="12px" />
+                  <Text>{displayDate}</Text>
                 </HStack>
-            </ModalFooter>
-        </VStack>
+              </VStack>
+            </HStack>
+
+            <Button
+              mt={3}
+              leftIcon={<FiVideo />}
+              bg="#56756D"
+              color="white"
+              h="38px"
+              px={6}
+              borderRadius="full"
+              fontSize="13px"
+              fontWeight="600"
+              boxShadow="0 4px 14px rgba(0, 0, 0, 0.2)"
+              _hover={{ bg: "#46625B" }}
+              onClick={() => {
+                const rawId = selectedEvent.extendedProps?.originalId || selectedEvent.id.replace(/^(apt|event)-/, "");
+                const room = `MLC_${rawId}`;
+                console.log("🌿 [Schedule] Joining video room:", room);
+                window.open(`/conference/${room}`, '_blank');
+              }}
+            >
+              Join Video Room
+            </Button>
+          </VStack>
+        </Box>
+
+        <ModalBody p={{ base: 6, md: 8 }}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+            {/* Patient Details & Notes */}
+            <VStack align="start" spacing={5}>
+              <Box w="full" bg="rgba(250, 248, 245, 0.85)" p={4} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.12)">
+                <Text fontSize="10.5px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase" mb={3}>
+                  PATIENT CONTACT
+                </Text>
+                <VStack align="start" spacing={2.5}>
+                  <HStack color="#263A33" fontSize="13.5px">
+                    <Circle size="24px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                      <Icon as={FiUser} boxSize="12px" />
+                    </Circle>
+                    <Text fontWeight="600">{selectedClientObj?.name || "Client"}</Text>
+                  </HStack>
+                  <HStack color="#5A6E65" fontSize="13px">
+                    <Circle size="24px" bg="rgba(86, 117, 109, 0.08)" color="#56756D">
+                      <Icon as={FiClock} boxSize="12px" />
+                    </Circle>
+                    <Text>{selectedClientObj?.phone_number || "No Phone Registered"}</Text>
+                  </HStack>
+                  <HStack color="#5A6E65" fontSize="13px">
+                    <Circle size="24px" bg="rgba(86, 117, 109, 0.08)" color="#56756D">
+                      <Icon as={FiGlobe} boxSize="12px" />
+                    </Circle>
+                    <Text>{selectedClientObj?.email || "No Email Registered"}</Text>
+                  </HStack>
+                </VStack>
+              </Box>
+
+              <Box w="full" bg="rgba(250, 248, 245, 0.85)" p={4} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.12)">
+                <Text fontSize="10.5px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase" mb={2}>
+                  SESSION NOTES
+                </Text>
+                <Text fontSize="13px" color="#263A33" lineHeight="1.5">
+                  {form.notes || "No private notes recorded for this session."}
+                </Text>
+              </Box>
+            </VStack>
+
+            {/* Operational Toggles */}
+            <VStack align="stretch" spacing={4}>
+              <Box bg="rgba(250, 248, 245, 0.85)" p={5} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.12)">
+                <Text fontSize="10.5px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase" mb={3}>
+                  ATTENDANCE & STATUS
+                </Text>
+                <VStack align="stretch" spacing={2.5}>
+                  <Button
+                    size="sm"
+                    h="36px"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    variant={selectedEvent?.extendedProps?.attendance_status === 'arrived' ? 'solid' : 'outline'}
+                    bg={selectedEvent?.extendedProps?.attendance_status === 'arrived' ? '#2B6CB0' : 'white'}
+                    color={selectedEvent?.extendedProps?.attendance_status === 'arrived' ? 'white' : '#2B6CB0'}
+                    borderColor="rgba(43, 108, 176, 0.35)"
+                    borderRadius="full"
+                    _hover={{ bg: selectedEvent?.extendedProps?.attendance_status === 'arrived' ? '#2B6CB0' : 'rgba(43, 108, 176, 0.08)' }}
+                    onClick={() => handleUpdate({ attendance_status: "arrived" }, { closeAfterSave: false })}
+                  >
+                    ✓ Mark as Arrived
+                  </Button>
+                  <Button
+                    size="sm"
+                    h="36px"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    variant={selectedEvent?.extendedProps?.attendance_status === 'did_not_arrive' ? 'solid' : 'outline'}
+                    bg={selectedEvent?.extendedProps?.attendance_status === 'did_not_arrive' ? '#E53E3E' : 'white'}
+                    color={selectedEvent?.extendedProps?.attendance_status === 'did_not_arrive' ? 'white' : '#E53E3E'}
+                    borderColor="rgba(229, 62, 62, 0.35)"
+                    borderRadius="full"
+                    _hover={{ bg: selectedEvent?.extendedProps?.attendance_status === 'did_not_arrive' ? '#E53E3E' : 'rgba(229, 62, 62, 0.08)' }}
+                    onClick={() => handleUpdate({ attendance_status: "did_not_arrive" }, { closeAfterSave: false })}
+                  >
+                    ✕ No Show
+                  </Button>
+                  <Button
+                    size="sm"
+                    h="36px"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    variant={form.status === 'completed' ? 'solid' : 'outline'}
+                    bg={form.status === 'completed' ? '#059669' : 'white'}
+                    color={form.status === 'completed' ? 'white' : '#059669'}
+                    borderColor="rgba(5, 150, 105, 0.35)"
+                    borderRadius="full"
+                    _hover={{ bg: form.status === 'completed' ? '#059669' : 'rgba(5, 150, 105, 0.08)' }}
+                    onClick={async () => {
+                      const linkedAppointmentId = selectedEvent?.extendedProps?.appointment_id;
+                      if (!linkedAppointmentId) {
+                        toast({ title: "No linked appointment to complete", status: "warning" });
+                        return;
+                      }
+                      try {
+                        await apiPost(`appointments/${linkedAppointmentId}/mark_completed/`, {});
+                        setForm((prev) => ({ ...prev, status: "completed" }));
+                        setEvents((prev) =>
+                          prev.map((ev) =>
+                            ev.id === selectedEvent.id
+                              ? {
+                                  ...ev,
+                                  extendedProps: {
+                                    ...ev.extendedProps,
+                                    appointment_status: "completed",
+                                  },
+                                }
+                              : ev
+                          )
+                        );
+                        toast({ title: "Session marked completed", status: "success" });
+                      } catch (_e) {
+                        toast({ title: "Could not mark completed", status: "error" });
+                      }
+                    }}
+                  >
+                    ★ Session Completed
+                  </Button>
+                </VStack>
+              </Box>
+
+              <Button
+                leftIcon={<FiFileText />}
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                h="38px"
+                fontSize="12.5px"
+                fontWeight="600"
+                _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                onClick={() => {
+                  const originalId = selectedEvent.extendedProps.originalId || selectedEvent.id;
+                  router.push(`/dashboard/therapist/clients?id=${form.client}&section=notes&appointmentId=${originalId}&eventTypeId=${form.event_type}`);
+                }}
+              >
+                View Treatment Notes
+              </Button>
+              <Button
+                leftIcon={<FiCopy />}
+                variant="ghost"
+                size="sm"
+                color="#56756D"
+                borderRadius="full"
+                fontWeight="600"
+                fontSize="12px"
+                _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                onClick={() => {
+                  const room = `https://mlchealth.in/conference/MLC_${selectedEvent.extendedProps.originalId || selectedEvent.id}`;
+                  navigator.clipboard.writeText(room);
+                  toast({ title: "Invite link copied to clipboard", status: "success" });
+                }}
+              >
+                Copy Video Invite Link
+              </Button>
+            </VStack>
+          </SimpleGrid>
+        </ModalBody>
+
+        <ModalFooter bg="#FAF8F5" p={4} px={{ base: 6, md: 8 }} borderTop="1px solid rgba(86, 117, 109, 0.12)" borderBottomRadius="3xl">
+          <HStack w="full" justify="space-between">
+            <HStack spacing={3}>
+              <Button
+                size="sm"
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                h="36px"
+                px={4}
+                fontSize="12.5px"
+                fontWeight="600"
+                _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                onClick={() => setIsFormView(true)}
+              >
+                Edit Details
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                color="#E53E3E"
+                borderRadius="full"
+                h="36px"
+                fontSize="12.5px"
+                fontWeight="600"
+                _hover={{ bg: "rgba(229, 62, 62, 0.08)" }}
+                onClick={handleDelete}
+              >
+                Cancel Session
+              </Button>
+            </HStack>
+            <Button
+              px={7}
+              borderRadius="full"
+              h="36px"
+              bg="#263A33"
+              color="white"
+              fontSize="13px"
+              fontWeight="600"
+              _hover={{ bg: "#56756D" }}
+              onClick={onClose}
+            >
+              Close
+            </Button>
+          </HStack>
+        </ModalFooter>
+      </VStack>
     );
   };
 
   const SessionFormView = () => (
     <>
-      <ModalHeader borderBottom="1px solid" borderColor="gray.100" pb={6}>
-        <HStack spacing={4}>
-            <Box p={3} bg="teal.50" borderRadius="xl"><Icon as={FiCalendar} color="teal.500" /></Box>
-            <VStack align="start" spacing={0}>
-                <Heading size="md" color="gray.700">{isEditMode ? "Edit Session Details" : "New Clinical Appointment"}</Heading>
-                <Text fontSize="xs" color="gray.400" fontWeight="bold" letterSpacing="wider">SCHEDULING COCKPIT</Text>
-            </VStack>
+      <ModalHeader borderBottom="1px solid rgba(86, 117, 109, 0.12)" p={6} px={{ base: 6, md: 8 }}>
+        <HStack spacing={3.5} align="center">
+          <Circle size="42px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+            <Icon as={FiCalendar} boxSize="18px" />
+          </Circle>
+          <VStack align="start" spacing={0.5}>
+            <Text fontSize="10.5px" color="#718096" fontWeight="700" letterSpacing="0.08em" textTransform="uppercase">
+              CLINICAL SCHEDULING
+            </Text>
+            <Heading
+              as="h2"
+              fontSize="19px"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              fontWeight="600"
+              color="#263A33"
+              letterSpacing="-0.015em"
+            >
+              {isEditMode ? "Edit Session Details" : "New Clinical Appointment"}
+            </Heading>
+          </VStack>
         </HStack>
       </ModalHeader>
-      <ModalCloseButton borderRadius="full" m={2} />
-      <ModalBody py={10} px={10}>
-        <VStack spacing={8} align="stretch">
-            <FormControl isRequired>
-                <FormLabel fontWeight="700" color="gray.600">Event Type</FormLabel>
-                <Select 
-                    placeholder="Select clinical model..." 
-                    value={form.event_type}
-                    onChange={(e) => {
-                        const typeId = e.target.value;
-                        const typeObj = eventTypes.find(t => String(t.id) === String(typeId));
-                        if (typeObj && !isEditMode) {
-                            const start = new Date(form.start_time);
-                            const end = new Date(start.getTime() + (typeObj.default_duration || 50) * 60000);
-                            setForm({ 
-                                ...form, 
-                                event_type: typeId, 
-                                end_time: toLocalISO(end),
-                                notes: form.notes || typeObj.default_notes || ""
-                            });
-                        } else {
-                            setForm({ ...form, event_type: typeId });
-                        }
-                    }}
-                    borderRadius="xl" h={12}
-                >
-                    {Object.entries(eventTypes.reduce((acc, t) => {
-                        const g = t.group || "General";
-                        if (!acc[g]) acc[g] = [];
-                        acc[g].push(t);
-                        return acc;
-                    }, {})).map(([groupName, types]) => (
-                        <optgroup label={groupName} key={groupName}>
-                            {types.map(t => (
-                                <option key={t.id} value={t.id}>{t.name}</option>
-                            ))}
-                        </optgroup>
-                    ))}
-                </Select>
-            </FormControl>
+      <ModalCloseButton borderRadius="full" m={4} />
+      <ModalBody py={6} px={{ base: 6, md: 8 }}>
+        <VStack spacing={5} align="stretch">
+          <FormControl isRequired>
+            <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase">
+              Event Type
+            </FormLabel>
+            <ModernSelect
+              placeholder="Select clinical model..."
+              value={form.event_type}
+              options={eventTypeOptions}
+              h="42px"
+              onChange={(typeId) => {
+                const typeObj = eventTypes.find(t => String(t.id) === String(typeId));
+                if (typeObj && !isEditMode && form.start_time) {
+                  const start = new Date(form.start_time);
+                  const end = new Date(start.getTime() + (typeObj.default_duration || 50) * 60000);
+                  setForm({
+                    ...form,
+                    event_type: typeId,
+                    end_time: toLocalISO(end),
+                    notes: form.notes || typeObj.default_notes || ""
+                  });
+                } else {
+                  setForm({ ...form, event_type: typeId });
+                }
+              }}
+            />
+          </FormControl>
 
-            <FormControl>
-                <FormLabel fontWeight="700" color="gray.600">Patient</FormLabel>
-                <Select 
-                    placeholder="Select client (optional)" 
-                    value={form.client}
-                    onChange={(e) => setForm({ ...form, client: e.target.value })}
-                    borderRadius="xl" h={12}
-                >
-                    {clients.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
-                </Select>
-            </FormControl>
+          <FormControl>
+            <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase">
+              Patient
+            </FormLabel>
+            <ModernSelect
+              placeholder="Select client (optional)"
+              value={form.client}
+              options={clientOptions}
+              h="42px"
+              onChange={(clientId) => setForm({ ...form, client: clientId })}
+            />
+          </FormControl>
 
-            <FormControl>
-                <FormLabel fontWeight="700" color="gray.600">Session Name (Optional overridden title)</FormLabel>
-                <Input 
-                    placeholder="e.g. Art Therapy Follow-up" 
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    borderRadius="xl" h={12}
-                />
-            </FormControl>
+          <FormControl>
+            <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase">
+              Session Title (Optional override)
+            </FormLabel>
+            <Input
+              placeholder="e.g. Art Therapy Follow-up"
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              borderRadius="xl"
+              h="42px"
+              fontSize="13px"
+              fontFamily="'Inter', sans-serif"
+              borderColor="rgba(86, 117, 109, 0.2)"
+              _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+            />
+          </FormControl>
 
-            <SimpleGrid columns={2} spacing={6}>
-                <FormControl isRequired>
-                    <FormLabel fontWeight="700" color="gray.600">Start Time</FormLabel>
-                    <Input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} borderRadius="xl" />
+          <FormControl isRequired>
+            <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase" mb={2}>
+              Date & Session Time
+            </FormLabel>
+            <MiniCalendarPicker
+              startTime={form.start_time}
+              endTime={form.end_time}
+              defaultDuration={50}
+              onChange={({ startTime, endTime }) => {
+                setForm(prev => ({
+                  ...prev,
+                  start_time: startTime,
+                  end_time: endTime,
+                }));
+              }}
+            />
+          </FormControl>
+
+          {!isEditMode && (
+            <Box bg="rgba(250, 248, 245, 0.85)" p={4} borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.12)">
+              <VStack align="stretch" spacing={3}>
+                <FormControl display="flex" alignItems="center" justifyContent="space-between">
+                  <FormLabel mb="0" fontSize="12.5px" fontWeight="600" color="#263A33">
+                    Repeat this session
+                  </FormLabel>
+                  <Checkbox
+                    colorScheme="teal"
+                    isChecked={Boolean(form.repeat_enabled)}
+                    onChange={(e) => setForm({ ...form, repeat_enabled: e.target.checked })}
+                  />
                 </FormControl>
-                <FormControl isRequired>
-                    <FormLabel fontWeight="700" color="gray.600">End Time</FormLabel>
-                    <Input type="datetime-local" value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} borderRadius="xl" />
-                </FormControl>
-            </SimpleGrid>
+                {form.repeat_enabled && (
+                  <SimpleGrid columns={2} spacing={3} pt={1}>
+                    <FormControl>
+                      <FormLabel fontSize="11px" fontWeight="600" color="#5A6E65">Interval</FormLabel>
+                      <Select
+                        value={form.repeat_interval || "weekly"}
+                        onChange={(e) => setForm({ ...form, repeat_interval: e.target.value })}
+                        borderRadius="lg"
+                        h="38px"
+                        fontSize="12.5px"
+                        bg="white"
+                        borderColor="rgba(86, 117, 109, 0.2)"
+                      >
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                      </Select>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel fontSize="11px" fontWeight="600" color="#5A6E65">Occurrences</FormLabel>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={52}
+                        value={form.repeat_count ?? 1}
+                        onChange={(e) => setForm({ ...form, repeat_count: e.target.value })}
+                        borderRadius="lg"
+                        h="38px"
+                        fontSize="12.5px"
+                        bg="white"
+                        borderColor="rgba(86, 117, 109, 0.2)"
+                      />
+                    </FormControl>
+                  </SimpleGrid>
+                )}
+              </VStack>
+            </Box>
+          )}
 
-            {!isEditMode && (
-              <Box bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.100">
-                <VStack align="stretch" spacing={3}>
-                  <FormControl display="flex" alignItems="center" justifyContent="space-between">
-                    <FormLabel mb="0" fontWeight="700" color="gray.600">Repeat this event</FormLabel>
-                    <Checkbox
-                      colorScheme="teal"
-                      isChecked={Boolean(form.repeat_enabled)}
-                      onChange={(e) => setForm({ ...form, repeat_enabled: e.target.checked })}
-                    />
-                  </FormControl>
-                  {form.repeat_enabled && (
-                    <SimpleGrid columns={2} spacing={4}>
-                      <FormControl>
-                        <FormLabel fontSize="sm" color="gray.600">Repeat every</FormLabel>
-                        <Select
-                          value={form.repeat_interval || "weekly"}
-                          onChange={(e) => setForm({ ...form, repeat_interval: e.target.value })}
-                          borderRadius="lg"
-                          bg="white"
-                        >
-                          <option value="daily">Day</option>
-                          <option value="weekly">Week</option>
-                          <option value="monthly">Month</option>
-                        </Select>
-                      </FormControl>
-                      <FormControl>
-                        <FormLabel fontSize="sm" color="gray.600">Total occurrences</FormLabel>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={52}
-                          value={form.repeat_count ?? 1}
-                          onChange={(e) => setForm({ ...form, repeat_count: e.target.value })}
-                          borderRadius="lg"
-                          bg="white"
-                        />
-                      </FormControl>
-                    </SimpleGrid>
-                  )}
-                </VStack>
-              </Box>
-            )}
-
-            <FormControl>
-                <FormLabel fontWeight="700" color="gray.600">Clinical Notes</FormLabel>
-                <Textarea 
-                    placeholder="Private notes for the session..." 
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    borderRadius="2xl" rows={4}
-                />
-            </FormControl>
+          <FormControl>
+            <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase">
+              Clinical Notes
+            </FormLabel>
+            <Textarea
+              placeholder="Private therapeutic notes for this session..."
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              borderRadius="xl"
+              rows={3}
+              fontSize="13px"
+              fontFamily="'Inter', sans-serif"
+              borderColor="rgba(86, 117, 109, 0.2)"
+              _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+            />
+          </FormControl>
         </VStack>
       </ModalBody>
-      <ModalFooter pb={8} px={10}>
-          <HStack w="full" justify="space-between">
-              <Button variant="ghost" onClick={isEditMode ? () => setIsFormView(false) : onClose} borderRadius="full">Back</Button>
-              <Button bg="#56756C" color="white" borderRadius="full" px={10} onClick={isEditMode ? handleUpdate : handleCreate} _hover={{ bg: '#3E5B54' }}>
-                  {isEditMode ? "Save Changes" : "Confirm Booking"}
-              </Button>
-          </HStack>
+      <ModalFooter bg="#FAF8F5" p={4} px={{ base: 6, md: 8 }} borderTop="1px solid rgba(86, 117, 109, 0.12)" borderBottomRadius="3xl">
+        <HStack w="full" justify="space-between">
+          <Button
+            variant="ghost"
+            color="#5A6E65"
+            borderRadius="full"
+            h="38px"
+            fontSize="13px"
+            fontWeight="600"
+            onClick={isEditMode ? () => setIsFormView(false) : onClose}
+          >
+            Back
+          </Button>
+          <Button
+            bg="#56756D"
+            color="white"
+            borderRadius="full"
+            h="38px"
+            px={7}
+            fontSize="13px"
+            fontWeight="600"
+            _hover={{ bg: "#263A33" }}
+            _active={{ bg: "#263A33" }}
+            boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+            onClick={isEditMode ? handleUpdate : handleCreate}
+          >
+            {isEditMode ? "Save Changes" : "Confirm Booking"}
+          </Button>
+        </HStack>
       </ModalFooter>
     </>
   );
@@ -879,91 +1089,298 @@ export default function ScheduleClient() {
     }
   };
 
-
   return (
-    <VStack align="stretch" spacing={6} p={{ base: 4, md: 8 }} bg="#FDFDFD" minH="100vh">
-      <VStack align="stretch" spacing={4} mb={4}>
-        {/* Title - always on its own line */}
-        <VStack align="start" spacing={0}>
-            <Heading size="lg" color="#2E2E2E" fontWeight="800" whiteSpace="nowrap">Clinical Schedule</Heading>
-            <Text color="gray.500" fontSize="sm" whiteSpace="nowrap">Manage your therapeutic sessions and availability.</Text>
-        </VStack>
-
-        {pendingBookingCount > 0 && (
-          <Box
-            as={NextLink}
-            href="/dashboard/therapist/booking-requests"
-            w="full"
-            py={3}
-            px={4}
-            borderRadius="xl"
-            bg="orange.50"
-            border="1px solid"
-            borderColor="orange.200"
-            _hover={{ bg: "orange.100" }}
-            display="block"
-          >
-            <HStack justify="space-between" flexWrap="wrap" gap={2}>
-              <HStack>
-                <Icon as={FiAlertCircle} color="orange.500" boxSize={5} />
-                <Text fontSize="sm" fontWeight="600" color="gray.800">
-                  {pendingBookingCount} pending booking request{pendingBookingCount === 1 ? "" : "s"} need your response
-                </Text>
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* Golden Benchmark Hero Banner */}
+      <Box
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex
+          direction={{ base: "column", lg: "row" }}
+          justify="space-between"
+          align={{ base: "stretch", lg: "center" }}
+          gap={4}
+        >
+          {/* Left: Icon Badge + Eyebrows + H1 + Subtitle */}
+          <HStack spacing={3.5} align="center">
+            <Circle size="46px" bg="rgba(86, 117, 109, 0.1)" color="#56756D" flexShrink={0}>
+              <Icon as={FiCalendar} boxSize="22px" />
+            </Circle>
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2} wrap="wrap">
+                <Badge
+                  bg="rgba(169, 203, 183, 0.2)"
+                  color="#263A33"
+                  fontSize="10px"
+                  fontWeight="700"
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.06em"
+                  textTransform="uppercase"
+                >
+                  CLINICAL PRACTICE 🌿
+                </Badge>
+                <Badge
+                  bg="rgba(86, 117, 109, 0.08)"
+                  color="#56756D"
+                  fontSize="10px"
+                  fontWeight="700"
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.04em"
+                >
+                  {events.length} TOTAL SESSIONS
+                </Badge>
               </HStack>
-              <Text fontSize="sm" color="teal.700" fontWeight="600">
-                Review & respond →
+              <Heading
+                as="h1"
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33"
+                fontWeight="600"
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                Clinical Schedule
+              </Heading>
+              <Text fontSize="13px" color="#5A6E65" fontWeight="400">
+                Manage your therapeutic sessions, calendar bookings, and clinical availability.
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Right: Metric Strip + Action Buttons */}
+          <Stack
+            direction={{ base: "column", md: "row" }}
+            spacing={3}
+            align={{ base: "stretch", md: "center" }}
+            w={{ base: "full", lg: "auto" }}
+          >
+            <HStack
+              spacing={{ base: 1.5, sm: 3 }}
+              p={1.5}
+              px={{ base: 2, sm: 2.5 }}
+              borderRadius="xl"
+              bg="rgba(250, 248, 245, 0.9)"
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)"
+              w={{ base: "full", md: "auto" }}
+              justify="space-between"
+            >
+              <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" flexShrink={0}>
+                  <Icon as={FiCalendar} boxSize="14px" />
+                </Circle>
+                <VStack align="start" spacing={0} minW="max-content">
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                    SESSIONS
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                    {events.length} Booked
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+              <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669" flexShrink={0}>
+                  <Icon as={FiClock} boxSize="14px" />
+                </Circle>
+                <VStack align="start" spacing={0} minW="max-content">
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                    UPCOMING
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                    {upcomingEventsCount} Active
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+              <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                <Circle size="28px" bg="rgba(113, 128, 150, 0.12)" color="#718096" flexShrink={0}>
+                  <Icon as={FiUser} boxSize="14px" />
+                </Circle>
+                <VStack align="start" spacing={0} minW="max-content">
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                    PATIENTS
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                    {clients.length} in Care
+                  </Text>
+                </VStack>
+              </HStack>
+            </HStack>
+
+            <HStack spacing={2.5} w={{ base: "full", md: "auto" }}>
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  borderColor="rgba(86, 117, 109, 0.25)"
+                  color="#263A33"
+                  borderRadius="full"
+                  h="38px"
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  px={3.5}
+                  leftIcon={<FiSettings />}
+                  onClick={() => requireBasicAccess(typeModal.onOpen)}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                >
+                  Types
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                h="38px"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                leftIcon={<FiGlobe />}
+                onClick={() => requireBasicAccess(oneOffModal.onOpen)}
+                _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                whiteSpace="nowrap"
+              >
+                One-off Availability
+              </Button>
+              <Button
+                leftIcon={<FiPlus />}
+                bg="#56756D"
+                color="white"
+                borderRadius="full"
+                h="38px"
+                fontSize="13px"
+                fontWeight="600"
+                px={5}
+                _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                _active={{ bg: "#263A33" }}
+                transition="all 0.2s"
+                boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                whiteSpace="nowrap"
+                onClick={() =>
+                  requireBasicAccess(() => {
+                    setIsEditMode(false);
+                    setForm({
+                      title: "",
+                      client: "",
+                      event_type: "",
+                      start_time: "",
+                      end_time: "",
+                      notes: "",
+                      status: "scheduled",
+                      repeat_enabled: false,
+                      repeat_interval: "weekly",
+                      repeat_count: 1,
+                    });
+                    onOpen();
+                  })
+                }
+              >
+                Add Session
+              </Button>
+            </HStack>
+          </Stack>
+        </Flex>
+      </Box>
+
+      {/* Alert for Pending Bookings if any */}
+      {pendingBookingCount > 0 && (
+        <Box
+          as={NextLink}
+          href="/dashboard/therapist/booking-requests"
+          w="full"
+          p={3.5}
+          px={4}
+          borderRadius="xl"
+          bg="rgba(254, 243, 199, 0.7)"
+          border="1px solid rgba(245, 158, 11, 0.3)"
+          _hover={{ bg: "rgba(254, 243, 199, 0.95)" }}
+          mb={4}
+          display="block"
+          transition="0.15s ease"
+        >
+          <HStack justify="space-between" flexWrap="wrap" gap={2}>
+            <HStack spacing={2.5}>
+              <Circle size="28px" bg="rgba(245, 158, 11, 0.2)" color="#B45309">
+                <Icon as={FiAlertCircle} boxSize="15px" />
+              </Circle>
+              <Text fontSize="13px" fontWeight="600" color="#92400E">
+                {pendingBookingCount} pending booking request{pendingBookingCount === 1 ? "" : "s"} awaiting your confirmation
               </Text>
             </HStack>
-          </Box>
-        )}
-        
-        {/* Controls row */}
-        <Flex 
-            direction={{ base: "column", sm: "row" }}
-            gap={4}
-            w="full"
-            align={{ base: "stretch", sm: "center" }}
-            justify="space-between"
-        >
-            {/* Scalability Slider - Hidden on mobile */}
-            <HStack 
-                spacing={4} 
-                bg="white" 
-                p={2} 
-                px={4} 
-                borderRadius="full" 
-                shadow="sm" 
-                border="1px solid" 
-                borderColor="gray.100"
-                display={{ base: "none", md: "flex" }}
-            >
-                <Icon as={FiMaximize2} color="gray.400" />
-                <Text fontSize="xs" fontWeight="700" color="gray.500" whiteSpace="nowrap">View Scale</Text>
-                <Slider aria-label="Scale View" min={1.5} max={6} step={0.5} w="120px" defaultValue={2} onChange={(v) => setSlotHeight(v)}>
-                    <SliderTrack bg="gray.100">
-                        <SliderFilledTrack bg="#56756C" />
-                    </SliderTrack>
-                    <SliderThumb boxSize={4} border="2px solid" borderColor="#56756C" />
-                </Slider>
-            </HStack>
+            <Text fontSize="12.5px" color="#92400E" fontWeight="700">
+              Review & Respond →
+            </Text>
+          </HStack>
+        </Box>
+      )}
 
-            <Flex 
-                direction={{ base: "column", lg: "row" }}
-                gap={3}
-                w={{ base: "full", lg: "auto" }}
-            >
-                {isAdmin && (
-                    <Button variant="ghost" leftIcon={<FiSettings />} borderRadius="full" onClick={() => requireBasicAccess(typeModal.onOpen)} size={{ base: "sm", md: "md" }}>Manage Types</Button>
-                )}
-                <Button variant="outline" borderRadius="full" leftIcon={<FiGlobe />} onClick={() => requireBasicAccess(oneOffModal.onOpen)} borderColor="#56756D" color="#56756D" _hover={{ bg: 'gray.50' }} size={{ base: "sm", md: "md" }}>
-                    One-off Availability
-                </Button>
-                <Button leftIcon={<FiPlus />} bg="#56756D" color="white" borderRadius="full" px={6} onClick={() => requireBasicAccess(() => { setIsEditMode(false); setForm({ title: "", client: "", event_type: "", start_time: "", end_time: "", notes: "", status: "scheduled", repeat_enabled: false, repeat_interval: "weekly", repeat_count: 1 }); onOpen(); })} _hover={{ bg: '#C9A960' }} size={{ base: "sm", md: "md" }}>
-                  Add Session
-                </Button>
-            </Flex>
-        </Flex>
-      </VStack>
+      {/* Calendar Toolbar Strip (Scale + Legends) */}
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={3}
+        wrap="wrap"
+        gap={3}
+      >
+        <HStack
+          spacing={3}
+          bg="white"
+          py={1.5}
+          px={3.5}
+          borderRadius="full"
+          border="1px solid rgba(86, 117, 109, 0.14)"
+          boxShadow="0 2px 6px -1px rgba(38, 58, 51, 0.04)"
+          display={{ base: "none", md: "flex" }}
+        >
+          <Icon as={FiMaximize2} color="#56756D" boxSize="13px" />
+          <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em" whiteSpace="nowrap">
+            View Scale
+          </Text>
+          <Slider
+            aria-label="Scale View"
+            min={1.5}
+            max={6}
+            step={0.5}
+            w="110px"
+            defaultValue={2}
+            onChange={(v) => setSlotHeight(v)}
+          >
+            <SliderTrack bg="rgba(86, 117, 109, 0.12)" h="4px" borderRadius="full">
+              <SliderFilledTrack bg="#56756D" />
+            </SliderTrack>
+            <SliderThumb boxSize="14px" bg="white" border="2px solid #56756D" boxShadow="sm" />
+          </Slider>
+        </HStack>
+
+        {/* Legend */}
+        <HStack spacing={3} wrap="wrap">
+          <HStack spacing={1.5}>
+            <Circle size="7px" bg="#56756D" />
+            <Text fontSize="11px" fontWeight="600" color="#5A6E65">Scheduled</Text>
+          </HStack>
+          <HStack spacing={1.5}>
+            <Circle size="7px" bg="#059669" />
+            <Text fontSize="11px" fontWeight="600" color="#5A6E65">Documented</Text>
+          </HStack>
+          <HStack spacing={1.5}>
+            <Circle size="7px" bg="#3182CE" />
+            <Text fontSize="11px" fontWeight="600" color="#5A6E65">Arrived</Text>
+          </HStack>
+        </HStack>
+      </Flex>
 
       {!hasBasicAccess && (
         <SubscriptionWall
@@ -975,54 +1392,18 @@ export default function ScheduleClient() {
         />
       )}
 
+      {/* Main Calendar Card */}
       <Box 
-          bg="white" 
-          p={{ base: 2, md: 6 }} 
-          borderRadius={{ base: "xl", md: "2xl" }} 
-          shadow="xl" 
-          border="1px solid" 
-          borderColor="gray.100" 
-          overflow="hidden"
-          sx={{
-              ".fc": { fontFamily: "'Inter', var(--font-inter), system-ui, sans-serif", color: "#1F2937" },
-              ".fc-timegrid-slot": { 
-                  height: `${slotHeight}rem`,
-                  borderColor: "#EEF2F7"
-              },
-              ".fc-business-hour": { backgroundColor: "rgba(86, 117, 109, 0.08) !important" },
-              ".fc-non-business": { backgroundColor: "#FAFBFC !important" },
-              ".fc-col-header": { background: "#F8FAFC" },
-              ".fc-col-header-cell": { borderColor: "#EEF2F7" },
-              ".fc-event": {
-                  borderRadius: "8px",
-                  borderLeft: "4px solid rgba(17,24,39,0.18)",
-                  boxShadow: "0 2px 8px rgba(15, 23, 42, 0.08)",
-                  padding: "0",
-                  color: "#0F172A !important",
-                  overflow: "hidden"
-              },
-              ".fc-event-main": {
-                  padding: "0",
-                  color: "#0F172A !important"
-              },
-              ".fc-toolbar-title": { fontSize: { base: "0.9rem", sm: "1rem", md: "1.15rem" }, fontWeight: "700", color: "#1F2937", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-              ".fc-button": { padding: { base: "5px 8px", md: "8px 14px" }, fontSize: { base: "0.7rem", md: "0.85rem" }, whiteSpace: "nowrap", borderRadius: "10px" },
-              ".fc-header-toolbar": { gap: { base: 1, md: 4 }, flexWrap: "nowrap !important", overflow: "hidden" },
-              ".fc-col-header-cell-cushion": { 
-                  whiteSpace: "nowrap !important", 
-                  fontSize: { base: "0.67rem", sm: "0.78rem", md: "0.9rem" },
-                  fontWeight: 600,
-                  padding: "2px !important",
-                  display: "block !important"
-              },
-              ".fc-timegrid-axis-cushion": { fontSize: { base: "0.65rem", md: "0.82rem" }, color: "#64748B" }
-          }}
+        bg="white" 
+        borderRadius="2xl" 
+        border="1px solid rgba(86, 117, 109, 0.14)" 
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+        overflow="hidden"
       >
         {mounted ? (
           <Box 
             overflowX="auto" 
             w="full" 
-            pb={4} 
             cursor="grab" 
             _active={{ cursor: 'grabbing' }}
             position="relative"
@@ -1032,70 +1413,53 @@ export default function ScheduleClient() {
               '&::-webkit-scrollbar-thumb': { background: '#D1D5DB', borderRadius: '10px' },
             }}
           >
-            <Box minW={{ base: "1000px", md: "100%" }} position="relative">
+            <Box minW={{ base: "800px", md: "100%" }} position="relative">
               <FullCalendarComponent 
-                  events={events} 
-                  onSelect={handleSelect}
-                  onEventClick={handleEventClick}
-                  onEventResize={handleEventResize}
-                  businessHours={businessHours}
-                  initialView="timeGridWeek"
-                  dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'numeric', omitCommas: true }}
-              eventContent={(arg) => {
+                events={events} 
+                onSelect={handleSelect}
+                onEventClick={handleEventClick}
+                onEventResize={handleEventResize}
+                businessHours={businessHours}
+                initialView="timeGridWeek"
+                slotHeight={slotHeight}
+                dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'numeric', omitCommas: true }}
+                eventContent={(arg) => {
                   const start = arg.event.startStr.split('T')[1]?.slice(0, 5) || "";
                   const end = arg.event.endStr.split('T')[1]?.slice(0, 5) || "";
                   const attendance = arg.event.extendedProps?.attendance_status;
                   const appointmentStatus = arg.event.extendedProps?.appointment_status;
-                  const statusIcon =
-                    appointmentStatus === "completed"
-                      ? "📝"
-                      : attendance === "arrived"
-                        ? "🟦"
-                        : attendance === "did_not_arrive"
-                          ? "🟥"
-                          : "";
-                  
-                  // Even more aggressive mobile scaling to prevent warping
-                  const titleSize = { base: "0.8rem", md: `${Math.max(0.9, Math.min(1.08, 0.68 + (slotHeight * 0.12)))}rem` };
-                  const timeSize = { base: "0.7rem", md: `${Math.max(0.78, Math.min(0.96, 0.58 + (slotHeight * 0.1)))}rem` };
 
                   return (
-                      <VStack align="start" spacing={0} p={1} h="full" justify="flex-start" overflow="hidden" minW={0}>
-                          <Text 
-                            fontWeight="700 !important" 
-                            fontSize={titleSize} 
-                            color="#0F172A !important" 
-                            whiteSpace="nowrap"
-                            overflow="hidden"
-                            textOverflow="ellipsis"
-                            w="full" 
-                            lineHeight="1.1"
-                            display="block"
-                          >
-                              {arg.event.title} {statusIcon}
-                          </Text>
-                          <Text 
-                            fontWeight="600 !important" 
-                            fontSize={timeSize} 
-                            color="#334155 !important" 
-                            whiteSpace="nowrap"
-                            overflow="hidden"
-                            textOverflow="ellipsis"
-                            opacity={0.9}
-                            lineHeight="1"
-                            w="full"
-                            display="block"
-                          >
-                              {start} - {end}
-                          </Text>
-                      </VStack>
+                    <Box p={1.5} h="full" w="full" overflow="hidden" position="relative">
+                      <HStack justify="space-between" align="center" spacing={1} mb={0.5}>
+                        <Text 
+                          fontWeight="600" 
+                          fontSize="12px" 
+                          fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                          color="#263A33" 
+                          isTruncated
+                          lineHeight="1.2"
+                        >
+                          {arg.event.title}
+                        </Text>
+                        {appointmentStatus === "completed" ? (
+                          <Badge bg="rgba(16, 185, 129, 0.15)" color="#059669" fontSize="8.5px" px={1} borderRadius="full">Done</Badge>
+                        ) : attendance === "arrived" ? (
+                          <Badge bg="rgba(49, 130, 206, 0.15)" color="#2B6CB0" fontSize="8.5px" px={1} borderRadius="full">Arrived</Badge>
+                        ) : null}
+                      </HStack>
+                      <HStack spacing={1} color="#5A6E65" fontSize="10.5px" fontWeight="500">
+                        <Icon as={FiClock} boxSize="10px" color="#56756D" />
+                        <Text isTruncated>{start} - {end}</Text>
+                      </HStack>
+                    </Box>
                   );
-              }}
-          />
+                }}
+              />
             </Box>
           </Box>
         ) : (
-          <Center h="400px"><Spinner /></Center>
+          <Center h="400px"><Spinner color="#56756D" /></Center>
         )}
       </Box>
 
@@ -1115,173 +1479,220 @@ export default function ScheduleClient() {
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={oneOffModal.isOpen} onClose={oneOffModal.onClose} size="lg">
-        <ModalOverlay backdropFilter="blur(5px)" />
-        <ModalContent borderRadius="3xl" p={4}>
-          <ModalHeader>
-            <HStack>
-                <Icon as={FiGlobe} color="#56756C" />
-                <Text>One-off Availability</Text>
+      <Modal isOpen={oneOffModal.isOpen} onClose={oneOffModal.onClose} size="lg" isCentered>
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="3xl" overflow="hidden">
+          <ModalHeader borderBottom="1px solid rgba(86, 117, 109, 0.12)" p={6}>
+            <HStack spacing={3}>
+              <Circle size="38px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiGlobe} boxSize="18px" />
+              </Circle>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="10px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  DISCOVERY PORTAL
+                </Text>
+                <Heading as="h3" fontSize="18px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33" letterSpacing="-0.015em">
+                  One-off Availability
+                </Heading>
+              </VStack>
             </HStack>
           </ModalHeader>
-          <ModalCloseButton mt={6} mr={6} />
-          <ModalBody>
-            <VStack spacing={6}>
-                <Box bg="#F0F9F4" p={4} borderRadius="2xl" border="1px solid" borderColor="#A9CBB7">
-                    <HStack align="start">
-                        <Icon as={FiAlertCircle} color="#56756D" mt={1} />
-                        <Text fontSize="sm" color="#2E2E2E">
-                            <strong>Client-Facing Slot:</strong> Publishing this time will make it immediately visible and bookable for clients on the website discovery portal.
-                        </Text>
-                    </HStack>
-                </Box>
+          <ModalCloseButton borderRadius="full" m={4} />
+          <ModalBody py={6} px={6}>
+            <VStack spacing={5}>
+              <Box bg="rgba(236, 253, 245, 0.8)" p={4} borderRadius="2xl" border="1px solid rgba(16, 185, 129, 0.25)" w="full">
+                <HStack align="start" spacing={3}>
+                  <Icon as={FiAlertCircle} color="#059669" boxSize="18px" mt={0.5} />
+                  <Text fontSize="12.5px" color="#065F46" lineHeight="1.5">
+                    <strong>Client-Facing Slot:</strong> Publishing this window will make it immediately visible and bookable for clients on your public therapist booking profile.
+                  </Text>
+                </HStack>
+              </Box>
 
-                <SimpleGrid columns={2} spacing={4} w="full">
-                    <FormControl isRequired>
-                        <FormLabel fontWeight="700" color="gray.600">Start Time</FormLabel>
-                        <Input type="datetime-local" value={oneOffForm.start_time} onChange={(e) => setOneOffForm({ ...oneOffForm, start_time: e.target.value })} borderRadius="xl" />
-                    </FormControl>
-                    <FormControl isRequired>
-                        <FormLabel fontWeight="700" color="gray.600">End Time</FormLabel>
-                        <Input type="datetime-local" value={oneOffForm.end_time} onChange={(e) => setOneOffForm({ ...oneOffForm, end_time: e.target.value })} borderRadius="xl" />
-                    </FormControl>
-                </SimpleGrid>
+              <FormControl isRequired w="full">
+                <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase" mb={2}>
+                  Slot Date & Window
+                </FormLabel>
+                <MiniCalendarPicker
+                  startTime={oneOffForm.start_time}
+                  endTime={oneOffForm.end_time}
+                  defaultDuration={60}
+                  onChange={({ startTime, endTime }) => {
+                    setOneOffForm(prev => ({
+                      ...prev,
+                      start_time: startTime,
+                      end_time: endTime,
+                    }));
+                  }}
+                />
+              </FormControl>
 
-                <FormControl>
-                    <FormLabel fontWeight="700" color="gray.600">Internal Memo (Optional)</FormLabel>
-                    <Textarea 
-                        placeholder="Why is this slot being opened?" 
-                        value={oneOffForm.notes}
-                        onChange={(e) => setOneOffForm({ ...oneOffForm, notes: e.target.value })}
-                        borderRadius="2xl"
-                    />
-                </FormControl>
+              <FormControl w="full">
+                <FormLabel fontSize="11.5px" fontWeight="700" color="#263A33" letterSpacing="0.04em" textTransform="uppercase">Internal Memo (Optional)</FormLabel>
+                <Textarea 
+                  placeholder="Why is this slot being opened? e.g. Weekend morning overflow..." 
+                  value={oneOffForm.notes}
+                  onChange={(e) => setOneOffForm({ ...oneOffForm, notes: e.target.value })}
+                  borderRadius="xl"
+                  rows={3}
+                  fontSize="13px"
+                  fontFamily="'Inter', sans-serif"
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                />
+              </FormControl>
             </VStack>
           </ModalBody>
-          <ModalFooter pb={8}>
-            <Button variant="ghost" mr={3} onClick={oneOffModal.onClose} borderRadius="full">Cancel</Button>
-            <Button bg="#56756C" color="white" borderRadius="full" px={10} onClick={handleCreateOneOff}>Publish Slot</Button>
+          <ModalFooter bg="#FAF8F5" p={4} px={6} borderTop="1px solid rgba(86, 117, 109, 0.12)" borderBottomRadius="3xl">
+            <HStack w="full" justify="space-between">
+              <Button variant="ghost" color="#5A6E65" borderRadius="full" h="38px" fontSize="13px" fontWeight="600" onClick={oneOffModal.onClose}>Cancel</Button>
+              <Button bg="#56756D" color="white" borderRadius="full" h="38px" px={7} fontSize="13px" fontWeight="600" _hover={{ bg: "#263A33" }} _active={{ bg: "#263A33" }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)" onClick={handleCreateOneOff}>Publish Slot</Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={typeModal.isOpen} onClose={typeModal.onClose} size="2xl">
-        <ModalOverlay backdropFilter="blur(5px)" />
-        <ModalContent borderRadius="3xl" p={4}>
-          <ModalHeader>Manage Event Types</ModalHeader>
-          <ModalCloseButton mt={6} mr={6} />
-          <ModalBody>
-            <VStack spacing={6} align="stretch" maxH="80vh" overflowY="auto">
-                <Box>
-                    <Text fontWeight="700" mb={3} fontSize="sm" color="gray.500">EXISTING TYPES</Text>
-                    <SimpleGrid columns={1} spacing={2} maxH="300px" overflowY="auto" pr={2}>
-                        {eventTypes.map((t, idx) => (
-                            <HStack key={t.id} justify="space-between" p={3} bg="gray.50" borderRadius="xl" _hover={{ bg: 'gray.100' }}>
-                                <HStack>
-                                    <Box w={3} h={3} borderRadius="full" bg={t.color} />
-                                    <Text fontWeight="600">{t.name}</Text>
-                                    <Text fontSize="xs" color="gray.400">({t.default_duration}m)</Text>
-                                </HStack>
-                                <HStack spacing={1}>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    onClick={() => handleMoveType(t.id, -1)}
-                                    isDisabled={idx === 0}
-                                    title="Move up"
-                                    px={2}
-                                  >
-                                    <Icon as={FiChevronUp} />
-                                  </Button>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    onClick={() => handleMoveType(t.id, 1)}
-                                    isDisabled={idx === eventTypes.length - 1}
-                                    title="Move down"
-                                    px={2}
-                                  >
-                                    <Icon as={FiChevronDown} />
-                                  </Button>
-                                  <Button size="xs" variant="ghost" onClick={() => startEditType(t)}>Edit</Button>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    colorScheme="red"
-                                    onClick={() => handleDeleteType(t)}
-                                    title="Delete type"
-                                    px={2}
-                                  >
-                                    <Icon as={FiTrash2} />
-                                  </Button>
-                                </HStack>
-                            </HStack>
-                        ))}
-                    </SimpleGrid>
-                </Box>
-
-                <Divider />
-
-                <VStack spacing={4} align="stretch" bg="gray.50" p={6} borderRadius="2xl">
-                    <Text fontWeight="700" fontSize="sm" color="gray.500">
-                        {editingType ? `EDITING: ${editingType.name}` : "CREATE NEW TYPE"}
-                    </Text>
-                    <SimpleGrid columns={2} spacing={4}>
-                        <FormControl>
-                            <FormLabel fontSize="sm">Type Name</FormLabel>
-                            <Input placeholder="e.g. Lunch" value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} bg="white" />
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel fontSize="sm">Section / Group</FormLabel>
-                            <Input placeholder="e.g. Clinical" value={newType.group} onChange={(e) => setNewType({ ...newType, group: e.target.value })} bg="white" />
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel fontSize="sm">Display Order</FormLabel>
-                            <Input type="number" value={newType.order} onChange={(e) => setNewType({ ...newType, order: parseInt(e.target.value) })} bg="white" />
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel fontSize="sm">Default Duration (min)</FormLabel>
-                            <Input type="number" value={newType.default_duration} onChange={(e) => setNewType({ ...newType, default_duration: parseInt(e.target.value) })} bg="white" />
-                        </FormControl>
-                        <FormControl>
-                            <FormLabel fontSize="sm">Pick Theme Color</FormLabel>
-                            <SimpleGrid columns={4} spacing={2}>
-                                {SAFE_COLORS.map(c => (
-                                    <Box 
-                                        key={c.hex} 
-                                        w="full" h={8} borderRadius="md" bg={c.hex} cursor="pointer" 
-                                        border={newType.color === c.hex ? "2px solid" : "none"}
-                                        borderColor="#56756C"
-                                        onClick={() => setNewType({ ...newType, color: c.hex })}
-                                        title={c.name}
-                                    />
-                                ))}
-                            </SimpleGrid>
-                        </FormControl>
-                        <FormControl display="flex" alignItems="center" mt={8}>
-                            <FormLabel mb="0" fontSize="sm">Is Paid?</FormLabel>
-                            <Checkbox colorScheme="teal" isChecked={newType.is_paid} onChange={(e) => setNewType({ ...newType, is_paid: e.target.checked })} />
-                        </FormControl>
-                        <FormControl display="flex" alignItems="center">
-                            <FormLabel mb="0" fontSize="sm">Requires Patient?</FormLabel>
-                            <Checkbox colorScheme="teal" isChecked={newType.requires_client} onChange={(e) => setNewType({ ...newType, requires_client: e.target.checked })} />
-                        </FormControl>
-                    </SimpleGrid>
-                    
-                    <FormControl>
-                        <FormLabel fontSize="sm">Pre-filled Notes</FormLabel>
-                        <Textarea placeholder="Standard notes for this session type..." value={newType.default_notes} onChange={(e) => setNewType({ ...newType, default_notes: e.target.value })} bg="white" />
-                    </FormControl>
-
-                    <HStack>
-                        {editingType && (
-                            <Button variant="ghost" onClick={() => { setEditingType(null); setNewType({ name: "", color: "#D1E9FF", default_duration: 50, is_paid: true, requires_client: true, default_notes: "" }); }}>Cancel Edit</Button>
-                        )}
-                        <Button flex={1} bg="#56756D" color="white" borderRadius="full" onClick={handleCreateType}>
-                            {editingType ? "Update Event Type" : "Add New Event Type"}
+      <Modal isOpen={typeModal.isOpen} onClose={typeModal.onClose} size="2xl" isCentered>
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="3xl" overflow="hidden">
+          <ModalHeader borderBottom="1px solid rgba(86, 117, 109, 0.12)" p={6}>
+            <HStack spacing={3}>
+              <Circle size="38px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiSettings} boxSize="18px" />
+              </Circle>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="10px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  CLINICAL CONFIGURATION
+                </Text>
+                <Heading as="h3" fontSize="18px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33" letterSpacing="-0.015em">
+                  Manage Event Types
+                </Heading>
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton borderRadius="full" m={4} />
+          <ModalBody p={6}>
+            <VStack spacing={6} align="stretch" maxH="75vh" overflowY="auto">
+              <Box>
+                <Text fontWeight="700" mb={3} fontSize="11px" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  EXISTING TYPES
+                </Text>
+                <SimpleGrid columns={1} spacing={2} maxH="250px" overflowY="auto" pr={1}>
+                  {eventTypes.map((t, idx) => (
+                    <HStack key={t.id} justify="space-between" p={3} bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)" borderRadius="xl">
+                      <HStack spacing={2.5}>
+                        <Box w={3} h={3} borderRadius="full" bg={t.color} />
+                        <Text fontWeight="600" fontSize="13px" color="#263A33">{t.name}</Text>
+                        <Text fontSize="11.5px" color="#718096">({t.default_duration}m)</Text>
+                      </HStack>
+                      <HStack spacing={1}>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => handleMoveType(t.id, -1)}
+                          isDisabled={idx === 0}
+                          title="Move up"
+                          px={2}
+                          borderRadius="md"
+                        >
+                          <Icon as={FiChevronUp} />
                         </Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => handleMoveType(t.id, 1)}
+                          isDisabled={idx === eventTypes.length - 1}
+                          title="Move down"
+                          px={2}
+                          borderRadius="md"
+                        >
+                          <Icon as={FiChevronDown} />
+                        </Button>
+                        <Button size="xs" variant="ghost" color="#56756D" fontWeight="600" borderRadius="md" onClick={() => startEditType(t)}>Edit</Button>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          colorScheme="red"
+                          onClick={() => handleDeleteType(t)}
+                          title="Delete type"
+                          px={2}
+                          borderRadius="md"
+                        >
+                          <Icon as={FiTrash2} />
+                        </Button>
+                      </HStack>
                     </HStack>
-                </VStack>
+                  ))}
+                </SimpleGrid>
+              </Box>
+
+              <Divider borderColor="rgba(86, 117, 109, 0.14)" />
+
+              <VStack spacing={4} align="stretch" bg="rgba(250, 248, 245, 0.85)" p={5} borderRadius="2xl" border="1px solid rgba(86, 117, 109, 0.12)">
+                <Text fontWeight="700" fontSize="11px" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  {editingType ? `EDITING: ${editingType.name}` : "CREATE NEW TYPE"}
+                </Text>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3.5}>
+                  <FormControl>
+                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Type Name</FormLabel>
+                    <Input placeholder="e.g. Couples Initial" value={newType.name} onChange={(e) => setNewType({ ...newType, name: e.target.value })} bg="white" borderRadius="xl" h="38px" fontSize="13px" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D" }} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Section / Group</FormLabel>
+                    <Input placeholder="e.g. Clinical" value={newType.group} onChange={(e) => setNewType({ ...newType, group: e.target.value })} bg="white" borderRadius="xl" h="38px" fontSize="13px" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D" }} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Display Order</FormLabel>
+                    <Input type="number" value={newType.order} onChange={(e) => setNewType({ ...newType, order: parseInt(e.target.value) })} bg="white" borderRadius="xl" h="38px" fontSize="13px" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D" }} />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Default Duration (min)</FormLabel>
+                    <Input type="number" value={newType.default_duration} onChange={(e) => setNewType({ ...newType, default_duration: parseInt(e.target.value) })} bg="white" borderRadius="xl" h="38px" fontSize="13px" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D" }} />
+                  </FormControl>
+                  <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
+                    <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Pick Theme Color</FormLabel>
+                    <SimpleGrid columns={8} spacing={2}>
+                      {SAFE_COLORS.map(c => (
+                        <Box 
+                          key={c.hex} 
+                          h="26px" 
+                          borderRadius="md" 
+                          bg={c.hex} 
+                          cursor="pointer" 
+                          border={newType.color === c.hex ? "2px solid #263A33" : "1px solid rgba(0,0,0,0.08)"}
+                          boxShadow={newType.color === c.hex ? "0 2px 6px rgba(0,0,0,0.15)" : "none"}
+                          onClick={() => setNewType({ ...newType, color: c.hex })}
+                          title={c.name}
+                        />
+                      ))}
+                    </SimpleGrid>
+                  </FormControl>
+                  <FormControl display="flex" alignItems="center">
+                    <Checkbox colorScheme="teal" isChecked={newType.is_paid} onChange={(e) => setNewType({ ...newType, is_paid: e.target.checked })}>
+                      <Text fontSize="12.5px" fontWeight="600" color="#263A33">Is Paid Session</Text>
+                    </Checkbox>
+                  </FormControl>
+                  <FormControl display="flex" alignItems="center">
+                    <Checkbox colorScheme="teal" isChecked={newType.requires_client} onChange={(e) => setNewType({ ...newType, requires_client: e.target.checked })}>
+                      <Text fontSize="12.5px" fontWeight="600" color="#263A33">Requires Patient</Text>
+                    </Checkbox>
+                  </FormControl>
+                </SimpleGrid>
+                
+                <FormControl>
+                  <FormLabel fontSize="11.5px" fontWeight="600" color="#263A33">Pre-filled Notes</FormLabel>
+                  <Textarea placeholder="Standard notes for this session type..." value={newType.default_notes} onChange={(e) => setNewType({ ...newType, default_notes: e.target.value })} bg="white" borderRadius="xl" rows={2} fontSize="13px" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D" }} />
+                </FormControl>
+
+                <HStack justify="flex-end" pt={2} spacing={3}>
+                  {editingType && (
+                    <Button variant="ghost" color="#5A6E65" borderRadius="full" h="36px" fontSize="12.5px" onClick={() => { setEditingType(null); setNewType({ name: "", color: "#D1E9FF", default_duration: 50, is_paid: true, requires_client: true, default_notes: "" }); }}>Cancel Edit</Button>
+                  )}
+                  <Button bg="#56756D" color="white" borderRadius="full" h="36px" px={6} fontSize="13px" fontWeight="600" _hover={{ bg: "#263A33" }} _active={{ bg: "#263A33" }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)" onClick={handleCreateType}>
+                    {editingType ? "Update Event Type" : "Add Event Type"}
+                  </Button>
+                </HStack>
+              </VStack>
             </VStack>
           </ModalBody>
         </ModalContent>
@@ -1291,6 +1702,6 @@ export default function ScheduleClient() {
         onClose={gateModal.onClose}
         contextLabel="Activate MLC Pro to create events, manage availability, and run your calendar on MLC."
       />
-    </VStack>
+    </Box>
   );
 }

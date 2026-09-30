@@ -136,7 +136,7 @@ function FieldInput({ field, value, onChange, isReadOnly = false }) {
           {choices.map((c, idx) => <option key={idx} value={c}>{c}</option>)}
         </Select>
       );
-    case "checkboxes":
+    case "checkboxes": {
       const currentValues = Array.isArray(value) ? value : [];
       const toggle = (choice) => {
         if (isReadOnly) return;
@@ -161,7 +161,8 @@ function FieldInput({ field, value, onChange, isReadOnly = false }) {
           ))}
         </Wrap>
       );
-    case "likert":
+    }
+    case "likert": {
       const min = Number(options.min) || 1;
       const max = Number(options.max) || 5;
       return (
@@ -179,6 +180,7 @@ function FieldInput({ field, value, onChange, isReadOnly = false }) {
            </Slider>
         </VStack>
       );
+    }
     default:
       return <Input value={value ?? ""} onChange={(e) => set(e.target.value)} isReadOnly={isReadOnly} borderRadius="xl" bg="gray.50" />;
   }

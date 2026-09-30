@@ -127,28 +127,31 @@ export default function FeedbackWidget({ variant = "floating" }) {
 
           <Button 
             rightIcon={<FiSend />} 
-            bg="linear-gradient(135deg, #56756D 0%, #6B8B7B 100%)"
             color="white"
-            h="46px"
-            fontSize="14.5px"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
+            h="44px"
+            fontSize="14px"
+            fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
             fontWeight="600"
             borderRadius="full" 
             onClick={handleSubmit}
             isLoading={loading}
             isDisabled={!content.trim()}
-            shadow="md"
+            bg="#4338CA"
+            boxShadow="0 4px 14px rgba(67, 56, 202, 0.25)"
             _hover={{
-              bg: "linear-gradient(135deg, #C9A960 0%, #D4B872 100%)",
+              bg: "#3730A3",
               transform: "translateY(-1px)",
-              shadow: "lg",
+              boxShadow: "0 6px 18px rgba(67, 56, 202, 0.35)",
+            }}
+            _active={{
+              transform: "translateY(0)",
             }}
             _disabled={{
               opacity: 0.6,
               cursor: "not-allowed",
-              _hover: { bg: "linear-gradient(135deg, #56756D 0%, #6B8B7B 100%)" },
+              _hover: { bg: "#4338CA" },
             }}
-            transition="all 0.25s ease"
+            transition="all 0.2s ease"
           >
             Send Feedback
           </Button>
@@ -156,21 +159,21 @@ export default function FeedbackWidget({ variant = "floating" }) {
       ) : (
         <VStack py={6} spacing={3}>
           <Box
-            w="50px"
-            h="50px"
+            w="46px"
+            h="46px"
             borderRadius="full"
-            bg="rgba(169,203,183,0.2)"
+            bg="rgba(16, 185, 129, 0.14)"
             display="flex"
             alignItems="center"
             justifyContent="center"
           >
-            <Icon as={FiCheckCircle} color="#56756D" boxSize={6} />
+            <Icon as={FiCheckCircle} color="#059669" boxSize={5} />
           </Box>
           <Text
-            fontWeight="600"
-            fontSize="18px"
+            fontWeight="700"
+            fontSize="16px"
             color="#263A33"
-            fontFamily="'Playfair Display', var(--font-playfair), serif"
+            fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
           >
             Thank You for Your Feedback!
           </Text>
@@ -178,7 +181,7 @@ export default function FeedbackWidget({ variant = "floating" }) {
             fontSize="13.5px"
             textAlign="center"
             color="rgba(46,46,46,0.75)"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
+            fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
             maxW="sm"
             lineHeight="1.6"
           >
@@ -219,7 +222,7 @@ export default function FeedbackWidget({ variant = "floating" }) {
               fontWeight="600"
               fontSize={{ base: "19px", md: "22px" }}
               color="#263A33"
-              fontFamily="'Playfair Display', var(--font-playfair), serif"
+              fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
               lineHeight="1.3"
             >
               Have a suggestion for us to improve?
@@ -227,7 +230,7 @@ export default function FeedbackWidget({ variant = "floating" }) {
             <Text
               fontSize="13.5px"
               color="rgba(46,46,46,0.68)"
-              fontFamily="'Inter', var(--font-inter), sans-serif"
+              fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
               mt={1}
             >
               Help us shape the future of MLC. Your feedback goes directly to our product and clinical care teams.
@@ -249,19 +252,33 @@ export default function FeedbackWidget({ variant = "floating" }) {
         strategy="fixed"
       >
         <PopoverTrigger>
-          <Tooltip label="Have a suggestion? Click here" placement="left" borderRadius="lg" hasArrow>
+          <Tooltip 
+            label="Have a suggestion? Click here" 
+            placement="left" 
+            borderRadius="lg" 
+            hasArrow
+            bg="#1E293B"
+            color="#F8FAFC"
+            fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
+            fontSize="12px"
+            fontWeight="500"
+            letterSpacing="0.01em"
+            px={3.5}
+            py={1.5}
+            boxShadow="0 6px 20px -2px rgba(15, 23, 42, 0.3)"
+          >
             <IconButton
               aria-label="Feedback button"
               icon={<FiMessageSquare />}
-              bg="#56756D"
+              bg="#4338CA"
               color="white"
               borderRadius="full"
-              boxSize="56px"
-              fontSize="22px"
-              shadow="2xl"
-              _hover={{ bg: "#C9A960", transform: "scale(1.08)" }}
-              _active={{ transform: "scale(0.95)" }}
-              transition="all 0.3s"
+              boxSize="48px"
+              fontSize="19px"
+              boxShadow="0 8px 20px -2px rgba(67, 56, 202, 0.35)"
+              _hover={{ bg: "#3730A3", transform: "scale(1.05)" }}
+              _active={{ transform: "scale(0.96)" }}
+              transition="all 0.2s ease"
               onClick={() => setIsOpen(!isOpen)}
             />
           </Tooltip>
@@ -269,38 +286,40 @@ export default function FeedbackWidget({ variant = "floating" }) {
         <Portal>
           <PopoverContent
             borderRadius="2xl"
-            shadow="2xl"
+            boxShadow="0 16px 40px -4px rgba(38, 58, 51, 0.15)"
             border="1px solid"
-            borderColor="rgba(86,117,109,0.15)"
+            borderColor="rgba(67, 56, 202, 0.2)"
             w={{ base: "320px", sm: "360px" }}
             p={2}
+            fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
           >
-            <PopoverHeader border="none" pt={4} px={4} pb={1}>
+            <PopoverHeader border="none" pt={3.5} px={3.5} pb={1}>
               <HStack spacing={2.5}>
                 <Box
                   w="30px"
                   h="30px"
                   borderRadius="8px"
-                  bg="rgba(169,203,183,0.2)"
+                  bg="rgba(67, 56, 202, 0.12)"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Icon as={FiMessageSquare} color="#56756D" boxSize="15px" />
+                  <Icon as={FiMessageSquare} color="#4338CA" boxSize="15px" />
                 </Box>
                 <Heading
-                  fontSize="16.5px"
+                  fontSize="15px"
                   color="#263A33"
-                  fontFamily="'Playfair Display', var(--font-playfair), serif"
+                  fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
                   fontWeight="600"
+                  letterSpacing="-0.01em"
                 >
                   Share Your Feedback
                 </Heading>
               </HStack>
               <Text
                 fontSize="12.5px"
-                color="rgba(46,46,46,0.65)"
-                fontFamily="'Inter', var(--font-inter), sans-serif"
+                color="#5A6E65"
+                fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
                 mt={1}
               >
                 Help us improve your experience at MLC.
@@ -308,7 +327,7 @@ export default function FeedbackWidget({ variant = "floating" }) {
             </PopoverHeader>
             <PopoverArrow />
             <PopoverCloseButton mt={3} mr={3} />
-            <PopoverBody px={4} pb={4} pt={1}>
+            <PopoverBody px={3.5} pb={3.5} pt={1}>
               {widgetContent}
             </PopoverBody>
           </PopoverContent>

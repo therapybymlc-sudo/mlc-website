@@ -19,16 +19,18 @@ import {
   Td,
   Badge,
   Stack,
+  Avatar,
+  Circle,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiVideo } from "react-icons/fi";
+import { FiVideo, FiCalendar, FiClock, FiCheckCircle, FiFileText } from "react-icons/fi";
 import { apiGet } from "../../../../../api.js";
 import NextLink from 'next/link';
 import { useAuth } from "../../../../../context/AuthContext";
 
 export default function AppointmentsClient() {
   const toast = useToast();
-  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated, isClient, clientProfile } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,8 +39,10 @@ export default function AppointmentsClient() {
     const paid = appt.payment_status === "paid";
     if (paid) {
       return {
-        label: "Completed",
-        colorScheme: "green",
+        label: "Paid",
+        color: "#047857",
+        bg: "rgba(16, 185, 129, 0.12)",
+        border: "rgba(16, 185, 129, 0.25)",
         actionLabel: "View Invoice",
         actionHref: `/dashboard/client/invoice/${appt.id}`,
         actionDisabled: false,
@@ -47,20 +51,54 @@ export default function AppointmentsClient() {
 
     return {
       label: "Pending",
-      colorScheme: "orange",
+      color: "#B45309",
+      bg: "rgba(245, 158, 11, 0.12)",
+      border: "rgba(245, 158, 11, 0.25)",
       actionLabel: "Awaiting Payment Link",
       actionHref: "/dashboard/client/booking-requests",
       actionDisabled: true,
     };
   };
 
+  const getStatusMeta = (status) => {
+    const s = (status || "").toLowerCase();
+    if (s === "cancelled") {
+      return {
+        label: "Cancelled",
+        bg: "rgba(239, 68, 68, 0.1)",
+        color: "#B91C1C",
+        border: "rgba(239, 68, 68, 0.25)",
+      };
+    }
+    if (s === "completed") {
+      return {
+        label: "Completed",
+        bg: "rgba(86, 117, 109, 0.12)",
+        color: "#263A33",
+        border: "rgba(86, 117, 109, 0.2)",
+      };
+    }
+    return {
+      label: "Confirmed",
+      bg: "rgba(16, 185, 129, 0.12)",
+      color: "#047857",
+      border: "rgba(16, 185, 129, 0.25)",
+    };
+  };
+
   async function fetchAppointments() {
+    if (!isAuthenticated || !isClient || !clientProfile) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await apiGet("client-appointments/");
       setAppointments(Array.isArray(res) ? res : res.results || []);
     } catch (err) {
-      toast({ title: "Could not load appointments", status: "error" });
+      if (err.response?.status !== 403 && err.response?.status !== 404) {
+        toast({ title: "Could not load appointments", status: "error" });
+      }
     } finally {
       setLoading(false);
     }
@@ -71,114 +109,257 @@ export default function AppointmentsClient() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-        fetchAppointments();
-    } else if (!authLoading && !isAuthenticated) {
-        setLoading(false);
+    if (!authLoading && isAuthenticated && isClient && clientProfile) {
+      fetchAppointments();
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  }, [authLoading, isAuthenticated]);
+  }, [authLoading, isAuthenticated, isClient, clientProfile]);
 
   if (!isMounted) return null;
 
   return (
-    <Box maxW="1200px" mx="auto">
-       <Flex 
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* 🌿 Framed Header Card */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
           direction={{ base: "column", md: "row" }}
           justify="space-between" 
-          align={{ base: "stretch", md: "flex-end" }}
-          mb={8}
+          align={{ base: "stretch", md: "center" }}
           gap={4}
         >
-          <VStack align={{ base: "center", md: "start" }} spacing={1} textAlign={{ base: "center", md: "left" }}>
-            <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', var(--font-playfair), serif">
+          {/* Identity & Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiCalendar} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg="#10B981" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0" 
+              />
+            </Box>
+
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2}>
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.12)" 
+                  color="#56756D" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full" 
+                  px={2.5} 
+                  py={0.5} 
+                  textTransform="uppercase" 
+                  letterSpacing="0.08em"
+                >
+                  Care Schedule
+                </Badge>
+              </HStack>
+              <Heading 
+                as="h1"
+                fontSize={{ base: "21px", sm: "25px" }} 
+                fontWeight="600" 
+                color="#263A33" 
+                letterSpacing="-0.015em"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                lineHeight="1.25"
+              >
                 Your Sessions
-            </Heading>
-            <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>Manage your upcoming and past therapeutic appointments.</Text>
-          </VStack>
+              </Heading>
+              <Text color="#5A6E65" fontSize="13px" fontWeight="400">
+                Manage your upcoming and past therapeutic appointments.
+              </Text>
+            </VStack>
+          </HStack>
           <Button 
             as={NextLink}
             href="/therapists/discovery"
             bg="#56756D" 
             color="white" 
             borderRadius="full" 
-            px={8} 
-            _hover={{ bg: '#C9A960' }}
+            height="38px"
+            fontSize="13px"
+            fontWeight="600"
+            px={5} 
+            leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+            _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+            transition="all 0.2s"
             w={{ base: "full", md: "auto" }}
             flexShrink={0}
+            whiteSpace="nowrap"
+            boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
           >
             Book New Session
           </Button>
         </Flex>
+      </Box>
 
-        <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
+        <Box 
+          bg="white" 
+          p={{ base: 4, md: 5 }} 
+          borderRadius="2xl" 
+          boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.14)"
+        >
             {loading ? (
-                <VStack py={20}><Spinner color="#56756D" /></VStack>
+                <VStack py={16}><Spinner color="#56756D" /></VStack>
             ) : (
                 <>
+                {/* 💻 Desktop Table */}
                 <Box display={{ base: "none", md: "block" }} overflowX="auto" w="full" minW="0">
-                <Table variant="simple" size={{ base: "sm", md: "md" }}>
+                <Table variant="simple" size="sm">
                     <Thead>
-                        <Tr>
-                            <Th whiteSpace="nowrap">Date & Time</Th>
-                            <Th whiteSpace="nowrap">Therapist</Th>
-                            <Th whiteSpace="nowrap">Format</Th>
-                            <Th whiteSpace="nowrap">Status</Th>
-                            <Th whiteSpace="nowrap">Payment Status</Th>
-                            <Th whiteSpace="nowrap" textAlign="right">Action</Th>
+                        <Tr borderBottom="1px solid rgba(86, 117, 109, 0.12)">
+                            <Th fontFamily="'Inter', var(--font-inter), sans-serif" fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>Date & Time</Th>
+                            <Th fontFamily="'Inter', var(--font-inter), sans-serif" fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>Therapist</Th>
+                            <Th fontFamily="'Inter', var(--font-inter), sans-serif" fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>Format</Th>
+                            <Th fontFamily="'Inter', var(--font-inter), sans-serif" fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>Status</Th>
+                            <Th fontFamily="'Inter', var(--font-inter), sans-serif" fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>Payment</Th>
+                            <Th fontFamily="'Inter', var(--font-inter), sans-serif" fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5} textAlign="right">Session Access</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {appointments.map((appt) => {
                             const paymentMeta = getPaymentMeta(appt);
+                            const statusMeta = getStatusMeta(appt.status_label || appt.status);
                             return (
-                            <Tr key={appt.id} _hover={{ bg: 'gray.50' }}>
-                                <Td>
-                                    <VStack align="start" spacing={0}>
-                                        <Text fontWeight="700" whiteSpace="nowrap">{new Date(appt.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
-                                        <Text fontSize="xs" color="gray.500" whiteSpace="nowrap">{new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            <Tr key={appt.id} _hover={{ bg: 'rgba(250, 248, 245, 0.65)' }} transition="background 0.15s">
+                                <Td py={3.5}>
+                                    <VStack align="start" spacing={0.5}>
+                                        <Text 
+                                          fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                                          fontWeight="600" 
+                                          fontSize="13.5px" 
+                                          color="#263A33" 
+                                          whiteSpace="nowrap"
+                                        >
+                                          {new Date(appt.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                        </Text>
+                                        <HStack spacing={1.5}>
+                                          <Circle size="6px" bg="#10B981" />
+                                          <Text fontSize="12px" color="#5A6E65" fontWeight="400" whiteSpace="nowrap">
+                                            {new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                          </Text>
+                                        </HStack>
                                     </VStack>
                                 </Td>
-                                <Td>
-                                    <Text fontWeight="600" noOfLines={1}>{appt.therapist_name || "Assigned Therapist"}</Text>
-                                </Td>
-                                <Td>
-                                    <HStack spacing={2}>
-                                        <Icon as={FiVideo} color="#56756D" />
-                                        <Text fontSize="sm">Online</Text>
+                                <Td py={3.5}>
+                                    <HStack spacing={2.5}>
+                                      <Avatar 
+                                        size="sm" 
+                                        name={appt.therapist_name || "Therapist"} 
+                                        src={appt.therapist_profile_image}
+                                        border="1.5px solid white"
+                                        boxShadow="0 1px 4px rgba(0,0,0,0.06)"
+                                      />
+                                      <VStack align="start" spacing={0}>
+                                        <Text 
+                                          fontSize="13.5px" 
+                                          fontWeight="600" 
+                                          color="#263A33" 
+                                          noOfLines={1}
+                                          fontFamily="'Inter', var(--font-inter), sans-serif"
+                                        >
+                                          {appt.therapist_name || "Assigned Therapist"}
+                                        </Text>
+                                        <Text fontSize="11px" color="#718096">
+                                          {appt.therapist_title || "Clinical Associate"}
+                                        </Text>
+                                      </VStack>
                                     </HStack>
                                 </Td>
-                                <Td>
-                                    <Badge colorScheme={appt.status === "cancelled" ? "red" : "teal"} borderRadius="full" px={3} py={1} fontSize="10px">
-                                      {(appt.status_label || appt.status || "Scheduled").toUpperCase()}
+                                <Td py={3.5}>
+                                    <HStack spacing={1.5} px={2.5} py={1} bg="rgba(86, 117, 109, 0.08)" borderRadius="full" display="inline-flex">
+                                        <Icon as={FiVideo} color="#56756D" boxSize="12px" />
+                                        <Text fontSize="12px" fontWeight="600" color="#263A33">Virtual 1-on-1</Text>
+                                    </HStack>
+                                </Td>
+                                <Td py={3.5}>
+                                    <Badge 
+                                      bg={statusMeta.bg}
+                                      color={statusMeta.color}
+                                      border="1px solid"
+                                      borderColor={statusMeta.border}
+                                      borderRadius="full" 
+                                      px={2.5} 
+                                      py={0.5} 
+                                      fontSize="10px"
+                                      fontWeight="700"
+                                      letterSpacing="0.04em"
+                                    >
+                                      {statusMeta.label.toUpperCase()}
                                     </Badge>
                                 </Td>
-                                <Td>
-                                  <Badge colorScheme={paymentMeta.colorScheme} borderRadius="full" px={3} py={1} fontSize="10px">
+                                <Td py={3.5}>
+                                  <Badge 
+                                    bg={paymentMeta.bg}
+                                    color={paymentMeta.color}
+                                    border="1px solid"
+                                    borderColor={paymentMeta.border}
+                                    borderRadius="full" 
+                                    px={2.5} 
+                                    py={0.5} 
+                                    fontSize="10px"
+                                    fontWeight="700"
+                                    letterSpacing="0.04em"
+                                  >
                                     {paymentMeta.label.toUpperCase()}
                                   </Badge>
                                 </Td>
-                                <Td textAlign="right">
-                                    <HStack justify="flex-end" spacing={2}>
-                                      <Button
-                                          as={NextLink}
-                                          href={paymentMeta.actionHref}
-                                          size="sm"
-                                          variant={paymentMeta.label === "Completed" ? "outline" : "solid"}
-                                          colorScheme={paymentMeta.label === "Completed" ? "gray" : "orange"}
-                                          borderRadius="full"
-                                          isDisabled={paymentMeta.actionDisabled}
-                                      >
-                                          {paymentMeta.actionLabel}
-                                      </Button>
+                                <Td textAlign="right" py={3.5}>
+                                    <HStack justify="flex-end" spacing={2.5}>
+                                      {paymentMeta.actionDisabled ? (
+                                        <Text fontSize="11.5px" color="#92400E" fontWeight="500" whiteSpace="nowrap">
+                                          Awaiting Link
+                                        </Text>
+                                      ) : (
+                                        <Button
+                                            as={NextLink}
+                                            href={paymentMeta.actionHref}
+                                            size="sm"
+                                            height="32px"
+                                            variant="outline"
+                                            borderColor="rgba(86, 117, 109, 0.25)"
+                                            color="#263A33"
+                                            borderRadius="full"
+                                            fontSize="12px"
+                                            fontWeight="600"
+                                            px={3.5}
+                                            leftIcon={<Icon as={FiFileText} boxSize="11px" />}
+                                            _hover={{ bg: 'rgba(169, 203, 183, 0.1)' }}
+                                        >
+                                            View Invoice
+                                        </Button>
+                                      )}
                                       <Button 
                                           as={NextLink}
                                           href={`/conference/MLC_${appt.id}`}
                                           size="sm" 
-                                          variant="solid" 
-                                          bg="teal.800" 
+                                          height="34px"
+                                          bg="#263A33" 
                                           color="white" 
                                           borderRadius="full"
-                                          _hover={{ bg: 'teal.900' }}
+                                          fontSize="12.5px"
+                                          fontWeight="600"
+                                          px={4}
+                                          leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="13px" />}
+                                          _hover={{ bg: '#182722', transform: 'translateY(-1px)' }}
+                                          transition="all 0.2s"
+                                          boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
                                       >
                                           Join Room
                                       </Button>
@@ -188,78 +369,137 @@ export default function AppointmentsClient() {
                             );
                         })}
                         {appointments.length === 0 && (
-                            <Tr><Td colSpan={6} textAlign="center" py={12} color="gray.400">No appointments scheduled.</Td></Tr>
+                            <Tr><Td colSpan={6} textAlign="center" py={12} color="#718096" fontSize="13px">No appointments scheduled.</Td></Tr>
                         )}
                     </Tbody>
                 </Table>
                 </Box>
-                <VStack display={{ base: "flex", md: "none" }} align="stretch" spacing={4}>
+
+                {/* 📱 Mobile Card List */}
+                <VStack display={{ base: "flex", md: "none" }} align="stretch" spacing={3}>
                   {appointments.map((appt) => {
                     const paymentMeta = getPaymentMeta(appt);
+                    const statusMeta = getStatusMeta(appt.status_label || appt.status);
                     return (
-                      <Box key={appt.id} border="1px solid" borderColor="gray.100" borderRadius="2xl" p={4}>
+                      <Box 
+                        key={appt.id} 
+                        border="1px solid" 
+                        borderColor="rgba(86, 117, 109, 0.14)" 
+                        borderRadius="2xl" 
+                        p={4}
+                        bg="rgba(250, 248, 245, 0.5)"
+                      >
                         <VStack align="stretch" spacing={3}>
                           <HStack justify="space-between" align="start">
-                            <VStack align="start" spacing={0}>
-                              <Text fontWeight="700">
+                            <VStack align="start" spacing={0.5}>
+                              <Text 
+                                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                                fontWeight="600"
+                                fontSize="14px"
+                                color="#263A33"
+                              >
                                 {new Date(appt.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                               </Text>
-                              <Text fontSize="xs" color="gray.500">
-                                {new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </Text>
+                              <HStack spacing={1.5}>
+                                <Circle size="6px" bg="#10B981" />
+                                <Text fontSize="12px" color="#5A6E65">
+                                  {new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
+                              </HStack>
                             </VStack>
-                            <Badge colorScheme={appt.status === "cancelled" ? "red" : "teal"} borderRadius="full" px={3} py={1} fontSize="10px">
-                              {(appt.status_label || appt.status || "Scheduled").toUpperCase()}
+                            <Badge 
+                              bg={statusMeta.bg}
+                              color={statusMeta.color}
+                              border="1px solid"
+                              borderColor={statusMeta.border}
+                              borderRadius="full" 
+                              px={2.5} 
+                              py={0.5} 
+                              fontSize="9.5px"
+                              fontWeight="700"
+                            >
+                              {statusMeta.label.toUpperCase()}
                             </Badge>
                           </HStack>
-                          <Text fontSize="sm" fontWeight="600" noOfLines={1}>{appt.therapist_name || "Assigned Therapist"}</Text>
-                          <HStack justify="space-between">
-                            <HStack spacing={2}>
-                              <Icon as={FiVideo} color="#56756D" />
-                              <Text fontSize="sm">Online</Text>
+
+                          <HStack spacing={2.5}>
+                            <Avatar 
+                              size="sm" 
+                              name={appt.therapist_name || "Therapist"} 
+                              src={appt.therapist_profile_image}
+                              border="1.5px solid white"
+                            />
+                            <VStack align="start" spacing={0}>
+                              <Text fontSize="13px" fontWeight="600" color="#263A33" noOfLines={1}>
+                                {appt.therapist_name || "Assigned Therapist"}
+                              </Text>
+                              <Text fontSize="11px" color="#718096">
+                                {appt.therapist_title || "Clinical Associate"}
+                              </Text>
+                            </VStack>
+                          </HStack>
+
+                          <HStack justify="space-between" pt={1}>
+                            <HStack spacing={1.5} px={2.5} py={0.5} bg="rgba(86, 117, 109, 0.08)" borderRadius="full">
+                              <Icon as={FiVideo} color="#56756D" boxSize="11px" />
+                              <Text fontSize="11.5px" fontWeight="600" color="#263A33">Virtual 1-on-1</Text>
                             </HStack>
-                            <Badge colorScheme={paymentMeta.colorScheme} borderRadius="full" px={3} py={1} fontSize="10px">
+                            <Badge 
+                              bg={paymentMeta.bg}
+                              color={paymentMeta.color}
+                              border="1px solid"
+                              borderColor={paymentMeta.border}
+                              borderRadius="full" 
+                              px={2.5} 
+                              py={0.5} 
+                              fontSize="9.5px"
+                              fontWeight="700"
+                            >
                               {paymentMeta.label.toUpperCase()}
                             </Badge>
                           </HStack>
-                          <Stack direction={{ base: "column", sm: "row" }} spacing={3} pt={2}>
-                            <Button
-                              as={NextLink}
-                              href={paymentMeta.actionHref}
-                              size="sm"
-                              w="full"
-                              variant={paymentMeta.label === "Completed" ? "outline" : "solid"}
-                              colorScheme={paymentMeta.label === "Completed" ? "gray" : "orange"}
-                              borderRadius="full"
-                              isDisabled={paymentMeta.actionDisabled}
-                              fontSize="xs"
-                              py={5}
-                            >
-                              {paymentMeta.actionLabel}
-                            </Button>
+
+                          <HStack spacing={2} pt={2}>
+                            {!paymentMeta.actionDisabled && (
+                              <Button
+                                as={NextLink}
+                                href={paymentMeta.actionHref}
+                                size="sm"
+                                height="36px"
+                                flex="1"
+                                variant="outline"
+                                borderColor="rgba(86, 117, 109, 0.25)"
+                                color="#263A33"
+                                borderRadius="full"
+                                fontSize="12px"
+                                fontWeight="600"
+                              >
+                                Invoice
+                              </Button>
+                            )}
                             <Button
                               as={NextLink}
                               href={`/conference/MLC_${appt.id}`}
                               size="sm"
-                              w="full"
-                              variant="solid"
-                              bg="teal.800"
+                              height="36px"
+                              flex="1"
+                              bg="#263A33"
                               color="white"
                               borderRadius="full"
-                              _hover={{ bg: 'teal.900' }}
-                              leftIcon={<Icon as={FiVideo} />}
-                              fontSize="xs"
-                              py={5}
+                              _hover={{ bg: '#182722' }}
+                              leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="13px" />}
+                              fontSize="12.5px"
+                              fontWeight="600"
                             >
                               Join Room
                             </Button>
-                          </Stack>
+                          </HStack>
                         </VStack>
                       </Box>
                     );
                   })}
                   {appointments.length === 0 && (
-                    <Box textAlign="center" py={10} color="gray.400">No appointments scheduled.</Box>
+                    <Box textAlign="center" py={8} color="#718096" fontSize="13px">No appointments scheduled.</Box>
                   )}
                 </VStack>
                 </>

@@ -9,6 +9,9 @@ const theme = extendTheme({
     forum: `'Playfair Display', var(--font-playfair), Georgia, serif`, // Harmonizes legacy Forum references
     sans: `'Inter', var(--font-inter), sans-serif`,
     lato: `'Inter', var(--font-inter), sans-serif`,
+    plusJakarta: `'Plus Jakarta Sans', var(--font-plus-jakarta), 'Inter', var(--font-inter), -apple-system, sans-serif`,
+    outfit: `'Outfit', var(--font-outfit), sans-serif`,
+    dmSans: `'DM Sans', var(--font-dmsans), sans-serif`,
   },
   fontSizes: {
     xs: "clamp(0.75rem, 0.70rem + 0.25vw, 0.875rem)",
@@ -106,6 +109,9 @@ const theme = extendTheme({
       button: {
         transition: "all 0.3s ease",
       },
+      "input, textarea, select, button": {
+        fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      },
       "a:not([class])": {
         color: "mlc.black",
         _hover: { color: "mlc.gold" },
@@ -137,6 +143,230 @@ const theme = extendTheme({
         lineHeight: "base",
       },
     },
+    Alert: {
+      baseStyle: {
+        container: {
+          px: 4,
+          py: 3.5,
+          borderRadius: "2xl",
+        },
+      },
+      variants: {
+        subtle: (props) => {
+          const s = props.status;
+          const c = props.colorScheme;
+          const isSuccess = s === "success" || c === "green" || c === "teal" || c === "emerald";
+          const isError = s === "error" || c === "red";
+          const isWarning = s === "warning" || c === "orange" || c === "yellow";
+
+          if (isSuccess) {
+            return {
+              container: {
+                bg: "linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)",
+                color: "#065F46",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                borderRadius: "2xl",
+                boxShadow: "0 14px 34px -4px rgba(6, 78, 59, 0.16), 0 2px 8px rgba(0, 0, 0, 0.04)",
+                backdropFilter: "blur(16px)",
+              },
+              title: { 
+                fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+                color: "#064E3B", 
+                fontWeight: "600",
+                fontSize: "14px",
+              },
+              description: { 
+                fontFamily: "'Inter', var(--font-inter), sans-serif", 
+                color: "#065F46", 
+                fontWeight: "400",
+                fontSize: "13px",
+              },
+              icon: { color: "#059669" },
+            };
+          }
+          if (isError) {
+            return {
+              container: {
+                bg: "linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%)",
+                color: "#991B1B",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "2xl",
+                boxShadow: "0 14px 34px -4px rgba(153, 27, 27, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)",
+                backdropFilter: "blur(16px)",
+              },
+              title: { 
+                fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+                color: "#7F1D1D", 
+                fontWeight: "600",
+                fontSize: "14px",
+              },
+              description: { 
+                fontFamily: "'Inter', var(--font-inter), sans-serif", 
+                color: "#991B1B", 
+                fontWeight: "400",
+                fontSize: "13px",
+              },
+              icon: { color: "#DC2626" },
+            };
+          }
+          if (isWarning) {
+            return {
+              container: {
+                bg: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
+                color: "#92400E",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
+                borderRadius: "2xl",
+                boxShadow: "0 14px 34px -4px rgba(146, 64, 14, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)",
+                backdropFilter: "blur(16px)",
+              },
+              title: { 
+                fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+                color: "#78350F", 
+                fontWeight: "600",
+                fontSize: "14px",
+              },
+              description: { 
+                fontFamily: "'Inter', var(--font-inter), sans-serif", 
+                color: "#92400E", 
+                fontWeight: "400",
+                fontSize: "13px",
+              },
+              icon: { color: "#D97706" },
+            };
+          }
+          return {
+            container: {
+              bg: "linear-gradient(135deg, #F0FDF4 0%, #FAF8F5 100%)",
+              color: "#263A33",
+              border: "1px solid rgba(86, 117, 109, 0.25)",
+              borderRadius: "2xl",
+              boxShadow: "0 14px 34px -4px rgba(38, 58, 51, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04)",
+              backdropFilter: "blur(16px)",
+            },
+            title: { 
+              fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+              color: "#263A33", 
+              fontWeight: "600",
+              fontSize: "14px",
+            },
+            description: { 
+              fontFamily: "'Inter', var(--font-inter), sans-serif", 
+              color: "#5A6E65", 
+              fontWeight: "400",
+              fontSize: "13px",
+            },
+            icon: { color: "#56756D" },
+          };
+        },
+        solid: (props) => {
+          // Fallback solid variant to the same soft wash style so useToast() solid default is styled identically
+          const s = props.status;
+          const c = props.colorScheme;
+          const isSuccess = s === "success" || c === "green" || c === "teal" || c === "emerald";
+          const isError = s === "error" || c === "red";
+          const isWarning = s === "warning" || c === "orange" || c === "yellow";
+
+          if (isSuccess) {
+            return {
+              container: {
+                bg: "linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)",
+                color: "#065F46",
+                border: "1px solid rgba(16, 185, 129, 0.35)",
+                borderRadius: "2xl",
+                boxShadow: "0 14px 34px -4px rgba(6, 78, 59, 0.16), 0 2px 8px rgba(0, 0, 0, 0.04)",
+                backdropFilter: "blur(16px)",
+              },
+              title: { 
+                fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+                color: "#064E3B", 
+                fontWeight: "600",
+                fontSize: "14px",
+              },
+              description: { 
+                fontFamily: "'Inter', var(--font-inter), sans-serif", 
+                color: "#065F46", 
+                fontWeight: "400",
+                fontSize: "13px",
+              },
+              icon: { color: "#059669" },
+            };
+          }
+          if (isError) {
+            return {
+              container: {
+                bg: "linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%)",
+                color: "#991B1B",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "2xl",
+                boxShadow: "0 14px 34px -4px rgba(153, 27, 27, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)",
+                backdropFilter: "blur(16px)",
+              },
+              title: { 
+                fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+                color: "#7F1D1D", 
+                fontWeight: "600",
+                fontSize: "14px",
+              },
+              description: { 
+                fontFamily: "'Inter', var(--font-inter), sans-serif", 
+                color: "#991B1B", 
+                fontWeight: "400",
+                fontSize: "13px",
+              },
+              icon: { color: "#DC2626" },
+            };
+          }
+          if (isWarning) {
+            return {
+              container: {
+                bg: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
+                color: "#92400E",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
+                borderRadius: "2xl",
+                boxShadow: "0 14px 34px -4px rgba(146, 64, 14, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04)",
+                backdropFilter: "blur(16px)",
+              },
+              title: { 
+                fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+                color: "#78350F", 
+                fontWeight: "600",
+                fontSize: "14px",
+              },
+              description: { 
+                fontFamily: "'Inter', var(--font-inter), sans-serif", 
+                color: "#92400E", 
+                fontWeight: "400",
+                fontSize: "13px",
+              },
+              icon: { color: "#D97706" },
+            };
+          }
+          return {
+            container: {
+              bg: "linear-gradient(135deg, #F0FDF4 0%, #FAF8F5 100%)",
+              color: "#263A33",
+              border: "1px solid rgba(86, 117, 109, 0.25)",
+              borderRadius: "2xl",
+              boxShadow: "0 14px 34px -4px rgba(38, 58, 51, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04)",
+              backdropFilter: "blur(16px)",
+            },
+            title: { 
+              fontFamily: "'Outfit', var(--font-outfit), sans-serif", 
+              color: "#263A33", 
+              fontWeight: "600",
+              fontSize: "14px",
+            },
+            description: { 
+              fontFamily: "'Inter', var(--font-inter), sans-serif", 
+              color: "#5A6E65", 
+              fontWeight: "400",
+              fontSize: "13px",
+            },
+            icon: { color: "#56756D" },
+          };
+        },
+      },
+    },
     Modal: {
       baseStyle: {
         dialog: {
@@ -156,37 +386,81 @@ const theme = extendTheme({
     Input: {
       baseStyle: {
         field: {
-          borderRadius: "2xl",
-          bg: "white",
-          borderColor: "gray.200",
-          _hover: { borderColor: "gray.300" },
-          _focus: { borderColor: "mlc.green", boxShadow: "0 0 0 1px #A9CBB7" },
+          fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          fontSize: "13px",
+          color: "#263A33",
+          borderRadius: "xl",
+          bg: "#FAF8F5",
+          borderColor: "rgba(86, 117, 109, 0.2)",
+          _placeholder: { color: "#8C9E96" },
+          _hover: { borderColor: "#56756D" },
+          _focus: { bg: "white", borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" },
         },
       },
     },
     Textarea: {
       baseStyle: {
-        borderRadius: "2xl",
-        bg: "white",
-        borderColor: "gray.200",
-        _hover: { borderColor: "gray.300" },
-        _focus: { borderColor: "mlc.green", boxShadow: "0 0 0 1px #A9CBB7" },
+        fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontSize: "13px",
+        color: "#263A33",
+        borderRadius: "xl",
+        bg: "#FAF8F5",
+        borderColor: "rgba(86, 117, 109, 0.2)",
+        _placeholder: { color: "#8C9E96" },
+        _hover: { borderColor: "#56756D" },
+        _focus: { bg: "white", borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" },
       },
     },
     Select: {
       baseStyle: {
         field: {
-          borderRadius: "2xl",
-          bg: "white",
-          borderColor: "gray.200",
-          _hover: { borderColor: "gray.300" },
-          _focus: { borderColor: "mlc.green", boxShadow: "0 0 0 1px #A9CBB7" },
+          fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          fontSize: "13px",
+          color: "#263A33",
+          borderRadius: "xl",
+          bg: "#FAF8F5",
+          borderColor: "rgba(86, 117, 109, 0.2)",
+          _hover: { borderColor: "#56756D" },
+          _focus: { bg: "white", borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" },
         },
+      },
+    },
+    FormLabel: {
+      baseStyle: {
+        fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontSize: "13px",
+        fontWeight: "600",
+        color: "#263A33",
+        mb: "6px",
       },
     },
     AccordionButton: {
       baseStyle: {
         borderRadius: "2xl",
+      },
+    },
+    Table: {
+      baseStyle: {
+        th: {
+          fontFamily: "body",
+          letterSpacing: "0.08em",
+          fontWeight: "700",
+        },
+      },
+    },
+    Tooltip: {
+      baseStyle: {
+        bg: "#263A33",
+        color: "white",
+        fontSize: "11.5px",
+        fontWeight: "500",
+        fontFamily: "'Inter', var(--font-inter), sans-serif",
+        letterSpacing: "-0.01em",
+        px: 2.5,
+        py: 1,
+        borderRadius: "md",
+        boxShadow: "0 6px 18px -2px rgba(38, 58, 51, 0.25)",
+        "--popper-arrow-bg": "#263A33",
       },
     },
   },

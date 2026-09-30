@@ -1,14 +1,17 @@
 'use client'
 
 import {
-  Box, Heading, Text, Input, Button, VStack, HStack, Table, Thead, Tbody, Tr, Th, Td, useToast, Spinner, SimpleGrid, FormControl, FormLabel, Badge, Divider, Icon, Stack, Grid, GridItem, Progress, Flex, Avatar, Center, Select, Textarea, Checkbox, CheckboxGroup, Radio, RadioGroup, Link, Collapse,
+  Box, Heading, Text, Input, Button, VStack, HStack, Table, Thead, Tbody, Tr, Th, Td, useToast, Spinner, SimpleGrid, FormControl, FormLabel, Badge, Divider, Icon, Stack, Grid, GridItem, Progress, Flex, Avatar, Center, Select, Textarea, Checkbox, CheckboxGroup, Radio, RadioGroup, Link, Collapse, Circle, InputGroup, InputLeftElement, InputRightElement, IconButton,
+  Menu, MenuButton, MenuList, MenuItem,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
-import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload } from "react-icons/fi";
+import { FiArrowLeft, FiUser, FiActivity, FiShield, FiClipboard, FiFileText, FiCalendar, FiCreditCard, FiClock, FiEdit3, FiPaperclip, FiSearch, FiSave, FiX, FiCheckCircle, FiDownload, FiUsers, FiArchive, FiUserPlus, FiArrowRight, FiChevronDown, FiCheck } from "react-icons/fi";
+import { useUser } from "@clerk/nextjs";
 import { apiDelete, apiGet, apiGetBlob, apiPatch, apiPost, apiPut, apiUpload } from "../../../../../api.js";
 import { resourcesApi } from "../../../../../api/resources.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
+import ModernDatePicker from "../../../../../components/ModernDatePicker";
 
 const initialClient = {
   name: "",
@@ -62,6 +65,7 @@ const initialClient = {
 };
 
 export default function ClientsClient() {
+  const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
@@ -81,6 +85,7 @@ export default function ClientsClient() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeSection, setActiveSection] = useState("details"); // details, notes, files, appointments
   const [search, setSearch] = useState("");
+  const [filterTab, setFilterTab] = useState("all"); // all, active, archived
   const [clientNotes, setClientNotes] = useState([]);
   const [clientFiles, setClientFiles] = useState([]);
   const [clientAppointments, setClientAppointments] = useState([]);
@@ -232,41 +237,28 @@ export default function ClientsClient() {
     }
   }, [viewMode, selectedClient?.id]);
 
-  const handleLinkClient = async (email) => {
-    try {
-      await apiPost("clients/link_by_email/", { email });
-      setNewClient(initialClient);
-      setViewMode("list");
-      fetchClients();
-      toast({ title: "Relationship Secured", description: "This client is now linked to your caseload.", status: "success" });
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-
   const handleAddClient = async () => {
     if (!newClient.first_name || !newClient.last_name || !newClient.email) {
       toast({ title: "Clinical Requirement", description: "Name and Email are mandatory.", status: "warning" });
       return;
     }
-    
-    // Try linking first
-    const linked = await handleLinkClient(newClient.email);
-    if (linked) return;
 
     try {
       const payload = {
         ...newClient,
         name: `${newClient.first_name} ${newClient.last_name}`.trim(),
       };
-      await apiPost("clients/", payload);
+      const res = await apiPost("clients/", payload);
       setNewClient(initialClient);
       setViewMode("list");
-      fetchClients();
-      toast({ title: "New File Created", status: "success" });
+      await fetchClients();
+      if (res?.linked_existing_profile) {
+        toast({ title: "Relationship Secured", description: "Existing patient record linked to your caseload.", status: "success" });
+      } else {
+        toast({ title: "New File Created", description: "Patient record created and active in care.", status: "success" });
+      }
     } catch (e) {
-      toast({ title: "Registration Error", status: "error" });
+      toast({ title: "Registration Error", description: e?.response?.data?.detail || "Could not register patient file.", status: "error" });
     }
   };
 
@@ -389,115 +381,417 @@ export default function ClientsClient() {
 
   const filteredClients = clients.filter(c => 
     c.name?.toLowerCase().includes(search.toLowerCase()) ||
-    c.email?.toLowerCase().includes(search.toLowerCase())
+    c.email?.toLowerCase().includes(search.toLowerCase()) ||
+    (c.client_file_number && c.client_file_number.toLowerCase().includes(search.toLowerCase()))
   );
   const activeClients = filteredClients.filter((c) => !c.terminated_patient);
   const terminatedClients = filteredClients.filter((c) => !!c.terminated_patient);
   const activeFiles = clientFiles.filter((f) => !f.is_archived);
   const archivedFiles = clientFiles.filter((f) => !!f.is_archived);
 
-  const renderClientHeader = () => (
-    <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'center' }} mb={6} gap={4}>
-      <HStack spacing={4} align="start">
-        {viewMode === "detail" && (
-          <Button variant="ghost" onClick={() => setViewMode("list")} leftIcon={<FiArrowLeft />} borderRadius="full" h="38px" fontSize="13px">Back</Button>
-        )}
-        <VStack align="start" spacing={0.5} minW={0}>
-          <Heading 
-            fontSize={{ base: "22px", md: "26px" }} 
-            fontWeight="600"
-            color="#263A33" 
-            fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
-            whiteSpace="normal" 
-            wordBreak="break-word" 
-            lineHeight="1.2"
-          >
-            {viewMode === "detail"
-              ? `${selectedClient?.name || ""}${selectedClient?.terminated_patient ? " [TERMINATED]" : ""}`
-              : "Clinical Caseload"}
-          </Heading>
-          <Text color="#5A6E65" fontSize="13px" wordBreak="break-word">
-            {viewMode === "detail" ? selectedClient?.email : "Manage patient documentation, treatment blueprints, and clinical history."}
-          </Text>
-        </VStack>
-      </HStack>
+  const displayedClients = 
+    filterTab === "active" ? activeClients :
+    filterTab === "archived" ? terminatedClients :
+    filteredClients;
 
-      <Stack direction={{ base: "column", lg: "row" }} spacing={3} align={{ base: "stretch", lg: "center" }} w={{ base: "full", lg: "auto" }}>
-        {viewMode === "detail" ? (
+  const totalClientsCount = clients.length;
+  const activeClientsCount = clients.filter(c => !c.terminated_patient).length;
+  const archivedClientsCount = clients.filter(c => !!c.terminated_patient).length;
+
+  const renderClientHeader = () => (
+    <Box 
+      bg="white"
+      p={{ base: 4, md: 5 }}
+      borderRadius="2xl"
+      border="1px solid"
+      borderColor="rgba(86, 117, 109, 0.14)"
+      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+      mb={6}
+    >
+      <Flex 
+        direction={{ base: 'column', lg: 'row' }} 
+        justify="space-between" 
+        align={{ base: 'flex-start', lg: 'center' }}
+        gap={4}
+      >
+        {viewMode === "list" && (
           <>
+            {/* Identity & Space Title */}
+            <HStack spacing={3.5} align="center">
+              <Box position="relative">
+                <Avatar 
+                  size="md" 
+                  name={user?.fullName || "Practitioner"} 
+                  src={user?.imageUrl} 
+                  border="2px solid white" 
+                  boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)" 
+                />
+                <Circle 
+                  size="11px" 
+                  bg="#38A169" 
+                  border="2px solid white" 
+                  position="absolute" 
+                  bottom="0" 
+                  right="0" 
+                />
+              </Box>
+
+              <VStack align="start" spacing={0.5}>
+                <HStack spacing={2} wrap="wrap">
+                  <Badge 
+                    bg="rgba(169, 203, 183, 0.2)" 
+                    color="#263A33" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full"
+                    px={2.5}
+                    py={0.5}
+                    letterSpacing="0.04em"
+                    textTransform="uppercase"
+                  >
+                    CLINICAL PRACTICE 🌿
+                  </Badge>
+                  <Badge 
+                    bg="rgba(86, 117, 109, 0.08)" 
+                    color="#56756D" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full"
+                    px={2.5}
+                    py={0.5}
+                  >
+                    {totalClientsCount} Total Patients
+                  </Badge>
+                </HStack>
+
+                <Heading 
+                  as="h1" 
+                  fontSize={{ base: "21px", sm: "25px" }}
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  color="#263A33" 
+                  fontWeight="600"
+                  lineHeight="1.25"
+                  letterSpacing="-0.015em"
+                >
+                  Clinical Caseload
+                </Heading>
+
+                <Text 
+                  fontSize="13px" 
+                  color="#5A6E65"
+                  fontWeight="400"
+                >
+                  Manage patient documentation, treatment blueprints, and clinical history.
+                </Text>
+              </VStack>
+            </HStack>
+
+            {/* Right: Metric Strip + Add Button */}
+            <Stack 
+              direction={{ base: "column", md: "row" }} 
+              spacing={3} 
+              align={{ base: "stretch", md: "center" }} 
+              w={{ base: "full", lg: "auto" }}
+            >
+              <HStack 
+                spacing={{ base: 1.5, sm: 3 }} 
+                p={1.5} 
+                px={{ base: 2, sm: 2.5 }}
+                borderRadius="xl" 
+                bg="rgba(250, 248, 245, 0.9)"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.1)"
+                w={{ base: 'full', md: 'auto' }}
+                justify="space-between"
+              >
+                <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                  <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" flexShrink={0}>
+                    <Icon as={FiUsers} boxSize="14px" />
+                  </Circle>
+                  <VStack align="start" spacing={0} minW="max-content">
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                      CASELOAD
+                    </Text>
+                    <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                      {totalClientsCount} Total
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+                <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                  <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669" flexShrink={0}>
+                    <Icon as={FiActivity} boxSize="14px" />
+                  </Circle>
+                  <VStack align="start" spacing={0} minW="max-content">
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                      ACTIVE
+                    </Text>
+                    <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                      {activeClientsCount} In Care
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+                <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                  <Circle size="28px" bg="rgba(113, 128, 150, 0.12)" color="#718096" flexShrink={0}>
+                    <Icon as={FiArchive} boxSize="14px" />
+                  </Circle>
+                  <VStack align="start" spacing={0} minW="max-content">
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                      ARCHIVED
+                    </Text>
+                    <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                      {archivedClientsCount} Closed
+                    </Text>
+                  </VStack>
+                </HStack>
+              </HStack>
+
+              <Button 
+                leftIcon={<FiUserPlus />} 
+                bg="#56756D" 
+                color="white" 
+                borderRadius="full" 
+                px={5} 
+                h="38px"
+                fontSize="13px"
+                fontWeight="600"
+                w={{ base: "full", md: "auto" }}
+                _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                _active={{ bg: "#263A33" }}
+                transition="all 0.2s"
+                boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                onClick={() => setViewMode("add")}
+                whiteSpace="nowrap"
+                flexShrink={0}
+              >
+                Add New Client
+              </Button>
+            </Stack>
+          </>
+        )}
+
+        {viewMode === "detail" && (
+          <>
+            <HStack spacing={3.5} align="center" flex="1" minW={0} wrap="wrap">
+              <Button 
+                variant="outline" 
+                borderColor="rgba(86, 117, 109, 0.25)" 
+                color="#263A33" 
+                onClick={() => setViewMode("list")} 
+                leftIcon={<FiArrowLeft />} 
+                borderRadius="full" 
+                h="38px" 
+                fontSize="12.5px" 
+                fontWeight="600" 
+                px={4} 
+                _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
+              >
+                Back
+              </Button>
+              <Box position="relative">
+                <Avatar 
+                  size="md" 
+                  name={selectedClient?.name || "Client"} 
+                  bg="rgba(86, 117, 109, 0.15)" 
+                  color="#263A33" 
+                  fontWeight="600" 
+                  border="2px solid white" 
+                  boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)" 
+                />
+                <Circle 
+                  size="11px" 
+                  bg={selectedClient?.terminated_patient ? "#E53E3E" : "#38A169"} 
+                  border="2px solid white" 
+                  position="absolute" 
+                  bottom="0" 
+                  right="0" 
+                />
+              </Box>
+              <VStack align="start" spacing={0.5} minW={0}>
+                <HStack spacing={2} wrap="wrap">
+                  <Badge 
+                    bg={selectedClient?.terminated_patient ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.12)"} 
+                    color={selectedClient?.terminated_patient ? "#B91C1C" : "#047857"} 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full" 
+                    px={2.5} 
+                    py={0.5} 
+                    letterSpacing="0.04em" 
+                    textTransform="uppercase"
+                  >
+                    {selectedClient?.terminated_patient ? "ARCHIVED / TERMINATED" : "ACTIVE CLINICAL FILE 🌿"}
+                  </Badge>
+                  <Badge 
+                    bg="rgba(86, 117, 109, 0.08)" 
+                    color="#56756D" 
+                    fontSize="10px" 
+                    fontWeight="700" 
+                    borderRadius="full" 
+                    px={2.5} 
+                    py={0.5}
+                  >
+                    FILE #{selectedClient?.client_file_number || "UNASSIGNED"}
+                  </Badge>
+                </HStack>
+                <Heading 
+                  as="h1" 
+                  fontSize={{ base: "21px", sm: "25px" }} 
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                  color="#263A33" 
+                  fontWeight="600" 
+                  lineHeight="1.25" 
+                  letterSpacing="-0.015em"
+                >
+                  {selectedClient?.name || "Patient Record"}
+                </Heading>
+                <Text fontSize="13px" color="#5A6E65" fontWeight="400">
+                  {selectedClient?.email} {selectedClient?.phone_number ? `• ${selectedClient.phone_number}` : ''}
+                </Text>
+              </VStack>
+            </HStack>
+
+            <Stack direction={{ base: "column", sm: "row" }} spacing={2.5} align="center" wrap="wrap" w={{ base: "full", lg: "auto" }}>
+              <Button 
+                leftIcon={<FiDownload />} 
+                variant="outline" 
+                borderColor="rgba(86, 117, 109, 0.25)" 
+                color="#263A33" 
+                borderRadius="full"
+                h="38px"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
+                onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Professional", noteTemplates)}
+              >
+                Export Records
+              </Button>
+              <Button 
+                leftIcon={<FiCalendar />} 
+                bg="#56756D" 
+                color="white" 
+                borderRadius="full" 
+                h="38px"
+                fontSize="13px"
+                fontWeight="600"
+                px={4}
+                _hover={{ bg: "#263A33" }}
+                onClick={() => router.push('/dashboard/therapist/schedule')}
+              >
+                Book Appointment
+              </Button>
+              <Button 
+                leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} 
+                variant={isEditing ? "solid" : "outline"} 
+                bg={isEditing ? "#263A33" : "transparent"}
+                color={isEditing ? "white" : "#263A33"}
+                borderColor="rgba(86, 117, 109, 0.25)"
+                borderRadius="full" 
+                h="38px"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                _hover={isEditing ? { bg: "#56756D" } : { bg: "rgba(169, 203, 183, 0.1)" }}
+                onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}
+              >
+                {isEditing ? "Save Changes" : "Edit Profile"}
+              </Button>
+              {selectedClient?.terminated_patient ? (
+                <Button 
+                  variant="outline" 
+                  borderColor="rgba(16, 185, 129, 0.3)" 
+                  color="#047857" 
+                  borderRadius="full" 
+                  h="38px" 
+                  fontSize="12.5px" 
+                  fontWeight="600" 
+                  px={4} 
+                  onClick={handleReactivateRelationship} 
+                  isLoading={relationshipTransitioning}
+                  _hover={{ bg: "rgba(16, 185, 129, 0.08)" }}
+                >
+                  Reactivate Relationship
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  borderColor="rgba(239, 68, 68, 0.3)" 
+                  color="#B91C1C" 
+                  borderRadius="full" 
+                  h="38px" 
+                  fontSize="12.5px" 
+                  fontWeight="600" 
+                  px={4} 
+                  onClick={handleTerminateRelationship} 
+                  isLoading={relationshipTransitioning}
+                  _hover={{ bg: "rgba(239, 68, 68, 0.08)" }}
+                >
+                  Terminate
+                </Button>
+              )}
+            </Stack>
+          </>
+        )}
+
+        {viewMode === "add" && (
+          <HStack spacing={3.5} align="center">
             <Button 
-              leftIcon={<FiDownload />} 
               variant="outline" 
               borderColor="rgba(86, 117, 109, 0.25)" 
               color="#263A33" 
-              borderRadius="full"
-              w={{ base: "full", lg: "auto" }}
-              h="38px"
-              fontSize="13px"
+              onClick={() => setViewMode("list")} 
+              leftIcon={<FiArrowLeft />} 
+              borderRadius="full" 
+              h="38px" 
+              fontSize="12.5px" 
+              fontWeight="600" 
+              px={4} 
               _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
-              onClick={() => exportAllClientNotes(selectedClient, clientNotes, "MLC Professional", noteTemplates)}
             >
-              Export Full Records
+              Back
             </Button>
-            <Button 
-              leftIcon={<FiCalendar />} 
-              bg="#56756D" 
-              color="white" 
-              borderRadius="full" 
-              w={{ base: "full", lg: "auto" }} 
-              h="38px"
-              fontSize="13px"
-              fontWeight="600"
-              _hover={{ bg: "#263A33" }}
-              onClick={() => router.push('/dashboard/therapist/schedule')}
-            >
-              Book Appointment
-            </Button>
-            <Button 
-              leftIcon={isEditing ? <FiCheckCircle /> : <FiEdit3 />} 
-              variant={isEditing ? "solid" : "outline"} 
-              bg={isEditing ? "#56756D" : "transparent"}
-              color={isEditing ? "white" : "#263A33"}
-              borderColor="rgba(86, 117, 109, 0.25)"
-              borderRadius="full" 
-              w={{ base: "full", lg: "auto" }} 
-              h="38px"
-              fontSize="13px"
-              _hover={isEditing ? { bg: "#263A33" } : { bg: "rgba(169, 203, 183, 0.1)" }}
-              onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}
-            >
-              {isEditing ? "Save Changes" : "Edit Profile"}
-            </Button>
-            {selectedClient?.terminated_patient ? (
-              <Button variant="outline" colorScheme="green" borderRadius="full" w={{ base: "full", lg: "auto" }} h="38px" fontSize="13px" onClick={handleReactivateRelationship} isLoading={relationshipTransitioning}>
-                Reactivate Relationship
-              </Button>
-            ) : (
-              <Button variant="outline" colorScheme="red" borderRadius="full" w={{ base: "full", lg: "auto" }} h="38px" fontSize="13px" onClick={handleTerminateRelationship} isLoading={relationshipTransitioning}>
-                Terminate Relationship
-              </Button>
-            )}
-          </>
-        ) : (
-          <Button 
-            leftIcon={<FiUser />} 
-            bg="#56756D" 
-            color="white" 
-            borderRadius="full" 
-            px={6} 
-            w={{ base: "full", lg: "auto" }} 
-            h="38px"
-            fontSize="13px"
-            fontWeight="600"
-            _hover={{ bg: "#263A33" }}
-            boxShadow="sm"
-            onClick={() => setViewMode("add")}
-          >
-            + Add New Client
-          </Button>
+            <Circle size="44px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+              <Icon as={FiUserPlus} boxSize="20px" />
+            </Circle>
+            <VStack align="start" spacing={0.5}>
+              <Badge 
+                bg="rgba(169, 203, 183, 0.2)" 
+                color="#263A33" 
+                fontSize="10px" 
+                fontWeight="700" 
+                borderRadius="full" 
+                px={2.5} 
+                py={0.5} 
+                letterSpacing="0.04em" 
+                textTransform="uppercase"
+              >
+                PATIENT REGISTRATION 🌿
+              </Badge>
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }} 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                color="#263A33" 
+                fontWeight="600" 
+                lineHeight="1.25" 
+                letterSpacing="-0.015em"
+              >
+                Register New Client
+              </Heading>
+              <Text fontSize="13px" color="#5A6E65" fontWeight="400">
+                Create a global patient record and initialize clinical onboarding documentation.
+              </Text>
+            </VStack>
+          </HStack>
         )}
-      </Stack>
-    </Flex>
+      </Flex>
+    </Box>
   );
 
   const renderClientDetail = () => {
@@ -622,7 +916,7 @@ export default function ClientsClient() {
          <Box mt={6}>
             <Text fontWeight="bold" fontSize="sm" mb={2}>Clinical Overview / Intake Notes</Text>
             {isEditing ? (
-              <Textarea value={editClient.extra_information} onChange={(e) => setEditClient({...editClient, extra_information: e.target.value})} borderRadius="xl" />
+              <Textarea value={editClient.extra_information || ""} onChange={(e) => setEditClient({...editClient, extra_information: e.target.value})} borderRadius="xl" />
             ) : (
               <Text color="gray.600" bg="gray.50" p={4} borderRadius="xl" fontSize="sm">{editClient.extra_information || "No additional info."}</Text>
             )}
@@ -686,22 +980,27 @@ export default function ClientsClient() {
   const renderNotesSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
       <HStack justify="space-between" mb={4} flexWrap="wrap" gap={3}>
-          <Heading size="md">Session Documentation</Heading>
+          <Heading fontSize="16px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33">Session Documentation</Heading>
           <Button 
             leftIcon={<FiClipboard />} 
-            colorScheme="teal" 
+            bg="#56756D" 
+            color="white" 
             size="sm" 
+            h="36px"
             borderRadius="full"
+            fontSize="12.5px"
+            fontWeight="600"
+            _hover={{ bg: "#263A33" }}
             onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}`)}
           >
             New Clinical Note
           </Button>
        </HStack>
        {clientNotes.length === 0 ? (
-         <Center py={20} bg="white" borderRadius="3xl" border="1px dashed" borderColor="gray.200">
+         <Center py={20} bg="white" borderRadius="2xl" border="1px dashed" borderColor="rgba(86, 117, 109, 0.2)">
             <VStack spacing={2}>
-               <Icon as={FiEdit3} w={8} h={8} color="gray.300" />
-               <Text color="gray.500">No session notes for this patient yet.</Text>
+               <Icon as={FiEdit3} w={8} h={8} color="#56756D" />
+               <Text color="#5A6E65" fontSize="13px">No session notes for this patient yet.</Text>
             </VStack>
          </Center>
        ) : (
@@ -709,14 +1008,14 @@ export default function ClientsClient() {
             <Box 
               key={note.id} 
               bg="white" 
-              p={{ base: 4, md: 8 }} 
-              borderRadius="3xl" 
+              p={{ base: 4, md: 5 }} 
+              borderRadius="2xl" 
               border="1px solid" 
-              borderColor="gray.100" 
-              shadow="sm"
+              borderColor="rgba(86, 117, 109, 0.14)" 
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
               cursor="pointer"
-              _hover={{ shadow: 'md', borderColor: 'teal.100' }}
-              transition="0.2s"
+              _hover={{ borderColor: 'rgba(86, 117, 109, 0.35)' }}
+              transition="0.15s"
               onClick={() => router.push(`/dashboard/therapist/notes/edit?clientId=${selectedClient?.id}&noteId=${note.id}`)}
             >
               <Stack direction={{ base: "column", md: "row" }} justify="space-between" mb={4} spacing={3}>
@@ -761,17 +1060,30 @@ export default function ClientsClient() {
   const renderFilesSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
        <HStack justify="space-between" mb={4} flexWrap="wrap" gap={3}>
-         <Heading size="md">Clinical Vault</Heading>
-         <Button leftIcon={<FiPaperclip />} variant="outline" size="sm" borderRadius="full" onClick={() => uploadInputRef.current?.click()} isLoading={uploadingFile}>
+         <Heading fontSize="16px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33">Clinical Vault</Heading>
+         <Button 
+           leftIcon={<FiPaperclip />} 
+           variant="outline" 
+           borderColor="rgba(86, 117, 109, 0.25)" 
+           color="#263A33" 
+           size="sm" 
+           h="36px"
+           borderRadius="full" 
+           fontSize="12.5px"
+           fontWeight="600"
+           _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
+           onClick={() => uploadInputRef.current?.click()} 
+           isLoading={uploadingFile}
+         >
            Upload Document
          </Button>
          <Input ref={uploadInputRef} type="file" display="none" onChange={handleUploadDocument} />
       </HStack>
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-         {activeFiles.length === 0 ? <Text color="gray.500">No documents found.</Text> : activeFiles.map(file => (
-            <Box key={file.id} p={{ base: 3, md: 4 }} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100">
+         {activeFiles.length === 0 ? <Text color="#5A6E65" fontSize="13px">No documents found.</Text> : activeFiles.map(file => (
+            <Box key={file.id} p={{ base: 3.5, md: 4 }} bg="white" borderRadius="2xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)">
                <HStack align="start" spacing={3}>
-                  <Icon as={FiPaperclip} color="teal.500" />
+                  <Circle size="30px" bg="rgba(86, 117, 109, 0.1)" color="#56756D"><Icon as={FiPaperclip} boxSize="15px" /></Circle>
                   <VStack align="start" spacing={1} flex="1" minW={0}>
                      {renamingFileId === file.id ? (
                       <Stack direction={{ base: "column", sm: "row" }} w="full" spacing={2}>
@@ -782,42 +1094,42 @@ export default function ClientsClient() {
                         </HStack>
                       </Stack>
                      ) : (
-                      <Text fontSize="sm" fontWeight="bold" wordBreak="break-word" whiteSpace="normal">
+                      <Text fontSize="13.5px" fontWeight="600" color="#263A33" wordBreak="break-word" whiteSpace="normal">
                         {file.display_name || file.file?.split('/').pop() || "Document"}
                       </Text>
                      )}
-                     <Text fontSize="xs" color="gray.400" whiteSpace="normal">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
+                     <Text fontSize="11.5px" color="#718096" whiteSpace="normal">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
                   </VStack>
                </HStack>
                <Stack direction={{ base: "column", sm: "row" }} spacing={2} mt={3}>
-                 <Button size="xs" variant="ghost" colorScheme="teal" onClick={() => openFileWithAuth(file)}>View</Button>
-                 <Button size="xs" variant="ghost" onClick={() => startRename(file)}>Rename</Button>
-                 <Button size="xs" variant="ghost" colorScheme="orange" onClick={() => archiveFile(file.id, true)}>Archive</Button>
-                 <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteFile(file.id)}>Delete</Button>
+                 <Button size="xs" variant="ghost" color="#56756D" borderRadius="full" onClick={() => openFileWithAuth(file)}>View</Button>
+                 <Button size="xs" variant="ghost" borderRadius="full" onClick={() => startRename(file)}>Rename</Button>
+                 <Button size="xs" variant="ghost" color="orange.600" borderRadius="full" onClick={() => archiveFile(file.id, true)}>Archive</Button>
+                 <Button size="xs" variant="ghost" color="red.600" borderRadius="full" onClick={() => deleteFile(file.id)}>Delete</Button>
                </Stack>
             </Box>
          ))}
       </SimpleGrid>
       {archivedFiles.length > 0 && (
-        <Box mt={2} border="1px solid" borderColor="gray.100" borderRadius="2xl" p={4} bg="gray.50">
+        <Box mt={2} border="1px solid" borderColor="rgba(86, 117, 109, 0.14)" borderRadius="2xl" p={4} bg="rgba(250, 248, 245, 0.85)">
           <HStack justify="space-between">
-            <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="wider">Archived Files</Heading>
-            <Button size="xs" variant="ghost" onClick={() => setShowArchivedFiles((v) => !v)}>
+            <Heading fontSize="12px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em">Archived Files</Heading>
+            <Button size="xs" variant="ghost" borderRadius="full" onClick={() => setShowArchivedFiles((v) => !v)}>
               {showArchivedFiles ? "Collapse" : "Expand"}
             </Button>
           </HStack>
           <Collapse in={showArchivedFiles} animateOpacity>
             <VStack align="stretch" mt={3} spacing={2}>
               {archivedFiles.map((file) => (
-                <Box key={file.id} p={3} bg="white" borderRadius="xl" border="1px solid" borderColor="gray.100">
+                <Box key={file.id} p={3} bg="white" borderRadius="xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.1)">
                   <VStack align="start" spacing={1}>
-                    <Text fontSize="sm" fontWeight="700" wordBreak="break-word" whiteSpace="normal">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
-                    <Text fontSize="xs" color="gray.400">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
+                    <Text fontSize="13px" fontWeight="600" color="#263A33" wordBreak="break-word" whiteSpace="normal">{file.display_name || file.file?.split('/').pop() || "Document"}</Text>
+                    <Text fontSize="11px" color="#718096">{new Date(file.uploaded_at).toLocaleDateString()}</Text>
                   </VStack>
                   <Stack direction={{ base: "column", sm: "row" }} spacing={2} mt={3}>
-                    <Button size="xs" variant="ghost" colorScheme="teal" onClick={() => openFileWithAuth(file)}>View</Button>
-                    <Button size="xs" variant="ghost" colorScheme="green" onClick={() => archiveFile(file.id, false)}>Restore</Button>
-                    <Button size="xs" variant="ghost" colorScheme="red" onClick={() => deleteFile(file.id)}>Delete</Button>
+                    <Button size="xs" variant="ghost" color="#56756D" borderRadius="full" onClick={() => openFileWithAuth(file)}>View</Button>
+                    <Button size="xs" variant="ghost" color="green.600" borderRadius="full" onClick={() => archiveFile(file.id, false)}>Restore</Button>
+                    <Button size="xs" variant="ghost" color="red.600" borderRadius="full" onClick={() => deleteFile(file.id)}>Delete</Button>
                   </Stack>
                 </Box>
               ))}
@@ -830,17 +1142,17 @@ export default function ClientsClient() {
 
   const renderAppointmentsSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
-      <Heading size="md" mb={4}>Service History</Heading>
-      {clientAppointments.length === 0 ? <Text color="gray.500">No scheduled sessions.</Text> : clientAppointments.map(appt => (
-         <HStack key={appt.id} p={5} bg="white" borderRadius="2xl" border="1px solid" borderColor="gray.100" justify="space-between">
-            <HStack spacing={4}>
-               <Box p={3} bg="teal.50" borderRadius="xl"><Icon as={FiCalendar} color="teal.500" /></Box>
+      <Heading fontSize="16px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33" mb={4}>Service History</Heading>
+      {clientAppointments.length === 0 ? <Text color="#5A6E65" fontSize="13px">No scheduled sessions.</Text> : clientAppointments.map(appt => (
+         <HStack key={appt.id} p={4} bg="white" borderRadius="2xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.14)" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" justify="space-between">
+            <HStack spacing={3.5}>
+               <Circle size="38px" bg="rgba(86, 117, 109, 0.1)" color="#56756D"><Icon as={FiCalendar} boxSize="18px" /></Circle>
                <VStack align="start" spacing={0}>
-                  <Text fontWeight="bold">{new Date(appt.date || appt.start_time).toLocaleString()}</Text>
-                  <Text fontSize="xs" color="gray.500">{appt.status_label || appt.status}</Text>
+                  <Text fontWeight="600" fontSize="13.5px" color="#263A33">{new Date(appt.date || appt.start_time).toLocaleString()}</Text>
+                  <Text fontSize="12px" color="#5A6E65">{appt.status_label || appt.status}</Text>
                </VStack>
             </HStack>
-            <Badge colorScheme="blue" variant="subtle" borderRadius="full">{appt.status}</Badge>
+            <Badge bg="rgba(86, 117, 109, 0.12)" color="#263A33" borderRadius="full" px={2.5} py={0.5} fontSize="10.5px" fontWeight="700">{appt.status}</Badge>
          </HStack>
       ))}
     </VStack>
@@ -849,13 +1161,18 @@ export default function ClientsClient() {
   const renderFormsSection = () => (
     <VStack align="stretch" spacing={4} animation="fadeIn 0.5s">
       <HStack justify="space-between" mb={3} flexWrap="wrap" gap={3}>
-        <Heading size="md">Assigned Client Forms</Heading>
+        <Heading fontSize="16px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33">Assigned Client Forms</Heading>
         <HStack flexWrap="wrap" w={{ base: "full", md: "auto" }}>
           <Button
             size="sm"
-            colorScheme="teal"
             variant="outline"
+            borderColor="rgba(86, 117, 109, 0.25)"
+            color="#263A33"
             borderRadius="full"
+            h="36px"
+            fontSize="12.5px"
+            fontWeight="600"
+            _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
             w={{ base: "full", sm: "auto" }}
             onClick={() => assignClientForm("consent")}
             isLoading={assigningFormType === "consent"}
@@ -864,8 +1181,13 @@ export default function ClientsClient() {
           </Button>
           <Button
             size="sm"
-            colorScheme="teal"
+            bg="#56756D"
+            color="white"
             borderRadius="full"
+            h="36px"
+            fontSize="12.5px"
+            fontWeight="600"
+            _hover={{ bg: "#263A33" }}
             w={{ base: "full", sm: "auto" }}
             onClick={() => assignClientForm("assessment")}
             isLoading={assigningFormType === "assessment"}
@@ -876,20 +1198,14 @@ export default function ClientsClient() {
       </HStack>
       <Box bg="purple.50" border="1px solid" borderColor="purple.100" borderRadius="xl" p={4}>
         <Text fontSize="xs" color="purple.700" fontWeight="700" mb={2}>Assign structured assessment</Text>
-        <Stack direction={{ base: "column", md: "row" }} spacing={3}>
-          <Select
+        <Stack direction={{ base: "column", md: "row" }} spacing={3} align="center">
+          <ModernSelect
             value={selectedAssessmentId}
-            onChange={(e) => setSelectedAssessmentId(e.target.value)}
-            bg="white"
-            maxW={{ base: "full", md: "320px" }}
-            size="sm"
-          >
-            {assessmentCatalog.map((assessment) => (
-              <option key={assessment.id} value={assessment.id}>
-                {assessment.name}
-              </option>
-            ))}
-          </Select>
+            onChange={(val) => setSelectedAssessmentId(val)}
+            options={assessmentCatalog.map((a) => ({ label: a.name, value: a.id }))}
+            placeholder="Select an assessment..."
+            w={{ base: "full", md: "320px" }}
+          />
           <Button
             size="sm"
             colorScheme="purple"
@@ -1002,26 +1318,26 @@ export default function ClientsClient() {
           ) : (
             <VStack align="stretch" spacing={6}>
               <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                 <Box p={4} bg="red.50" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="red.100">
-                    <Text fontSize="xs" fontWeight="bold" color="red.600">DEPRESSION</Text>
-                    <Heading size="lg" color="red.800">{selectedClient.dass_scores?.depression}</Heading>
-                    <Badge colorScheme="red" variant="subtle" borderRadius="full" px={2}>{selectedClient.dass_interpretations?.depression}</Badge>
+                 <Box p={4} bg="#FEF2F2" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="rgba(239, 68, 68, 0.25)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#B91C1C" letterSpacing="0.06em">DEPRESSION</Text>
+                    <Heading fontSize="26px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#991B1B">{selectedClient.dass_scores?.depression}</Heading>
+                    <Badge bg="rgba(239, 68, 68, 0.15)" color="#B91C1C" borderRadius="full" px={2.5} py={0.5} fontSize="10.5px" fontWeight="700">{selectedClient.dass_interpretations?.depression}</Badge>
                  </Box>
-                 <Box p={4} bg="orange.50" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="orange.100">
-                    <Text fontSize="xs" fontWeight="bold" color="orange.600">ANXIETY</Text>
-                    <Heading size="lg" color="orange.800">{selectedClient.dass_scores?.anxiety}</Heading>
-                    <Badge colorScheme="orange" variant="subtle" borderRadius="full" px={2}>{selectedClient.dass_interpretations?.anxiety}</Badge>
+                 <Box p={4} bg="#FFFBEB" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="rgba(245, 158, 11, 0.25)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#B45309" letterSpacing="0.06em">ANXIETY</Text>
+                    <Heading fontSize="26px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#92400E">{selectedClient.dass_scores?.anxiety}</Heading>
+                    <Badge bg="rgba(245, 158, 11, 0.15)" color="#B45309" borderRadius="full" px={2.5} py={0.5} fontSize="10.5px" fontWeight="700">{selectedClient.dass_interpretations?.anxiety}</Badge>
                  </Box>
-                 <Box p={4} bg="blue.50" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="blue.100">
-                    <Text fontSize="xs" fontWeight="bold" color="blue.600">STRESS</Text>
-                    <Heading size="lg" color="blue.800">{selectedClient.dass_scores?.stress}</Heading>
-                    <Badge colorScheme="blue" variant="subtle" borderRadius="full" px={2}>{selectedClient.dass_interpretations?.stress}</Badge>
+                 <Box p={4} bg="#EFF6FF" borderRadius="2xl" textAlign="center" border="1px solid" borderColor="rgba(59, 130, 246, 0.25)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#1D4ED8" letterSpacing="0.06em">STRESS</Text>
+                    <Heading fontSize="26px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#1E40AF">{selectedClient.dass_scores?.stress}</Heading>
+                    <Badge bg="rgba(59, 130, 246, 0.15)" color="#1D4ED8" borderRadius="full" px={2.5} py={0.5} fontSize="10.5px" fontWeight="700">{selectedClient.dass_interpretations?.stress}</Badge>
                  </Box>
               </SimpleGrid>
 
-              <Box bg="teal.50" p={6} borderRadius="2xl" border="1px solid" borderColor="teal.100">
-                 <Heading size="xs" color="teal.800" textTransform="uppercase" mb={3} letterSpacing="wider">Clinical Discovery Summary</Heading>
-                 <Text fontSize="sm" color="gray.700" lineHeight="tall" whiteSpace="pre-wrap">
+              <Box bg="rgba(250, 248, 245, 0.9)" p={5} borderRadius="2xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.14)">
+                 <Heading fontSize="12px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="700" color="#56756D" textTransform="uppercase" mb={2.5} letterSpacing="0.08em">Clinical Discovery Summary</Heading>
+                 <Text fontSize="13px" color="#263A33" lineHeight="tall" whiteSpace="pre-wrap">
                     {selectedClient.summary || "No automated summary provided."}
                  </Text>
               </Box>
@@ -1068,12 +1384,12 @@ export default function ClientsClient() {
           </Box>
        </DetailCard>
 
-       <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <Heading size="xs" textTransform="uppercase" color="gray.400" mb={6} letterSpacing="wider">Session Invoices</Heading>
+       <Box bg="white" p={{ base: 4, md: 5 }} borderRadius="2xl" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" border="1px solid" borderColor="rgba(86, 117, 109, 0.14)">
+          <Heading fontSize="15px" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" color="#263A33" mb={5} letterSpacing="-0.01em">Session Invoices</Heading>
           {clientAppointments.length === 0 ? (
-            <Text color="gray.500" fontSize="sm">No billed sessions yet.</Text>
+            <Text color="#5A6E65" fontSize="13px">No billed sessions yet.</Text>
           ) : (
-            <VStack align="stretch" spacing={3}>
+            <VStack align="stretch" spacing={2.5}>
               {clientAppointments.slice(0, 10).map(appt => {
                 const apptId = String(appt?.id ?? '');
                 const status = String(appt?.status || "").toLowerCase();
@@ -1081,25 +1397,28 @@ export default function ClientsClient() {
                 const isCancelled = status === "cancelled";
                 const isPaid = !isCancelled && (paymentStatus === "paid" || status === "completed");
                 const invoiceState = isCancelled ? "CANCELLED" : (isPaid ? "PAID" : "PENDING");
-                const invoiceColor = isCancelled ? "red" : (isPaid ? "green" : "orange");
+                const invoiceBg = isCancelled ? "rgba(239, 68, 68, 0.1)" : (isPaid ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)");
+                const invoiceColor = isCancelled ? "#B91C1C" : (isPaid ? "#047857" : "#B45309");
                 return (
-                <Flex key={appt.id} p={4} borderRadius="2xl" border="1px solid" borderColor="gray.50" align={{ base: "start", md: "center" }} direction={{ base: "column", md: "row" }} gap={3} justify="space-between" _hover={{ bg: 'gray.50' }}>
+                <Flex key={appt.id} p={3.5} borderRadius="xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.1)" bg="rgba(250, 248, 245, 0.85)" align={{ base: "start", md: "center" }} direction={{ base: "column", md: "row" }} gap={3} justify="space-between" _hover={{ bg: 'white', borderColor: "rgba(86, 117, 109, 0.2)" }} transition="0.15s">
                   <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" fontSize="sm">{new Date(appt.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
-                    <Text fontSize="2xs" color="gray.500">MLC-INV-{apptId.slice(0, 8) || 'N/A'}</Text>
+                    <Text fontWeight="600" fontSize="13px" color="#263A33">{new Date(appt.start_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>
+                    <Text fontSize="11px" color="#718096">MLC-INV-{apptId.slice(0, 8) || 'N/A'}</Text>
                   </VStack>
-                  <HStack spacing={4} w={{ base: "full", md: "auto" }} justify={{ base: "space-between", md: "flex-end" }}>
-                    <Badge colorScheme={invoiceColor} variant="subtle" borderRadius="full">
+                  <HStack spacing={3} w={{ base: "full", md: "auto" }} justify={{ base: "space-between", md: "flex-end" }}>
+                    <Badge bg={invoiceBg} color={invoiceColor} borderRadius="full" px={2.5} py={0.5} fontSize="10.5px" fontWeight="700">
                       {invoiceState}
                     </Badge>
                     <Button 
                       size="xs" 
                       variant="outline" 
-                      colorScheme="teal" 
+                      borderColor="rgba(86, 117, 109, 0.25)" 
+                      color="#263A33" 
                       borderRadius="full"
                       as={Link}
                       href={`/dashboard/client/invoice/${appt.id}`}
                       isExternal
+                      _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
                     >
                       View
                     </Button>
@@ -1109,7 +1428,7 @@ export default function ClientsClient() {
               })}
             </VStack>
           )}
-          <Text mt={6} fontSize="2xs" color="gray.400" fontStyle="italic">
+          <Text mt={5} fontSize="11.5px" color="#718096">
             Note: All invoices include clinical liability disclaimers and MLC professional branding.
           </Text>
        </Box>
@@ -1118,133 +1437,322 @@ export default function ClientsClient() {
 
   if (!mounted) return (
     <Center minH="400px">
-      <VStack spacing={4}>
-        <Spinner size="xl" color="teal.500" thickness="4px" />
-        <Text color="gray.500" fontWeight="600">Restoring Patient Dossiers...</Text>
+      <VStack spacing={3}>
+        <Spinner size="xl" color="#56756D" thickness="3px" />
+        <Text color="#5A6E65" fontWeight="500" fontSize="13px">Restoring Patient Dossiers...</Text>
       </VStack>
     </Center>
   );
 
   return (
-    <Box>
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
       {renderClientHeader()}
 
       {viewMode === "list" && (
-        <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <HStack mb={8} bg="gray.50" p={2} px={4} borderRadius="full">
-             <Icon as={FiSearch} color="gray.400" />
-             <Input 
-               placeholder="Find patient by name or professional email..." 
-               variant="unstyled"
-               value={search} 
-               onChange={(e) => setSearch(e.target.value)} 
-               fontSize="sm"
-             />
-          </HStack>
-          
+        <Box 
+          bg="white" 
+          p={{ base: 4, md: 5 }} 
+          borderRadius="2xl" 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.14)" 
+          boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+        >
+          {/* Search & Filter Bar */}
+          <Flex 
+            direction={{ base: 'column', md: 'row' }} 
+            justify="space-between" 
+            align={{ base: 'stretch', md: 'center' }} 
+            gap={3} 
+            mb={5}
+          >
+            <InputGroup maxW={{ base: 'full', md: '380px' }}>
+              <InputLeftElement pointerEvents="none" h="40px" pl={3}>
+                <Icon as={FiSearch} color="#56756D" />
+              </InputLeftElement>
+              <Input 
+                placeholder="Search patient by name, email, or file #..." 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                bg="rgba(250, 248, 245, 0.85)"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.15)"
+                borderRadius="full"
+                h="40px"
+                fontSize="13px"
+                pl="38px"
+                pr={search ? "38px" : "12px"}
+                _focus={{ borderColor: "#56756D", bg: "white", boxShadow: "0 0 0 1px #56756D" }}
+              />
+              {search && (
+                <InputRightElement h="40px" pr={2}>
+                  <IconButton 
+                    icon={<FiX />} 
+                    size="xs" 
+                    variant="ghost" 
+                    aria-label="Clear search" 
+                    borderRadius="full"
+                    onClick={() => setSearch("")} 
+                  />
+                </InputRightElement>
+              )}
+            </InputGroup>
+
+            <HStack spacing={2} overflowX="auto" py={1}>
+              {[
+                { key: "all", label: "All Patients", count: filteredClients.length },
+                { key: "active", label: "Active", count: activeClients.length },
+                { key: "archived", label: "Archived", count: terminatedClients.length },
+              ].map((tab) => {
+                const isSelected = filterTab === tab.key;
+                return (
+                  <Button
+                    key={tab.key}
+                    size="sm"
+                    borderRadius="full"
+                    h="34px"
+                    px={3.5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    bg={isSelected ? "#56756D" : "rgba(250, 248, 245, 0.9)"}
+                    color={isSelected ? "white" : "#5A6E65"}
+                    border="1px solid"
+                    borderColor={isSelected ? "#56756D" : "rgba(86, 117, 109, 0.15)"}
+                    _hover={{ bg: isSelected ? "#263A33" : "rgba(86, 117, 109, 0.08)" }}
+                    onClick={() => setFilterTab(tab.key)}
+                    transition="0.15s"
+                  >
+                    {tab.label} ({tab.count})
+                  </Button>
+                );
+              })}
+            </HStack>
+          </Flex>
+
           {loading ? (
-            <VStack py={20}><Spinner color="teal.500" size="xl" /><Text color="gray.500">Retrieving Caseload...</Text></VStack>
+            <Center py={16}>
+              <VStack spacing={3}>
+                <Spinner color="#56756D" size="xl" thickness="3px" />
+                <Text color="#5A6E65" fontSize="13px" fontWeight="500">Retrieving Caseload...</Text>
+              </VStack>
+            </Center>
+          ) : displayedClients.length === 0 ? (
+            <Center py={16}>
+              <VStack spacing={3}>
+                <Circle size="52px" bg="rgba(86, 117, 109, 0.08)" color="#56756D">
+                  <Icon as={FiUsers} boxSize="24px" />
+                </Circle>
+                <Text fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" fontSize="16px" color="#263A33">
+                  No Patient Records Found
+                </Text>
+                <Text fontSize="13px" color="#5A6E65" maxW="360px" textAlign="center">
+                  {search ? `No patients match "${search}". Try searching another name or file number.` : `No ${filterTab} patients in your clinical caseload.`}
+                </Text>
+                {search && (
+                  <Button 
+                    variant="outline" 
+                    borderColor="rgba(86, 117, 109, 0.25)" 
+                    color="#263A33" 
+                    borderRadius="full" 
+                    size="sm" 
+                    h="34px" 
+                    fontSize="12.5px"
+                    onClick={() => setSearch("")}
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </VStack>
+            </Center>
           ) : (
             <>
-              {/* Desktop Table */}
-              <Box display={{ base: "none", md: "block" }}>
+              {/* Desktop Table View */}
+              <Box display={{ base: "none", md: "block" }} overflowX="auto">
                 <Table variant="simple">
                   <Thead>
                     <Tr>
-                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">PATIENT NAME</Th>
-                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">CONTACT</Th>
-                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">FILE #</Th>
-                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">STATUS</Th>
-                      <Th textAlign="right" fontSize="10.5px" fontWeight="700" letterSpacing="0.1em" color="#56756D">ACTIONS</Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" color="#56756D" borderColor="rgba(86, 117, 109, 0.12)" py={3.5}>
+                        PATIENT NAME
+                      </Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" color="#56756D" borderColor="rgba(86, 117, 109, 0.12)" py={3.5}>
+                        CONTACT DETAILS
+                      </Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" color="#56756D" borderColor="rgba(86, 117, 109, 0.12)" py={3.5}>
+                        FILE NUMBER
+                      </Th>
+                      <Th fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" color="#56756D" borderColor="rgba(86, 117, 109, 0.12)" py={3.5}>
+                        INTAKE STATUS
+                      </Th>
+                      <Th textAlign="right" fontSize="10.5px" fontWeight="700" letterSpacing="0.08em" color="#56756D" borderColor="rgba(86, 117, 109, 0.12)" py={3.5}>
+                        ACTIONS
+                      </Th>
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {activeClients.map((client) => (
-                      <Tr key={client.id} _hover={{ bg: "rgba(169, 203, 183, 0.05)" }} transition="0.2s" cursor="pointer" onClick={() => { setSelectedClient(client); setViewMode("detail"); }}>
-                        <Td>
-                          <HStack spacing={3}>
-                             <Avatar size="sm" name={client.name} bg="rgba(169, 203, 183, 0.25)" color="#263A33" fontWeight="600" />
-                             <Text fontWeight="600" color="#263A33" fontSize="13.5px">{client.name}</Text>
-                          </HStack>
-                        </Td>
-                        <Td><Text fontSize="13px" color="#5A6E65">{client.email}</Text></Td>
-                        <Td><Text fontSize="12px" fontWeight="600" color="gray.400">{client.client_file_number || "—"}</Text></Td>
-                        <Td><Badge bg="rgba(169, 203, 183, 0.2)" color="#263A33" fontSize="10px" fontWeight="700" borderRadius="full" px={2.5} py={0.5}>ACTIVE</Badge></Td>
-                        <Td textAlign="right">
-                          <Button size="sm" variant="ghost" color="#56756D" borderRadius="full" fontSize="12.5px" _hover={{ bg: "rgba(169, 203, 183, 0.12)", color: "#263A33" }}>
-                            Open File
-                          </Button>
-                        </Td>
-                      </Tr>
-                    ))}
+                    {displayedClients.map((client) => {
+                      const isTerminated = !!client.terminated_patient;
+                      return (
+                        <Tr 
+                          key={client.id} 
+                          _hover={{ bg: "rgba(250, 248, 245, 0.85)" }} 
+                          transition="0.15s" 
+                          cursor="pointer" 
+                          onClick={() => { setSelectedClient(client); setViewMode("detail"); }}
+                        >
+                          <Td borderColor="rgba(86, 117, 109, 0.08)" py={3.5}>
+                            <HStack spacing={3}>
+                              <Avatar 
+                                size="sm" 
+                                name={client.name} 
+                                bg={isTerminated ? "rgba(239, 68, 68, 0.1)" : "rgba(86, 117, 109, 0.12)"} 
+                                color={isTerminated ? "#B91C1C" : "#263A33"} 
+                                fontWeight="600" 
+                                border="1px solid"
+                                borderColor={isTerminated ? "rgba(239, 68, 68, 0.2)" : "rgba(86, 117, 109, 0.2)"}
+                              />
+                              <VStack align="start" spacing={0}>
+                                <Text 
+                                  fontWeight="600" 
+                                  color="#263A33" 
+                                  fontSize="13.5px" 
+                                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                                >
+                                  {client.name}
+                                </Text>
+                                {client.preferred_first_name && (
+                                  <Text fontSize="11px" color="#718096">
+                                    Prefers: {client.preferred_first_name}
+                                  </Text>
+                                )}
+                              </VStack>
+                            </HStack>
+                          </Td>
+                          <Td borderColor="rgba(86, 117, 109, 0.08)" py={3.5}>
+                            <VStack align="start" spacing={0}>
+                              <Text fontSize="13px" color="#5A6E65">{client.email || "—"}</Text>
+                              {client.phone_number && (
+                                <Text fontSize="11.5px" color="#718096">{client.phone_number}</Text>
+                              )}
+                            </VStack>
+                          </Td>
+                          <Td borderColor="rgba(86, 117, 109, 0.08)" py={3.5}>
+                            <Badge 
+                              bg="rgba(86, 117, 109, 0.08)" 
+                              color="#263A33" 
+                              borderRadius="md" 
+                              px={2} 
+                              py={0.5} 
+                              fontSize="11.5px" 
+                              fontWeight="600"
+                            >
+                              {client.client_file_number || "—"}
+                            </Badge>
+                          </Td>
+                          <Td borderColor="rgba(86, 117, 109, 0.08)" py={3.5}>
+                            {isTerminated ? (
+                              <Badge 
+                                bg="rgba(239, 68, 68, 0.1)" 
+                                color="#B91C1C" 
+                                border="1px solid rgba(239, 68, 68, 0.25)" 
+                                fontSize="10.5px" 
+                                fontWeight="700" 
+                                borderRadius="full" 
+                                px={2.5} 
+                                py="2px"
+                              >
+                                ARCHIVED
+                              </Badge>
+                            ) : (
+                              <Badge 
+                                bg="rgba(16, 185, 129, 0.12)" 
+                                color="#047857" 
+                                border="1px solid rgba(16, 185, 129, 0.25)" 
+                                fontSize="10.5px" 
+                                fontWeight="700" 
+                                borderRadius="full" 
+                                px={2.5} 
+                                py="2px"
+                              >
+                                ACTIVE
+                              </Badge>
+                            )}
+                          </Td>
+                          <Td textAlign="right" borderColor="rgba(86, 117, 109, 0.08)" py={3.5}>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              borderColor="rgba(86, 117, 109, 0.25)" 
+                              color="#263A33" 
+                              borderRadius="full" 
+                              h="32px" 
+                              fontSize="12px" 
+                              fontWeight="600" 
+                              px={3.5}
+                              _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                              rightIcon={<FiArrowRight />}
+                            >
+                              Open File
+                            </Button>
+                          </Td>
+                        </Tr>
+                      );
+                    })}
                   </Tbody>
                 </Table>
               </Box>
-              {terminatedClients.length > 0 && (
-                <Box mt={6} border="1px solid" borderColor="gray.100" borderRadius="2xl" p={4} bg="gray.50">
-                  <HStack justify="space-between">
-                    <Heading size="xs" color="gray.600" textTransform="uppercase" letterSpacing="wider">Terminated Clients</Heading>
-                    <Button size="xs" variant="ghost" onClick={() => setShowTerminatedDrawer((v) => !v)}>
-                      {showTerminatedDrawer ? "Collapse" : "Expand"}
-                    </Button>
-                  </HStack>
-                  <Collapse in={showTerminatedDrawer} animateOpacity>
-                    <VStack align="stretch" mt={3} spacing={2}>
-                      {terminatedClients.map((client) => (
-                        <HStack
-                          key={client.id}
-                          p={3}
-                          bg="white"
-                          borderRadius="xl"
-                          border="1px solid"
-                          borderColor="gray.100"
-                          justify="space-between"
-                          cursor="pointer"
-                          onClick={() => { setSelectedClient(client); setViewMode("detail"); }}
-                        >
-                          <HStack>
-                            <Avatar size="xs" name={client.name} bg="red.50" color="red.500" />
-                            <VStack align="start" spacing={0}>
-                              <Text fontSize="sm" fontWeight="700">{client.name}</Text>
-                              <Text fontSize="xs" color="gray.500">{client.email}</Text>
-                            </VStack>
-                          </HStack>
-                          <Badge colorScheme="red" variant="subtle" borderRadius="full">TERMINATED</Badge>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  </Collapse>
-                </Box>
-              )}
 
               {/* Mobile Card List */}
-              <VStack display={{ base: "flex", md: "none" }} spacing={4} align="stretch">
-                {activeClients.map((client) => (
-                  <Box 
-                    key={client.id} 
-                    p={4} 
-                    borderRadius="2xl" 
-                    border="1px solid" 
-                    borderColor="gray.100" 
-                    bg="white"
-                    onClick={() => { setSelectedClient(client); setViewMode("detail"); }}
-                  >
-                    <Flex justify="space-between" align="center" mb={3}>
-                      <HStack>
-                        <Avatar size="sm" name={client.name} bg="teal.100" color="teal.600" />
-                        <VStack align="start" spacing={0}>
-                          <Text fontWeight="bold" fontSize="sm">{client.name}</Text>
-                          <Text fontSize="xs" color="gray.500">{client.email}</Text>
-                        </VStack>
+              <VStack display={{ base: "flex", md: "none" }} spacing={3} align="stretch">
+                {displayedClients.map((client) => {
+                  const isTerminated = !!client.terminated_patient;
+                  return (
+                    <Box 
+                      key={client.id} 
+                      p={4} 
+                      borderRadius="xl" 
+                      border="1px solid" 
+                      borderColor="rgba(86, 117, 109, 0.12)" 
+                      bg="rgba(250, 248, 245, 0.85)"
+                      onClick={() => { setSelectedClient(client); setViewMode("detail"); }}
+                      cursor="pointer"
+                    >
+                      <Flex justify="space-between" align="center" mb={2}>
+                        <HStack spacing={2.5}>
+                          <Avatar 
+                            size="sm" 
+                            name={client.name} 
+                            bg={isTerminated ? "rgba(239, 68, 68, 0.1)" : "rgba(86, 117, 109, 0.15)"} 
+                            color={isTerminated ? "#B91C1C" : "#263A33"} 
+                            fontWeight="600" 
+                          />
+                          <VStack align="start" spacing={0}>
+                            <Text fontWeight="600" fontSize="13.5px" fontFamily="'Outfit', sans-serif" color="#263A33">
+                              {client.name}
+                            </Text>
+                            <Text fontSize="12px" color="#5A6E65">{client.email}</Text>
+                          </VStack>
+                        </HStack>
+                        <Badge 
+                          bg={isTerminated ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.12)"} 
+                          color={isTerminated ? "#B91C1C" : "#047857"} 
+                          borderRadius="full" 
+                          px={2} 
+                          fontSize="10px" 
+                          fontWeight="700" 
+                        >
+                          {isTerminated ? "ARCHIVED" : "ACTIVE"}
+                        </Badge>
+                      </Flex>
+                      <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="rgba(86, 117, 109, 0.08)">
+                        <Text fontSize="11px" color="#718096" fontWeight="600">
+                          FILE: {client.client_file_number || "—"}
+                        </Text>
+                        <Button size="xs" variant="ghost" color="#56756D" fontWeight="600" rightIcon={<FiArrowRight />}>
+                          Open File
+                        </Button>
                       </HStack>
-                      <Badge colorScheme="green" variant="subtle" borderRadius="full" px={2} fontSize="2xs">ACTIVE</Badge>
-                    </Flex>
-                    <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="gray.50">
-                      <Text fontSize="2xs" color="gray.400" fontWeight="bold">FILE: {client.client_file_number || "—"}</Text>
-                      <Button size="xs" variant="link" colorScheme="teal">Open Clinical File</Button>
-                    </HStack>
-                  </Box>
-                ))}
+                    </Box>
+                  );
+                })}
               </VStack>
             </>
           )}
@@ -1252,30 +1760,92 @@ export default function ClientsClient() {
       )}
 
       {viewMode === "add" && (
-        <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" maxW="4xl" mx="auto">
-          <Heading size="md" mb={8}>Clinical Registration Form</Heading>
-          <VStack spacing={10} align="stretch">
-             {/* Same structure as detail sections but editable by default */}
+        <Box 
+          bg="white" 
+          p={{ base: 5, md: 6 }} 
+          borderRadius="2xl" 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.14)" 
+          boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+          maxW="4xl" 
+          mx="auto"
+        >
+          <Heading 
+            fontSize="18px" 
+            fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+            fontWeight="600" 
+            color="#263A33" 
+            mb={6}
+          >
+            Clinical Registration Form
+          </Heading>
+          <VStack spacing={6} align="stretch">
              <DetailCard title="Identity Basics">
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                   <FormControl isRequired><FormLabel fontSize="xs">First Name</FormLabel><Input placeholder="Legal First Name" value={newClient.first_name} onChange={(e) => setNewClient({...newClient, first_name: e.target.value})} borderRadius="xl" /></FormControl>
-                   <FormControl isRequired><FormLabel fontSize="xs">Last Name</FormLabel><Input placeholder="Legal Surname" value={newClient.last_name} onChange={(e) => setNewClient({...newClient, last_name: e.target.value})} borderRadius="xl" /></FormControl>
-                   <FormControl isRequired><FormLabel fontSize="xs">Profession Email</FormLabel><Input type="email" placeholder="patient@example.com" value={newClient.email} onChange={(e) => setNewClient({...newClient, email: e.target.value})} borderRadius="xl" /></FormControl>
-                   <FormControl><FormLabel fontSize="xs">Phone Number</FormLabel><Input placeholder="+965" value={newClient.phone_number} onChange={(e) => setNewClient({...newClient, phone_number: e.target.value})} borderRadius="xl" /></FormControl>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                   <FormControl isRequired>
+                     <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em">First Name</FormLabel>
+                     <Input placeholder="Legal First Name" value={newClient.first_name} onChange={(e) => setNewClient({...newClient, first_name: e.target.value})} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.18)" fontSize="13px" h="38px" _focus={{ borderColor: "#56756D", bg: "white" }} />
+                   </FormControl>
+                   <FormControl isRequired>
+                     <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em">Last Name</FormLabel>
+                     <Input placeholder="Legal Surname" value={newClient.last_name} onChange={(e) => setNewClient({...newClient, last_name: e.target.value})} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.18)" fontSize="13px" h="38px" _focus={{ borderColor: "#56756D", bg: "white" }} />
+                   </FormControl>
+                   <FormControl isRequired>
+                     <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em">Professional Email</FormLabel>
+                     <Input type="email" placeholder="patient@example.com" value={newClient.email} onChange={(e) => setNewClient({...newClient, email: e.target.value})} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.18)" fontSize="13px" h="38px" _focus={{ borderColor: "#56756D", bg: "white" }} />
+                   </FormControl>
+                   <FormControl>
+                     <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em">Phone Number</FormLabel>
+                     <Input placeholder="+965" value={newClient.phone_number} onChange={(e) => setNewClient({...newClient, phone_number: e.target.value})} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.18)" fontSize="13px" h="38px" _focus={{ borderColor: "#56756D", bg: "white" }} />
+                   </FormControl>
                 </SimpleGrid>
              </DetailCard>
              
              <DetailCard title="Clinical Specifics">
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                   <FormControl><FormLabel fontSize="xs">Date of Birth</FormLabel><Input type="date" value={newClient.date_of_birth} onChange={(e) => setNewClient({...newClient, date_of_birth: e.target.value})} borderRadius="xl" /></FormControl>
-                   <FormControl><FormLabel fontSize="xs">Sex</FormLabel><Select value={newClient.sex} onChange={(e) => setNewClient({...newClient, sex: e.target.value})} borderRadius="xl"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option></Select></FormControl>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                   <FormControl>
+                     <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em">Date of Birth</FormLabel>
+                     <ModernDatePicker
+                        value={newClient.date_of_birth}
+                        onChange={(val) => setNewClient({ ...newClient, date_of_birth: val })}
+                        placeholder="Select Date of Birth"
+                        minYear={1920}
+                        maxYear={new Date().getFullYear()}
+                        h="38px"
+                      />
+                   </FormControl>
+                   <FormControl>
+                     <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em">Sex</FormLabel>
+                     <ModernSelect
+                       value={newClient.sex}
+                       onChange={(val) => setNewClient({...newClient, sex: val})}
+                       options={["Female", "Male", "Intersex", "Other"]}
+                       placeholder="Select"
+                     />
+                   </FormControl>
                 </SimpleGrid>
              </DetailCard>
              
-             <Flex justify="flex-end" pt={4}>
-                <HStack spacing={4}>
-                   <Button variant="ghost" onClick={() => setViewMode("list")}>Discard</Button>
-                   <Button bg="teal.500" color="white" px={10} borderRadius="full" onClick={handleAddClient} _hover={{ bg: 'teal.600' }}>Save Global Client File</Button>
+             <Flex justify="flex-end" pt={2}>
+                <HStack spacing={3}>
+                   <Button variant="outline" borderColor="rgba(86, 117, 109, 0.25)" color="#263A33" borderRadius="full" h="38px" fontSize="12.5px" fontWeight="600" px={4} onClick={() => setViewMode("list")}>
+                     Discard
+                   </Button>
+                   <Button 
+                     bg="#56756D" 
+                     color="white" 
+                     px={6} 
+                     borderRadius="full" 
+                     h="38px" 
+                     fontSize="13px" 
+                     fontWeight="600" 
+                     onClick={handleAddClient} 
+                     _hover={{ bg: '#263A33' }}
+                     _active={{ bg: '#263A33' }}
+                     boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                   >
+                     Save Global Client File
+                   </Button>
                 </HStack>
              </Flex>
           </VStack>
@@ -1291,50 +1861,219 @@ function NavButton({ icon, label, count, active, onClick }) {
   return (
     <HStack 
       justify="space-between" 
-      p={3} 
-      px={4} 
+      p={2.5} 
+      px={3.5} 
       borderRadius="xl" 
-      bg={active ? "teal.50" : "transparent"} 
-      color={active ? "teal.700" : "gray.600"}
-      _hover={{ bg: "teal.50", color: "teal.700" }}
+      bg={active ? "rgba(86, 117, 109, 0.08)" : "transparent"} 
+      color={active ? "#263A33" : "#5A6E65"}
+      fontWeight={active ? "600" : "500"}
+      fontSize="13px"
+      _hover={{ bg: "rgba(86, 117, 109, 0.06)", color: "#263A33" }}
       cursor="pointer"
       onClick={onClick}
-      transition="0.2s"
+      transition="0.15s"
+      position="relative"
     >
-      <HStack minW={0}>
-         <Icon as={icon} />
-         <Text fontSize="sm" fontWeight={active ? "bold" : "medium"} whiteSpace="normal" wordBreak="break-word">{label}</Text>
+      {active && (
+        <Box 
+          position="absolute" 
+          left="0" 
+          top="50%" 
+          transform="translateY(-50%)" 
+          w="3px" 
+          h="16px" 
+          borderRadius="full" 
+          bg="#56756D" 
+        />
+      )}
+      <HStack spacing={2.5} minW={0}>
+         <Circle size="28px" bg={active ? "#56756D" : "rgba(86, 117, 109, 0.08)"} color={active ? "white" : "#56756D"} transition="0.15s">
+           <Icon as={icon} boxSize="13px" />
+         </Circle>
+         <Text fontSize="13px" whiteSpace="normal" wordBreak="break-word">{label}</Text>
       </HStack>
-      {count !== undefined && <Badge colorScheme="teal" borderRadius="full" px={2}>{count}</Badge>}
+      {count !== undefined && (
+        <Badge bg={active ? "#56756D" : "rgba(86, 117, 109, 0.12)"} color={active ? "white" : "#56756D"} borderRadius="full" px={2} fontSize="10px" fontWeight="700">
+          {count}
+        </Badge>
+      )}
     </HStack>
-  )
+  );
 }
 
 function DetailCard({ title, children, isEditing }) {
   return (
-    <Box bg="white" p={{ base: 4, md: 8 }} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100" borderTop={isEditing ? "4px solid" : "1px solid"} borderTopColor={isEditing ? "teal.500" : "gray.100"}>
-       <Heading size="xs" textTransform="uppercase" color="gray.400" mb={6} letterSpacing="wider">{title}</Heading>
+    <Box 
+      bg="white" 
+      p={{ base: 4, md: 5 }} 
+      borderRadius="2xl" 
+      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+      border="1px solid" 
+      borderColor={isEditing ? "rgba(86, 117, 109, 0.4)" : "rgba(86, 117, 109, 0.14)"}
+    >
+       <Heading 
+         fontSize="15px" 
+         fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+         fontWeight="600" 
+         color="#263A33" 
+         mb={5} 
+         letterSpacing="-0.01em"
+       >
+         {title}
+       </Heading>
        {children}
     </Box>
-  )
+  );
 }
 
 function DataField({ label, value, isEditing, onChange, type = "text", options = [] }) {
   return (
     <Box>
-       <Text fontSize="xs" fontWeight="bold" color="gray.400" mb={1}>{label}</Text>
+       <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em" mb={1.5}>
+         {label}
+       </Text>
        {isEditing ? (
          type === "select" ? (
-           <Select value={value || ""} onChange={(e) => onChange(e.target.value)} borderRadius="xl">
-             <option value="">Select</option>
-             {options.map(o => <option key={o} value={o}>{o}</option>)}
-           </Select>
+           <ModernSelect
+             value={value || ""} 
+             onChange={(val) => onChange(val)} 
+             options={options}
+             placeholder="Select"
+           />
+         ) : type === "date" ? (
+           <ModernDatePicker
+             value={value || ""}
+             onChange={(val) => onChange(val)}
+             placeholder="Select date"
+             minYear={1920}
+             maxYear={new Date().getFullYear()}
+             h="38px"
+           />
          ) : (
-           <Input type={type} value={value || ""} onChange={(e) => onChange(e.target.value)} borderRadius="xl" />
+           <Input 
+             type={type} 
+             value={value || ""} 
+             onChange={(e) => onChange(e.target.value)} 
+             borderRadius="xl"
+             bg="rgba(250, 248, 245, 0.85)"
+             border="1px solid rgba(86, 117, 109, 0.18)"
+             fontSize="13px"
+             h="38px"
+             _focus={{ borderColor: "#56756D", bg: "white" }}
+           />
          )
        ) : (
-         <Text fontSize="sm" fontWeight="600" color="gray.700">{value || "—"}</Text>
+         <Text fontSize="13.5px" fontWeight="500" color="#263A33">
+           {value || "—"}
+         </Text>
        )}
     </Box>
-  )
+  );
+}
+
+function ModernSelect({ value, onChange, options = [], placeholder = "Select", isDisabled = false, w = "full", minW = "160px" }) {
+  const formattedOptions = options.map((opt) =>
+    typeof opt === "string" ? { label: opt, value: opt } : opt
+  );
+  const selectedOption = formattedOptions.find((o) => String(o.value) === String(value));
+  const displayText = selectedOption ? selectedOption.label : placeholder;
+  const hasValue = !!selectedOption && selectedOption.value !== "";
+
+  return (
+    <Menu placement="bottom-start" matchWidth autoSelect={false}>
+      {({ isOpen }) => (
+        <Box w={w}>
+          <MenuButton
+            as={Button}
+            isDisabled={isDisabled}
+            w="full"
+            h="38px"
+            px={3.5}
+            borderRadius="xl"
+            bg={isOpen ? "white" : "rgba(250, 248, 245, 0.85)"}
+            border="1px solid"
+            borderColor={isOpen ? "#56756D" : "rgba(86, 117, 109, 0.18)"}
+            boxShadow={isOpen ? "0 0 0 1px #56756D" : "none"}
+            _hover={{ bg: "white", borderColor: "#56756D" }}
+            _active={{ bg: "white" }}
+            textAlign="left"
+            rightIcon={
+              <Icon
+                as={FiChevronDown}
+                transition="transform 0.2s"
+                transform={isOpen ? "rotate(180deg)" : "none"}
+                color="#56756D"
+                boxSize="14px"
+              />
+            }
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Text
+              as="span"
+              fontSize="13px"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
+              fontWeight={hasValue ? "500" : "400"}
+              color={hasValue ? "#263A33" : "#718096"}
+              isTruncated
+            >
+              {displayText}
+            </Text>
+          </MenuButton>
+          <MenuList
+            bg="white"
+            borderRadius="xl"
+            p={1.5}
+            border="1px solid rgba(86, 117, 109, 0.15)"
+            boxShadow="0 12px 28px -4px rgba(38, 58, 51, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04)"
+            zIndex={1400}
+            minW={minW}
+            maxH="240px"
+            overflowY="auto"
+          >
+            {placeholder && (
+              <MenuItem
+                borderRadius="lg"
+                px={3}
+                py={2}
+                fontSize="12.5px"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                fontWeight="500"
+                color="#718096"
+                _hover={{ bg: "rgba(86, 117, 109, 0.08)", color: "#263A33" }}
+                onClick={() => onChange("")}
+              >
+                {placeholder}
+              </MenuItem>
+            )}
+            {formattedOptions.map((opt) => {
+              const active = String(opt.value) === String(value);
+              return (
+                <MenuItem
+                  key={opt.value}
+                  borderRadius="lg"
+                  px={3}
+                  py={2}
+                  fontSize="13px"
+                  fontFamily="'Inter', var(--font-inter), sans-serif"
+                  fontWeight={active ? "600" : "500"}
+                  color={active ? "#263A33" : "#5A6E65"}
+                  bg={active ? "rgba(86, 117, 109, 0.08)" : "transparent"}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.12)", color: "#263A33" }}
+                  onClick={() => onChange(opt.value)}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Text as="span" isTruncated>{opt.label}</Text>
+                  {active && <Icon as={FiCheck} color="#56756D" boxSize="13px" />}
+                </MenuItem>
+              );
+            })}
+          </MenuList>
+        </Box>
+      )}
+    </Menu>
+  );
 }

@@ -8,7 +8,9 @@ import {
   MenuItem,
   Button,
   HStack,
+  VStack,
   Text,
+  Badge,
   Icon,
   Portal,
   Box,
@@ -74,7 +76,7 @@ export default function ModernSelect({
               py={0}
               fontWeight="normal"
               fontSize={fontSize}
-              fontFamily="'Inter', sans-serif"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
               textAlign="left"
               transition="all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
               boxShadow={isOpen ? `0 0 0 1px ${focusBorderColor}, 0 4px 12px rgba(86, 117, 109, 0.1)` : "none"}
@@ -93,21 +95,43 @@ export default function ModernSelect({
             >
               <HStack justify="space-between" w="full" spacing={2}>
                 <HStack spacing={2} minW={0} overflow="hidden">
+                  {selectedOption?.colorDot && (
+                    <Box
+                      w="8px"
+                      h="8px"
+                      borderRadius="full"
+                      bg={selectedOption.colorDot}
+                      flexShrink={0}
+                    />
+                  )}
                   {leftIcon && (
                     <Icon
                       as={leftIcon}
                       boxSize="15px"
-                      color={isPlaceholder ? "gray.400" : "#56756D"}
+                      color={isPlaceholder ? "#718096" : "#56756D"}
                       flexShrink={0}
                     />
                   )}
                   <Text
                     isTruncated
-                    color={isPlaceholder ? "gray.400" : "#263A33"}
+                    color={isPlaceholder ? "#718096" : "#263A33"}
                     fontWeight={isPlaceholder ? "400" : "500"}
                   >
                     {displayText}
                   </Text>
+                  {selectedOption?.badge && (
+                    <Badge
+                      fontSize="9.5px"
+                      bg="rgba(86, 117, 109, 0.12)"
+                      color="#56756D"
+                      borderRadius="full"
+                      px={2}
+                      py={0.5}
+                      fontWeight="600"
+                    >
+                      {selectedOption.badge}
+                    </Badge>
+                  )}
                 </HStack>
 
                 <Icon
@@ -162,7 +186,7 @@ export default function ModernSelect({
                       color="#263A33"
                       fontWeight={isSelected ? "600" : "450"}
                       fontSize={fontSize}
-                      fontFamily="'Inter', sans-serif"
+                      fontFamily="'Inter', var(--font-inter), sans-serif"
                       transition="all 0.15s ease"
                       _hover={{
                         bg: "rgba(86, 117, 109, 0.12)",
@@ -173,24 +197,56 @@ export default function ModernSelect({
                       }}
                     >
                       <HStack justify="space-between" w="full" spacing={2}>
-                        <HStack spacing={2.5}>
+                        <HStack spacing={2.5} minW={0} overflow="hidden">
+                          {opt.colorDot && (
+                            <Box
+                              w="8px"
+                              h="8px"
+                              borderRadius="full"
+                              bg={opt.colorDot}
+                              flexShrink={0}
+                            />
+                          )}
                           {opt.icon && (
                             <Icon
                               as={opt.icon}
                               boxSize="14px"
                               color={isSelected ? "#56756D" : "#7A8D86"}
+                              flexShrink={0}
                             />
                           )}
-                          <Text>{opt.label}</Text>
+                          <VStack align="start" spacing={0} minW={0}>
+                            <Text isTruncated>{opt.label}</Text>
+                            {opt.subtext && (
+                              <Text fontSize="11px" color="#718096" isTruncated>
+                                {opt.subtext}
+                              </Text>
+                            )}
+                          </VStack>
                         </HStack>
-                        {isSelected && (
-                          <Icon
-                            as={FiCheck}
-                            boxSize="14px"
-                            color="#56756D"
-                            strokeWidth={2.5}
-                          />
-                        )}
+                        <HStack spacing={1.5} flexShrink={0}>
+                          {opt.badge && (
+                            <Badge
+                              fontSize="9.5px"
+                              bg="rgba(86, 117, 109, 0.12)"
+                              color="#56756D"
+                              borderRadius="full"
+                              px={2}
+                              py={0.5}
+                              fontWeight="600"
+                            >
+                              {opt.badge}
+                            </Badge>
+                          )}
+                          {isSelected && (
+                            <Icon
+                              as={FiCheck}
+                              boxSize="14px"
+                              color="#56756D"
+                              strokeWidth={2.5}
+                            />
+                          )}
+                        </HStack>
                       </HStack>
                     </MenuItem>
                   );

@@ -423,27 +423,34 @@ export default function WelcomeOnboarding({ links = [] }) {
           <HStack h="100vh" spacing={0} align="stretch" overflow="hidden">
                      {/* 🎨 Visual Side (Desktop Only) */}
             {isDesktop && (
-              <Box flex="1" position="relative" bg="#A9CBB7">
+              <Box flex="1" position="relative" bg="#1A2823" overflow="hidden" borderRight="1px solid" borderColor="rgba(86, 117, 109, 0.16)">
                 <Image 
-                  src="/human_connection_therapy_1776424085531.png" 
-                  alt="" 
+                  src="/serene_therapy_session.jpg" 
+                  alt="A tranquil therapy conversation" 
                   w="full" 
                   h="full" 
                   objectFit="cover"
-                  opacity="0.9"
+                  opacity="1"
                 />
-                <Box position="absolute" inset={0} bgGradient="linear(to-r, transparent, rgba(253, 251, 250, 1))" />
                 
-                <Box position="absolute" bottom={12} left={12} maxW="400px">
+                {/* 🌟 Focused bottom gradient for high contrast readability - zero washout on people */}
+                <Box 
+                  position="absolute" 
+                  inset={0} 
+                  bgGradient="linear(to-t, rgba(14, 26, 22, 0.94) 0%, rgba(14, 26, 22, 0.5) 28%, transparent 55%)" 
+                />
+                
+                {/* 🌿 Bottom Text Container with crystal-clear contrast */}
+                <Box position="absolute" bottom={{ base: 8, lg: 12 }} left={{ base: 8, lg: 12 }} maxW="420px" zIndex={2}>
                   <VStack align="start" spacing={3}>
                     <Badge 
-                      bg="whiteAlpha.900" 
+                      bg="rgba(255, 255, 255, 0.94)" 
                       color="#263A33" 
                       px={3.5} 
                       py={1} 
                       borderRadius="full"
                       fontSize="10.5px"
-                      fontWeight="600"
+                      fontWeight="700"
                       letterSpacing="0.08em"
                       boxShadow="sm"
                     >
@@ -451,19 +458,22 @@ export default function WelcomeOnboarding({ links = [] }) {
                     </Badge>
                     <Heading 
                       color="white" 
-                      fontSize={{ lg: "30px", xl: "34px" }} 
-                      fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
-                      fontWeight="600"
+                      fontSize={{ lg: "28px", xl: "32px" }} 
+                      fontFamily="'Plus Jakarta Sans', var(--font-plus-jakarta), 'Inter', var(--font-inter), -apple-system, sans-serif" 
+                      fontWeight="700"
                       lineHeight="1.2"
-                      textShadow="0 2px 10px rgba(0,0,0,0.15)"
+                      letterSpacing="-0.025em"
+                      textShadow="0 2px 14px rgba(0,0,0,0.6)"
                     >
-                      A Sanctuary <br/> for the Mind.
+                      A Safe Space <br/> for Your Mind.
                     </Heading>
                     <Text 
-                      color="whiteAlpha.900" 
+                      color="rgba(255, 255, 255, 0.92)" 
                       fontSize="13.5px" 
                       fontWeight="400"
                       lineHeight="1.5"
+                      fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif"
+                      textShadow="0 1px 8px rgba(0,0,0,0.5)"
                     >
                       Guided architecture for your therapeutic growth.
                     </Text>
@@ -511,9 +521,10 @@ export default function WelcomeOnboarding({ links = [] }) {
                          <VStack align="start" spacing={1.5}>
                             <Heading 
                               fontSize={{ base: "24px", md: "28px" }}
-                              fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
-                              fontWeight="600"
+                              fontFamily="'Plus Jakarta Sans', var(--font-plus-jakarta), 'Inter', var(--font-inter), -apple-system, sans-serif" 
+                              fontWeight="700"
                               lineHeight="1.2"
+                              letterSpacing="-0.02em"
                               color="#263A33"
                             >
                               {currentSlide?.title}
@@ -521,8 +532,8 @@ export default function WelcomeOnboarding({ links = [] }) {
                             <Text 
                               fontSize="14px" 
                               color="#56756D" 
-                              fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif" 
-                              fontStyle="italic" 
+                              fontFamily="'Inter', var(--font-inter), -apple-system, sans-serif" 
+                              fontWeight="500"
                               letterSpacing="0.01em"
                             >
                               {currentSlide?.subtitle}

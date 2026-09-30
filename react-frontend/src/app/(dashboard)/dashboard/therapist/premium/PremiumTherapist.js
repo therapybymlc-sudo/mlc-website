@@ -10,8 +10,10 @@ import {
   Button,
   Tag,
   Icon,
+  Badge,
+  Circle,
 } from "@chakra-ui/react";
-import { FiTarget, FiZap, FiBook, FiActivity, FiMessageCircle, FiHeart } from "react-icons/fi";
+import { FiTarget, FiZap, FiBook, FiActivity, FiMessageCircle, FiHeart, FiArrowRight } from "react-icons/fi";
 import { useAuth } from "../../../../../context/AuthContext";
 import PremiumPreReleaseForm from "../../../../../components/PremiumPreReleaseForm";
 
@@ -24,128 +26,161 @@ export default function PremiumTherapist() {
   };
 
   return (
-    <Box maxW="1100px" mx="auto">
+    <Box maxW="1100px" mx="auto" pb={16} fontFamily="'Inter', var(--font-inter), sans-serif">
+      {/* 🌿 Main Hero Banner */}
       <Box
-        bg="linear-gradient(135deg, #120F1B 0%, #2B223B 60%, #3A2C4A 100%)"
+        bg="linear-gradient(135deg, #1A2823 0%, #263A33 55%, #2F453D 100%)"
         color="white"
-        p={{ base: 8, md: 16 }}
-        borderRadius="4xl"
-        shadow="2xl"
+        p={{ base: 6, sm: 8, md: 12 }}
+        borderRadius="3xl"
+        boxShadow="0 16px 40px -8px rgba(26, 40, 35, 0.25)"
         position="relative"
         overflow="hidden"
+        border="1px solid rgba(169, 203, 183, 0.15)"
       >
         <Box
           position="absolute"
-          top="-10%"
+          top="-15%"
           right="-5%"
-          w="350px"
-          h="350px"
-          bg="rgba(169, 203, 183, 0.15)"
+          w="380px"
+          h="380px"
+          bg="radial-gradient(circle, rgba(169, 203, 183, 0.12) 0%, transparent 70%)"
           borderRadius="full"
-          filter="blur(100px)"
+          pointerEvents="none"
         />
 
-        <VStack align="start" spacing={12} position="relative" zIndex={1}>
-          <HStack justify="space-between" w="100%" flexWrap="wrap" spacing={6}>
+        <VStack align="start" spacing={8} position="relative" zIndex={1}>
+          <HStack justify="space-between" w="100%" flexWrap="wrap" spacing={6} align="start">
             <Box maxW="2xl">
-              <HStack spacing={2} mb={6} flexWrap="wrap">
-                <Tag
-                  bg="#A9CBB7"
-                  color="#120F1B"
+              <HStack spacing={2.5} mb={4} flexWrap="wrap">
+                <Badge
+                  bg="rgba(169, 203, 183, 0.15)"
+                  color="#A9CBB7"
+                  border="1px solid"
+                  borderColor="rgba(169, 203, 183, 0.3)"
                   borderRadius="full"
-                  px={4}
-                  py={1}
-                  fontSize="xs"
-                  fontWeight="800"
-                  letterSpacing="widest"
+                  px={3}
+                  py={0.8}
+                  fontSize="10px"
+                  fontWeight="700"
+                  letterSpacing="0.08em"
+                  textTransform="uppercase"
                 >
                   THERAPIST PREMIUM
-                </Tag>
+                </Badge>
                 {!unlocked && (
-                  <Tag colorScheme="orange" borderRadius="full" px={4} py={1} fontSize="xs" fontWeight="800">
+                  <Badge 
+                    bg="rgba(255, 255, 255, 0.1)"
+                    color="white"
+                    border="1px solid"
+                    borderColor="rgba(255, 255, 255, 0.2)"
+                    borderRadius="full" 
+                    px={3} 
+                    py={0.8} 
+                    fontSize="10px" 
+                    fontWeight="700"
+                    letterSpacing="0.08em"
+                  >
                     COMING SOON
-                  </Tag>
+                  </Badge>
                 )}
               </HStack>
-              <Heading size="3xl" fontFamily="'Playfair Display', serif" mb={6}>
+
+              <Heading 
+                fontSize={{ base: "26px", md: "34px" }} 
+                fontWeight="600" 
+                color="white" 
+                letterSpacing="-0.02em"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                mb={3}
+              >
                 The Therapist OS
               </Heading>
-              <Text fontSize="xl" color="whiteAlpha.800" lineHeight="tall">
-                Your unified clinical command center for assessments, resources, private messaging,
-                and self-care tools designed for practitioners who want depth without burnout.
+
+              <Text fontSize="14px" color="rgba(255, 255, 255, 0.82)" lineHeight="1.65" maxW="600px">
+                Your unified clinical command center for psychometric assessments, therapy resources, private messaging,
+                and mindful practice tools designed for practitioners who seek clinical depth without burnout.
               </Text>
             </Box>
 
-            <Box textAlign={{ base: "left", md: "right" }}>
+            <Box textAlign={{ base: "left", md: "right" }} pt={{ base: 2, md: 6 }}>
               {unlocked ? (
                 <Button
-                  bg="white"
-                  color="black"
+                  bg="#A9CBB7"
+                  color="#1A2823"
                   borderRadius="full"
-                  px={10}
-                  h={14}
-                  _hover={{ transform: 'scale(1.05)' }}
+                  px={6}
+                  height="40px"
+                  fontSize="13px"
+                  fontWeight="600"
+                  _hover={{ bg: "#C2DECF" }}
                 >
                   Premium Activated
                 </Button>
               ) : (
-                <VStack align={{ base: "start", md: "end" }} spacing={2}>
+                <VStack align={{ base: "start", md: "end" }} spacing={1.5}>
                   <Button
-                    bg="#C9A960"
-                    color="black"
+                    bg="#A9CBB7"
+                    color="#1A2823"
                     borderRadius="full"
-                    px={10}
-                    h={14}
-                    _hover={{ bg: "#E3C77B", transform: 'scale(1.05)' }}
+                    px={7}
+                    height="42px"
+                    fontSize="13px"
+                    fontWeight="600"
+                    rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    _hover={{ bg: "#C2DECF", transform: "translateY(-1px)" }}
+                    transition="all 0.2s"
+                    boxShadow="0 4px 14px rgba(0, 0, 0, 0.15)"
                     onClick={scrollToWaitlist}
                   >
-                    Join pre-release list
+                    Join Pre-Release List
                   </Button>
-                  <Text fontSize="sm" color="whiteAlpha.600">
-                    Major launch discount for early registrants.
+                  <Text fontSize="11.5px" color="rgba(255, 255, 255, 0.6)">
+                    Exclusive launch pricing for early practitioners.
                   </Text>
                 </VStack>
               )}
             </Box>
           </HStack>
 
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} w="100%">
+          {/* 🏛️ 6 Detailed Feature Bento Grid */}
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4} w="100%">
             <FeatureCard
               icon={FiZap}
               title="25+ Screening Assessments"
-              description="Assign, track, and visualize over 25 clinical screening tools with automated scoring and progress insights."
+              description="Assign, track, and visualize validated clinical screening instruments with automated scoring and longitudinal progress insights."
             />
             <FeatureCard
               icon={FiBook}
-              title="200+ Therapist Resources"
-              description="A curated vault of worksheets, exercises, psychoeducation, and audio tools built for real clinical practice."
+              title="200+ Clinical Worksheets"
+              description="A curated repository of evidence-based worksheets, cognitive restructuring prompts, and psychoeducational workbooks."
             />
             <FeatureCard
               icon={FiHeart}
               title="Therapist Self-Care Checks"
-              description="Burnout-aware wellness prompts and self-care rituals so you can sustain the work you do for others."
+              description="Compassion-fatigue monitors and mindful pause rituals designed to preserve your clinical energy and well-being."
             />
             <FeatureCard
               icon={FiMessageCircle}
-              title="Private In-Platform Chat"
-              description="Complete chat with full privacy, so you never have to share your personal number with a client again."
+              title="Encrypted Client Care Hub"
+              description="Secure between-session messaging and resource sharing without ever exposing personal phone numbers or channels."
             />
             <FeatureCard
               icon={FiActivity}
-              title="Client Journey Hub"
-              description="Goals, journal intensity, and shared resources in one calm clinical snapshot."
+              title="Client Caseload Insights"
+              description="Live goals tracking, journal emotional intensities, and appointment history unified in one calm clinical view."
             />
             <FeatureCard
               icon={FiTarget}
               title="Practice Growth Suite"
-              description="Advanced analytics, priority discovery visibility, and automation for follow-ups and retention."
+              description="Priority clinician directory placement, patient engagement analytics, and automated follow-up workflows."
             />
           </SimpleGrid>
         </VStack>
       </Box>
 
       {!unlocked && (
-        <Box mt={12}>
+        <Box mt={8}>
           <PremiumPreReleaseForm audience="therapist" id="premium-pre-release" />
         </Box>
       )}
@@ -156,17 +191,28 @@ export default function PremiumTherapist() {
 function FeatureCard({ icon, title, description }) {
   return (
     <Box
-      bg="rgba(255,255,255,0.04)"
-      p={8}
-      borderRadius="4xl"
+      bg="rgba(255, 255, 255, 0.04)"
+      p={5}
+      borderRadius="2xl"
       border="1px solid"
-      borderColor="rgba(255,255,255,0.08)"
+      borderColor="rgba(255, 255, 255, 0.08)"
+      transition="all 0.2s"
+      _hover={{ borderColor: "rgba(169, 203, 183, 0.25)" }}
     >
-      <Icon as={icon} boxSize={8} color="#A9CBB7" mb={6} />
-      <Heading size="md" mb={4} color="white">
+      <Circle size="36px" bg="rgba(169, 203, 183, 0.12)" color="#A9CBB7" mb={3.5}>
+        <Icon as={icon} boxSize="16px" />
+      </Circle>
+      <Heading 
+        fontSize="15px" 
+        fontWeight="600"
+        mb={2} 
+        color="white"
+        fontFamily="'Outfit', var(--font-outfit), sans-serif"
+        letterSpacing="-0.01em"
+      >
         {title}
       </Heading>
-      <Text color="whiteAlpha.700" lineHeight="tall">
+      <Text color="rgba(255, 255, 255, 0.72)" fontSize="13px" lineHeight="1.6">
         {description}
       </Text>
     </Box>

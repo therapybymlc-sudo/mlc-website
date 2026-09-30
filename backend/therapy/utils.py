@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Q
 from django.utils import timezone
 from .models import TherapistProfile, ClientProfile, TherapeuticRelationship
 
@@ -317,6 +318,10 @@ def _resolve_client_from_request(request):
 
         email = getattr(auth_user, "email", None)
         if not email:
+            return None
+
+        # Hard guard: Clinicians / therapists should NEVER be resolved or created as clients
+        if TherapistProfile.objects.filter(Q(user=auth_user) | Q(email__iexact=email)).exists():
             return None
 
         client = ClientProfile.objects.filter(email__iexact=email).first()

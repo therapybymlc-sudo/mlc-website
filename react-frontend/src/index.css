@@ -87,14 +87,53 @@ h4 {
 
 body,
 p, 
+span,
+div,
 button, 
 input, 
 textarea, 
 select, 
 label, 
-.nav-item {
-  font-family: 'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+.nav-item,
+.chakra-tag,
+.chakra-tag__label,
+.chakra-tag__close-button,
+[class*="multi-value"],
+[class*="multi-value__label"],
+[class*="multi-value__remove"],
+[class*="value-container"] {
+  font-family: 'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
+
+/* Ensure react-select multi-value pills flow horizontally and render with sans-serif */
+[class*="value-container--is-multi"] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+[class*="multi-value"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  max-width: none !important;
+  background-color: rgba(86, 117, 109, 0.1) !important;
+  border: 1px solid rgba(86, 117, 109, 0.22) !important;
+  border-radius: 9999px !important;
+}
+
+[class*="multi-value__label"] {
+  font-family: 'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #263A33 !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
 
 p {
   font-size: 1rem;

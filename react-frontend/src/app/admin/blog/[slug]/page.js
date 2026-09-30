@@ -26,7 +26,7 @@ export default function EditBlogPage() {
         }
     };
 
-    if (loading) return <Center h="80vh"><Spinner size="xl" color="teal.500" /></Center>;
+    if (loading) return <Center h="80vh"><Spinner size="xl" color="#56756D" /></Center>;
     if (!post) return <Center h="80vh">Post not found</Center>;
 
     return <BlogEditor isEdit={true} initialData={post} />;

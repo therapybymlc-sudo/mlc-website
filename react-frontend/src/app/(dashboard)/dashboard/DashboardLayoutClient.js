@@ -70,6 +70,7 @@ export default function DashboardLayout({ children }) {
     authReady,
     roleDashboardMismatch,
     clearRoleDashboardMismatch,
+    whoami,
   } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const pathname = usePathname();
@@ -83,9 +84,12 @@ export default function DashboardLayout({ children }) {
     setMounted(true);
   }, []);
 
+  const hasPractitionerIdentity =
+    isTherapist || !!therapistProfile || !!whoami?.has_therapist_profile;
+
   const isTherapistPendingVerification =
     onTherapistDashboardRoute &&
-    !!isTherapist &&
+    hasPractitionerIdentity &&
     !isAdmin &&
     therapistProfile &&
     therapistProfile.is_verified === false;
@@ -95,7 +99,7 @@ export default function DashboardLayout({ children }) {
     if (!mounted || !isLoaded || !authReady) return;
 
     // 1. Client user attempting to access Practitioner workspace
-    if (onTherapistDashboardRoute && isClient && !isTherapist && !isAdmin) {
+    if (onTherapistDashboardRoute && isClient && !hasPractitionerIdentity && !isAdmin) {
       toast.closeAll();
       signOut().then(() => {
         router.replace("/login/client?mismatch=client");
@@ -104,7 +108,7 @@ export default function DashboardLayout({ children }) {
     }
 
     // 2. Therapist user attempting to access Client workspace
-    if (onClientDashboardRoute && isTherapist && !isClient && !isAdmin) {
+    if (onClientDashboardRoute && hasPractitionerIdentity && !isClient && !isAdmin) {
       toast.closeAll();
       signOut().then(() => {
         router.replace("/login/therapist?mismatch=therapist");
@@ -118,17 +122,25 @@ export default function DashboardLayout({ children }) {
     onTherapistDashboardRoute,
     onClientDashboardRoute,
     isClient,
-    isTherapist,
+    hasPractitionerIdentity,
     isAdmin,
     router,
     toast,
     signOut,
   ]);
 
+  useEffect(() => {
+    if (roleDashboardMismatch) {
+      if ((hasPractitionerIdentity && onTherapistDashboardRoute) || (isClient && onClientDashboardRoute)) {
+        clearRoleDashboardMismatch();
+      }
+    }
+  }, [roleDashboardMismatch, hasPractitionerIdentity, onTherapistDashboardRoute, isClient, onClientDashboardRoute, clearRoleDashboardMismatch]);
+
   const isUnauthorizedMismatch =
     mounted && isLoaded && authReady && (
-      (onTherapistDashboardRoute && isClient && !isTherapist && !isAdmin) ||
-      (onClientDashboardRoute && isTherapist && !isClient && !isAdmin)
+      (onTherapistDashboardRoute && isClient && !hasPractitionerIdentity && !isAdmin) ||
+      (onClientDashboardRoute && hasPractitionerIdentity && !isClient && !isAdmin)
     );
 
   const isPlaceholderClientIdentity = useMemo(() => {
@@ -158,37 +170,43 @@ export default function DashboardLayout({ children }) {
 
   const links = useMemo(() => {
     const therapistLinks = [
+      { type: 'header', label: 'Clinical Practice' },
       { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
       { label: 'Clients', icon: FiUsers, href: '/dashboard/therapist/clients' },
       { label: 'Clinical Blueprints', icon: FiClipboard, href: '/dashboard/therapist/notes' },
       { label: 'My Schedule', icon: FiCalendar, href: '/dashboard/therapist/schedule' },
       { label: 'Booking requests', icon: FiInbox, href: '/dashboard/therapist/booking-requests' },
       { label: 'Availability', icon: FiClock, href: '/dashboard/therapist/availability' },
-      { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
-      { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
-      { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
+      { type: 'header', label: 'Community & Tools' },
       { label: 'Care Space', icon: FiHeart, href: '/dashboard/therapist/care' },
       { label: 'Community Hub', icon: FiShare2, href: '/dashboard/therapist/community' },
       hasSupervisorEligibility
         ? { label: 'Supervision Hub', icon: FiAward, href: '/dashboard/therapist/supervision' }
         : { label: 'Supervisee Suite', icon: FiAward, href: '/dashboard/therapist/supervisee' },
+      { label: 'Resources', icon: FiBookOpen, href: '/dashboard/therapist/resources' },
+      { label: 'The Therapist OS', icon: FiTarget, href: '/dashboard/therapist/premium' },
+      { type: 'header', label: 'Management' },
       { label: 'Messages', icon: FiMessageSquare, href: '/dashboard/therapist/messages' },
       { label: 'Earnings', icon: FiTrendingUp, href: '/dashboard/therapist/earnings' },
-      { label: 'The Therapist OS', icon: FiTarget, href: '/dashboard/therapist/premium' },
+      { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
+      { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
       { label: 'Need Help?', icon: FiHelpCircle, href: '/dashboard/therapist/support' },
     ];
 
     const clientLinks = [
+      { type: 'header', label: 'Sessions & Care' },
       { label: 'Overview', icon: FiLayout, href: '/dashboard/client', isClient: true },
       { label: 'Appointments', icon: FiCalendar, href: '/dashboard/client/appointments' },
       { label: 'Booking requests', icon: FiInbox, href: '/dashboard/client/booking-requests' },
       { label: 'Messages', icon: FiMessageSquare, href: '/dashboard/client/messages' },
+      { type: 'header', label: 'Growth & Tools' },
       { label: 'My Goals', icon: FiCheckCircle, href: '/dashboard/client/goals' },
       { label: 'Journal', icon: FiFileText, href: '/dashboard/client/journal' },
-      { label: 'My Profile', icon: FiUser, href: '/dashboard/client/profile' },
       { label: 'The Lux Studio', icon: FiTarget, href: '/dashboard/client/premium' },
       { label: 'Care Tools', icon: FiBookOpen, href: '/dashboard/client/resources' },
       { label: 'Safety Plan', icon: FiHeart, href: '/dashboard/client/safety' },
+      { type: 'header', label: 'Account' },
+      { label: 'My Profile', icon: FiUser, href: '/dashboard/client/profile' },
       { label: 'Need Help?', icon: FiHelpCircle, href: '/dashboard/client/support' },
     ];
 
@@ -198,6 +216,7 @@ export default function DashboardLayout({ children }) {
 
     if (isTherapistPendingVerification) {
       return [
+        { type: 'header', label: 'Clinical Practice' },
         { label: 'Overview', icon: FiLayout, href: '/dashboard/therapist' },
         { label: 'My Profile', icon: FiUser, href: '/dashboard/therapist/profile' },
         { label: 'Subscription', icon: FiTarget, href: '/dashboard/therapist/subscription' },
@@ -225,83 +244,180 @@ export default function DashboardLayout({ children }) {
 
   if (!mounted || !isLoaded || !authReady || isUnauthorizedMismatch) {
     return (
-        <Center h="100vh">
+        <Center h="100vh" bg="#FAF8F5">
             <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
         </Center>
     );
   }
 
+  // Derive human-readable page name for breadcrumb
+  const pathParts = pathname?.split('/').filter(Boolean) || [];
+  const lastSegment = pathParts[pathParts.length - 1];
+  const pageTitle = (!lastSegment || lastSegment === 'client' || lastSegment === 'therapist')
+    ? 'Overview' 
+    : lastSegment.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
   return (
-    <Flex minH="100vh" bg="#F9FAFB">
+    <Flex minH="100vh" bg="#FAF8F5">
       {/* Desktop Sidebar */}
       <Box
         display={{ base: 'none', lg: 'block' }}
-        w="280px"
+        w="235px"
+        flexShrink={0}
         h="100vh"
         bg="white"
         borderRight="1px solid"
-        borderColor="gray.100"
+        borderColor="rgba(86, 117, 109, 0.12)"
         position="sticky"
         top="0"
         overflowY="auto"
+        zIndex="30"
+        sx={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+        }}
       >
         <SidebarContent links={links} pathname={pathname} signOut={signOut} />
       </Box>
 
       {/* Mobile Nav and Main Content */}
-      <Box flex="1" overflowX="hidden">
-        {/* Top Header Bar */}
+      <Box flex="1" overflowX="hidden" minW="0">
+        {/* Modern Dribbble-inspired Frosted Top Header Bar */}
         <Flex 
-          h="70px" 
-          px={8} 
+          h="64px" 
+          px={{ base: 4, lg: 8 }} 
           align="center" 
           justify="space-between" 
-          bg="transparent" 
+          bg="rgba(250, 248, 245, 0.85)" 
+          backdropFilter="blur(12px)"
+          borderBottom="1px solid"
+          borderColor="rgba(86, 117, 109, 0.12)"
+          position="sticky"
+          top="0"
+          zIndex="20"
           display={{ base: 'none', lg: 'flex' }}
         >
-           <Box /> 
-            <HStack spacing={6}>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                leftIcon={<Icon as={FiTarget} />} 
-                onClick={() => window.dispatchEvent(new CustomEvent('mlc-start-tour'))}
-                color="teal.700"
-                borderColor="teal.100"
-                bg="teal.50"
-                fontWeight="900"
-                fontSize="xs"
-                letterSpacing="0.1em"
+          {/* Breadcrumb / Workspace indicator */}
+          <HStack spacing={3}>
+            <Box 
+              w="8px" 
+              h="8px" 
+              borderRadius="full" 
+              bg="#56756D" 
+              boxShadow="0 0 0 3px rgba(169, 203, 183, 0.3)" 
+            />
+            <Text 
+              fontFamily="'Inter', var(--font-inter), sans-serif" 
+              fontSize="14px" 
+              fontWeight="600" 
+              color="#263A33"
+            >
+              {onClientDashboardRoute ? 'Client Portal' : 'Clinical Practice'}
+            </Text>
+            <Text color="rgba(86, 117, 109, 0.4)" fontSize="xs" fontWeight="bold">/</Text>
+            <Text 
+              fontFamily="'Inter', var(--font-inter), sans-serif" 
+              fontSize="13px" 
+              color="#56756D"
+              fontWeight="500"
+            >
+              {pageTitle}
+            </Text>
+          </HStack>
+
+          {/* Right Action Strip */}
+          <HStack spacing={3.5}>
+            {onClientDashboardRoute ? (
+              <Button
+                as={NextLink}
+                href="/dashboard/client/appointments"
+                size="sm"
+                height="38px"
                 borderRadius="full"
-                _hover={{ bg: 'teal.800', color: 'white', transform: 'scale(1.05)' }}
-                transition="all 0.3s"
+                bg="#56756D"
+                color="white"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+                _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                transition="all 0.2s"
+                boxShadow="0 2px 8px rgba(38, 58, 51, 0.1)"
               >
-                ORIENTATION
+                Book Session
               </Button>
-              <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
-            </HStack>
+            ) : (
+              <Button
+                as={NextLink}
+                href="/dashboard/therapist/schedule"
+                size="sm"
+                height="38px"
+                borderRadius="full"
+                bg="#56756D"
+                color="white"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+                _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                transition="all 0.2s"
+                boxShadow="0 2px 8px rgba(38, 58, 51, 0.1)"
+              >
+                My Schedule
+              </Button>
+            )}
+
+            <Button 
+              size="sm" 
+              height="38px"
+              variant="outline" 
+              leftIcon={<Icon as={FiTarget} boxSize="13px" />} 
+              onClick={() => window.dispatchEvent(new CustomEvent('mlc-start-tour'))}
+              color="#56756D"
+              borderColor="rgba(86, 117, 109, 0.25)"
+              bg="rgba(169, 203, 183, 0.1)"
+              fontWeight="600"
+              fontSize="12px"
+              letterSpacing="0.05em"
+              borderRadius="full"
+              _hover={{ bg: 'rgba(86, 117, 109, 0.15)', color: '#263A33', borderColor: '#56756D' }}
+              transition="all 0.2s"
+            >
+              TOUR
+            </Button>
+
+            <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
+          </HStack>
         </Flex>
 
+        {/* Mobile Top Header */}
         <Flex
           display={{ base: 'flex', lg: 'none' }}
           align="center"
           justify="space-between"
-          p={4}
-          bg="white"
+          p={3.5}
+          bg="rgba(250, 248, 245, 0.95)"
+          backdropFilter="blur(10px)"
           borderBottom="1px solid"
-          borderColor="gray.100"
+          borderColor="rgba(86, 117, 109, 0.15)"
+          position="sticky"
+          top="0"
+          zIndex="20"
         >
-          <HStack spacing={3} as={NextLink} href="/" _hover={{ textDecoration: 'none' }}>
+          <HStack spacing={2.5} as={NextLink} href="/" _hover={{ textDecoration: 'none' }}>
              <Box 
-               w="36px" 
-               h="36px" 
+               w="34px" 
+               h="34px" 
                borderRadius="10px" 
                bg="white" 
                border="1px solid rgba(86, 117, 109, 0.2)" 
                p={1}
-               display="flex"
-               alignItems="center"
-               justifyContent="center"
+               display="flex" 
+               alignItems="center" 
+               justifyContent="center" 
                boxShadow="0 2px 6px rgba(38, 58, 51, 0.06)"
              >
                 <Image src="/logo_tra.png" alt="MLC" w="100%" h="100%" objectFit="contain" />
@@ -311,33 +427,39 @@ export default function DashboardLayout({ children }) {
                  fontFamily="'Playfair Display', Georgia, serif" 
                  fontWeight="600" 
                  color="#263A33" 
-                 fontSize="14.5px"
+                 fontSize="14.5px" 
                  lineHeight="1.2"
                >
                  MLC Portal
                </Text>
                <Text 
-                 fontFamily="'Playfair Display', Georgia, serif" 
-                 fontStyle="italic" 
+                 fontFamily="'Inter', var(--font-inter), sans-serif" 
                  fontSize="11.5px" 
-                 color="#56756D"
+                 color="#56756D" 
                  lineHeight="1.2"
+                 fontWeight="500"
                >
-                 Mental Health Org
+                 {onClientDashboardRoute ? 'Client Portal' : 'Clinical Practice'}
                </Text>
              </VStack>
           </HStack>
-          <IconButton
-            icon={<HamburgerIcon />}
-            variant="ghost"
-            onClick={onOpen}
-            aria-label="Open sidebar"
-          />
+          <HStack spacing={2}>
+            <NotificationCenter isAuthenticated={!!user} authLoading={!isLoaded} />
+            <IconButton
+              icon={<HamburgerIcon />}
+              variant="ghost"
+              onClick={onOpen}
+              aria-label="Open sidebar"
+              size="sm"
+              borderRadius="full"
+              color="#263A33"
+            />
+          </HStack>
         </Flex>
 
         {/* Dash Page Content */}
         <Box p={{ base: 4, md: 8, lg: 10 }} key={pathname}>
-          {roleDashboardMismatch ? (
+          {roleDashboardMismatch && !(hasPractitionerIdentity && onTherapistDashboardRoute) && !(isClient && onClientDashboardRoute) ? (
             <Alert
               status="warning"
               variant="subtle"
@@ -429,7 +551,7 @@ export default function DashboardLayout({ children }) {
       {/* Mobile Sidebar Drawer */}
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
-        <DrawerContent>
+        <DrawerContent maxW="260px">
           <DrawerHeader borderBottomWidth="1px" p={4}>
             <HStack justify="space-between">
               <HStack spacing={2.5}>

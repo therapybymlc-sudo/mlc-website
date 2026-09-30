@@ -13,7 +13,11 @@ import {
   useToast,
   Alert,
   AlertIcon,
+  Heading,
+  HStack,
+  Icon,
 } from '@chakra-ui/react';
+import { FiCheckCircle } from 'react-icons/fi';
 import { apiPost } from '../api.js';
 import { useUser } from '@clerk/nextjs';
 
@@ -78,17 +82,26 @@ export default function PremiumPreReleaseForm({ audience = 'therapist', id = 'pr
 
   if (submitted) {
     return (
-      <Box id={id} bg="white" p={{ base: 6, md: 8 }} borderRadius="2xl" border="1px solid" borderColor="green.100">
-        <Alert status="success" borderRadius="xl" bg="green.50">
-          <AlertIcon />
+      <Box 
+        id={id} 
+        bg="linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)" 
+        p={{ base: 6, md: 8 }} 
+        borderRadius="2xl" 
+        border="1px solid rgba(16, 185, 129, 0.3)"
+        boxShadow="0 4px 20px -2px rgba(6, 78, 59, 0.08)"
+      >
+        <HStack spacing={3.5} align="start">
+          <Icon as={FiCheckCircle} color="#047857" boxSize="20px" mt={0.5} />
           <Box>
-            <Text fontWeight="700" color="green.800">Registration received</Text>
-            <Text fontSize="sm" color="green.700" mt={1}>
-              Thank you for joining the pre-release list. You will receive a major discount when{' '}
-              {audience === 'client' ? 'Lux Studio' : 'Therapist OS'} launches.
+            <Text fontWeight="600" color="#047857" fontSize="15px" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+              Registration Confirmed
+            </Text>
+            <Text fontSize="13px" color="#065F46" mt={1} lineHeight="1.5">
+              Thank you for reserving your spot. We will email you exclusive early-access pricing as soon as{' '}
+              {audience === 'client' ? 'Lux Studio' : 'Therapist OS'} is ready.
             </Text>
           </Box>
-        </Alert>
+        </HStack>
       </Box>
     );
   }
@@ -100,54 +113,111 @@ export default function PremiumPreReleaseForm({ audience = 'therapist', id = 'pr
       p={{ base: 6, md: 8 }}
       borderRadius="2xl"
       border="1px solid"
-      borderColor="gray.200"
-      boxShadow="sm"
+      borderColor="rgba(86, 117, 109, 0.14)"
+      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+      fontFamily="'Inter', var(--font-inter), sans-serif"
     >
       <VStack align="stretch" spacing={5} as="form" onSubmit={handleSubmit}>
         <Box>
-          <Text fontSize="xs" fontWeight="700" color="#56756D" letterSpacing="0.12em" textTransform="uppercase">
-            Pre-release registration
+          <Text fontSize="11px" fontWeight="700" color="#56756D" letterSpacing="0.08em" textTransform="uppercase">
+            Pre-Release Registration
           </Text>
-          <Text fontWeight="700" fontSize="lg" color="gray.800" mt={1}>
-            Get a major discount at launch
-          </Text>
-          <Text fontSize="sm" color="rgba(46,46,46,0.75)" mt={2}>
-            Premium is coming soon. Register now as a {audience === 'client' ? 'client' : 'therapist'} and we will
-            email you exclusive early-access pricing when {audience === 'client' ? 'Lux Studio' : 'Therapist OS'} goes live.
+          <Heading 
+            fontSize="18px" 
+            fontWeight="600" 
+            color="#263A33" 
+            mt={1}
+            fontFamily="'Outfit', var(--font-outfit), sans-serif"
+            letterSpacing="-0.01em"
+          >
+            Reserve Your Early-Access Pricing
+          </Heading>
+          <Text fontSize="13px" color="#5A6E65" mt={1.5} lineHeight="1.5">
+            Register now to receive premier launch pricing and early preview access when {audience === 'client' ? 'The Lux Studio' : 'Therapist OS'} goes live.
           </Text>
         </Box>
 
         <FormControl isRequired>
-          <FormLabel>Full name</FormLabel>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+          <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Full Name</FormLabel>
+          <Input 
+            value={name} 
+            onChange={(e) => setName(e.target.value)} 
+            placeholder="Your name" 
+            bg="#FAF8F5"
+            border="1px solid"
+            borderColor="rgba(86, 117, 109, 0.2)"
+            borderRadius="xl"
+            h="42px"
+            fontSize="13.5px"
+            _focus={{ borderColor: "#56756D", bg: "white", boxShadow: "0 0 0 1px #56756D" }}
+          />
         </FormControl>
+
         <FormControl isRequired>
-          <FormLabel>Email</FormLabel>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Email Address</FormLabel>
+          <Input 
+            type="email" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            placeholder="you@example.com" 
+            bg="#FAF8F5"
+            border="1px solid"
+            borderColor="rgba(86, 117, 109, 0.2)"
+            borderRadius="xl"
+            h="42px"
+            fontSize="13.5px"
+            _focus={{ borderColor: "#56756D", bg: "white", boxShadow: "0 0 0 1px #56756D" }}
+          />
         </FormControl>
+
         <FormControl>
-          <FormLabel>Phone (optional)</FormLabel>
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 …" />
+          <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Phone Number (Optional)</FormLabel>
+          <Input 
+            value={phone} 
+            onChange={(e) => setPhone(e.target.value)} 
+            placeholder="+1 … or +91 …" 
+            bg="#FAF8F5"
+            border="1px solid"
+            borderColor="rgba(86, 117, 109, 0.2)"
+            borderRadius="xl"
+            h="42px"
+            fontSize="13.5px"
+            _focus={{ borderColor: "#56756D", bg: "white", boxShadow: "0 0 0 1px #56756D" }}
+          />
         </FormControl>
+
         <FormControl>
-          <FormLabel>Anything you are most excited about? (optional)</FormLabel>
+          <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">What are you most looking forward to? (Optional)</FormLabel>
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Tell us what you hope Premium will help you with…"
+            placeholder="Share any specific tools, rituals, or features you'd love to see…"
             rows={3}
+            bg="#FAF8F5"
+            border="1px solid"
+            borderColor="rgba(86, 117, 109, 0.2)"
+            borderRadius="xl"
+            fontSize="13.5px"
+            _focus={{ borderColor: "#56756D", bg: "white", boxShadow: "0 0 0 1px #56756D" }}
           />
         </FormControl>
+
         <Button
           type="submit"
-          bg="#56756D"
+          bg="#263A33"
           color="white"
           borderRadius="full"
-          size="lg"
+          height="40px"
+          fontSize="13px"
+          fontWeight="600"
           isLoading={submitting}
-          _hover={{ bg: '#3E5B54' }}
+          _hover={{ bg: '#182722' }}
+          boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
+          w="fit-content"
+          px={8}
+          mt={1}
         >
-          Join pre-release list
+          Join Pre-Release List
         </Button>
       </VStack>
     </Box>

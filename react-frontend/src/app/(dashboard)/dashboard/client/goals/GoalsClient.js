@@ -14,8 +14,6 @@ import {
   Icon,
   SimpleGrid,
   Progress,
-  Tag,
-  Divider,
   Tabs,
   TabList,
   TabPanels,
@@ -29,6 +27,9 @@ import {
   Badge,
   Collapse,
   Stack,
+  Circle,
+  Spinner,
+  Center,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { 
@@ -37,26 +38,49 @@ import {
   FiTarget, 
   FiChevronDown, 
   FiChevronUp, 
-  FiCalendar, 
   FiClock, 
   FiTrendingUp,
-  FiEdit2,
-  FiSave
+  FiCompass,
+  FiCheck,
+  FiCheckCircle,
 } from "react-icons/fi";
 import { apiGet, apiPost, apiPut, apiDelete } from "../../../../../api.js";
 import { useAuth } from "../../../../../context/AuthContext";
 import RichTextEditor from "../../../../../components/RichTextEditor";
 
 const CATEGORIES = [
-  { id: 'daily', label: 'Daily Goals', color: '#56756D', icon: FiClock },
-  { id: 'short_term', label: 'Short Term', color: '#C9A960', icon: FiTrendingUp },
-  { id: 'long_term', label: 'Long Term', color: '#B08968', icon: FiTarget },
+  { 
+    id: 'daily', 
+    label: 'Daily Goals', 
+    color: '#56756D', 
+    badgeBg: 'rgba(86, 117, 109, 0.12)',
+    badgeColor: '#263A33',
+    badgeBorder: 'rgba(86, 117, 109, 0.22)',
+    icon: FiClock 
+  },
+  { 
+    id: 'short_term', 
+    label: 'Short Term', 
+    color: '#C9A960', 
+    badgeBg: 'rgba(201, 169, 96, 0.14)',
+    badgeColor: '#8D6B21',
+    badgeBorder: 'rgba(201, 169, 96, 0.28)',
+    icon: FiTrendingUp 
+  },
+  { 
+    id: 'long_term', 
+    label: 'Long Term', 
+    color: '#B08968', 
+    badgeBg: 'rgba(176, 137, 104, 0.14)',
+    badgeColor: '#7A5230',
+    badgeBorder: 'rgba(176, 137, 104, 0.28)',
+    icon: FiTarget 
+  },
 ];
 
 function normalizeRichTextHtml(html) {
   if (!html) return "";
   let out = String(html).trim();
-  // Some editors return a full HTML document; keep only body payload for safe embedding.
   out = out.replace(/<!doctype[^>]*>/gi, "");
   out = out.replace(/<\/?(html|head|body)[^>]*>/gi, "");
   return out.trim();
@@ -107,7 +131,7 @@ export default function GoalsClient() {
         title: newGoalTitle,
         description: normalizedDescription,
         category: activeCategory,
-        color: CATEGORIES.find(c => c.id === activeCategory).color,
+        color: CATEGORIES.find(c => c.id === activeCategory)?.color || '#56756D',
         is_completed: false,
       });
       const newGoals = [saved, ...goals];
@@ -116,9 +140,18 @@ export default function GoalsClient() {
       setNewGoalTitle("");
       setNewGoalDesc("");
       setShowAddForm(false);
-      toast({ title: "Goal anchored", status: "success" });
+      toast({ 
+        title: "Intention Anchored", 
+        description: "Your goal has been added to your healing roadmap.",
+        status: "success",
+        duration: 3000
+      });
     } catch (err) {
-      toast({ title: "Failed to anchor goal", status: "error" });
+      toast({ 
+        title: "Could not save goal", 
+        description: "Please check your network and try again.",
+        status: "error" 
+      });
     } finally {
       setIsAdding(false);
     }
@@ -142,7 +175,7 @@ export default function GoalsClient() {
       const newGoals = goals.filter(g => g.id !== id);
       setGoals(newGoals);
       localStorage.setItem("mlc_goals_cache", JSON.stringify(newGoals));
-      toast({ title: "Goal released", status: "info" });
+      toast({ title: "Goal removed", status: "info", duration: 2500 });
     } catch (err) {
       toast({ title: "Could not remove goal", status: "error" });
     }
@@ -152,7 +185,11 @@ export default function GoalsClient() {
     setIsMounted(true);
     const cached = localStorage.getItem("mlc_goals_cache");
     if (cached) {
-      try { setGoals(JSON.parse(cached)); } catch (e) {}
+      try { 
+        setGoals(JSON.parse(cached)); 
+      } catch {
+        // Ignore cache parse errors
+      }
     }
   }, []);
 
@@ -160,7 +197,7 @@ export default function GoalsClient() {
     if (!authLoading && isAuthenticated) {
       fetchGoals();
     } else if (!authLoading && !isAuthenticated) {
-        setLoading(false);
+      setLoading(false);
     }
   }, [authLoading, isAuthenticated]);
 
@@ -173,66 +210,228 @@ export default function GoalsClient() {
   };
 
   return (
-    <Box maxW="1000px" mx="auto" pb={20}>
-      <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'stretch', md: 'flex-end' }} mb={10} gap={4}>
-        <VStack id="tour-goals-header" align={{ base: "center", md: "start" }} spacing={1} textAlign={{ base: "center", md: "left" }}>
-          <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">
-            Your Healing Roadmap
-          </Heading>
-          <Text color="gray.500">Tiered intentions for your evolution.</Text>
-        </VStack>
-        <Button 
-          id="tour-goals-new"
-          leftIcon={<FiPlus />} 
-          bg="#56756D" 
-          color="white" 
-          borderRadius="full" 
-          px={8}
-          w={{ base: "full", md: "auto" }}
-          onClick={() => setShowAddForm(!showAddForm)}
-          _hover={{ bg: '#C9A960' }}
+    <Box maxW="1240px" mx="auto" pb={12} fontFamily="'Inter', var(--font-inter), sans-serif">
+      {/* 🌿 Framed Header Card */}
+      <Box 
+        id="tour-goals-header"
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', md: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'start', md: 'center' }} 
+          gap={4}
         >
-          New Intention
-        </Button>
-      </Flex>
+          {/* Identity & Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiCheckCircle} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg="#10B981" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0" 
+              />
+            </Box>
 
-      {/* Stats Board */}
-      <SimpleGrid id="tour-goals-stats" columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
-        {CATEGORIES.map(cat => (
-          <Box key={cat.id} bg="white" p={6} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-            <HStack justify="space-between" mb={3}>
-              <Text fontSize="xs" fontWeight="800" color="gray.400" letterSpacing="widest">{cat.label.toUpperCase()}</Text>
-              <Icon as={cat.icon} color={cat.color} />
-            </HStack>
-            <Heading size="md" mb={3} color={cat.color}>{Math.round(getProgress(cat.id))}%</Heading>
-            <Progress value={getProgress(cat.id)} size="sm" borderRadius="full" colorScheme="teal" bg="gray.50" />
-          </Box>
-        ))}
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2}>
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.12)" 
+                  color="#56756D" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full" 
+                  px={2.5} 
+                  py={0.5} 
+                  textTransform="uppercase" 
+                  letterSpacing="0.08em"
+                >
+                  Growth Intentions
+                </Badge>
+              </HStack>
+              <Heading 
+                as="h1"
+                fontSize={{ base: "21px", sm: "25px" }} 
+                fontWeight="600" 
+                color="#263A33" 
+                letterSpacing="-0.015em"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                lineHeight="1.25"
+              >
+                Your Healing Roadmap
+              </Heading>
+              <Text color="#5A6E65" fontSize="13px" fontWeight="400">
+                Tiered intentions and mindful milestones for your evolution.
+              </Text>
+            </VStack>
+          </HStack>
+
+          <Button 
+            id="tour-goals-new"
+            leftIcon={<Icon as={FiPlus} boxSize="13px" />} 
+            bg="#56756D" 
+            color="white" 
+            borderRadius="full" 
+            height="38px"
+            fontSize="13px"
+            fontWeight="600"
+            px={5}
+            w={{ base: "full", md: "auto" }}
+            onClick={() => setShowAddForm(!showAddForm)}
+            _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+            transition="all 0.2s"
+            whiteSpace="nowrap"
+            boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+          >
+            {showAddForm ? "Close Form" : "New Intention"}
+          </Button>
+        </Flex>
+      </Box>
+
+      {/* 📊 Bento Stats Board */}
+      <SimpleGrid id="tour-goals-stats" columns={{ base: 1, md: 3 }} spacing={4} mb={8}>
+        {CATEGORIES.map(cat => {
+          const prog = Math.round(getProgress(cat.id));
+          return (
+            <Box 
+              key={cat.id} 
+              bg="white" 
+              p={5} 
+              borderRadius="2xl" 
+              boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+              border="1px solid" 
+              borderColor="rgba(86, 117, 109, 0.14)"
+              transition="all 0.2s"
+              _hover={{ borderColor: "rgba(86, 117, 109, 0.25)" }}
+            >
+              <HStack justify="space-between" mb={2}>
+                <Text 
+                  fontSize="11px" 
+                  fontWeight="700" 
+                  color="#718096" 
+                  letterSpacing="0.08em" 
+                  textTransform="uppercase"
+                >
+                  {cat.label}
+                </Text>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.08)" color="#56756D">
+                  <Icon as={cat.icon} boxSize="13px" />
+                </Circle>
+              </HStack>
+
+              <Text 
+                fontSize="26px" 
+                fontWeight="600" 
+                mb={3} 
+                color="#263A33" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                letterSpacing="-0.02em"
+              >
+                {prog}%
+              </Text>
+
+              <Box position="relative" w="100%" h="6px" bg="rgba(86, 117, 109, 0.1)" borderRadius="full" overflow="hidden">
+                <Box 
+                  h="100%" 
+                  w={`${prog}%`} 
+                  bg="#56756D" 
+                  borderRadius="full" 
+                  transition="width 0.4s ease"
+                />
+              </Box>
+            </Box>
+          );
+        })}
       </SimpleGrid>
 
-      {/* Add Form Collapse */}
-      <Collapse in={showAddForm}>
-        <Box bg="white" p={8} borderRadius="3xl" shadow="md" mb={10} border="1px solid" borderColor="teal.50">
-          <VStack spacing={6} align="stretch">
-            <Stack direction={{ base: "column", md: "row" }} spacing={4}>
+      {/* ✍️ Add New Intention Form */}
+      <Collapse in={showAddForm} animateOpacity>
+        <Box 
+          bg="white" 
+          p={{ base: 5, md: 7 }} 
+          borderRadius="2xl" 
+          boxShadow="0 8px 30px -4px rgba(38, 58, 51, 0.08)" 
+          mb={8} 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.2)"
+        >
+          <VStack spacing={5} align="stretch">
+            <HStack justify="space-between">
+              <Heading 
+                fontSize="16px" 
+                fontWeight="600" 
+                color="#263A33"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              >
+                Create New Intention
+              </Heading>
+              <Badge 
+                bg="rgba(86, 117, 109, 0.1)" 
+                color="#56756D" 
+                borderRadius="full" 
+                px={2.5} 
+                py={0.5} 
+                fontSize="10px" 
+                fontWeight="700"
+              >
+                PERSONAL
+              </Badge>
+            </HStack>
+
+            <Stack direction={{ base: "column", md: "row" }} spacing={3}>
               <Input 
-                placeholder="What is your intention?" 
-                variant="filled"
-                bg="gray.50"
+                placeholder="What is your intention? (e.g., Daily Mindful Breathing)" 
+                bg="#FAF8F5"
+                border="1px solid"
+                borderColor="rgba(86, 117, 109, 0.2)"
                 borderRadius="xl"
-                h={{ base: "50px", md: "60px" }}
-                fontSize={{ base: "md", md: "lg" }}
-                fontWeight="600"
+                h="44px"
+                fontSize="14px"
+                fontWeight="500"
                 value={newGoalTitle}
                 onChange={(e) => setNewGoalTitle(e.target.value)}
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D", bg: "white" }}
+                flex={1}
               />
               <Menu>
-                <MenuButton as={Button} rightIcon={<FiChevronDown />} h={{ base: "50px", md: "60px" }} borderRadius="xl" px={6} bg="gray.50" minW={{ base: "full", md: "180px" }}>
+                <MenuButton 
+                  as={Button} 
+                  rightIcon={<Icon as={FiChevronDown} boxSize="13px" />} 
+                  h="44px" 
+                  borderRadius="xl" 
+                  px={5} 
+                  bg="#FAF8F5" 
+                  border="1px solid"
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  fontSize="13px"
+                  fontWeight="600"
+                  color="#263A33"
+                  minW={{ base: "full", md: "160px" }}
+                  _hover={{ bg: "white" }}
+                >
                   {CATEGORIES.find(c => c.id === activeCategory)?.label}
                 </MenuButton>
-                <MenuList borderRadius="xl" shadow="xl" border="none">
+                <MenuList borderRadius="xl" shadow="lg" border="1px solid rgba(86, 117, 109, 0.15)" p={1}>
                   {CATEGORIES.map(c => (
-                    <MenuItem key={c.id} onClick={() => setActiveCategory(c.id)} icon={<Icon as={c.icon} color={c.color} />}>
+                    <MenuItem 
+                      key={c.id} 
+                      onClick={() => setActiveCategory(c.id)} 
+                      icon={<Icon as={c.icon} color="#56756D" boxSize="13px" />}
+                      fontSize="13px"
+                      fontWeight="500"
+                      borderRadius="lg"
+                    >
                       {c.label}
                     </MenuItem>
                   ))}
@@ -241,57 +440,119 @@ export default function GoalsClient() {
             </Stack>
             
             <Box>
-              <Text fontSize="sm" fontWeight="700" color="gray.500" mb={2}>Context / Details</Text>
+              <Text fontSize="12px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em" mb={2}>
+                Context & Personal Notes (Optional)
+              </Text>
               <RichTextEditor 
                 value={newGoalDesc}
                 onChange={handleGoalDescriptionChange}
-                placeholder="Dive deeper into why this matters..."
+                placeholder="Describe why this intention is meaningful to your journey..."
               />
             </Box>
 
-            <Flex justify="flex-end" gap={3}>
-               <Button variant="ghost" onClick={() => setShowAddForm(false)} borderRadius="full">Cancel</Button>
-               <Button 
-                bg="#56756D" 
+            <Flex justify="flex-end" gap={3} pt={2}>
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowAddForm(false)} 
+                borderRadius="full"
+                size="sm"
+                height="34px"
+                fontSize="12.5px"
+                fontWeight="500"
+                color="#718096"
+                _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                bg="#263A33" 
                 color="white" 
                 borderRadius="full" 
-                px={10}
+                size="sm"
+                height="34px"
+                px={6}
+                fontSize="12.5px"
+                fontWeight="600"
                 onClick={handleAddGoal}
                 isLoading={isAdding}
                 loadingText="Anchoring..."
-                _hover={{ bg: '#C9A960' }}
-               >
-                 Save Goal
-               </Button>
+                _hover={{ bg: '#182722' }}
+              >
+                Anchor Intention
+              </Button>
             </Flex>
           </VStack>
         </Box>
       </Collapse>
 
-      <Tabs id="tour-goals-tabs" variant="soft-rounded" colorScheme="teal">
+      {/* 🏷️ Filter Pills & Content */}
+      <Tabs id="tour-goals-tabs" variant="unstyled">
         <TabList 
-          mb={8} 
-          bg="white" 
-          p={1} 
+          mb={6} 
+          bg="rgba(86, 117, 109, 0.08)" 
+          p="4px" 
           borderRadius="full" 
-          shadow="sm" 
           w={{ base: "100%", md: "fit-content" }}
           overflowX="auto"
           flexWrap="nowrap"
+          border="1px solid"
+          borderColor="rgba(86, 117, 109, 0.12)"
           sx={{
             "&::-webkit-scrollbar": { display: "none" },
             scrollbarWidth: "none",
           }}
         >
-          <Tab borderRadius="full" px={{ base: 4, md: 8 }} fontSize={{ base: "xs", md: "sm" }} fontWeight="700" flexShrink={0} whiteSpace="nowrap">All Goals</Tab>
+          <Tab 
+            borderRadius="full" 
+            px={{ base: 4, md: 6 }} 
+            py={1.5}
+            fontSize="12.5px" 
+            fontWeight="600" 
+            color="#5A6E65"
+            flexShrink={0} 
+            whiteSpace="nowrap"
+            transition="all 0.2s"
+            _hover={{ color: "#263A33" }}
+            _selected={{ 
+              bg: "#263A33", 
+              color: "white", 
+              boxShadow: "0 2px 8px rgba(38, 58, 51, 0.16)" 
+            }}
+          >
+            All Goals
+          </Tab>
           {CATEGORIES.map(cat => (
-            <Tab key={cat.id} borderRadius="full" px={{ base: 4, md: 8 }} fontSize={{ base: "xs", md: "sm" }} fontWeight="700" flexShrink={0} whiteSpace="nowrap">{cat.label}</Tab>
+            <Tab 
+              key={cat.id} 
+              borderRadius="full" 
+              px={{ base: 4, md: 6 }} 
+              py={1.5}
+              fontSize="12.5px" 
+              fontWeight="600" 
+              color="#5A6E65"
+              flexShrink={0} 
+              whiteSpace="nowrap"
+              transition="all 0.2s"
+              _hover={{ color: "#263A33" }}
+              _selected={{ 
+                bg: "#263A33", 
+                color: "white", 
+                boxShadow: "0 2px 8px rgba(38, 58, 51, 0.16)" 
+              }}
+            >
+              {cat.label}
+            </Tab>
           ))}
         </TabList>
 
         <TabPanels>
           <TabPanel p={0}>
-             <GoalsListView goals={goals} onToggle={handleToggleGoal} onDelete={handleDeleteGoal} />
+             <GoalsListView 
+              goals={goals} 
+              onToggle={handleToggleGoal} 
+              onDelete={handleDeleteGoal} 
+              onOpenAdd={() => setShowAddForm(true)}
+            />
           </TabPanel>
           {CATEGORIES.map(cat => (
             <TabPanel key={cat.id} p={0}>
@@ -299,6 +560,11 @@ export default function GoalsClient() {
                 goals={goals.filter(g => g.category === cat.id)} 
                 onToggle={handleToggleGoal} 
                 onDelete={handleDeleteGoal} 
+                categoryLabel={cat.label}
+                onOpenAdd={() => {
+                  setActiveCategory(cat.id);
+                  setShowAddForm(true);
+                }}
               />
             </TabPanel>
           ))}
@@ -308,18 +574,61 @@ export default function GoalsClient() {
   );
 }
 
-function GoalsListView({ goals, onToggle, onDelete }) {
+function GoalsListView({ goals, onToggle, onDelete, categoryLabel, onOpenAdd }) {
   if (goals.length === 0) {
     return (
-      <VStack py={20} bg="white" borderRadius="3xl" border="2px dashed" borderColor="gray.100">
-        <Icon as={FiTarget} boxSize={10} color="gray.200" mb={4} />
-        <Text color="gray.400">No intentions set in this category yet.</Text>
-      </VStack>
+      <Box 
+        bg="white" 
+        p={{ base: 8, md: 12 }} 
+        borderRadius="2xl" 
+        border="1px solid" 
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+        textAlign="center"
+      >
+        <VStack spacing={4} maxW="380px" mx="auto">
+          <Circle size="50px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+            <Icon as={FiCompass} boxSize="22px" />
+          </Circle>
+          <VStack spacing={1}>
+            <Heading 
+              fontSize="16px" 
+              fontWeight="600" 
+              color="#263A33"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+            >
+              {categoryLabel ? `No ${categoryLabel} Yet` : "No Intentions Set"}
+            </Heading>
+            <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
+              Set actionable personal intentions to guide your therapeutic journey and track your mindful milestones.
+            </Text>
+          </VStack>
+          {onOpenAdd && (
+            <Button
+              size="sm"
+              height="34px"
+              bg="#263A33"
+              color="white"
+              borderRadius="full"
+              fontSize="12.5px"
+              fontWeight="600"
+              px={5}
+              leftIcon={<Icon as={FiPlus} boxSize="12px" />}
+              onClick={onOpenAdd}
+              _hover={{ bg: "#182722", transform: "translateY(-1px)" }}
+              transition="all 0.2s"
+              mt={1}
+            >
+              Set First Intention
+            </Button>
+          )}
+        </VStack>
+      </Box>
     );
   }
 
   return (
-    <VStack align="stretch" spacing={4}>
+    <VStack align="stretch" spacing={3.5}>
       {goals.map((goal) => (
         <GoalItem key={goal.id} goal={goal} onToggle={onToggle} onDelete={onDelete} />
       ))}
@@ -329,93 +638,132 @@ function GoalsListView({ goals, onToggle, onDelete }) {
 
 function GoalItem({ goal, onToggle, onDelete }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const catColor = CATEGORIES.find(c => c.id === goal.category)?.color || '#56756D';
-
+  const catMeta = CATEGORIES.find(c => c.id === goal.category) || CATEGORIES[0];
   const safeDescription = normalizeRichTextHtml(goal.description || "");
 
   return (
     <Box 
       bg="white" 
       borderRadius="2xl" 
-      shadow="sm" 
       border="1px solid" 
-      borderColor={goal.is_completed ? 'teal.50' : 'gray.50'}
+      borderColor={goal.is_completed ? 'rgba(86, 117, 109, 0.1)' : 'rgba(86, 117, 109, 0.15)'}
+      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
       overflow="hidden"
-      transition="0.3s"
-      _hover={{ shadow: 'md', transform: 'translateY(-2px)' }}
+      transition="all 0.2s"
+      _hover={{ borderColor: 'rgba(86, 117, 109, 0.28)' }}
     >
-      <Box p={5}>
-        <HStack justify="space-between">
-          <HStack spacing={4} flex="1">
+      <Box p={{ base: 4, sm: 5 }}>
+        <HStack justify="space-between" align="center" spacing={3}>
+          <HStack spacing={3.5} flex="1" overflow="hidden">
             <Checkbox 
-              colorScheme="teal" 
+              colorScheme="green" 
               size="lg" 
               isChecked={goal.is_completed}
               onChange={() => onToggle(goal)}
+              sx={{
+                '[data-checked]': {
+                  bg: '#263A33 !important',
+                  borderColor: '#263A33 !important',
+                },
+                borderRadius: 'md',
+              }}
             />
-            <VStack align="start" spacing={0} onClick={() => setIsExpanded(!isExpanded)} cursor="pointer" flex="1" overflow="hidden">
-              <HStack w="full" wrap="nowrap">
+            
+            <VStack 
+              align="start" 
+              spacing={0.5} 
+              onClick={() => safeDescription && setIsExpanded(!isExpanded)} 
+              cursor={safeDescription ? "pointer" : "default"} 
+              flex="1" 
+              overflow="hidden"
+            >
+              <HStack w="full" wrap="nowrap" spacing={2.5}>
                 <Text 
-                  fontWeight="700" 
-                  color={goal.is_completed ? 'gray.300' : '#2E2E2E'}
+                  fontWeight="600" 
+                  color={goal.is_completed ? '#A0AEC0' : '#263A33'}
                   textDecoration={goal.is_completed ? 'line-through' : 'none'}
-                  fontSize={{ base: "md", md: "lg" }}
+                  fontSize={{ base: "13.5px", md: "14.5px" }}
                   noOfLines={1}
                   flex={1}
+                  fontFamily="'Inter', var(--font-inter), sans-serif"
                 >
                   {goal.title}
                 </Text>
+                
                 <Badge 
-                  bg={catColor} 
-                  color="white" 
-                  fontSize="8px" 
+                  bg={catMeta.badgeBg} 
+                  color={catMeta.badgeColor} 
+                  border="1px solid"
+                  borderColor={catMeta.badgeBorder}
+                  fontSize="10px" 
+                  fontWeight="700" 
                   borderRadius="full" 
-                  px={2}
-                  opacity={goal.is_completed ? 0.3 : 0.8}
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.04em"
+                  opacity={goal.is_completed ? 0.45 : 1}
                   whiteSpace="nowrap"
                   display={{ base: "none", sm: "block" }}
                 >
-                  {goal.category?.replace('_', ' ').toUpperCase()}
+                  {catMeta.label.toUpperCase()}
                 </Badge>
               </HStack>
-              <Text fontSize="xs" color="gray.400">
-                Created {new Date(goal.created_at).toLocaleDateString()}
+              
+              <Text fontSize="11.5px" color="#718096">
+                Created {new Date(goal.created_at || Date.now()).toLocaleDateString(undefined, {
+                  month: 'numeric',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
               </Text>
             </VStack>
           </HStack>
           
-          <HStack spacing={2}>
+          <HStack spacing={1} flexShrink={0}>
             {safeDescription && (
               <IconButton 
-                icon={isExpanded ? <FiChevronUp /> : <FiChevronDown />} 
+                icon={<Icon as={isExpanded ? FiChevronUp : FiChevronDown} boxSize="15px" />} 
                 variant="ghost" 
                 size="sm"
+                borderRadius="full"
+                color="#56756D"
+                _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                aria-label="Expand goal details"
                 onClick={() => setIsExpanded(!isExpanded)}
               />
             )}
             <IconButton 
-              icon={<FiTrash2 />} 
+              icon={<Icon as={FiTrash2} boxSize="14px" />} 
               variant="ghost" 
               size="sm" 
-              color="gray.200" 
-              _hover={{ color: 'red.500', bg: 'red.50' }}
+              borderRadius="full"
+              color="#A0AEC0" 
+              _hover={{ color: '#E53E3E', bg: 'rgba(239, 68, 68, 0.08)' }}
+              aria-label="Delete goal"
               onClick={() => onDelete(goal.id)}
             />
           </HStack>
         </HStack>
       </Box>
 
-      <Collapse in={isExpanded}>
-        <Box px={14} pb={6} pt={0}>
-          <Divider mb={4} opacity={0.5} />
-          <Box 
-            fontSize="sm" 
-            color="gray.600" 
-            className="rich-text-content"
-            dangerouslySetInnerHTML={{ __html: safeDescription }} 
-          />
-        </Box>
-      </Collapse>
+      {safeDescription && (
+        <Collapse in={isExpanded} animateOpacity>
+          <Box px={{ base: 5, md: 12 }} pb={5} pt={1}>
+            <Box 
+              bg="rgba(250, 248, 245, 0.8)" 
+              p={4} 
+              borderRadius="xl" 
+              border="1px solid" 
+              borderColor="rgba(86, 117, 109, 0.1)"
+              fontSize="13px" 
+              color="#263A33" 
+              lineHeight="1.5"
+              className="rich-text-content"
+              dangerouslySetInnerHTML={{ __html: safeDescription }} 
+            />
+          </Box>
+        </Collapse>
+      )}
     </Box>
   );
 }

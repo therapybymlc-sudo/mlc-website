@@ -10,10 +10,11 @@ import {
 } from "@chakra-ui/react";
 import { 
   FiCheckCircle, FiClock, FiCalendar, FiShield, FiLock, 
-  FiArrowLeft, FiVideo, FiUser, FiInfo, FiCheck
+  FiArrowLeft, FiVideo, FiUser, FiInfo, FiCheck, FiZap
 } from "react-icons/fi";
 import Link from 'next/link';
 import { useUser } from "@clerk/nextjs";
+import { useAuth } from "../../../context/AuthContext";
 import { apiPost } from "../../../api.js";
 
 export default function CheckoutClient() {
@@ -27,12 +28,14 @@ export default function CheckoutClient() {
   
   const therapistId = searchParams.get('therapist');
   const slotId = searchParams.get('slot');
+  const sessionType = searchParams.get('type') === 'supervision' ? 'supervision' : 'individual';
+  const isSupervision = sessionType === 'supervision';
 
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [slot, setSlot] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [bookingRequestId, setBookingRequestId] = useState(null);
+  const [_bookingRequestId, setBookingRequestId] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -107,6 +110,7 @@ export default function CheckoutClient() {
       const order = await apiPost("payments/razorpay/create-order", {
         therapist_id: therapistId,
         slot_id: slotId,
+        session_type: sessionType,
       });
 
       setBookingRequestId(order.booking_request_id);
@@ -190,6 +194,86 @@ export default function CheckoutClient() {
     }
   };
 
+  const auth = useAuth();
+  const isAuthDummyClient = auth?.isDummyClient;
+  const userEmail = (user?.primaryEmailAddress?.emailAddress || "").toLowerCase();
+  const userName = (user?.fullName || "").toLowerCase();
+  const isDummyClient = Boolean(
+    isAuthDummyClient ||
+    userEmail.includes("dummy") ||
+    userEmail.includes("test") ||
+    userName.includes("dummy")
+  );
+
+  const isLocalhost = typeof window !== "undefined" && (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  );
+
+  const therapistEmail = (profile?.email || "").toLowerCase();
+  const therapistName = (profile?.name || "").toLowerCase();
+  const isDummyTherapist = Boolean(
+    profile && (
+      profile.id === 8 ||
+      therapistEmail.includes("dummy") ||
+      therapistEmail.includes("test") ||
+      therapistName.includes("dummy") ||
+      therapistName.includes("maya")
+    )
+  );
+
+  // Strictly localhost AND dummy client account AND dummy therapist account
+  const canSimulatePayment = Boolean(isLocalhost && isDummyClient && isDummyTherapist);
+
+  const handleSimulatePayment = async () => {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      toast({ title: "Please sign in as a dummy client to continue.", status: "info" });
+      const returnUrl = typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : "/book/checkout";
+      window.location.href = `/login/client?redirect_url=${encodeURIComponent(returnUrl)}`;
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const res = await apiPost("payments/simulate-booking", {
+        therapist_id: therapistId,
+        slot_id: slotId,
+        session_type: sessionType,
+        message_from_client: isSupervision ? "Local dev test clinical supervision" : "Local dev test booking",
+      });
+
+      if (res.booking_request_id) {
+        setBookingRequestId(res.booking_request_id);
+      }
+
+      toast({
+        title: "⚡ Payment Simulated Successfully!",
+        description: "Bypassed payment gateway. Session booked, Jitsi link created & confirmation emails triggered.",
+        status: "success",
+        duration: 8000,
+      });
+
+      setTimeout(() => {
+        window.location.href = "/dashboard/client/appointments";
+      }, 1500);
+    } catch (e) {
+      console.error("Simulation error", e);
+      const is404 = e?.response?.status === 404;
+      const detailMsg = is404
+        ? "Backend endpoint '/api/payments/simulate-booking/' returned 404 on https://api.mlchealth.in. The new backend code needs to be committed and pushed to GitHub main so Render can deploy it."
+        : (e?.response?.data?.detail || e.message || "Failed to simulate booking payment.");
+      toast({
+        title: is404 ? "Backend Route Not Deployed Yet" : "Simulation Failed",
+        description: detailMsg,
+        status: "warning",
+        duration: 9000,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (!isMounted) return <Box h="100vh" bg="#FDFBFA" />;
 
   if (isLoading) {
@@ -236,9 +320,13 @@ export default function CheckoutClient() {
   const slotEndDate = slot.end_time ? new Date(slot.end_time) : new Date(slotDate.getTime() + 50 * 60 * 1000);
   const endTimeStr = slotEndDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-  // Robust currency calculation without decimal duplication bugs
-  const rateNumber = parseFloat(profile.hourly_rate || 1200);
-  const formattedAmount = isNaN(rateNumber) ? "₹1,200" : `₹${rateNumber.toLocaleString('en-IN')}`;
+  // Robust currency calculation based on session type
+  const rateNumber = parseFloat(
+    isSupervision
+      ? (profile.supervision_hourly_rate || profile.hourly_rate || 1500)
+      : (profile.hourly_rate || 1200)
+  );
+  const formattedAmount = isNaN(rateNumber) ? (isSupervision ? "₹1,500" : "₹1,200") : `₹${rateNumber.toLocaleString('en-IN')}`;
 
   const clientName = user?.fullName || [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || "Registered Client";
   const clientEmail = user?.primaryEmailAddress?.emailAddress || "";
@@ -280,9 +368,9 @@ export default function CheckoutClient() {
               {/* Header Titles */}
               <VStack align="start" spacing={2}>
                 <Badge
-                  bg="rgba(86, 117, 109, 0.12)"
-                  color="#56756D"
-                  border="1px solid rgba(86, 117, 109, 0.25)"
+                  bg={isSupervision ? "rgba(140, 110, 45, 0.15)" : "rgba(86, 117, 109, 0.12)"}
+                  color={isSupervision ? "#8C6E2D" : "#56756D"}
+                  border={isSupervision ? "1px solid rgba(140, 110, 45, 0.3)" : "1px solid rgba(86, 117, 109, 0.25)"}
                   px={3}
                   py={0.8}
                   borderRadius="full"
@@ -291,7 +379,7 @@ export default function CheckoutClient() {
                   letterSpacing="0.08em"
                   textTransform="uppercase"
                 >
-                  Step 2 of 2 • Appointment Confirmation
+                  Step 2 of 2 • {isSupervision ? "Clinical Supervision Confirmation" : "Appointment Confirmation"}
                 </Badge>
                 <Heading
                   fontSize={{ base: "24px", md: "32px" }}
@@ -385,7 +473,7 @@ export default function CheckoutClient() {
                             Modality & Privacy
                           </Text>
                           <Text fontSize="13.5px" fontWeight="700" color="#263A33">
-                            Online 1-on-1 Video Consultation
+                            {isSupervision ? "Clinical Supervision & Mentorship" : "Online 1-on-1 Video Consultation"}
                           </Text>
                           <Text fontSize="12px" color="rgba(46,46,46,0.65)">
                             Private, peer-to-peer encrypted room (No software download required)
@@ -472,7 +560,7 @@ export default function CheckoutClient() {
                   {/* Breakdown Table */}
                   <VStack align="stretch" spacing={3} pt={1}>
                     <HStack justify="space-between" fontSize="13.5px" color="whiteAlpha.850">
-                      <Text>Clinical Consultation (50m)</Text>
+                      <Text>{isSupervision ? "Clinical Supervision (60m)" : "Clinical Consultation (50m)"}</Text>
                       <Text fontWeight="600" color="white">{formattedAmount}</Text>
                     </HStack>
 
@@ -528,6 +616,61 @@ export default function CheckoutClient() {
                   >
                     Confirm & Pay {formattedAmount}
                   </Button>
+
+                  {/* ⚡ Localhost Dev Only: Simulate Payment for Dummy Client -> Dummy Therapist */}
+                  {canSimulatePayment && (
+                    <Box
+                      p={3.5}
+                      borderRadius="xl"
+                      bg="rgba(16, 185, 129, 0.12)"
+                      border="1px dashed rgba(110, 231, 183, 0.5)"
+                      w="full"
+                    >
+                      <VStack spacing={2.5} align="stretch">
+                        <HStack justify="space-between">
+                          <Badge 
+                            bg="#10B981" 
+                            color="#064E3B" 
+                            borderRadius="full" 
+                            px={2.5} 
+                            py={0.5} 
+                            fontSize="9.5px"
+                            fontWeight="800"
+                            letterSpacing="0.05em"
+                            textTransform="uppercase"
+                          >
+                            Localhost Dev Mode
+                          </Badge>
+                          <Text fontSize="11px" color="#6EE7B7" fontWeight="700">
+                            Dummy Client ➔ Dummy Therapist
+                          </Text>
+                        </HStack>
+
+                        <Button
+                          w="full"
+                          h="44px"
+                          bg="#10B981"
+                          color="#064E3B"
+                          borderRadius="full"
+                          fontSize="13px"
+                          fontWeight="800"
+                          leftIcon={<Icon as={FiZap} boxSize="15px" />}
+                          isLoading={isProcessing}
+                          loadingText="Simulating Payment..."
+                          _hover={{ bg: "#34D399", transform: "translateY(-1px)" }}
+                          transition="all 0.15s ease"
+                          onClick={handleSimulatePayment}
+                          boxShadow="0 4px 14px rgba(16, 185, 129, 0.3)"
+                        >
+                          Simulate Payment (Bypass Gateway)
+                        </Button>
+
+                        <Text fontSize="11px" color="#D1FAE5" textAlign="center" lineHeight="1.5" fontWeight="500">
+                          Bypasses Razorpay, generates dummy payment details, creates appointment & triggers Jitsi video link + confirmation emails.
+                        </Text>
+                      </VStack>
+                    </Box>
+                  )}
 
                   {/* Security Footnote */}
                   <VStack spacing={2} pt={2} textAlign="center">

@@ -77,10 +77,16 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
               </HStack>
               
               <VStack align="start" spacing={3}>
-                <Heading size="xl" fontFamily="'Playfair Display', serif" color="#263A33">
+                <Heading 
+                  fontSize={{ base: "20px", md: "24px" }} 
+                  fontWeight="600" 
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                  color="#263A33" 
+                  letterSpacing="-0.015em"
+                >
                   {form.title}
                 </Heading>
-                <Text fontSize="md" color="rgba(46,46,46,0.75)" lineHeight="tall">
+                <Text fontSize="13.5px" color="#5A6E65" lineHeight="1.6">
                   {form.instructions || "Please complete this assessment to help your therapist understand your current state and progress."}
                 </Text>
               </VStack>
@@ -272,7 +278,14 @@ export default function AssessmentForm({ form, onSubmit, isLoading }) {
           <VStack spacing={8} align="stretch" textAlign="center" py={10}>
             <Icon as={FiCheckCircle} color="#6B8B7B" boxSize={20} mx="auto" />
             <VStack spacing={4}>
-              <Heading size="lg" fontFamily="'Playfair Display', serif">Ready to submit?</Heading>
+              <Heading 
+                fontSize="20px" 
+                fontWeight="600" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                color="#263A33"
+              >
+                Ready to submit?
+              </Heading>
               <Text color="rgba(46,46,46,0.75)" maxW="400px" mx="auto">
                 You've answered all {totalQuestions} items. Once submitted, your therapist will be notified and an automatic report will be generated.
               </Text>

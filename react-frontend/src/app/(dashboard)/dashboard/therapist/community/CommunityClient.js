@@ -1,19 +1,60 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid,
-  Icon, Image, Badge, Stack, Flex, Input, InputGroup, InputLeftElement,
-  useToast, Spinner, Center, Divider, Avatar, AvatarGroup,
-  Menu, MenuButton, MenuList, MenuItem, Tab, TabList, TabPanel, TabPanels, Tabs,
-  Tag, TagLabel, IconButton, useDisclosure, Modal, ModalOverlay, ModalContent,
-  ModalHeader, ModalBody, ModalFooter, ModalCloseButton, Textarea,
-  FormControl, FormLabel
+  Box,
+  VStack,
+  HStack,
+  Heading,
+  Text,
+  Button,
+  SimpleGrid,
+  Icon,
+  Badge,
+  Flex,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  useToast,
+  Spinner,
+  Center,
+  Divider,
+  Avatar,
+  AvatarGroup,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+  Tag,
+  TagLabel,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Textarea,
+  FormControl,
+  FormLabel,
+  Circle,
+  Stack,
 } from "@chakra-ui/react";
 import { 
-  FiSearch, FiPlus, FiMessageSquare, FiTrendingUp, FiHash, FiClock,
-  FiUser, FiUsers, FiMoreVertical, FiShare2, FiHeart, FiBookmark, FiFilter,
-  FiChevronRight, FiCheckCircle, FiShield
+  FiSearch,
+  FiPlus,
+  FiMessageSquare,
+  FiTrendingUp,
+  FiHash,
+  FiClock,
+  FiUsers,
+  FiShare2,
+  FiChevronRight,
+  FiCheckCircle,
+  FiShield,
+  FiCompass,
 } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
 import NextLink from "next/link";
@@ -26,69 +67,110 @@ const MotionBox = motion(Box);
 // ===========================
 
 const DiscussionCard = ({ thread, mounted }) => (
-    <MotionBox
-      as={NextLink}
-      href={`/dashboard/therapist/community/${thread.id}`}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      bg="white"
-      p={6}
-      borderRadius="2xl"
-      border="1px solid"
-      borderColor="gray.100"
-      shadow="sm"
-      _hover={{ shadow: "md", borderColor: "teal.100", transform: "translateY(-2px)", textDecoration: "none" }}
-      transition="all 0.2s"
-      display="block"
-    >
-      <VStack align="stretch" spacing={4}>
-        <HStack justify="space-between">
-          <HStack spacing={3}>
-            <Badge colorScheme="teal" borderRadius="full" px={3} variant="subtle" fontSize="2xs" fontWeight="800">
-              {thread.category_name}
+  <MotionBox
+    as={NextLink}
+    href={`/dashboard/therapist/community/${thread.id}`}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    bg="white"
+    p={5}
+    borderRadius="2xl"
+    border="1px solid"
+    borderColor="rgba(86, 117, 109, 0.14)"
+    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+    _hover={{
+      boxShadow: "0 8px 24px -4px rgba(38, 58, 51, 0.08)",
+      borderColor: "rgba(86, 117, 109, 0.28)",
+      transform: "translateY(-2px)",
+      textDecoration: "none"
+    }}
+    transition="all 0.2s"
+    display="block"
+  >
+    <VStack align="stretch" spacing={3}>
+      <HStack justify="space-between" align="center">
+        <HStack spacing={2}>
+          <Badge 
+            bg="rgba(86, 117, 109, 0.1)" 
+            color="#56756D" 
+            borderRadius="full" 
+            px={2.5} 
+            py={0.5} 
+            fontSize="10px" 
+            fontWeight="700"
+            letterSpacing="0.04em"
+            textTransform="uppercase"
+          >
+            {thread.category_name}
+          </Badge>
+          {thread.is_pinned && (
+            <Badge bg="#FEF3C7" color="#92400E" borderRadius="full" px={2} py={0.5} fontSize="10px" fontWeight="700">
+              PINNED
             </Badge>
-            {thread.is_pinned && <Icon as={FiHash} color="orange.400" />}
-          </HStack>
-          <Text fontSize="xs" color="gray.400">{mounted ? new Date(thread.created_at).toLocaleDateString() : ""}</Text>
+          )}
         </HStack>
-
-        <Heading size="md" color="teal.900" noOfLines={2}>{thread.title}</Heading>
-        
-        <Text fontSize="sm" color="gray.600" noOfLines={3}>
-          {thread.content}
+        <Text fontSize="11.5px" color="#718096">
+          {mounted && thread.created_at ? new Date(thread.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ""}
         </Text>
+      </HStack>
 
-        <HStack justify="space-between" pt={2}>
-          <HStack spacing={3}>
-            <Avatar size="xs" name={thread.author_name} src={thread.author_image} />
-            <Text fontSize="xs" fontWeight="700" color="gray.700">{thread.author_name}</Text>
+      <Heading 
+        as="h3"
+        fontSize="15px" 
+        fontWeight="600" 
+        color="#263A33" 
+        fontFamily="'Outfit', var(--font-outfit), sans-serif"
+        letterSpacing="-0.01em"
+        noOfLines={2}
+        lineHeight="1.35"
+      >
+        {thread.title}
+      </Heading>
+      
+      <Text fontSize="13px" color="#5A6E65" noOfLines={3} lineHeight="1.5">
+        {thread.content}
+      </Text>
+
+      <HStack justify="space-between" pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
+        <HStack spacing={2.5}>
+          <Avatar size="xs" name={thread.author_name} src={thread.author_image} />
+          <Text fontSize="12px" fontWeight="600" color="#263A33">{thread.author_name}</Text>
+        </HStack>
+        <HStack spacing={3}>
+          <HStack spacing={1} color="#718096">
+            <Icon as={FiMessageSquare} boxSize="12px" />
+            <Text fontSize="11.5px" fontWeight="600">{thread.comment_count || 0}</Text>
           </HStack>
-          <HStack spacing={4}>
-            <HStack spacing={1} color="gray.400">
-              <Icon as={FiMessageSquare} />
-              <Text fontSize="xs" fontWeight="600">{thread.comment_count}</Text>
-            </HStack>
-            <HStack spacing={1} color="gray.400">
-              <Icon as={FiClock} />
-              <Text fontSize="xs" fontWeight="600">{thread.views_count}</Text>
-            </HStack>
+          <HStack spacing={1} color="#718096">
+            <Icon as={FiClock} boxSize="12px" />
+            <Text fontSize="11.5px" fontWeight="600">{thread.views_count || 0}</Text>
           </HStack>
         </HStack>
-      </VStack>
-    </MotionBox>
+      </HStack>
+    </VStack>
+  </MotionBox>
 );
 
 const CategoryPill = ({ category, isActive, onClick }) => (
   <Button
     size="sm"
-    variant={isActive ? "solid" : "ghost"}
-    colorScheme={isActive ? "teal" : "gray"}
+    h="32px"
     borderRadius="full"
-    leftIcon={<Icon as={FiHash} />}
+    fontSize="12px"
+    fontWeight={isActive ? "700" : "500"}
+    bg={isActive ? "#56756D" : "rgba(250, 248, 245, 0.85)"}
+    color={isActive ? "white" : "#263A33"}
+    border="1px solid"
+    borderColor={isActive ? "#56756D" : "rgba(86, 117, 109, 0.16)"}
+    boxShadow={isActive ? "0 2px 6px rgba(86, 117, 109, 0.25)" : "none"}
+    leftIcon={<Icon as={FiHash} boxSize="11px" />}
     onClick={onClick}
-    px={4}
-    fontSize="xs"
-    fontWeight="800"
+    px={3.5}
+    _hover={{
+      bg: isActive ? "#46625B" : "rgba(86, 117, 109, 0.08)",
+      borderColor: "#56756D",
+    }}
+    flexShrink={0}
   >
     {category.name}
   </Button>
@@ -145,292 +227,542 @@ export default function CommunityClient() {
 
   const handleSubmitThread = async () => {
     if (!newThread.title || !newThread.content || !newThread.category) {
-        toast({ title: "Please fill all fields", status: "warning" });
-        return;
+      toast({ title: "Please fill all fields", status: "warning" });
+      return;
     }
     try {
-        setIsSubmitting(true);
-        const res = await apiPost("community/threads/", newThread);
-        setThreads([res, ...threads]);
-        onClose();
-        setNewThread({ title: "", content: "", category: "" });
-        toast({ title: "Discussion started!", status: "success" });
+      setIsSubmitting(true);
+      const res = await apiPost("community/threads/", newThread);
+      setThreads([res, ...threads]);
+      onClose();
+      setNewThread({ title: "", content: "", category: "" });
+      toast({ title: "Discussion started!", status: "success" });
     } catch (err) {
-        toast({ title: "Failed to post discussion", status: "error" });
+      toast({ title: "Failed to post discussion", status: "error" });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Box maxW="7xl" mx="auto">
-      <VStack align="stretch" spacing={8}>
-        {/* Header Section */}
-        <Flex justify="space-between" align="end" wrap="wrap" gap={4}>
-          <VStack align="start" spacing={1}>
-            <HStack color="teal.600">
-               <Icon as={FiShare2} />
-               <Text fontWeight="800" fontSize="xs" letterSpacing="widest">THERAPIST COLLECTIVE</Text>
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* 🌿 1. UNIFIED HERO BANNER CARD (Golden Benchmark) */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', lg: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', lg: 'center' }}
+          gap={4}
+        >
+          {/* Identity Badge + H1 + Subtitle */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiUsers} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg="#10B981" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0"
+              />
+            </Box>
+
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2} wrap="wrap">
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.1)" 
+                  color="#263A33" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.06em"
+                  textTransform="uppercase"
+                >
+                  Therapist Collective · Community
+                </Badge>
+                <Badge 
+                  bg="rgba(16, 185, 129, 0.12)" 
+                  color="#047857" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                >
+                  Verified Clinicians Only
+                </Badge>
+              </HStack>
+
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33" 
+                fontWeight="600"
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                Community Hub
+              </Heading>
+
+              <Text 
+                fontSize="13px" 
+                color="#5A6E65"
+                fontWeight="400"
+              >
+                Your dedicated space for peer consultation, clinical support, and shared resources.
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Right: Metric Strip + Action Buttons */}
+          <HStack 
+            spacing={3} 
+            wrap={{ base: 'wrap', sm: 'nowrap' }} 
+            w={{ base: 'full', lg: 'auto' }} 
+            justify={{ base: 'flex-start', lg: 'flex-end' }}
+          >
+            <HStack 
+              spacing={3} 
+              p={1.5} 
+              px={2.5}
+              borderRadius="xl" 
+              bg="rgba(250, 248, 245, 0.9)"
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)"
+            >
+              <HStack spacing={2} px={2} py={1}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                  <Icon as={FiMessageSquare} boxSize="13px" />
+                </Circle>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                    THREADS
+                  </Text>
+                  <Text fontSize="13px" fontWeight="700" color="#263A33">
+                    {threads.length}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+              <HStack spacing={2} px={2} py={1}>
+                <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669">
+                  <Icon as={FiUsers} boxSize="13px" />
+                </Circle>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                    ONLINE
+                  </Text>
+                  <Text fontSize="13px" fontWeight="700" color="#263A33">
+                    84+ Peers
+                  </Text>
+                </VStack>
+              </HStack>
             </HStack>
-            <Heading size="xl" color="teal.900" fontFamily="'Playfair Display', serif">Community Hub</Heading>
-            <Text color="gray.500">Your dedicated space for clinical peer support and professional growth.</Text>
-          </VStack>
-          <HStack spacing={4}>
+
             <Button 
-                as={NextLink}
-                href="/dashboard/therapist/community/peers"
-                leftIcon={<FiUsers />} 
-                variant="outline"
-                colorScheme="teal"
-                borderRadius="full" 
-                px={8}
+              as={NextLink}
+              href="/dashboard/therapist/community/peers"
+              variant="outline"
+              borderColor="rgba(86, 117, 109, 0.25)"
+              color="#263A33"
+              borderRadius="full"
+              height="38px"
+              fontSize="12.5px"
+              fontWeight="600"
+              px={4.5}
+              leftIcon={<Icon as={FiUsers} boxSize="13px" color="#56756D" />}
+              _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+              flexShrink={0}
             >
-                Browse Peers
+              Browse Peers
             </Button>
+
             <Button 
-                leftIcon={<FiPlus />} 
-                bg="teal.800" 
-                color="white" 
-                borderRadius="full" 
-                px={8}
-                _hover={{ bg: "teal.900" }}
-                onClick={onOpen}
+              bg="#263A33" 
+              color="white" 
+              borderRadius="full" 
+              height="38px"
+              fontSize="13px"
+              fontWeight="600"
+              px={5}
+              leftIcon={<Icon as={FiPlus} boxSize="13px" />}
+              _hover={{ bg: "#182722", transform: "translateY(-1px)" }}
+              transition="all 0.2s"
+              boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)"
+              onClick={onOpen}
+              flexShrink={0}
             >
-                Start Discussion
+              Start Discussion
             </Button>
           </HStack>
         </Flex>
+      </Box>
 
-        {/* Stats & Banner */}
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-            <Box bgGradient="linear(to-br, teal.800, teal.900)" p={6} borderRadius="3xl" color="white">
-                <VStack align="start" spacing={4}>
-                    <Icon as={FiShield} boxSize={8} opacity={0.6} />
-                    <Box>
-                        <Heading size="md" mb={1}>Clinical Circle</Heading>
-                        <Text fontSize="xs" opacity={0.8}>Strictly verified clinicians only. All discussions are privileged.</Text>
-                    </Box>
-                </VStack>
-            </Box>
-            <Box bg="white" p={6} borderRadius="3xl" border="1px solid" borderColor="teal.50">
-                <VStack align="start" spacing={4}>
-                    <HStack w="full" justify="space-between">
-                        <Heading size="sm" color="gray.700">Active Peers</Heading>
-                        <Badge colorScheme="green" borderRadius="full">+12 Today</Badge>
-                    </HStack>
-                    <AvatarGroup size="sm" max={5}>
-                        <Avatar name="Dr. Asma" />
-                        <Avatar name="Sarah J." />
-                        <Avatar name="Kevin M." />
-                        <Avatar name="Priya R." />
-                        <Avatar name="John D." />
-                        <Avatar name="Extra" />
-                    </AvatarGroup>
-                    <Text fontSize="xs" color="gray.500">Join 84+ clinical specialists online now.</Text>
-                </VStack>
-            </Box>
-            <Box bg="white" p={6} borderRadius="3xl" border="1px solid" borderColor="teal.50">
-                <VStack align="start" spacing={4}>
-                    <Heading size="sm" color="gray.700">Trending Topics</Heading>
-                    <HStack wrap="wrap" spacing={2}>
-                        <Tag size="sm" variant="subtle" colorScheme="orange">#ClinicalEthics</Tag>
-                        <Tag size="sm" variant="subtle" colorScheme="blue">#BurnoutPrevention</Tag>
-                        <Tag size="sm" variant="subtle" colorScheme="purple">#InsuranceBilling</Tag>
-                    </HStack>
-                </VStack>
-            </Box>
-        </SimpleGrid>
+      {/* 🌿 2. CLINICAL PRIVACY ASSURANCE STRIP */}
+      <HStack 
+        justify="space-between" 
+        bg="linear-gradient(135deg, #F0FDF4 0%, #FAF8F5 100%)" 
+        p={3} 
+        px={4} 
+        borderRadius="xl" 
+        border="1px solid rgba(16, 185, 129, 0.2)" 
+        mb={6}
+        wrap="wrap"
+        gap={2}
+      >
+        <HStack spacing={2.5}>
+          <Circle size="24px" bg="rgba(16, 185, 129, 0.15)" color="#047857">
+            <Icon as={FiShield} boxSize="12px" />
+          </Circle>
+          <Text fontSize="12.5px" fontWeight="600" color="#064E3B">
+            Confidential Clinical Space
+          </Text>
+          <Text fontSize="12px" color="#5A6E65" display={{ base: "none", md: "inline" }}>
+            — Strictly verified practitioners only. Patient-identifying info is prohibited.
+          </Text>
+        </HStack>
 
-        {/* Filter Bar & Tabs */}
-        <Tabs variant="soft-rounded" colorScheme="teal" onChange={(index) => setActiveTab(index === 0 ? "discussions" : "resources")}>
-          <TabList bg="white" p={2} borderRadius="2xl" shadow="sm" mb={6}>
-            <Tab fontWeight="800" fontSize="sm">Discussions</Tab>
-            <Tab fontWeight="800" fontSize="sm">Resource Vault</Tab>
-          </TabList>
+        <HStack spacing={1.5}>
+          <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.04em">
+            TRENDING:
+          </Text>
+          <Tag size="sm" borderRadius="full" bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="10.5px">#ClinicalEthics</Tag>
+          <Tag size="sm" borderRadius="full" bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="10.5px">#BurnoutPrevention</Tag>
+        </HStack>
+      </HStack>
 
-          <TabPanels>
-            <TabPanel p={0}>
-                <VStack align="stretch" spacing={8}>
-                    <Stack direction={{ base: "column", md: "row" }} justify="space-between" spacing={4} bg="white" p={4} borderRadius="2xl" shadow="sm">
-                        <HStack spacing={2} overflowX="auto" pb={{ base: 2, md: 0 }}>
-                            <CategoryPill 
-                                category={{ name: "All Topics" }} 
-                                isActive={activeCategory === "all"} 
-                                onClick={() => setActiveCategory("all")} 
-                            />
-                            {categories.map(cat => (
-                                <CategoryPill 
-                                    key={cat.id} 
-                                    category={cat} 
-                                    isActive={activeCategory === cat.name || activeCategory === cat.id} 
-                                    onClick={() => setActiveCategory(cat.name)} 
-                                />
-                            ))}
-                        </HStack>
-                        <InputGroup maxW={{ md: "300px" }}>
-                            <InputLeftElement><FiSearch color="gray.400" /></InputLeftElement>
-                            <Input 
-                                placeholder="Search discussions..." 
-                                borderRadius="full" 
-                                bg="gray.50" 
-                                border="none"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </InputGroup>
-                    </Stack>
+      {/* 🌿 3. TABS & CONTENT STREAM */}
+      <Tabs 
+        variant="unstyled" 
+        onChange={(index) => setActiveTab(index === 0 ? "discussions" : "resources")}
+      >
+        {/* Modern Pill TabList */}
+        <Flex 
+          bg="white" 
+          p={1.5} 
+          borderRadius="xl" 
+          border="1px solid rgba(86, 117, 109, 0.12)" 
+          boxShadow="0 2px 8px -2px rgba(38, 58, 51, 0.03)"
+          mb={6}
+          w="fit-content"
+          gap={1.5}
+        >
+          <Tab
+            borderRadius="lg"
+            px={4}
+            py={1.5}
+            fontSize="13px"
+            fontWeight="600"
+            color="#5A6E65"
+            _selected={{ bg: "#56756D", color: "white", boxShadow: "0 2px 6px rgba(86, 117, 109, 0.25)" }}
+            _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+            transition="all 0.15s ease"
+          >
+            Discussions
+          </Tab>
+          <Tab
+            borderRadius="lg"
+            px={4}
+            py={1.5}
+            fontSize="13px"
+            fontWeight="600"
+            color="#5A6E65"
+            _selected={{ bg: "#56756D", color: "white", boxShadow: "0 2px 6px rgba(86, 117, 109, 0.25)" }}
+            _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+            transition="all 0.15s ease"
+          >
+            Resource Vault
+          </Tab>
+        </Flex>
 
-                    {/* Discussions Grid */}
-                    {loading ? (
-                      <Center py={20}><Spinner color="teal.500" size="xl" /></Center>
-                    ) : (
-                      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-                        <AnimatePresence>
-                            {filteredThreads.map(thread => (
-                                <DiscussionCard key={thread.id} thread={thread} mounted={mounted} />
-                            ))}
-                        </AnimatePresence>
-                      </SimpleGrid>
-                    )}
+        <TabPanels>
+          <TabPanel p={0}>
+            <VStack align="stretch" spacing={6}>
+              {/* Category Filter Bar + Search */}
+              <Flex 
+                direction={{ base: "column", md: "row" }} 
+                justify="space-between" 
+                align={{ base: "stretch", md: "center" }}
+                gap={3} 
+                bg="white" 
+                p={3.5} 
+                borderRadius="2xl" 
+                border="1px solid rgba(86, 117, 109, 0.12)"
+                boxShadow="0 4px 16px -2px rgba(38, 58, 51, 0.03)"
+              >
+                <HStack spacing={2} overflowX="auto" pb={{ base: 2, md: 0 }}>
+                  <CategoryPill 
+                    category={{ name: "All Topics" }} 
+                    isActive={activeCategory === "all"} 
+                    onClick={() => setActiveCategory("all")} 
+                  />
+                  {categories.map(cat => (
+                    <CategoryPill 
+                      key={cat.id} 
+                      category={cat} 
+                      isActive={activeCategory === cat.name || activeCategory === cat.id} 
+                      onClick={() => setActiveCategory(cat.name)} 
+                    />
+                  ))}
+                </HStack>
 
-                    {!loading && filteredThreads.length === 0 && (
-                        <Center py={20} bg="white" borderRadius="3xl" border="2px dashed" borderColor="gray.100">
-                            <VStack spacing={4}>
-                                <Icon as={FiMessageSquare} boxSize={10} color="gray.200" />
-                                <Text fontWeight="700" color="gray.500">No discussions found in this category.</Text>
-                                <Button onClick={onOpen} variant="link" color="teal.600">Start the first conversation</Button>
-                            </VStack>
-                        </Center>
-                    )}
-                </VStack>
-            </TabPanel>
+                <InputGroup maxW={{ md: "260px" }}>
+                  <InputLeftElement pointerEvents="none" h="36px">
+                    <Icon as={FiSearch} color="#718096" boxSize="13px" />
+                  </InputLeftElement>
+                  <Input 
+                    placeholder="Search discussions..." 
+                    borderRadius="full" 
+                    bg="rgba(250, 248, 245, 0.85)" 
+                    border="1px solid rgba(86, 117, 109, 0.16)"
+                    h="36px"
+                    fontSize="12.5px"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    _focus={{ borderColor: "#56756D", bg: "white" }}
+                  />
+                </InputGroup>
+              </Flex>
 
-            <TabPanel p={0}>
-                <VStack align="stretch" spacing={8}>
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-                        {communityResources.map((res) => (
-                            <MotionBox
-                                key={res.id}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                bg="white"
-                                p={6}
-                                borderRadius="3xl"
-                                border="1px solid"
-                                borderColor="gray.100"
-                                shadow="sm"
-                                _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-                            >
-                                <VStack align="start" spacing={4}>
-                                    <Badge colorScheme="teal" borderRadius="full" px={3}>{res.resource_type_label}</Badge>
-                                    <VStack align="start" spacing={1}>
-                                        <Heading size="sm" color="teal.900">{res.title}</Heading>
-                                        <Text fontSize="xs" color="gray.500" noOfLines={2}>{res.description}</Text>
-                                    </VStack>
-                                    <HStack w="full" justify="space-between" pt={2}>
-                                        <HStack spacing={2}>
-                                            <Avatar size="xs" name={res.therapist_name} />
-                                            <Text fontSize="2xs" fontWeight="700" color="gray.600">{res.therapist_name}</Text>
-                                        </HStack>
-                                        <Button 
-                                            as="a" 
-                                            href={res.file || res.url} 
-                                            target="_blank" 
-                                            size="xs" 
-                                            colorScheme="teal" 
-                                            variant="ghost" 
-                                            rightIcon={<FiChevronRight />}
-                                        >
-                                            Access
-                                        </Button>
-                                    </HStack>
-                                </VStack>
-                            </MotionBox>
-                        ))}
-                        <Center 
-                            p={6} 
-                            borderRadius="3xl" 
-                            border="2px dashed" 
-                            borderColor="gray.200" 
-                            cursor="pointer"
-                            _hover={{ bg: "teal.50", borderColor: "teal.200" }}
-                            onClick={() => toast({ title: "Upload Coming Soon", status: "info" })}
+              {/* Discussions Stream */}
+              {loading ? (
+                <Center py={20}><Spinner color="#56756D" size="xl" /></Center>
+              ) : (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                  <AnimatePresence>
+                    {filteredThreads.map(thread => (
+                      <DiscussionCard key={thread.id} thread={thread} mounted={mounted} />
+                    ))}
+                  </AnimatePresence>
+                </SimpleGrid>
+              )}
+
+              {!loading && filteredThreads.length === 0 && (
+                <Box 
+                  py={16} 
+                  bg="white" 
+                  borderRadius="2xl" 
+                  border="1px solid rgba(86, 117, 109, 0.14)" 
+                  boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+                  textAlign="center"
+                >
+                  <VStack spacing={3} maxW="360px" mx="auto">
+                    <Circle size="46px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                      <Icon as={FiMessageSquare} boxSize="20px" />
+                    </Circle>
+                    <VStack spacing={1}>
+                      <Text 
+                        fontSize="15px" 
+                        fontWeight="600" 
+                        color="#263A33"
+                        fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                      >
+                        No Discussions Found
+                      </Text>
+                      <Text fontSize="12.5px" color="#5A6E65">
+                        No active conversations match this category yet. Be the first to start a conversation.
+                      </Text>
+                    </VStack>
+                    <Button 
+                      onClick={onOpen} 
+                      bg="#56756D"
+                      color="white"
+                      size="sm"
+                      h="34px"
+                      borderRadius="full"
+                      px={4}
+                      mt={1}
+                      _hover={{ bg: "#263A33" }}
+                    >
+                      Start Discussion
+                    </Button>
+                  </VStack>
+                </Box>
+              )}
+            </VStack>
+          </TabPanel>
+
+          <TabPanel p={0}>
+            <VStack align="stretch" spacing={6}>
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
+                {communityResources.map((res) => (
+                  <MotionBox
+                    key={res.id}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    bg="white"
+                    p={5}
+                    borderRadius="2xl"
+                    border="1px solid rgba(86, 117, 109, 0.14)"
+                    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+                    _hover={{ boxShadow: "0 8px 24px -4px rgba(38, 58, 51, 0.08)", transform: "translateY(-2px)" }}
+                    transition="all 0.2s"
+                  >
+                    <VStack align="start" spacing={3}>
+                      <Badge bg="rgba(86, 117, 109, 0.1)" color="#56756D" borderRadius="full" px={2.5} py={0.5} fontSize="10px" fontWeight="700">
+                        {res.resource_type_label || "Resource"}
+                      </Badge>
+                      <VStack align="start" spacing={1}>
+                        <Heading 
+                          as="h4"
+                          fontSize="15px" 
+                          fontWeight="600" 
+                          color="#263A33"
+                          fontFamily="'Outfit', var(--font-outfit), sans-serif"
                         >
-                            <VStack spacing={2}>
-                                <Icon as={FiPlus} boxSize={8} color="gray.300" />
-                                <Text fontWeight="700" color="gray.400" fontSize="sm">Share Resource</Text>
-                            </VStack>
-                        </Center>
-                    </SimpleGrid>
-                </VStack>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </VStack>
+                          {res.title}
+                        </Heading>
+                        <Text fontSize="12.5px" color="#5A6E65" noOfLines={2}>
+                          {res.description}
+                        </Text>
+                      </VStack>
+                      <HStack w="full" justify="space-between" pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
+                        <HStack spacing={2}>
+                          <Avatar size="xs" name={res.therapist_name} />
+                          <Text fontSize="11px" fontWeight="600" color="#263A33">{res.therapist_name}</Text>
+                        </HStack>
+                        <Button 
+                          as="a" 
+                          href={res.file || res.url} 
+                          target="_blank" 
+                          size="xs" 
+                          variant="ghost" 
+                          color="#56756D"
+                          fontWeight="600"
+                          rightIcon={<Icon as={FiChevronRight} />}
+                          _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                        >
+                          Access
+                        </Button>
+                      </HStack>
+                    </VStack>
+                  </MotionBox>
+                ))}
+              </SimpleGrid>
+            </VStack>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
 
       {/* New Thread Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay backdropFilter="blur(10px)" />
-        <ModalContent borderRadius="3xl" p={4}>
-          <ModalHeader>
-            <Heading size="lg" color="teal.900" fontFamily="'Playfair Display', serif">Start a Discussion</Heading>
-            <Text fontSize="sm" color="gray.500" fontWeight="400">Share your thoughts, ask a question, or seek peer support.</Text>
+        <ModalOverlay backdropFilter="blur(6px)" bg="rgba(38, 58, 51, 0.3)" />
+        <ModalContent 
+          borderRadius="2xl" 
+          p={3}
+          border="1px solid rgba(86, 117, 109, 0.16)"
+          boxShadow="0 20px 40px -8px rgba(6, 78, 59, 0.2)"
+          fontFamily="'Inter', var(--font-inter), sans-serif"
+        >
+          <ModalHeader pb={2}>
+            <Heading 
+              fontSize="18px" 
+              fontWeight="600" 
+              color="#263A33" 
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              letterSpacing="-0.01em"
+            >
+              Start a Clinical Discussion
+            </Heading>
+            <Text fontSize="12.5px" color="#5A6E65" fontWeight="400" mt={0.5}>
+              Share clinical thoughts, explore ethical dilemmas, or consult with peers.
+            </Text>
           </ModalHeader>
-          <ModalCloseButton />
+          <ModalCloseButton mt={2} mr={2} />
           <ModalBody>
-            <VStack spacing={6}>
+            <VStack spacing={4}>
               <FormControl isRequired>
-                <FormLabel fontWeight="700" fontSize="sm">Category</FormLabel>
+                <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em" mb={2}>
+                  Category
+                </FormLabel>
                 <Stack direction="row" wrap="wrap" spacing={2}>
-                    {categories.map(cat => (
-                        <Button
-                            key={cat.id}
-                            size="sm"
-                            variant={newThread.category === cat.id ? "solid" : "outline"}
-                            colorScheme="teal"
-                            borderRadius="full"
-                            onClick={() => setNewThread({ ...newThread, category: cat.id })}
-                        >
-                            {cat.name}
-                        </Button>
-                    ))}
+                  {categories.map(cat => (
+                    <Button
+                      key={cat.id}
+                      size="xs"
+                      h="28px"
+                      variant={newThread.category === cat.id ? "solid" : "outline"}
+                      bg={newThread.category === cat.id ? "#56756D" : "white"}
+                      color={newThread.category === cat.id ? "white" : "#263A33"}
+                      borderColor={newThread.category === cat.id ? "#56756D" : "rgba(86, 117, 109, 0.2)"}
+                      borderRadius="full"
+                      px={3}
+                      fontSize="11.5px"
+                      fontWeight={newThread.category === cat.id ? "700" : "500"}
+                      onClick={() => setNewThread({ ...newThread, category: cat.id })}
+                    >
+                      {cat.name}
+                    </Button>
+                  ))}
                 </Stack>
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontWeight="700" fontSize="sm">Title</FormLabel>
+                <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em" mb={1.5}>
+                  Discussion Title
+                </FormLabel>
                 <Input 
-                    placeholder="E.g., Handling complex transference in trauma work" 
-                    borderRadius="xl"
-                    value={newThread.title}
-                    onChange={(e) => setNewThread({ ...newThread, title: e.target.value })}
+                  placeholder="E.g., Handling complex transference in trauma work" 
+                  borderRadius="xl"
+                  bg="rgba(250, 248, 245, 0.6)"
+                  border="1px solid rgba(86, 117, 109, 0.18)"
+                  fontSize="13px"
+                  h="38px"
+                  value={newThread.title}
+                  onChange={(e) => setNewThread({ ...newThread, title: e.target.value })}
+                  _focus={{ borderColor: "#56756D", bg: "white" }}
                 />
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel fontWeight="700" fontSize="sm">Discussion Content</FormLabel>
+                <FormLabel fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.06em" mb={1.5}>
+                  Clinical Context & Details
+                </FormLabel>
                 <Textarea 
-                    placeholder="Describe your context or question in detail..." 
-                    borderRadius="xl"
-                    minH="200px"
-                    value={newThread.content}
-                    onChange={(e) => setNewThread({ ...newThread, content: e.target.value })}
+                  placeholder="Describe your context, therapeutic query, or framework in detail (ensure client confidentiality is strictly maintained)..." 
+                  borderRadius="xl"
+                  bg="rgba(250, 248, 245, 0.6)"
+                  border="1px solid rgba(86, 117, 109, 0.18)"
+                  fontSize="13px"
+                  minH="160px"
+                  value={newThread.content}
+                  onChange={(e) => setNewThread({ ...newThread, content: e.target.value })}
+                  _focus={{ borderColor: "#56756D", bg: "white" }}
                 />
               </FormControl>
             </VStack>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose} borderRadius="full">Cancel</Button>
+          <ModalFooter pt={3}>
+            <Button variant="ghost" mr={3} onClick={onClose} borderRadius="full" fontSize="12.5px">Cancel</Button>
             <Button 
-                bg="teal.800" 
-                color="white" 
-                borderRadius="full" 
-                px={10}
-                isLoading={isSubmitting}
-                onClick={handleSubmitThread}
-                _hover={{ bg: "teal.900" }}
+              bg="#263A33" 
+              color="white" 
+              borderRadius="full" 
+              height="38px"
+              fontSize="13px"
+              fontWeight="600"
+              px={8}
+              isLoading={isSubmitting}
+              onClick={handleSubmitThread}
+              _hover={{ bg: "#182722" }}
             >
-                Post Discussion
+              Post Discussion
             </Button>
           </ModalFooter>
         </ModalContent>

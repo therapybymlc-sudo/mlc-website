@@ -387,7 +387,7 @@ export default function CareersClient() {
                 shadow="sm"
                 _hover={{ bg: "#425C55", transform: "translateY(-1px)", shadow: "md" }}
                 transition="all 0.2s ease"
-                rightIcon={<FiArrowRight boxSize="12px" />}
+                rightIcon={<Icon as={FiArrowRight} boxSize="12px" />}
               >
                 Apply Now
               </Button>
@@ -822,7 +822,7 @@ export default function CareersClient() {
                       fontFamily="'Inter', var(--font-inter), sans-serif"
                       fontSize="12px"
                       fontWeight="600"
-                      rightIcon={<FiArrowRight boxSize="11px" />}
+                      rightIcon={<Icon as={FiArrowRight} boxSize="11px" />}
                       _hover={{ color: "#263A33" }}
                       onClick={() => setActiveOpening(opening)}
                     >
@@ -1078,7 +1078,7 @@ export default function CareersClient() {
                   shadow="sm"
                   _hover={{ bg: "#425C55", shadow: "0 4px 12px rgba(86,117,109,0.25)" }}
                   transition="all 0.2s"
-                  rightIcon={<FiSend boxSize="12px" />}
+                  rightIcon={<Icon as={FiSend} boxSize="12px" />}
                 >
                   {content.form.submit_label}
                 </Button>
@@ -1159,7 +1159,7 @@ export default function CareersClient() {
               fontSize="13px"
               _hover={{ bg: "rgba(201,169,96,0.3)", transform: "translateY(-1px)" }}
               transition="all 0.2s ease"
-              leftIcon={<FiMail boxSize="13px" />}
+              leftIcon={<Icon as={FiMail} boxSize="13px" />}
             >
               {content.footer.cta_label}
             </Button>
@@ -1288,7 +1288,7 @@ export default function CareersClient() {
                 fontSize="12.5px"
                 _hover={{ bg: "#425C55" }}
                 transition="all 0.2s ease"
-                rightIcon={<FiArrowRight boxSize="11px" />}
+                rightIcon={<Icon as={FiArrowRight} boxSize="11px" />}
                 onClick={() => {
                   setActiveOpening(null);
                   scrollToApply(activeOpening.title);

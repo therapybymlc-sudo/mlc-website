@@ -1,6 +1,7 @@
 from rest_framework.permissions import BasePermission
 from rest_framework import exceptions
 from django.db import IntegrityError
+from django.db.models import Q
 
 from .models import (
     TherapistProfile,
@@ -50,6 +51,9 @@ def get_current_client_profile(user):
 
     # 2. Check by email and sync user link if needed
     email = getattr(user, "email", None)
+    if TherapistProfile.objects.filter(Q(user=user) | (Q(email__iexact=email) if email else Q(pk__isnull=True))).exists():
+        return None
+
     if email:
         client = ClientProfile.objects.filter(email__iexact=email).first()
         if client:

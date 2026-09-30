@@ -1,6 +1,6 @@
 'use client'
 
-import React, { forwardRef, useRef, useState, useEffect } from 'react';
+import React, { forwardRef, useRef, useState, useEffect, useCallback } from 'react';
 import HTMLFlipBook from 'react-pageflip';
 import {
   Box,
@@ -12,37 +12,40 @@ import {
   Icon,
   Button,
   Center,
+  Circle,
   Badge,
-  useColorModeValue,
   Tag,
   Divider,
   Spinner,
+  Flex,
 } from "@chakra-ui/react";
-import { FiChevronLeft, FiChevronRight, FiX, FiDownload, FiBookOpen } from "react-icons/fi";
-import { generateJournalEpub } from './epubExporter';
+import { FiChevronLeft, FiChevronRight, FiX, FiDownload, FiBookOpen, FiArrowRight } from "react-icons/fi";
+import { generateJournalPDF } from './journalPdfExporter';
 
 // Page component
 const Page = forwardRef((props, ref) => {
   return (
     <Box
       ref={ref}
-      bg="mlc.beige"
-      p={8}
-      boxShadow="inset -5px 0 15px rgba(0,0,0,0.05)"
-      cursor={props.onClick ? "pointer" : "auto"}
+      bg="#FAF8F5"
+      p={{ base: 5, md: 8 }}
+      boxShadow="inset -4px 0 12px rgba(38, 58, 51, 0.04)"
+      cursor={props.onClick ? "pointer" : "default"}
       className="page"
       h="100%"
       w="100%"
       position="relative"
-      borderRight="1px solid rgba(0,0,0,0.1)"
+      borderRight="1px solid rgba(86, 117, 109, 0.12)"
       display="flex"
       flexDirection="column"
+      onClick={props.onClick}
+      fontFamily="'Inter', var(--font-inter), sans-serif"
     >
-      <Box flex="1">
+      <Box flex="1" overflowY="auto" className="book-page-body" pr={1}>
          {props.children}
       </Box>
-      <Box position="absolute" bottom={4} textAlign="center" w="full" left="0">
-         <Text fontSize="xs" color="gray.400" fontWeight="bold">- {props.number} -</Text>
+      <Box position="absolute" bottom={3} textAlign="center" w="full" left="0" pointerEvents="none">
+         <Text fontSize="11px" color="#718096" fontWeight="600">- {props.number} -</Text>
       </Box>
     </Box>
   );
@@ -54,16 +57,26 @@ export default function JournalBookView({ entries, onClose, userName }) {
   const bookRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [exporting, setExporting] = useState(false);
-  const [dimensions, setDimensions] = useState({ width: 500, height: 700 });
+  const [dimensions, setDimensions] = useState({ width: 460, height: 640, isMobile: false });
 
-  // Handle responsiveness
+  // Handle responsive sizing so book, header, and footer never clip
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
+      const h = window.innerHeight;
+      // Reserve 160px for HUD header + footer bar + padding
+      const availableH = Math.max(380, h - 160);
+      
       if (w < 768) {
-        setDimensions({ width: w - 40, height: (w - 40) * 1.4 });
+        const bookW = Math.min(w - 32, 420);
+        const bookH = Math.min(availableH, bookW * 1.38);
+        setDimensions({ width: Math.round(bookW), height: Math.round(bookH), isMobile: true });
       } else {
-        setDimensions({ width: 500, height: 750 });
+        // Desktop: spread width max
+        const maxSingleWidth = (w - 180) / 2;
+        const targetH = Math.min(availableH, 650);
+        const targetW = Math.min(maxSingleWidth, targetH * 0.72);
+        setDimensions({ width: Math.round(targetW), height: Math.round(targetH), isMobile: false });
       }
     };
     handleResize();
@@ -71,26 +84,82 @@ export default function JournalBookView({ entries, onClose, userName }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const flipNext = useCallback(() => {
+    try {
+      if (bookRef.current) {
+        const pageFlip = bookRef.current.pageFlip ? bookRef.current.pageFlip() : bookRef.current;
+        if (pageFlip && typeof pageFlip.flipNext === 'function') {
+          pageFlip.flipNext();
+        }
+      }
+    } catch (err) {
+      console.warn("flipNext error:", err);
+    }
+  }, []);
+
+  const flipPrev = useCallback(() => {
+    try {
+      if (bookRef.current) {
+        const pageFlip = bookRef.current.pageFlip ? bookRef.current.pageFlip() : bookRef.current;
+        if (pageFlip && typeof pageFlip.flipPrev === 'function') {
+          pageFlip.flipPrev();
+        }
+      }
+    } catch (err) {
+      console.warn("flipPrev error:", err);
+    }
+  }, []);
+
+  const turnToPage = useCallback((pageNum) => {
+    try {
+      if (bookRef.current) {
+        const pageFlip = bookRef.current.pageFlip ? bookRef.current.pageFlip() : bookRef.current;
+        if (pageFlip && typeof pageFlip.turnToPage === 'function') {
+          pageFlip.turnToPage(pageNum);
+        }
+      }
+    } catch (err) {
+      console.warn("turnToPage error:", err);
+    }
+  }, []);
+
+  // Keyboard navigation: Left/Right arrows and Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        flipNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        flipPrev();
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [flipNext, flipPrev, onClose]);
+
   const handleExport = async () => {
     setExporting(true);
     try {
-      const blob = await generateJournalEpub(entries, userName);
+      const blob = await generateJournalPDF(entries, userName);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `My_Therapeutic_Journey_${new Date().toLocaleDateString().replace(/\//g, '-')}.epub`;
+      a.download = `My_Therapeutic_Journey_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
+      console.error("PDF export error:", err);
     } finally {
       setExporting(false);
     }
   };
 
   if (!entries || entries.length === 0) return null;
+
+  const totalPages = entries.length + 3;
 
   return (
     <Box 
@@ -99,8 +168,8 @@ export default function JournalBookView({ entries, onClose, userName }) {
       left="0" 
       w="100vw" 
       h="100vh" 
-      bg="rgba(0,0,0,0.85)" 
-      backdropFilter="blur(10px)"
+      bg="rgba(14, 26, 22, 0.94)" 
+      backdropFilter="blur(16px)"
       zIndex={2000}
       display="flex"
       flexDirection="column"
@@ -108,49 +177,111 @@ export default function JournalBookView({ entries, onClose, userName }) {
          "@media print": { display: 'none' }
       }}
     >
-      {/* HUD / Header */}
-      <HStack p={6} justify="space-between" w="full">
+      {/* 🧭 Top HUD Header */}
+      <HStack px={{ base: 4, md: 8 }} py={3.5} justify="space-between" w="full" borderBottom="1px solid rgba(255,255,255,0.08)">
          <VStack align="start" spacing={0}>
-            <Heading size="md" color="white" fontFamily="'Playfair Display', serif">Digital Manuscript</Heading>
-            <Text color="gray.400" fontSize="xs">A collection of your evolution</Text>
+            <Heading 
+              fontSize="16px" 
+              fontWeight="600" 
+              color="white" 
+              letterSpacing="-0.015em"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+            >
+              Digital Manuscript
+            </Heading>
+            <Text color="rgba(255,255,255,0.6)" fontSize="12px">
+              A private collection of your evolution
+            </Text>
          </VStack>
          
-         <HStack spacing={4}>
+         <HStack spacing={3}>
             <Button 
-                leftIcon={<FiDownload />} 
+                leftIcon={<Icon as={FiDownload} boxSize="13px" />} 
                 size="sm" 
+                height="34px"
                 borderRadius="full" 
-                bg="mlc.greenDark" 
+                bg="#56756D" 
                 color="white" 
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
                 onClick={handleExport}
                 isLoading={exporting}
                 loadingText="Exporting..."
-                _hover={{ bg: 'mlc.gold' }}
+                _hover={{ bg: '#263A33' }}
             >
-                Export ePub
+                Export PDF
             </Button>
             <IconButton 
-                icon={<FiX />} 
+                icon={<Icon as={FiX} boxSize="18px" />} 
                 onClick={onClose} 
                 borderRadius="full" 
                 variant="ghost" 
                 color="white" 
-                _hover={{ bg: 'whiteAlpha.200' }}
+                size="sm"
+                h="36px"
+                w="36px"
+                aria-label="Close book view"
+                _hover={{ bg: 'rgba(255,255,255,0.15)' }}
             />
          </HStack>
       </HStack>
 
-      <Center flex="1" p={4} overflow="hidden">
+      {/* 📖 Book Viewport & Flanking Side Controls */}
+      <Box position="relative" flex="1" display="flex" alignItems="center" justifyContent="center" overflow="hidden" px={2}>
+        {/* Floating Left Arrow */}
+        <IconButton 
+          icon={<Icon as={FiChevronLeft} boxSize="20px" />} 
+          position="absolute"
+          left={{ base: "4px", md: "24px" }}
+          zIndex={10}
+          isDisabled={currentPage === 0}
+          onClick={flipPrev}
+          borderRadius="full"
+          bg="white"
+          color="#263A33"
+          size="md"
+          h="44px"
+          w="44px"
+          boxShadow="0 4px 20px rgba(0,0,0,0.3)"
+          aria-label="Previous Page"
+          _hover={{ bg: "#FAF8F5", transform: "scale(1.06)" }}
+          _disabled={{ opacity: 0.25, cursor: "not-allowed" }}
+          transition="all 0.2s"
+        />
+
+        {/* Floating Right Arrow */}
+        <IconButton 
+          icon={<Icon as={FiChevronRight} boxSize="20px" />} 
+          position="absolute"
+          right={{ base: "4px", md: "24px" }}
+          zIndex={10}
+          isDisabled={currentPage >= totalPages - 1}
+          onClick={flipNext}
+          borderRadius="full"
+          bg="white"
+          color="#263A33"
+          size="md"
+          h="44px"
+          w="44px"
+          boxShadow="0 4px 20px rgba(0,0,0,0.3)"
+          aria-label="Next Page"
+          _hover={{ bg: "#FAF8F5", transform: "scale(1.06)" }}
+          _disabled={{ opacity: 0.25, cursor: "not-allowed" }}
+          transition="all 0.2s"
+        />
+
+        {/* HTML Flip Book Container */}
         <Box position="relative">
           <HTMLFlipBook
             width={dimensions.width}
             height={dimensions.height}
             size="fixed"
-            minWidth={315}
+            minWidth={280}
             maxWidth={1000}
-            minHeight={400}
-            maxHeight={1533}
-            maxShadowOpacity={0.5}
+            minHeight={360}
+            maxHeight={1400}
+            maxShadowOpacity={0.4}
             showCover={true}
             mobileScrollSupport={true}
             onFlip={(e) => setCurrentPage(e.data)}
@@ -158,36 +289,122 @@ export default function JournalBookView({ entries, onClose, userName }) {
             className="mlc-book"
           >
             {/* 1. Cover Page */}
-            <Page number={0}>
-               <Center h="100%" flexDirection="column" textAlign="center" p={{ base: 4, md: 10 }} border="10px double" borderColor="mlc.gold">
-                  <VStack spacing={8}>
-                     <Icon as={FiBookOpen} boxSize={12} color="mlc.gold" />
-                     <VStack spacing={2}>
-                        <Text fontSize="sm" letterSpacing="0.2em" color="gray.500" fontWeight="800">MLC HEALTH</Text>
-                        <Heading size={{ base: "lg", md: "2xl" }} fontFamily="'Playfair Display', serif" color="mlc.black" whiteSpace="normal" wordBreak="keep-all" lineHeight="1.3">My Therapeutic Journey</Heading>
+            <Page number={0} onClick={flipNext}>
+               <Center 
+                  h="100%" 
+                  flexDirection="column" 
+                  textAlign="center" 
+                  p={{ base: 4, md: 8 }} 
+                  border="6px double rgba(86, 117, 109, 0.35)"
+                  borderRadius="lg"
+                  bg="white"
+               >
+                  <VStack spacing={5} maxW="340px">
+                     <Circle size="52px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                       <Icon as={FiBookOpen} boxSize="22px" />
+                     </Circle>
+                     
+                     <VStack spacing={1.5}>
+                        <Text fontSize="11px" letterSpacing="0.12em" color="#718096" fontWeight="700" textTransform="uppercase">
+                          MLC Therapy
+                        </Text>
+                        <Heading 
+                          fontSize={{ base: "20px", md: "24px" }} 
+                          fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                          fontWeight="600"
+                          color="#263A33" 
+                          letterSpacing="-0.015em"
+                          lineHeight="1.3"
+                        >
+                          My Therapeutic Journey
+                        </Heading>
                      </VStack>
-                     <Divider w="50px" borderColor="mlc.gold" borderBottomWidth="2px" />
-                     <VStack spacing={0}>
-                        <Text fontStyle="italic" color="gray.600" fontSize={{ base: "sm", md: "md" }}>Documented by</Text>
-                        <Text fontWeight="800" fontSize={{ base: "md", md: "lg" }} color="mlc.black">{userName}</Text>
+                     
+                     <Divider w="40px" borderColor="rgba(86, 117, 109, 0.35)" borderWidth="1px" />
+                     
+                     <VStack spacing={0.5}>
+                        <Text color="#718096" fontSize="12px" fontWeight="500">Documented by</Text>
+                        <Text fontWeight="600" fontSize="15px" color="#263A33">{userName}</Text>
                      </VStack>
-                     <Text fontSize="xs" color="gray.400" mt={10}>Generated on {new Date().toLocaleDateString()}</Text>
+                     
+                     <Button
+                        size="sm"
+                        height="34px"
+                        bg="#263A33"
+                        color="white"
+                        borderRadius="full"
+                        fontSize="12px"
+                        fontWeight="600"
+                        px={5}
+                        rightIcon={<Icon as={FiArrowRight} boxSize="12px" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          flipNext();
+                        }}
+                        _hover={{ bg: "#182722" }}
+                        mt={3}
+                     >
+                        Open Manuscript
+                     </Button>
+
+                     <Text fontSize="11px" color="#A0AEC0" pt={2}>
+                       Generated on {new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                     </Text>
                   </VStack>
                </Center>
             </Page>
 
             {/* 2. Table of Contents */}
             <Page number={1}>
-               <VStack align="start" spacing={6} p={4}>
-                  <Heading size="lg" fontFamily="'Playfair Display', serif" mb={4}>Contents</Heading>
-                  <VStack align="start" spacing={3} w="full">
-                    {entries.slice(0, 15).map((entry, idx) => (
-                      <HStack key={entry.id} justify="space-between" w="full" borderBottom="1px dotted" borderColor="gray.200">
-                        <Text fontSize="sm" fontWeight="600">{new Date(entry.created_at).toLocaleDateString()}</Text>
-                        <Text fontSize="xs" color="mlc.gold">Page {idx + 2}</Text>
+               <VStack align="start" spacing={4} p={2} h="100%">
+                  <HStack justify="space-between" w="full" borderBottom="1px solid rgba(86, 117, 109, 0.15)" pb={2}>
+                    <Heading 
+                      fontSize="17px" 
+                      fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                      fontWeight="600"
+                      color="#263A33"
+                    >
+                      Contents
+                    </Heading>
+                    <Text fontSize="11px" color="#718096" fontWeight="600">
+                      {entries.length} Reflections
+                    </Text>
+                  </HStack>
+
+                  <VStack align="start" spacing={1.5} w="full" flex="1" overflowY="auto">
+                    {entries.map((entry, idx) => (
+                      <HStack 
+                        key={entry.id} 
+                        justify="space-between" 
+                        w="full" 
+                        p={2}
+                        borderRadius="md"
+                        borderBottom="1px dotted rgba(86, 117, 109, 0.15)"
+                        cursor="pointer"
+                        _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                        onClick={() => turnToPage(idx + 2)}
+                        transition="all 0.15s"
+                      >
+                        <VStack align="start" spacing={0} maxW="70%">
+                          <Text fontSize="12.5px" fontWeight="600" color="#263A33" noOfLines={1}>
+                            {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </Text>
+                          <Text fontSize="11px" color="#718096" noOfLines={1}>
+                            {entry.mood}
+                          </Text>
+                        </VStack>
+                        <Badge 
+                          bg="rgba(86, 117, 109, 0.1)" 
+                          color="#263A33" 
+                          borderRadius="full" 
+                          fontSize="10px" 
+                          fontWeight="700" 
+                          px={2}
+                        >
+                          P. {idx + 2}
+                        </Badge>
                       </HStack>
                     ))}
-                    {entries.length > 15 && <Text fontSize="xs" color="gray.400">... and {entries.length - 15} more reflections</Text>}
                   </VStack>
                </VStack>
             </Page>
@@ -195,32 +412,47 @@ export default function JournalBookView({ entries, onClose, userName }) {
             {/* 3. Entries Map */}
             {entries.map((entry, idx) => (
               <Page key={entry.id} number={idx + 2}>
-                <VStack align="start" spacing={6} h="100%">
-                   <HStack justify="space-between" w="full">
-                      <Text color="gray.400" fontSize="xs" fontWeight="bold">{new Date(entry.created_at).toLocaleDateString()}</Text>
-                      <Badge colorScheme="teal" variant="subtle" borderRadius="full">{entry.mood}</Badge>
+                <VStack align="start" spacing={3.5} h="100%">
+                   <HStack justify="space-between" w="full" borderBottom="1px solid rgba(86, 117, 109, 0.1)" pb={2}>
+                      <Text color="#718096" fontSize="11.5px" fontWeight="600">
+                        {new Date(entry.created_at).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                      <Badge 
+                        bg="rgba(16, 185, 129, 0.12)" 
+                        color="#047857" 
+                        borderRadius="full" 
+                        fontSize="10px"
+                        fontWeight="700"
+                        px={2.5}
+                        py={0.5}
+                      >
+                        {entry.mood}
+                      </Badge>
                    </HStack>
                    
                    <Box 
                       className="book-content"
                       flex="1" 
                       w="full"
-                      fontSize="md"
-                      lineHeight="1.8"
-                      color="mlc.black"
-                      fontFamily="'Playfair Display', serif"
+                      fontSize="13px"
+                      lineHeight="1.65"
+                      color="#263A33"
                       sx={{
-                        "p": { mb: 4 },
-                        "img": { borderRadius: "xl", my: 4, maxH: "200px", objectFit: "cover" },
-                        "ul, ol": { ml: 4, mb: 4 },
-                        "blockquote": { borderLeft: "4px solid", borderColor: "mlc.gold", pl: 4, fontStyle: "italic", color: "gray.600" }
+                        "p": { mb: 3 },
+                        "img": { borderRadius: "lg", my: 3, maxH: "180px", objectFit: "cover" },
+                        "ul, ol": { ml: 4, mb: 3 },
+                        "blockquote": { borderLeft: "3px solid #56756D", pl: 3, my: 3, color: "#5A6E65" }
                       }}
                       dangerouslySetInnerHTML={{ __html: entry.entry }}
                    />
 
                    {(entry.extra_data?.tags?.length > 0 || entry.extra_data?.impacts?.length > 0) && (
-                      <HStack spacing={2} wrap="wrap">
-                         {(entry.extra_data.tags || []).map(t => <Tag key={t} size="sm" variant="ghost" color="gray.400">#{t}</Tag>)}
+                      <HStack spacing={1.5} wrap="wrap" pt={1}>
+                         {(entry.extra_data.tags || []).map(t => (
+                           <Tag key={t} size="sm" borderRadius="full" bg="#FAF8F5" border="1px solid rgba(86, 117, 109, 0.15)" color="#5A6E65" fontSize="10px">
+                             #{t}
+                           </Tag>
+                         ))}
                       </HStack>
                    )}
                 </VStack>
@@ -229,64 +461,106 @@ export default function JournalBookView({ entries, onClose, userName }) {
 
             {/* 4. Back Cover */}
             <Page number={entries.length + 2}>
-               <Center h="100%" flexDirection="column" textAlign="center" p={10} bg="#F2F1ED">
-                  <VStack spacing={4}>
-                     <Heading size="md" fontFamily="'Playfair Display', serif" color="mlc.greenDark">The Path Continues</Heading>
-                     <Text fontSize="sm" color="gray.500">Every word written is a step taken toward self-awareness.</Text>
-                     <Box mt={20}>
-                        <Text fontSize="xs" fontWeight="bold" letterSpacing="0.1em">MLC HEALTH</Text>
-                        <Text fontSize="10px">Therapy & Growth Collective</Text>
+               <Center h="100%" flexDirection="column" textAlign="center" p={8} bg="#FAF8F5">
+                  <VStack spacing={3}>
+                     <Heading 
+                       fontSize="17px" 
+                       fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                       fontWeight="600" 
+                       color="#263A33"
+                     >
+                       The Path Continues
+                     </Heading>
+                     <Text fontSize="12.5px" color="#5A6E65" maxW="260px" lineHeight="1.5">
+                       Every word written is a conscious step taken toward healing and self-awareness.
+                     </Text>
+                     <Box mt={12} pt={4} borderTop="1px solid rgba(86, 117, 109, 0.15)" w="180px">
+                        <Text fontSize="11px" fontWeight="700" color="#263A33" letterSpacing="0.08em" textTransform="uppercase">
+                          MLC Therapy
+                        </Text>
+                        <Text fontSize="10px" color="#718096">Therapy & Growth Collective</Text>
                      </Box>
                   </VStack>
                </Center>
             </Page>
           </HTMLFlipBook>
-
-          {/* Controls */}
-          <HStack 
-             position="absolute" 
-             bottom="-60px" 
-             left="0" 
-             w="full" 
-             justify="center" 
-             spacing={6}
-          >
-             <IconButton 
-                icon={<FiChevronLeft />} 
-                isDisabled={currentPage === 0}
-                onClick={() => bookRef.current.pageFlip().flipPrev()}
-                borderRadius="full"
-                bg="white"
-                shadow="lg"
-             />
-             <Text color="white" fontWeight="bold" fontSize="sm">
-                Page {currentPage + 1} of {entries.length + 3}
-             </Text>
-             <IconButton 
-                icon={<FiChevronRight />} 
-                isDisabled={currentPage >= entries.length + 2}
-                onClick={() => bookRef.current.pageFlip().flipNext()}
-                borderRadius="full"
-                bg="white"
-                shadow="lg"
-             />
-          </HStack>
         </Box>
-      </Center>
+      </Box>
+
+      {/* 🧭 Bottom Navigation Bar (Always Visible In Viewport) */}
+      <HStack 
+        py={3} 
+        px={6} 
+        w="full" 
+        justify="center" 
+        spacing={5} 
+        borderTop="1px solid rgba(255,255,255,0.08)"
+        bg="rgba(14, 26, 22, 0.6)"
+      >
+         <Button
+            leftIcon={<Icon as={FiChevronLeft} boxSize="14px" />}
+            size="sm"
+            height="32px"
+            borderRadius="full"
+            bg="white"
+            color="#263A33"
+            fontSize="12px"
+            fontWeight="600"
+            px={4}
+            isDisabled={currentPage === 0}
+            onClick={flipPrev}
+            _hover={{ bg: "#FAF8F5" }}
+            _disabled={{ opacity: 0.35, cursor: "not-allowed" }}
+         >
+            Previous
+         </Button>
+
+         <Badge
+            bg="rgba(255,255,255,0.12)"
+            color="white"
+            borderRadius="full"
+            px={3.5}
+            py={1}
+            fontSize="11.5px"
+            fontWeight="600"
+            letterSpacing="0.04em"
+         >
+            Page {currentPage + 1} of {totalPages}
+         </Badge>
+
+         <Button
+            rightIcon={<Icon as={FiChevronRight} boxSize="14px" />}
+            size="sm"
+            height="32px"
+            borderRadius="full"
+            bg="white"
+            color="#263A33"
+            fontSize="12px"
+            fontWeight="600"
+            px={4}
+            isDisabled={currentPage >= totalPages - 1}
+            onClick={flipNext}
+            _hover={{ bg: "#FAF8F5" }}
+            _disabled={{ opacity: 0.35, cursor: "not-allowed" }}
+         >
+            Next
+         </Button>
+      </HStack>
       
       <Box as="style">
         {`
           .mlc-book {
-             box-shadow: 0 50px 100px rgba(0,0,0,0.5);
+             box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+             border-radius: 8px;
           }
-          .book-content::-webkit-scrollbar {
+          .book-page-body::-webkit-scrollbar {
             width: 4px;
           }
-          .book-content::-webkit-scrollbar-track {
+          .book-page-body::-webkit-scrollbar-track {
             background: transparent;
           }
-          .book-content::-webkit-scrollbar-thumb {
-            background: rgba(0,0,0,0.1);
+          .book-page-body::-webkit-scrollbar-thumb {
+            background: rgba(86, 117, 109, 0.2);
             border-radius: 10px;
           }
         `}

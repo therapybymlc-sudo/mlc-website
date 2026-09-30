@@ -16,6 +16,7 @@ import {
 import { apiPost } from "../../api.js";
 import NextLink from "next/link";
 import ModernSelect from "../../components/ModernSelect";
+import ModernDatePicker from "../../components/ModernDatePicker";
 
 const MotionBox = motion(Box);
 
@@ -579,17 +580,15 @@ export default function BookNowClient() {
                     <FormLabel fontSize="11.5px" fontWeight="600" color="#3D5A52" fontFamily="'Inter', sans-serif" mb={1} letterSpacing="0.02em">
                       PREFERRED DAY
                     </FormLabel>
-                    <Input 
-                      type="date"
-                      borderRadius="12px"
-                      borderColor="rgba(86, 117, 109, 0.22)"
-                      focusBorderColor="#56756D"
-                      h="40px"
-                      fontSize="13px"
-                      fontFamily="'Inter', sans-serif"
-                      bg="#FDFBFA"
+                    <ModernDatePicker
                       value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      onChange={(val) => setFormData({ ...formData, date: val })}
+                      placeholder="Select preferred date"
+                      h="40px"
+                      borderRadius="12px"
+                      bg="#FDFBFA"
+                      borderColor="rgba(86, 117, 109, 0.22)"
+                      fontSize="13px"
                     />
                   </FormControl>
 

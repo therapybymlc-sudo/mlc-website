@@ -540,7 +540,7 @@ const TherapistCardMini = ({ therapist }) => {
                 h="34px"
                 fontSize="12px"
                 fontWeight="600"
-                rightIcon={<FiArrowRight boxSize="11px" />}
+                rightIcon={<Icon as={FiArrowRight} boxSize="11px" />}
                 _hover={{ bg: '#425C55', shadow: '0 4px 12px rgba(86,117,109,0.25)' }}
                 transition="all 0.2s"
             >
@@ -995,7 +995,7 @@ export default function DirectoryClient() {
             fontWeight="600" 
             fontSize="12.5px" 
             mt={1}
-            rightIcon={<FiArrowRight boxSize="12px" />}
+            rightIcon={<Icon as={FiArrowRight} boxSize="12px" />}
             _hover={{ bg: "#56756D", color: "white", borderColor: "#56756D" }}
             transition="all 0.2s ease"
           >

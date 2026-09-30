@@ -93,66 +93,111 @@ def _period_meta(
 
 
 def _subscription_price_decimals():
-    monthly = Decimal(
-        str(
-            getattr(
-                settings,
-                "RAZORPAY_BASIC_MONTHLY_PRICE",
-                os.getenv("RAZORPAY_BASIC_MONTHLY_PRICE", "0"),
-            )
-        )
-    )
-    annual = Decimal(
-        str(
-            getattr(
-                settings,
-                "RAZORPAY_BASIC_ANNUAL_PRICE",
-                os.getenv("RAZORPAY_BASIC_ANNUAL_PRICE", "0"),
-            )
-        )
-    )
-    return monthly, annual
+    def _parse(val):
+        if val is None or val == "":
+            return Decimal("0")
+        try:
+            cleaned = str(val).replace(",", "").strip()
+            return Decimal(cleaned)
+        except Exception:
+            return Decimal("0")
+
+    raw_monthly = getattr(settings, "RAZORPAY_BASIC_MONTHLY_PRICE", None) or os.getenv("RAZORPAY_BASIC_MONTHLY_PRICE", "0")
+    raw_annual = getattr(settings, "RAZORPAY_BASIC_ANNUAL_PRICE", None) or os.getenv("RAZORPAY_BASIC_ANNUAL_PRICE", "0")
+    return _parse(raw_monthly), _parse(raw_annual)
 
 
-def compute_core_kpis(start, end, months_in_period: int) -> dict[str, Any]:
+def _count_clients_in_period(start, end, include_demo: bool = True) -> int:
+    try:
+        qs = ClientProfile.objects.all()
+        if not include_demo:
+            qs = qs.exclude(user__email__icontains="dummy").exclude(email__icontains="dummy").exclude(user__email__icontains="test")
+        if any(f.name == "created_at" for f in ClientProfile._meta.get_fields()):
+            return qs.filter(created_at__gte=start, created_at__lt=end).count()
+        return qs.filter(user__date_joined__gte=start, user__date_joined__lt=end).count()
+    except Exception:
+        return ClientProfile.objects.count()
+
+
+def _count_therapists_onboarded_in_period(start, end, include_demo: bool = True) -> int:
+    try:
+        qs = TherapistProfile.objects.all()
+        if not include_demo:
+            qs = qs.exclude(user__email__icontains="dummy").exclude(email__icontains="dummy").exclude(user__email__icontains="test")
+        if any(f.name == "created_at" for f in TherapistProfile._meta.get_fields()):
+            return qs.filter(created_at__gte=start, created_at__lt=end).count()
+        app_qs = TherapistApplication.objects.filter(
+            status="approved", approved_at__gte=start, approved_at__lt=end
+        )
+        if not include_demo:
+            app_qs = app_qs.exclude(email__icontains="dummy").exclude(email__icontains="test")
+        app_count = app_qs.count()
+        if app_count > 0:
+            return app_count
+        return qs.filter(user__date_joined__gte=start, user__date_joined__lt=end).count()
+    except Exception:
+        return TherapistProfile.objects.count()
+
+
+def _count_therapists_verified_in_period(start, end, include_demo: bool = True) -> int:
+    try:
+        qs = TherapistProfile.objects.filter(is_verified=True)
+        if not include_demo:
+            qs = qs.exclude(user__email__icontains="dummy").exclude(email__icontains="dummy").exclude(user__email__icontains="test")
+        if any(f.name == "created_at" for f in TherapistProfile._meta.get_fields()):
+            return qs.filter(created_at__gte=start, created_at__lt=end).count()
+        return qs.filter(user__date_joined__gte=start, user__date_joined__lt=end).count()
+    except Exception:
+        return TherapistProfile.objects.filter(is_verified=True).count()
+
+
+def compute_core_kpis(start, end, months_in_period: int, include_demo: bool = True) -> dict[str, Any]:
     monthly_price, annual_price = _subscription_price_decimals()
 
-    incoming_registrations = TherapistApplication.objects.filter(
+    incoming_registrations_qs = TherapistApplication.objects.filter(
         created_at__gte=start, created_at__lt=end
-    ).count()
-    new_clients = ClientProfile.objects.filter(created_at__gte=start, created_at__lt=end).count()
-    therapists_onboarded = TherapistProfile.objects.filter(
-        created_at__gte=start, created_at__lt=end
-    ).count()
-    therapists_verified = TherapistProfile.objects.filter(
-        is_verified=True,
-        created_at__gte=start,
-        created_at__lt=end,
-    ).count()
+    )
+    if not include_demo:
+        incoming_registrations_qs = incoming_registrations_qs.exclude(email__icontains="dummy").exclude(email__icontains="test")
+    incoming_registrations = incoming_registrations_qs.count()
+
+    new_clients = _count_clients_in_period(start, end, include_demo=include_demo)
+    therapists_onboarded = _count_therapists_onboarded_in_period(start, end, include_demo=include_demo)
+    therapists_verified = _count_therapists_verified_in_period(start, end, include_demo=include_demo)
 
     sessions_taken_qs = Appointment.objects.filter(
         status=Appointment.Status.COMPLETED,
         start_time__gte=start,
         start_time__lt=end,
     )
+    if not include_demo:
+        sessions_taken_qs = sessions_taken_qs.exclude(therapist__user__email__icontains="dummy").exclude(client__user__email__icontains="dummy").exclude(therapist__email__icontains="dummy").exclude(client__email__icontains="dummy")
     sessions_taken = sessions_taken_qs.count()
 
+    payments_qs = RazorpayPayment.objects.filter(
+        status=RazorpayPayment.Status.PAID,
+        created_at__gte=start,
+        created_at__lt=end,
+    )
+    if not include_demo:
+        payments_qs = payments_qs.exclude(client__user__email__icontains="dummy").exclude(client__email__icontains="dummy").exclude(appointment__therapist__user__email__icontains="dummy")
+
     session_revenue_raw = (
-        RazorpayPayment.objects.filter(
-            status=RazorpayPayment.Status.PAID,
-            created_at__gte=start,
-            created_at__lt=end,
-        ).aggregate(total=Coalesce(Sum("amount"), Value(0)))["total"]
+        payments_qs.aggregate(total=Coalesce(Sum("amount"), Value(0)))["total"]
         or 0
     )
     session_revenue = rupees_from_paise(session_revenue_raw)
 
-    active_monthly_subscribers = TherapistProfile.objects.filter(
+    therapists_sub_qs = TherapistProfile.objects.all()
+    if not include_demo:
+        therapists_sub_qs = therapists_sub_qs.exclude(user__email__icontains="dummy").exclude(email__icontains="dummy").exclude(user__email__icontains="test")
+
+    active_monthly_subscribers = therapists_sub_qs.filter(
         is_basic_subscribed=True,
         basic_plan="monthly",
         subscription_status="active",
     ).count()
-    active_annual_subscribers = TherapistProfile.objects.filter(
+    active_annual_subscribers = therapists_sub_qs.filter(
         is_basic_subscribed=True,
         basic_plan="annual",
         subscription_status="active",
@@ -172,6 +217,9 @@ def compute_core_kpis(start, end, months_in_period: int) -> dict[str, Any]:
         captured_at__lt=end,
         status__in=["captured", "paid", "active"],
     )
+    if not include_demo:
+        subscription_charges_qs = subscription_charges_qs.exclude(therapist__user__email__icontains="dummy").exclude(therapist__email__icontains="dummy")
+
     subscription_revenue_recorded_raw = subscription_charges_qs.aggregate(
         total=Coalesce(Sum("amount"), Value(0))
     )["total"] or 0
@@ -198,12 +246,12 @@ def compute_core_kpis(start, end, months_in_period: int) -> dict[str, Any]:
     }
 
 
-def build_executive_report(start, end, months_in_period, period_type, label) -> dict[str, Any]:
-    kpis = compute_core_kpis(start, end, months_in_period)
+def build_executive_report(start, end, months_in_period, period_type, label, include_demo: bool = True) -> dict[str, Any]:
+    kpis = compute_core_kpis(start, end, months_in_period, include_demo=include_demo)
     pstart, pend, p_months, plabel, _ = get_prior_period_bounds(
         period_type, *_unpack_period_args(period_type, start)
     )
-    prior = compute_core_kpis(pstart, pend, p_months)
+    prior = compute_core_kpis(pstart, pend, p_months, include_demo=include_demo)
 
     # Subscriber counts are a snapshot ("now"), not window flow — omit from period-over-period deltas.
     delta_exclude = {"active_monthly_subscribers", "active_annual_subscribers"}
@@ -290,12 +338,8 @@ def build_growth_report(start, end, months_in_period, period_type, label) -> dic
             "directory_signups": {
                 "title": "New platform accounts",
                 "description": "Profiles created in the period (all therapists and clients).",
-                "new_therapist_profiles": TherapistProfile.objects.filter(
-                    created_at__gte=start, created_at__lt=end
-                ).count(),
-                "new_client_profiles": ClientProfile.objects.filter(
-                    created_at__gte=start, created_at__lt=end
-                ).count(),
+                "new_therapist_profiles": _count_therapists_onboarded_in_period(start, end),
+                "new_client_profiles": _count_clients_in_period(start, end),
             },
             "clinical_relationships": {
                 "title": "Therapeutic relationships",
@@ -790,21 +834,24 @@ REPORT_BUILDERS = {
 }
 
 
-def build_report(report_key: str, start, end, months_in_period, period_type, label):
+def build_report(report_key: str, start, end, months_in_period, period_type, label, include_demo: bool = True):
     key = (report_key or "executive").lower()
     builder = REPORT_BUILDERS.get(key)
     if not builder:
         return None
-    return builder(start, end, months_in_period, period_type, label)
+    try:
+        return builder(start, end, months_in_period, period_type, label, include_demo=include_demo)
+    except TypeError:
+        return builder(start, end, months_in_period, period_type, label)
 
 
-def build_full_overview_payload(start, end, months_in_period, period_type, label):
+def build_full_overview_payload(start, end, months_in_period, period_type, label, include_demo: bool = True):
     """
     Legacy combined payload (single call) — used by /api/admin/reports/overview/
     for backward compatibility and bulk export.
     """
     now = timezone.now()
-    kpis = compute_core_kpis(start, end, months_in_period)
+    kpis = compute_core_kpis(start, end, months_in_period, include_demo=include_demo)
     monthly_price, annual_price = _subscription_price_decimals()
 
     sessions_taken_qs = Appointment.objects.filter(
@@ -812,6 +859,8 @@ def build_full_overview_payload(start, end, months_in_period, period_type, label
         start_time__gte=start,
         start_time__lt=end,
     )
+    if not include_demo:
+        sessions_taken_qs = sessions_taken_qs.exclude(therapist__user__email__icontains="dummy").exclude(client__user__email__icontains="dummy")
 
     revenue_by_therapist = [
         {

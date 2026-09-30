@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Box, Container, VStack, HStack, Heading, Text, Button, SimpleGrid, Progress,
-  Radio, RadioGroup, Checkbox, Stack, Input, Select, useToast, Divider, Icon,
+  Radio, RadioGroup, Checkbox, Stack, Input, useToast, Divider, Icon,
   Tag, Wrap, Textarea, FormControl, FormLabel, Alert, AlertIcon, AlertTitle,
   AlertDescription, Badge, InputGroup, Spinner, Center, Image, Flex,
 } from "@chakra-ui/react";
@@ -19,6 +19,7 @@ import { useAuth } from "../../../context/AuthContext";
 import NextLink from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { Select as ChakraReactSelect } from "chakra-react-select";
+import ModernSelect from "../../../components/ModernSelect";
 
 const MotionBox = motion(Box);
 
@@ -159,8 +160,10 @@ function AuthGate() {
           <VStack spacing={3}>
             <Heading
               size={{ base: "lg", md: "xl" }}
-              color="#56756D"
-              fontFamily="'Playfair Display', serif"
+              color="#263A33"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              fontWeight="600"
+              letterSpacing="-0.015em"
             >
               Sign In to Begin
             </Heading>
@@ -478,66 +481,154 @@ export default function DiscoveryClient() {
     switch (currentSection) {
       case 0:
         return (
-          <VStack spacing={{ base: 6, md: 10 }} align="center" textAlign="center" py={{ base: 4, md: 6 }}>
-            <Icon as={FiShield} w={{ base: 10, md: 12 }} h={{ base: 10, md: 12 }} color="#6B8B7B" />
-            <VStack spacing={4}>
-              <Heading size={{ base: "lg", md: "xl" }} color="#56756D" fontFamily="'Playfair Display', serif">Privacy & Purpose</Heading>
-              <Text color="rgba(46,46,46,0.75)" fontSize={{ base: "sm", md: "lg" }} maxW="lg">We prioritize clinical compatibility. Your responses are stored securely and used only to pair you with the best specialist for your needs.</Text>
-              <Box p={{ base: 4, md: 6 }} bg="rgba(169,203,183,0.1)" borderRadius="2xl" border="1px solid" borderColor="rgba(169,203,183,0.15)" mt={4}>
-                <Checkbox isChecked={quizData.consent} onChange={(e) => setQuizData({ ...quizData, consent: e.target.checked })}>
-                  <Text fontSize={{ base: "xs", md: "sm" }} fontWeight="600">I consent to this screening and understand it is for therapist matching, not emergency intervention.</Text>
-                </Checkbox>
-              </Box>
-              <HStack spacing={2} pt={4}>
-                <Text fontSize="xs" color="rgba(46,46,46,0.6)">Already know who you're looking for?</Text>
-                <Button 
-                    as={NextLink} 
-                    href="/therapists/directory" 
-                    variant="link" 
-                    color="#56756D" 
-                    fontSize="xs" 
-                    fontWeight="700"
-                    textDecoration="underline"
-                >
-                    Browse Directory
-                </Button>
-              </HStack>
+          <VStack spacing={5} align="center" textAlign="center" py={{ base: 3, md: 5 }}>
+            <Center w="52px" h="52px" borderRadius="full" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+              <Icon as={FiShield} boxSize="24px" />
+            </Center>
+            <VStack spacing={2} maxW="md">
+              <Heading 
+                fontSize={{ base: "20px", md: "22px" }} 
+                color="#263A33" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                fontWeight="600"
+                letterSpacing="-0.015em"
+              >
+                Privacy & Purpose
+              </Heading>
+              <Text 
+                color="#5A6E65" 
+                fontSize="13px" 
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                lineHeight="1.5"
+              >
+                We prioritize clinical compatibility. Your responses are stored securely and used only to pair you with the best specialist for your needs.
+              </Text>
             </VStack>
+
+            <Box 
+              p={3.5} 
+              bg="rgba(86, 117, 109, 0.06)" 
+              borderRadius="xl" 
+              border="1px solid rgba(86, 117, 109, 0.16)" 
+              w="full"
+              maxW="md"
+              textAlign="left"
+            >
+              <Checkbox 
+                colorScheme="teal"
+                isChecked={quizData.consent} 
+                onChange={(e) => setQuizData({ ...quizData, consent: e.target.checked })}
+              >
+                <Text fontSize="12.5px" fontWeight="500" color="#263A33" fontFamily="'Inter', var(--font-inter), sans-serif" lineHeight="1.5">
+                  I consent to this screening and understand it is for therapist matching, not emergency intervention.
+                </Text>
+              </Checkbox>
+            </Box>
+
+            <HStack spacing={1.5} pt={2}>
+              <Text fontSize="12px" color="#718096" fontFamily="'Inter', var(--font-inter), sans-serif">
+                Already know who you're looking for?
+              </Text>
+              <Button 
+                as={NextLink} 
+                href="/therapists/directory" 
+                variant="link" 
+                color="#56756D" 
+                fontSize="12px" 
+                fontWeight="600"
+                fontFamily="'Inter', var(--font-inter), sans-serif"
+                textDecoration="underline"
+                _hover={{ color: "#263A33" }}
+              >
+                Browse Directory
+              </Button>
+            </HStack>
           </VStack>
         );
+
       case 1:
         return (
-          <VStack spacing={{ base: 5, md: 8 }} align="stretch">
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }}>
+          <VStack spacing={4} align="stretch">
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>First Name</FormLabel>
-                <Input value={quizData.first_name} onChange={(e) => setQuizData({ ...quizData, first_name: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }} placeholder="Your first name" />
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">First Name</FormLabel>
+                <Input 
+                  value={quizData.first_name} 
+                  onChange={(e) => setQuizData({ ...quizData, first_name: e.target.value })} 
+                  h="40px"
+                  borderRadius="xl" 
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                  placeholder="Your first name" 
+                />
               </FormControl>
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Last Name</FormLabel>
-                <Input value={quizData.last_name} onChange={(e) => setQuizData({ ...quizData, last_name: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }} placeholder="Your last name" />
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Last Name</FormLabel>
+                <Input 
+                  value={quizData.last_name} 
+                  onChange={(e) => setQuizData({ ...quizData, last_name: e.target.value })} 
+                  h="40px"
+                  borderRadius="xl" 
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                  placeholder="Your last name" 
+                />
               </FormControl>
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Age</FormLabel>
-                <Input type="number" value={quizData.age} onChange={(e) => setQuizData({ ...quizData, age: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }} />
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Age</FormLabel>
+                <Input 
+                  type="number" 
+                  value={quizData.age} 
+                  onChange={(e) => setQuizData({ ...quizData, age: e.target.value })} 
+                  h="40px"
+                  borderRadius="xl" 
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                  placeholder="e.g. 28"
+                />
               </FormControl>
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Gender</FormLabel>
-                <Select value={quizData.gender} onChange={(e) => setQuizData({ ...quizData, gender: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }}>
-                  <option value="">Select</option>
-                  {GENDER_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
-                </Select>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Gender</FormLabel>
+                <ModernSelect 
+                  value={quizData.gender} 
+                  onChange={(val) => setQuizData({ ...quizData, gender: val })} 
+                  options={GENDER_OPTIONS}
+                  placeholder="Select gender"
+                  h="40px"
+                />
               </FormControl>
             </SimpleGrid>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Location (Country)</FormLabel>
-              <Input value={quizData.location.country} onChange={(e) => setQuizData({ ...quizData, location: { ...quizData.location, country: e.target.value } })} borderRadius="xl" size={{ base: "md", md: "lg" }} />
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Location (Country)</FormLabel>
+              <Input 
+                value={quizData.location.country} 
+                onChange={(e) => setQuizData({ ...quizData, location: { ...quizData.location, country: e.target.value } })} 
+                h="40px"
+                borderRadius="xl" 
+                borderColor="rgba(86, 117, 109, 0.2)"
+                bg="white"
+                fontSize="13px"
+                color="#263A33"
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+              />
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Languages for Therapy</FormLabel>
-              <Text fontSize="xs" color="rgba(46,46,46,0.6)" mb={2}>Type to search, select multiple languages</Text>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={0.5} fontFamily="'Inter', var(--font-inter), sans-serif">Languages for Therapy</FormLabel>
+              <Text fontSize="11.5px" color="#5A6E65" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Type to search, select multiple languages</Text>
               <ChakraReactSelect
                 isMulti
+                controlShouldRenderValue={true}
                 name="languages"
                 options={LANGUAGE_OPTIONS}
                 placeholder="Search and select languages..."
@@ -547,16 +638,87 @@ export default function DiscoveryClient() {
                   setQuizData({ ...quizData, languages: selected ? selected.map(s => s.value) : [] });
                 }}
                 chakraStyles={{
-                  container: (provided) => ({ ...provided, borderRadius: "xl" }),
-                  control: (provided) => ({ ...provided, borderRadius: "xl", minH: "45px" }),
-                  multiValue: (provided) => ({ ...provided, bg: "rgba(169,203,183,0.15)", borderRadius: "full" }),
-                  multiValueLabel: (provided) => ({ ...provided, color: "#56756D", fontWeight: "600", fontSize: "sm" }),
-                  multiValueRemove: (provided) => ({ ...provided, color: "#56756D", _hover: { bg: "rgba(86,117,109,0.15)", color: "#263A33" } }),
-                  dropdownIndicator: (provided) => ({ ...provided, bg: "transparent" }),
-                  option: (provided, state) => ({
+                  container: (provided) => ({ ...provided, borderRadius: "12px", width: "100%" }),
+                  control: (provided, { isFocused }) => ({
                     ...provided,
-                    bg: state.isSelected ? "#6B8B7B" : state.isFocused ? "rgba(169,203,183,0.1)" : "white",
-                    color: state.isSelected ? "white" : "gray.800",
+                    borderRadius: "12px",
+                    borderColor: isFocused ? "#56756D" : "rgba(86, 117, 109, 0.2)",
+                    boxShadow: isFocused ? "0 0 0 1px #56756D" : "none",
+                    bg: isFocused ? "white" : "rgba(250, 248, 245, 0.85)",
+                    minHeight: "40px",
+                    fontSize: "13px",
+                    fontFamily: "'Inter', var(--font-inter), sans-serif",
+                    transition: "all 0.18s ease",
+                    _hover: { borderColor: "#56756D", bg: "white" },
+                  }),
+                  valueContainer: (provided) => ({
+                    ...provided,
+                    display: "flex !important",
+                    flexDirection: "row !important",
+                    flexWrap: "wrap !important",
+                    alignItems: "center !important",
+                    padding: "3px 8px !important",
+                    gap: "5px !important",
+                    fontFamily: "'Inter', var(--font-inter), sans-serif !important",
+                  }),
+                  multiValue: (provided) => ({
+                    ...provided,
+                    display: "inline-flex !important",
+                    alignItems: "center !important",
+                    bg: "rgba(86, 117, 109, 0.1) !important",
+                    border: "1px solid rgba(86, 117, 109, 0.22) !important",
+                    borderRadius: "full !important",
+                    my: "2px !important",
+                    px: "5px !important",
+                    py: "1px !important",
+                    maxWidth: "none !important",
+                  }),
+                  multiValueLabel: (provided) => ({
+                    ...provided,
+                    fontFamily: "'Inter', var(--font-inter), sans-serif !important",
+                    fontSize: "12px !important",
+                    fontWeight: "600 !important",
+                    color: "#263A33 !important",
+                    px: "4px !important",
+                    maxWidth: "none !important",
+                    overflow: "visible !important",
+                    textOverflow: "clip !important",
+                    whiteSpace: "nowrap !important",
+                  }),
+                  multiValueRemove: (provided) => ({
+                    ...provided,
+                    color: "#56756D !important",
+                    borderRadius: "full !important",
+                    px: "4px !important",
+                    _hover: { bg: "rgba(239, 68, 68, 0.15) !important", color: "#DC2626 !important" },
+                  }),
+                  dropdownIndicator: (provided) => ({ ...provided, color: "#56756D", px: "8px" }),
+                  clearIndicator: (provided) => ({ ...provided, color: "#718096", px: "6px" }),
+                  menu: (provided) => ({
+                    ...provided,
+                    zIndex: 1600,
+                    borderRadius: "14px",
+                    boxShadow: "0 12px 28px -4px rgba(38, 58, 51, 0.14)",
+                    border: "1px solid rgba(86, 117, 109, 0.15)",
+                    bg: "white",
+                  }),
+                  menuList: (provided) => ({
+                    ...provided,
+                    p: "6px",
+                    borderRadius: "14px",
+                    maxHeight: "220px",
+                    fontFamily: "'Inter', var(--font-inter), sans-serif",
+                  }),
+                  option: (provided, { isFocused, isSelected }) => ({
+                    ...provided,
+                    borderRadius: "8px",
+                    px: "10px",
+                    py: "6px",
+                    fontSize: "13px",
+                    fontFamily: "'Inter', var(--font-inter), sans-serif",
+                    fontWeight: isSelected ? "600" : "500",
+                    color: isSelected ? "#263A33" : "#3D544C",
+                    bg: isSelected ? "rgba(86, 117, 109, 0.12)" : isFocused ? "rgba(86, 117, 109, 0.08)" : "transparent",
                   }),
                 }}
                 menuPlacement="auto"
@@ -564,86 +726,135 @@ export default function DiscoveryClient() {
             </FormControl>
           </VStack>
         );
+
       case 2:
         return (
-          <VStack spacing={{ base: 5, md: 8 }} align="stretch">
+          <VStack spacing={4} align="stretch">
             <Box>
-              <Heading size={{ base: "sm", md: "md" }} color="#56756D" mb={2}>Life Context & Identity</Heading>
-              <Text fontSize={{ base: "xs", md: "sm" }} color="rgba(46,46,46,0.75)">Tell us about any specific factors defining your identity or life stage.</Text>
+              <Heading 
+                fontSize={{ base: "17px", md: "19px" }}
+                color="#263A33" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                fontWeight="600"
+                letterSpacing="-0.015em"
+                mb={1}
+              >
+                Life Context & Identity
+              </Heading>
+              <Text fontSize="12.5px" color="#5A6E65" fontFamily="'Inter', var(--font-inter), sans-serif">
+                Tell us about any specific factors defining your identity or life stage.
+              </Text>
             </Box>
-            <VStack spacing={{ base: 4, md: 6 }} align="stretch">
+
+            <VStack spacing={3.5} align="stretch">
               <FormControl>
-                <FormLabel fontWeight="bold" fontSize={{ base: "xs", md: "sm" }} color="#56756D">LIFE STAGE / ROLES</FormLabel>
-                <Select placeholder="Select your current phase" borderRadius="xl" size={{ base: "md", md: "lg" }} value={quizData.life_stage_context} onChange={(e) => setQuizData({ ...quizData, life_stage_context: e.target.value })}>
-                  {IDENTITY_OPTIONS.lifeStage.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </Select>
+                <FormLabel fontSize="11.5px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">LIFE STAGE / ROLES</FormLabel>
+                <ModernSelect 
+                  placeholder="Select your current phase" 
+                  h="40px"
+                  value={quizData.life_stage_context} 
+                  onChange={(val) => setQuizData({ ...quizData, life_stage_context: val })}
+                  options={IDENTITY_OPTIONS.lifeStage}
+                />
               </FormControl>
               <FormControl>
-                <FormLabel fontWeight="bold" fontSize={{ base: "xs", md: "sm" }} color="#56756D">CULTURAL / SOCIAL CONTEXT</FormLabel>
-                <Select placeholder="Select cultural context" borderRadius="xl" size={{ base: "md", md: "lg" }} value={quizData.cultural_social_context} onChange={(e) => setQuizData({ ...quizData, cultural_social_context: e.target.value })}>
-                  {IDENTITY_OPTIONS.cultural.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </Select>
+                <FormLabel fontSize="11.5px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">CULTURAL / SOCIAL CONTEXT</FormLabel>
+                <ModernSelect 
+                  placeholder="Select cultural context" 
+                  h="40px"
+                  value={quizData.cultural_social_context} 
+                  onChange={(val) => setQuizData({ ...quizData, cultural_social_context: val })}
+                  options={IDENTITY_OPTIONS.cultural}
+                />
               </FormControl>
               <FormControl>
-                <FormLabel fontWeight="bold" fontSize={{ base: "xs", md: "sm" }} color="#56756D">IDENTITY / LIVED EXPERIENCE</FormLabel>
-                <Select placeholder="Select lived experience" borderRadius="xl" size={{ base: "md", md: "lg" }} value={quizData.identity_lived_experience} onChange={(e) => setQuizData({ ...quizData, identity_lived_experience: e.target.value })}>
-                  {IDENTITY_OPTIONS.livedExperience.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </Select>
+                <FormLabel fontSize="11.5px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">IDENTITY / LIVED EXPERIENCE</FormLabel>
+                <ModernSelect 
+                  placeholder="Select lived experience" 
+                  h="40px"
+                  value={quizData.identity_lived_experience} 
+                  onChange={(val) => setQuizData({ ...quizData, identity_lived_experience: val })}
+                  options={IDENTITY_OPTIONS.livedExperience}
+                />
               </FormControl>
               <FormControl>
-                <FormLabel fontWeight="bold" fontSize={{ base: "xs", md: "sm" }} color="#56756D">OTHER CONTEXTS</FormLabel>
-                <Textarea placeholder="Feel free to share any other identity or life details here..." borderRadius="xl" value={quizData.other_identity_details} onChange={(e) => setQuizData({ ...quizData, other_identity_details: e.target.value })} />
+                <FormLabel fontSize="11.5px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.06em" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">OTHER CONTEXTS</FormLabel>
+                <Textarea 
+                  placeholder="Feel free to share any other identity or life details here..." 
+                  borderRadius="xl" 
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  rows={3}
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                  value={quizData.other_identity_details} 
+                  onChange={(e) => setQuizData({ ...quizData, other_identity_details: e.target.value })} 
+                />
               </FormControl>
             </VStack>
           </VStack>
         );
+
       case 3:
         return (
-          <VStack spacing={{ base: 5, md: 8 }} align="stretch">
+          <VStack spacing={4} align="stretch">
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Session Type</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Session Type</FormLabel>
               <RadioGroup value={quizData.session_type_pref} onChange={(v) => setQuizData({ ...quizData, session_type_pref: v })}>
-                <Stack spacing={3}>
-                  {SESSION_TYPES.map(s => <Radio key={s} value={s} colorScheme="green" size={{ base: "md", md: "lg" }}>{s}</Radio>)}
+                <Stack spacing={2}>
+                  {SESSION_TYPES.map(s => (
+                    <Radio key={s} value={s} colorScheme="teal" size="md">
+                      <Text fontSize="13px" color="#263A33" fontWeight="500">{s}</Text>
+                    </Radio>
+                  ))}
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             {quizData.session_type_pref === "In-person (Select Locations)" && (
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>City</FormLabel>
-                <Select value={quizData.location_city} onChange={(e) => setQuizData({ ...quizData, location_city: e.target.value })} borderRadius="xl" placeholder="Select city" size={{ base: "md", md: "lg" }}>
-                  {MAJOR_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </Select>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">City</FormLabel>
+                <ModernSelect 
+                  value={quizData.location_city} 
+                  onChange={(val) => setQuizData({ ...quizData, location_city: val })} 
+                  placeholder="Select city" 
+                  h="40px"
+                  options={MAJOR_CITIES}
+                />
               </FormControl>
             )}
+
             <FormControl>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Therapist Style Preference</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Therapist Style Preference</FormLabel>
               <RadioGroup value={quizData.therapy_style_pref} onChange={(v) => setQuizData({ ...quizData, therapy_style_pref: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
-                  <Radio value="Structured" colorScheme="green">Structured</Radio>
-                  <Radio value="Reflective" colorScheme="green">Reflective</Radio>
-                  <Radio value="Balanced" colorScheme="green">Balanced</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 5 }}>
+                  <Radio value="Structured" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Structured</Text></Radio>
+                  <Radio value="Reflective" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Reflective</Text></Radio>
+                  <Radio value="Balanced" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Balanced</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>How soon do you want to start?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">How soon do you want to start?</FormLabel>
               <RadioGroup value={quizData.urgency} onChange={(v) => setQuizData({ ...quizData, urgency: v })}>
                 <Stack direction="column" spacing={2}>
-                  <Radio value="ASAP" colorScheme="green">As soon as possible</Radio>
-                  <Radio value="1-2 weeks" colorScheme="green">Within 1-2 weeks</Radio>
-                  <Radio value="Exploring" colorScheme="green">Just exploring</Radio>
+                  <Radio value="ASAP" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">As soon as possible</Text></Radio>
+                  <Radio value="1-2 weeks" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Within 1-2 weeks</Text></Radio>
+                  <Radio value="Exploring" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Just exploring</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
           </VStack>
         );
+
       case 4:
         return (
-          <VStack spacing={{ base: 5, md: 8 }} align="stretch">
+          <VStack spacing={4} align="stretch">
             <FormControl isRequired>
-              <FormLabel fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>Areas of Support Needed (Multiple Choice)</FormLabel>
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 2, md: 3 }}>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Areas of Support Needed (Multiple Choice)</FormLabel>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2.5}>
                 {CONCERNS.map(c => (
                   <Checkbox
                     key={c}
@@ -652,207 +863,284 @@ export default function DiscoveryClient() {
                       const current = quizData.presenting_concerns;
                       setQuizData({ ...quizData, presenting_concerns: e.target.checked ? [...current, c] : current.filter(i => i !== c) });
                     }}
-                    colorScheme="green"
-                    size={{ base: "sm", md: "md" }}
+                    colorScheme="teal"
+                    size="md"
                   >
-                    <Text fontSize={{ base: "xs", md: "sm" }}>{c}</Text>
+                    <Text fontSize="12.5px" color="#263A33" fontWeight="500">{c}</Text>
                   </Checkbox>
                 ))}
               </SimpleGrid>
             </FormControl>
-            <Divider />
+
+            <Divider borderColor="rgba(86, 117, 109, 0.12)" />
+
             <FormControl isRequired>
-              <FormLabel fontWeight="bold" fontSize={{ base: "sm", md: "md" }}>Primary Clinical Concern</FormLabel>
-              <Select value={quizData.primary_concern} onChange={(e) => setQuizData({ ...quizData, primary_concern: e.target.value })} borderRadius="xl" placeholder="Select primary" size={{ base: "md", md: "lg" }}>
-                {quizData.presenting_concerns.map(c => <option key={c} value={c}>{c}</option>)}
-              </Select>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Primary Clinical Concern</FormLabel>
+              <ModernSelect 
+                value={quizData.primary_concern} 
+                onChange={(val) => setQuizData({ ...quizData, primary_concern: val })} 
+                placeholder="Select primary concern" 
+                h="40px"
+                options={quizData.presenting_concerns.length > 0 ? quizData.presenting_concerns : CONCERNS}
+              />
             </FormControl>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }}>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
               <FormControl>
-                <FormLabel fontSize={{ base: "xs", md: "sm" }}>Duration</FormLabel>
-                <Select value={quizData.duration} onChange={(e) => setQuizData({ ...quizData, duration: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }}>
-                  <option value="< 1 month">Less than 1 month</option>
-                  <option value="1-6 months">1-6 months</option>
-                  <option value="6+ months">Over 6 months</option>
-                  <option value="Years">Years (on/off)</option>
-                </Select>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Duration</FormLabel>
+                <ModernSelect 
+                  value={quizData.duration} 
+                  onChange={(val) => setQuizData({ ...quizData, duration: val })} 
+                  placeholder="Select duration"
+                  h="40px"
+                  options={[
+                    { value: "< 1 month", label: "Less than 1 month" },
+                    { value: "1-6 months", label: "1-6 months" },
+                    { value: "6+ months", label: "Over 6 months" },
+                    { value: "Years", label: "Years (on/off)" },
+                  ]}
+                />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize={{ base: "xs", md: "sm" }}>Daily Impact</FormLabel>
-                <Select value={quizData.impairment_level} onChange={(e) => setQuizData({ ...quizData, impairment_level: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }}>
-                  <option value="Mild">Mild</option>
-                  <option value="Moderate">Moderate</option>
-                  <option value="Significant">Significant</option>
-                  <option value="Severe">Severe</option>
-                </Select>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Daily Impact</FormLabel>
+                <ModernSelect 
+                  value={quizData.impairment_level} 
+                  onChange={(val) => setQuizData({ ...quizData, impairment_level: val })} 
+                  placeholder="Select daily impact"
+                  h="40px"
+                  options={["Mild", "Moderate", "Significant", "Severe"]}
+                />
               </FormControl>
             </SimpleGrid>
           </VStack>
         );
+
       case 5:
         return (
-          <VStack spacing={{ base: 5, md: 8 }} align="stretch">
+          <VStack spacing={4} align="stretch">
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Previous Therapy?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Previous Therapy?</FormLabel>
               <RadioGroup value={quizData.prior_therapy} onChange={(v) => setQuizData({ ...quizData, prior_therapy: v })}>
                 <Stack spacing={2}>
-                  <Radio value="Yes" colorScheme="green">Yes</Radio>
-                  <Radio value="No" colorScheme="green">No</Radio>
+                  <Radio value="Yes" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Yes</Text></Radio>
+                  <Radio value="No" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Seeing a Psychiatrist / On Medication?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Seeing a Psychiatrist / On Medication?</FormLabel>
               <RadioGroup value={quizData.on_medication} onChange={(v) => setQuizData({ ...quizData, on_medication: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
-                  <Radio value="Yes" colorScheme="green">Yes</Radio>
-                  <Radio value="No" colorScheme="green">No</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
+                  <Radio value="Yes" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Yes</Text></Radio>
+                  <Radio value="No" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Existing Diagnosis?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Existing Diagnosis?</FormLabel>
               <RadioGroup value={quizData.has_diagnosis} onChange={(v) => setQuizData({ ...quizData, has_diagnosis: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
-                  <Radio value="Yes" colorScheme="green">Yes</Radio>
-                  <Radio value="No" colorScheme="green">No</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
+                  <Radio value="Yes" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Yes</Text></Radio>
+                  <Radio value="No" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Physical Health Concerns?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Physical Health Concerns?</FormLabel>
               <RadioGroup value={quizData.health_factors} onChange={(v) => setQuizData({ ...quizData, health_factors: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
-                  <Radio value="Yes" colorScheme="green">Yes</Radio>
-                  <Radio value="No" colorScheme="green">No</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
+                  <Radio value="Yes" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Yes</Text></Radio>
+                  <Radio value="No" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
-            {quizData.health_factors === "Yes" && <Textarea placeholder="Details..." value={quizData.health_factors_details} onChange={(e) => setQuizData({ ...quizData, health_factors_details: e.target.value })} borderRadius="xl" />}
+
+            {quizData.health_factors === "Yes" && (
+              <Textarea 
+                placeholder="Please share details..." 
+                value={quizData.health_factors_details} 
+                onChange={(e) => setQuizData({ ...quizData, health_factors_details: e.target.value })} 
+                borderRadius="xl"
+                borderColor="rgba(86, 117, 109, 0.2)"
+                fontSize="13px"
+                color="#263A33"
+                rows={3}
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+              />
+            )}
           </VStack>
         );
+
       case 6:
         return (
-          <VStack spacing={{ base: 6, md: 10 }} align="stretch">
+          <VStack spacing={4} align="stretch">
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Sleep Quality</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Sleep Quality</FormLabel>
               <RadioGroup value={quizData.sleep_quality} onChange={(v) => setQuizData({ ...quizData, sleep_quality: v })}>
                 <Stack spacing={2}>
-                  <Radio value="Good" colorScheme="green">Steady</Radio>
-                  <Radio value="Troubled" colorScheme="green">Interrupted / Troubled</Radio>
-                  <Radio value="Poor" colorScheme="green">Significant Lack of Sleep</Radio>
+                  <Radio value="Good" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Steady / Restful</Text></Radio>
+                  <Radio value="Troubled" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Interrupted / Troubled</Text></Radio>
+                  <Radio value="Poor" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Significant Lack of Sleep</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Energy Levels</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Energy Levels</FormLabel>
               <RadioGroup value={quizData.energy_level} onChange={(v) => setQuizData({ ...quizData, energy_level: v })}>
                 <Stack spacing={2}>
-                  <Radio value="Steady" colorScheme="green">Steady</Radio>
-                  <Radio value="Low" colorScheme="green">Low Energy</Radio>
-                  <Radio value="Fluctuating" colorScheme="green">Wide fluctuations</Radio>
+                  <Radio value="Steady" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Steady</Text></Radio>
+                  <Radio value="Low" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Low Energy</Text></Radio>
+                  <Radio value="Fluctuating" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Wide Fluctuations</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Appetite Changes</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Appetite Changes</FormLabel>
               <RadioGroup value={quizData.appetite_level} onChange={(v) => setQuizData({ ...quizData, appetite_level: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
-                  <Radio value="Normal" colorScheme="green">No Change</Radio>
-                  <Radio value="Increased" colorScheme="green">Increased</Radio>
-                  <Radio value="Decreased" colorScheme="green">Decreased</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 5 }}>
+                  <Radio value="Normal" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No Change</Text></Radio>
+                  <Radio value="Increased" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Increased</Text></Radio>
+                  <Radio value="Decreased" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Decreased</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Social Support (Who can you talk to?)</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={2} fontFamily="'Inter', var(--font-inter), sans-serif">Social Support (Who can you talk to?)</FormLabel>
               <Wrap spacing={2}>
-                {["Family", "Friends", "Partner", "Work Colleagues", "No one currently"].map(s => (
-                  <Tag
-                    key={s}
-                    cursor="pointer"
-                    borderRadius="full"
-                    px={{ base: 3, md: 4 }}
-                    py={2}
-                    fontSize={{ base: "xs", md: "sm" }}
-                    variant={quizData.support_sources.includes(s) ? "solid" : "outline"}
-                    colorScheme="green"
-                    onClick={() => {
-                      const current = quizData.support_sources;
-                      setQuizData({ ...quizData, support_sources: current.includes(s) ? current.filter(x => x !== s) : [...current, s] });
-                    }}
-                  >
-                    {s}
-                  </Tag>
-                ))}
+                {["Family", "Friends", "Partner", "Work Colleagues", "No one currently"].map(s => {
+                  const isSelected = quizData.support_sources.includes(s);
+                  return (
+                    <Tag
+                      key={s}
+                      cursor="pointer"
+                      borderRadius="full"
+                      px={3.5}
+                      py={1.5}
+                      fontSize="12px"
+                      fontWeight="600"
+                      bg={isSelected ? "#56756D" : "rgba(86, 117, 109, 0.08)"}
+                      color={isSelected ? "white" : "#263A33"}
+                      border="1px solid"
+                      borderColor={isSelected ? "#56756D" : "rgba(86, 117, 109, 0.18)"}
+                      transition="all 0.15s ease"
+                      _hover={{ borderColor: "#56756D" }}
+                      onClick={() => {
+                        const current = quizData.support_sources;
+                        setQuizData({ ...quizData, support_sources: current.includes(s) ? current.filter(x => x !== s) : [...current, s] });
+                      }}
+                    >
+                      {s}
+                    </Tag>
+                  );
+                })}
               </Wrap>
             </FormControl>
           </VStack>
         );
+
       case 7:
         return (
-          <VStack spacing={{ base: 5, md: 8 }} align="stretch">
-            <Alert status="error" borderRadius="xl" bg="red.50" color="red.800" border="1px solid" borderColor="red.100" flexDirection={{ base: "column", md: "row" }} alignItems={{ base: "flex-start", md: "center" }}>
-              <AlertIcon />
-              <Box>
-                <AlertTitle fontSize={{ base: "sm", md: "md" }}>Safety Notice</AlertTitle>
-                <AlertDescription fontSize={{ base: "xs", md: "sm" }} lineHeight="tall">
-                  MLC does not currently have emergency services. In case of emergencies please visit your nearest Hospital's emergency unit or Contact your countries national helplines for support. We hope that we can soon build our emergency services to provide more individuals the support they need during times of crisis.
-                </AlertDescription>
-              </Box>
-            </Alert>
+          <VStack spacing={4} align="stretch">
+            <Box 
+              p={4} 
+              borderRadius="xl" 
+              bg="linear-gradient(135deg, #FEF2F2 0%, #FFF5F5 100%)" 
+              border="1px solid rgba(239, 68, 68, 0.25)"
+            >
+              <HStack spacing={3} align="flex-start">
+                <Icon as={FiShield} boxSize="18px" color="#DC2626" mt={0.5} flexShrink={0} />
+                <VStack align="start" spacing={1}>
+                  <Text fontSize="13px" fontWeight="700" color="#991B1B" fontFamily="'Inter', var(--font-inter), sans-serif">
+                    Safety Notice
+                  </Text>
+                  <Text fontSize="12px" color="#B91C1C" lineHeight="1.5" fontFamily="'Inter', var(--font-inter), sans-serif">
+                    MLC provides scheduled outpatient care and does not have emergency crisis intervention. In immediate emergencies, please visit your nearest hospital emergency department or dial your local national emergency helpline.
+                  </Text>
+                </VStack>
+              </HStack>
+            </Box>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Thoughts of self-harm?</FormLabel>
-              <Select value={quizData.suicidal_thoughts} onChange={(e) => setQuizData({ ...quizData, suicidal_thoughts: e.target.value })} borderRadius="xl" size={{ base: "md", md: "lg" }}>
-                <option value="No">No</option>
-                <option value="Passive">Passive thoughts</option>
-                <option value="Active">Active / I feel at risk</option>
-              </Select>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Thoughts of self-harm?</FormLabel>
+              <ModernSelect 
+                value={quizData.suicidal_thoughts} 
+                onChange={(val) => setQuizData({ ...quizData, suicidal_thoughts: val })} 
+                placeholder="Select frequency"
+                h="40px"
+                options={[
+                  { value: "No", label: "No" },
+                  { value: "Passive", label: "Passive thoughts" },
+                  { value: "Active", label: "Active / I feel at risk" },
+                ]}
+              />
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Past history of self-harm?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Past history of self-harm?</FormLabel>
               <RadioGroup value={quizData.past_self_harm} onChange={(v) => setQuizData({ ...quizData, past_self_harm: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
-                  <Radio value="Yes" colorScheme="green">Yes</Radio>
-                  <Radio value="No" colorScheme="green">No</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
+                  <Radio value="Yes" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Yes</Text></Radio>
+                  <Radio value="No" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
+
             <FormControl isRequired>
-              <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Safe in your current environment?</FormLabel>
+              <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Safe in your current environment?</FormLabel>
               <RadioGroup value={quizData.feels_safe} onChange={(v) => setQuizData({ ...quizData, feels_safe: v })}>
-                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
-                  <Radio value="Yes" colorScheme="green">Yes</Radio>
-                  <Radio value="No" colorScheme="green">No</Radio>
+                <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
+                  <Radio value="Yes" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">Yes</Text></Radio>
+                  <Radio value="No" colorScheme="teal" size="md"><Text fontSize="13px" color="#263A33" fontWeight="500">No</Text></Radio>
                 </Stack>
               </RadioGroup>
             </FormControl>
           </VStack>
         );
+
       case 8:
         return (
-          <VStack spacing={{ base: 6, md: 10 }} align="stretch">
+          <VStack spacing={4} align="stretch">
             <Box>
-              <Heading size={{ base: "sm", md: "md" }} color="#56756D" mb={4}>Mood Screening (DASS-21)</Heading>
-              <Text fontSize={{ base: "xs", md: "sm" }} color="rgba(46,46,46,0.75)" mb={4}>Please select the most accurate response based on the past week:</Text>
-              <VStack align="start" fontSize="xs" color="rgba(46,46,46,0.6)" spacing={1} bg="gray.50" p={{ base: 3, md: 4 }} borderRadius="xl">
+              <Heading 
+                fontSize={{ base: "17px", md: "19px" }}
+                color="#263A33" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                fontWeight="600"
+                letterSpacing="-0.015em"
+                mb={1}
+              >
+                Mood Screening (DASS-21)
+              </Heading>
+              <Text fontSize="12.5px" color="#5A6E65" mb={3} fontFamily="'Inter', var(--font-inter), sans-serif">
+                Please select the most accurate response based on your experience over the past week:
+              </Text>
+              <VStack align="start" fontSize="12px" color="#5A6E65" spacing={1} bg="rgba(250, 248, 245, 0.85)" p={3} borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.12)">
                 <Text>• <b>Never:</b> Did not apply to me at all</Text>
-                <Text>• <b>Sometimes:</b> Applied to some degree / some time</Text>
+                <Text>• <b>Sometimes:</b> Applied to some degree / occasionally</Text>
                 <Text>• <b>Often:</b> Applied considerably / good part of time</Text>
-                <Text>• <b>Almost Always:</b> Applied very much / most time</Text>
+                <Text>• <b>Almost Always:</b> Applied very much / most of the time</Text>
               </VStack>
             </Box>
+
             {DASS_ITEMS.map((item, idx) => (
-              <FormControl key={idx} p={{ base: 4, md: 6 }} borderBottom="1px solid" borderColor="gray.100">
-                <FormLabel fontSize={{ base: "sm", md: "md" }} fontWeight="bold" mb={{ base: 3, md: 4 }}>{idx + 1}. {item}</FormLabel>
+              <FormControl key={idx} py={3} px={1} borderBottom="1px solid rgba(86, 117, 109, 0.08)">
+                <FormLabel fontSize="13px" fontWeight="600" color="#263A33" mb={2} fontFamily="'Inter', var(--font-inter), sans-serif">
+                  {idx + 1}. {item}
+                </FormLabel>
                 <RadioGroup
                   value={quizData.dass_answers[idx]?.toString() || ""}
                   onChange={(v) => setQuizData({ ...quizData, dass_answers: { ...quizData.dass_answers, [idx]: parseInt(v) } })}
                 >
-                  <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 8 }}>
+                  <Stack direction={{ base: "column", md: "row" }} spacing={{ base: 2, md: 6 }}>
                     {DASS_LABELS.map((label, score) => (
-                      <Radio key={score} value={score.toString()} colorScheme="green" size={{ base: "sm", md: "md" }}>
-                        <Text fontSize={{ base: "xs", md: "sm" }} whiteSpace="nowrap">{label}</Text>
+                      <Radio key={score} value={score.toString()} colorScheme="teal" size="md">
+                        <Text fontSize="12.5px" color="#263A33" fontWeight="500" whiteSpace="nowrap">{label}</Text>
                       </Radio>
                     ))}
                   </Stack>
@@ -861,34 +1149,69 @@ export default function DiscoveryClient() {
             ))}
           </VStack>
         );
+
       case 9:
         return (
-          <VStack spacing={{ base: 6, md: 10 }} align="stretch" py={{ base: 4, md: 6 }}>
-            <Box textAlign="center">
-              <Icon as={FiCheck} w={{ base: 10, md: 12 }} h={{ base: 10, md: 12 }} color="#6B8B7B" mb={4} />
-              <Heading size={{ base: "md", md: "lg" }}>One Final Step</Heading>
-              <Text color="rgba(46,46,46,0.75)" fontSize={{ base: "sm", md: "md" }}>Please provide your contact details so we can save your results and send you matches.</Text>
-            </Box>
+          <VStack spacing={5} align="stretch" py={{ base: 2, md: 4 }}>
+            <VStack spacing={2} textAlign="center">
+              <Center w="48px" h="48px" borderRadius="full" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiCheck} boxSize="22px" />
+              </Center>
+              <Heading 
+                fontSize={{ base: "19px", md: "21px" }}
+                color="#263A33"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                fontWeight="600"
+                letterSpacing="-0.015em"
+              >
+                One Final Step
+              </Heading>
+              <Text color="#5A6E65" fontSize="13px" maxW="md">
+                Please provide your contact details so we can save your results and send you matches.
+              </Text>
+            </VStack>
 
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Email Address</FormLabel>
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Email Address</FormLabel>
                 <InputGroup>
-                  <Input value={quizData.email} onChange={(e) => setQuizData({ ...quizData, email: e.target.value })} borderRadius="xl" placeholder="example@email.com" size={{ base: "md", md: "lg" }} />
+                  <Input 
+                    value={quizData.email} 
+                    onChange={(e) => setQuizData({ ...quizData, email: e.target.value })} 
+                    h="40px"
+                    borderRadius="xl" 
+                    borderColor="rgba(86, 117, 109, 0.2)"
+                    bg="white"
+                    fontSize="13px"
+                    color="#263A33"
+                    _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                    placeholder="example@email.com" 
+                  />
                 </InputGroup>
               </FormControl>
               <FormControl isRequired>
-                <FormLabel fontWeight="600" fontSize={{ base: "sm", md: "md" }}>Phone Number (WhatsApp)</FormLabel>
-                <Input value={quizData.phone} onChange={(e) => setQuizData({ ...quizData, phone: e.target.value })} borderRadius="xl" placeholder="+91 00000 00000" size={{ base: "md", md: "lg" }} />
+                <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5} fontFamily="'Inter', var(--font-inter), sans-serif">Phone Number (WhatsApp)</FormLabel>
+                <Input 
+                  value={quizData.phone} 
+                  onChange={(e) => setQuizData({ ...quizData, phone: e.target.value })} 
+                  h="40px"
+                  borderRadius="xl" 
+                  borderColor="rgba(86, 117, 109, 0.2)"
+                  bg="white"
+                  fontSize="13px"
+                  color="#263A33"
+                  _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                  placeholder="+91 00000 00000" 
+                />
               </FormControl>
             </SimpleGrid>
 
-            <VStack align="stretch" spacing={4} bg="rgba(169,203,183,0.1)" p={{ base: 4, md: 6 }} borderRadius="2xl">
-              <Checkbox isChecked={quizData.whatsapp_marketing_consent} onChange={(e) => setQuizData({ ...quizData, whatsapp_marketing_consent: e.target.checked })}>
-                <Text fontSize={{ base: "xs", md: "sm" }}>I'd like to receive mental health resources and updates via <b>WhatsApp</b>.</Text>
+            <VStack align="stretch" spacing={3} bg="rgba(86, 117, 109, 0.06)" p={4} borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.14)">
+              <Checkbox colorScheme="teal" isChecked={quizData.whatsapp_marketing_consent} onChange={(e) => setQuizData({ ...quizData, whatsapp_marketing_consent: e.target.checked })}>
+                <Text fontSize="12.5px" color="#263A33">I'd like to receive mental health resources and updates via <b>WhatsApp</b>.</Text>
               </Checkbox>
-              <Checkbox isChecked={quizData.email_marketing_consent} onChange={(e) => setQuizData({ ...quizData, email_marketing_consent: e.target.checked })}>
-                <Text fontSize={{ base: "xs", md: "sm" }}>I'd like to receive mental health resources and updates via <b>Email</b>.</Text>
+              <Checkbox colorScheme="teal" isChecked={quizData.email_marketing_consent} onChange={(e) => setQuizData({ ...quizData, email_marketing_consent: e.target.checked })}>
+                <Text fontSize="12.5px" color="#263A33">I'd like to receive mental health resources and updates via <b>Email</b>.</Text>
               </Checkbox>
             </VStack>
 
@@ -896,15 +1219,16 @@ export default function DiscoveryClient() {
               bg="#56756D"
               color="white"
               borderRadius="full"
-              px={{ base: 8, md: 12 }}
-              h="46px"
-              fontSize="14px"
-              fontWeight="700"
+              px={8}
+              h="40px"
+              fontSize="13px"
+              fontWeight="600"
               onClick={submitQuiz}
               isLoading={isLoading}
               w={{ base: "full", md: "auto" }}
               alignSelf="center"
-              _hover={{ bg: "#263A33" }}
+              boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+              _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
             >
               View Recommendations
             </Button>
@@ -935,7 +1259,15 @@ export default function DiscoveryClient() {
           <Box p={{ base: 6, md: 10 }} bg="white" borderRadius={{ base: "2xl", md: "3rem" }} shadow="xl" border="1px solid" borderColor="rgba(169,203,183,0.1)">
             <VStack align="start" spacing={{ base: 4, md: 6 }} maxW="4xl">
               <Badge bg="rgba(169,203,183,0.1)" color="#56756D" px={4} py={1} borderRadius="full" fontSize={{ base: "2xs", md: "xs" }}>CLINICAL SUMMARY</Badge>
-              <Heading size={{ base: "md", md: "xl" }} color="#263A33" fontFamily="'Playfair Display', serif">Thank you for sharing your story</Heading>
+              <Heading 
+                size={{ base: "md", md: "xl" }} 
+                color="#263A33" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                fontWeight="600"
+                letterSpacing="-0.015em"
+              >
+                Thank you for sharing your story
+              </Heading>
               <Text fontSize={{ base: "sm", md: "lg" }} color="rgba(46,46,46,0.75)" lineHeight="1.8">
                 It takes significant internal courage to vocalize these concerns. Your screening indicates{' '}
                 <Box as="span" fontWeight="800" color="#56756D">{d.toLowerCase()}</Box> levels of low mood,{' '}
@@ -956,7 +1288,15 @@ export default function DiscoveryClient() {
           </Box>
 
           <VStack align="start" spacing={6}>
-            <Heading size={{ base: "md", md: "lg" }} color="#263A33">Your Recommended Specialists</Heading>
+            <Heading 
+              size={{ base: "md", md: "lg" }} 
+              color="#263A33"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              fontWeight="600"
+              letterSpacing="-0.015em"
+            >
+              Your Recommended Specialists
+            </Heading>
             {!hasAnyMatchResults && (
               <Box p={{ base: 5, md: 6 }} bg="rgba(169,203,183,0.1)" borderRadius="2xl" border="1px solid" borderColor="rgba(169,203,183,0.15)" w="full">
                 <VStack align="start" spacing={2}>
@@ -1011,12 +1351,20 @@ export default function DiscoveryClient() {
         <VStack spacing={{ base: 6, md: 10 }} align="center" textAlign="center" p={{ base: 8, md: 12 }} bg="white" borderRadius={{ base: "2xl", md: "3rem" }} shadow="2xl">
           <Icon as={FiCheck} w={{ base: 12, md: 16 }} h={{ base: 12, md: 16 }} color="#6B8B7B" />
           <VStack spacing={4}>
-            <Heading size={{ base: "lg", md: "xl" }} color="#263A33">Welcome Back</Heading>
-            <Text fontSize={{ base: "sm", md: "lg" }} color="rgba(46,46,46,0.75)">You have already completed your clinical screening. How would you like to proceed?</Text>
+            <Heading 
+              size={{ base: "lg", md: "xl" }} 
+              color="#263A33"
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              fontWeight="600"
+              letterSpacing="-0.015em"
+            >
+              Welcome Back
+            </Heading>
+            <Text fontSize={{ base: "sm", md: "lg" }} color="rgba(46,46,46,0.75)" fontFamily="'Inter', var(--font-inter), sans-serif">You have already completed your clinical screening. How would you like to proceed?</Text>
           </VStack>
           <Stack direction={{ base: "column", md: "row" }} spacing={4} w="full">
-            <Button flex={1} bg="#56756D" color="white" borderRadius="full" height="14" fontSize={{ base: "sm", md: "md" }} onClick={() => setView("results")}>View My Recommended Matches</Button>
-            <Button flex={1} variant="outline" borderColor="#56756D" color="#56756D" borderRadius="full" height="14" fontSize={{ base: "sm", md: "md" }} leftIcon={<FiRefreshCw />} onClick={() => setView("quiz")}>Update My Needs</Button>
+            <Button flex={1} bg="#56756D" color="white" borderRadius="full" height="14" fontSize={{ base: "sm", md: "md" }} fontFamily="'Inter', var(--font-inter), sans-serif" onClick={() => setView("results")}>View My Recommended Matches</Button>
+            <Button flex={1} variant="outline" borderColor="#56756D" color="#56756D" borderRadius="full" height="14" fontSize={{ base: "sm", md: "md" }} fontFamily="'Inter', var(--font-inter), sans-serif" leftIcon={<FiRefreshCw />} onClick={() => setView("quiz")}>Update My Needs</Button>
           </Stack>
         </VStack>
       </Container>
@@ -1027,44 +1375,66 @@ export default function DiscoveryClient() {
   // 🔹 View Router
   // ===========================
 
-  if (view === "checking" || !isMounted) return <Box py={40} textAlign="center"><Spinner size="xl" color="#6B8B7B" /><Text mt={4} color="rgba(46,46,46,0.6)">Retrieving your profile...</Text></Box>;
+  if (view === "checking" || !isMounted) return <Box py={40} textAlign="center" fontFamily="'Inter', var(--font-inter), sans-serif"><Spinner size="xl" color="#56756D" /><Text mt={4} color="#718096">Retrieving your profile...</Text></Box>;
   if (view === "auth_gate") return <AuthGate />;
   if (view === "welcome_back") return renderWelcomeBack();
   if (view === "high_risk") return (
-    <Box py={{ base: 12, md: 20 }} textAlign="center" px={4}>
-      <Heading size={{ base: "md", md: "lg" }}>Immediate Support Recommended</Heading>
-      <Text mt={4} fontSize={{ base: "sm", md: "md" }}>Please contact your countries national helplines or nearest hospital ER.</Text>
+    <Box py={{ base: 12, md: 20 }} textAlign="center" px={4} fontFamily="'Inter', var(--font-inter), sans-serif">
+      <Heading 
+        size={{ base: "md", md: "lg" }}
+        color="#263A33"
+        fontFamily="'Outfit', var(--font-outfit), sans-serif"
+        fontWeight="600"
+        letterSpacing="-0.015em"
+      >
+        Immediate Support Recommended
+      </Heading>
+      <Text mt={4} fontSize={{ base: "sm", md: "md" }} color="#5A6E65">Please contact your countries national helplines or nearest hospital ER.</Text>
     </Box>
   );
   if (view === "results") return renderResults();
 
   return (
-    <Box bg="#FDFBFA" minH="100vh" py={{ base: 8, md: 12 }} px={{ base: 3, md: 0 }}>
+    <Box bg="#FDFBFA" minH="100vh" py={{ base: 8, md: 12 }} px={{ base: 3, md: 0 }} fontFamily="'Inter', var(--font-inter), sans-serif">
       <Container maxW={{ base: "full", md: currentSection > 7 ? "4xl" : "3xl" }}>
         <VStack spacing={{ base: 5, md: 8 }} align="stretch">
-          <Box bg="white" p={{ base: 5, md: 10 }} borderRadius="2xl" shadow="lg" border="1px solid" borderColor="gray.100">
+          <Box 
+            bg="white" 
+            p={{ base: 5, md: 10 }} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid rgba(86, 117, 109, 0.14)"
+          >
             <VStack spacing={{ base: 5, md: 8 }} align="stretch">
               <Box>
                 <HStack justify="space-between" mb={3}>
-                  <Text fontSize="xs" fontWeight="900" color="#56756D">STEP {currentSection + 1} / {SECTIONS.length}</Text>
-                  <Text fontSize="xs" fontWeight="900" color="gray.300">{Math.round(progress)}%</Text>
+                  <Text fontSize="11px" fontWeight="700" color="#56756D" letterSpacing="0.08em" textTransform="uppercase" fontFamily="'Inter', var(--font-inter), sans-serif">
+                    STEP {currentSection + 1} / {SECTIONS.length}
+                  </Text>
+                  <Text fontSize="11px" fontWeight="700" color="#718096" fontFamily="'Inter', var(--font-inter), sans-serif">
+                    {Math.round(progress)}%
+                  </Text>
                 </HStack>
-                <Progress value={progress} size="xs" colorScheme="green" borderRadius="full" />
+                <Progress value={progress} size="xs" borderRadius="full" sx={{ '& > div': { bg: '#56756D' } }} />
               </Box>
               <AnimatePresence mode="wait">
                 <MotionBox key={currentSection} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
                   {renderSection()}
                 </MotionBox>
               </AnimatePresence>
-              <Flex justify="space-between" pt={{ base: 6, md: 8 }} gap={3} direction={{ base: "row" }} flexWrap="nowrap">
+              <Flex justify="space-between" pt={{ base: 5, md: 7 }} gap={3} direction={{ base: "row" }} flexWrap="nowrap" align="center">
                 <Button
                   variant="ghost"
                   leftIcon={<FiArrowLeft />}
                   onClick={prevStep}
                   isDisabled={currentSection === 0}
-                  h="46px"
-                  fontSize="14px"
-                  fontWeight="700"
+                  h="38px"
+                  fontSize="13px"
+                  fontWeight="600"
+                  color="#5A6E65"
+                  borderRadius="full"
+                  px={4}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.08)", color: "#263A33" }}
                   flexShrink={0}
                 >
                   Back
@@ -1073,15 +1443,16 @@ export default function DiscoveryClient() {
                   <Button
                     bg="#56756D"
                     color="white"
-                    px={{ base: 6, md: 10 }}
-                    h="46px"
-                    fontSize="14px"
-                    fontWeight="700"
+                    px={{ base: 5, md: 7 }}
+                    h="38px"
+                    fontSize="13px"
+                    fontWeight="600"
                     borderRadius="full"
                     rightIcon={<FiArrowRight />}
                     onClick={nextStep}
                     flexShrink={0}
-                    _hover={{ bg: "#263A33" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
                   >
                     Continue
                   </Button>

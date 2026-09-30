@@ -1,342 +1,939 @@
 'use client'
 
 import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  SimpleGrid,
-  Button,
-  useToast,
-  Icon,
-  Divider,
-  Flex,
-  Badge,
-  Container,
-  Select,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Spinner,
-  Center,
+  Box, Heading, Text, VStack, HStack, Stack, Button, useToast,
+  Icon, Divider, Flex, Badge, Table, Thead, Tbody,
+  Tr, Th, Td, Spinner, Center, Grid, Circle, Menu,
+  MenuButton, MenuList, MenuItem, SimpleGrid
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import { 
-  FiTrendingUp, 
-  FiCalendar, 
-  FiArrowUpRight, 
-  FiPieChart,
-  FiFileText,
-  FiDownload
+  FiTrendingUp, FiCalendar, FiArrowUpRight, FiPieChart,
+  FiFileText, FiDownload, FiDollarSign, FiCheck, FiChevronDown,
+  FiCreditCard, FiShield, FiClock
 } from "react-icons/fi";
 import { FaRupeeSign } from "react-icons/fa";
-import { apiGet } from "../../../../../api.js";
 import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  BarChart, 
-  Bar,
-  Cell
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, 
+  CartesianGrid, Tooltip, BarChart, Bar 
 } from 'recharts';
 
-const dummyData = [
-  { name: 'Jan', earnings: 4500, sessions: 12 },
-  { name: 'Feb', earnings: 5200, sessions: 15 },
-  { name: 'Mar', earnings: 4800, sessions: 14 },
-  { name: 'Apr', earnings: 6100, sessions: 18 },
-  { name: 'May', earnings: 5900, sessions: 17 },
-  { name: 'Jun', earnings: 7200, sessions: 21 },
+/* =========================================
+   Modern Select Dropdown Component
+========================================= */
+function ModernSelect({
+  value,
+  onChange,
+  options = [],
+  placeholder = "Select",
+  isDisabled = false,
+  minW = "140px",
+  size = "md"
+}) {
+  const selectedOption = options.find((o) => String(o.value) === String(value));
+  const displayText = selectedOption ? selectedOption.label : placeholder;
+  const isSm = size === "sm";
+
+  return (
+    <Menu placement="bottom-end" autoSelect={false}>
+      {({ isOpen }) => (
+        <Box>
+          <MenuButton
+            as={Button}
+            isDisabled={isDisabled}
+            h={isSm ? "34px" : "38px"}
+            px={3.5}
+            borderRadius="full"
+            bg={isOpen ? "white" : "rgba(250, 248, 245, 0.9)"}
+            border="1px solid"
+            borderColor={isOpen ? "#56756D" : "rgba(86, 117, 109, 0.2)"}
+            boxShadow={isOpen ? "0 0 0 1px #56756D" : "none"}
+            _hover={{ bg: "white", borderColor: "#56756D" }}
+            _active={{ bg: "white" }}
+            fontSize="12.5px"
+            fontWeight="600"
+            color="#263A33"
+            rightIcon={
+              <Icon
+                as={FiChevronDown}
+                transition="transform 0.2s"
+                transform={isOpen ? "rotate(180deg)" : "none"}
+                color="#56756D"
+                boxSize="13px"
+              />
+            }
+          >
+            {displayText}
+          </MenuButton>
+          <MenuList
+            bg="white"
+            borderRadius="xl"
+            p={1.5}
+            border="1px solid rgba(86, 117, 109, 0.15)"
+            boxShadow="0 12px 28px -4px rgba(38, 58, 51, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04)"
+            zIndex={1400}
+            minW={minW}
+          >
+            {options.map((opt) => {
+              const active = String(opt.value) === String(value);
+              return (
+                <MenuItem
+                  key={opt.value}
+                  borderRadius="lg"
+                  px={3}
+                  py={2}
+                  fontSize="12.5px"
+                  fontFamily="'Inter', var(--font-inter), sans-serif"
+                  fontWeight={active ? "600" : "500"}
+                  color={active ? "#263A33" : "#5A6E65"}
+                  bg={active ? "rgba(86, 117, 109, 0.08)" : "transparent"}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.12)", color: "#263A33" }}
+                  onClick={() => onChange(opt.value)}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Text as="span">{opt.label}</Text>
+                  {active && <Icon as={FiCheck} color="#56756D" boxSize="13px" />}
+                </MenuItem>
+              );
+            })}
+          </MenuList>
+        </Box>
+      )}
+    </Menu>
+  );
+}
+
+import { useAuth } from "../../../../../context/AuthContext";
+import { apiGet } from "../../../../../api.js";
+
+const DUMMY_MONTHLY_DATA = [
+  { name: 'Jan', earnings: 45000, sessions: 18 },
+  { name: 'Feb', earnings: 52000, sessions: 21 },
+  { name: 'Mar', earnings: 48000, sessions: 19 },
+  { name: 'Apr', earnings: 61000, sessions: 24 },
+  { name: 'May', earnings: 59000, sessions: 23 },
+  { name: 'Jun', earnings: 74000, sessions: 29 },
+];
+
+const DUMMY_QUARTERLY_DATA = [
+  { name: 'Q1', earnings: 145000, sessions: 58 },
+  { name: 'Q2', earnings: 194000, sessions: 76 },
+  { name: 'Q3', earnings: 182000, sessions: 71 },
+  { name: 'Q4', earnings: 215000, sessions: 84 },
+];
+
+const DUMMY_YEARLY_DATA = [
+  { name: '2024', earnings: 580000, sessions: 230 },
+  { name: '2025', earnings: 710000, sessions: 280 },
+  { name: '2026', earnings: 840000, sessions: 330 },
+];
+
+const DUMMY_TRANSACTIONS = [
+  { id: 'TX-8921', date: '2026-06-28', client: 'Sarah Johnson', sessionType: 'Individual Therapy (60m)', amount: 2500, status: 'Settled' },
+  { id: 'TX-8920', date: '2026-06-26', client: 'Michael Chen', sessionType: 'Cognitive Assessment', amount: 3500, status: 'Settled' },
+  { id: 'TX-8919', date: '2026-06-24', client: 'Emma Wilson', sessionType: 'Couples Consultation', amount: 3000, status: 'Processing' },
+  { id: 'TX-8918', date: '2026-06-22', client: 'David Smith', sessionType: 'Follow-up Session (45m)', amount: 2000, status: 'Settled' },
+  { id: 'TX-8917', date: '2026-06-19', client: 'Priya Sharma', sessionType: 'Anxiety Intake Evaluation', amount: 3200, status: 'Settled' },
 ];
 
 export default function EarningsClient() {
+  const { isDummyTherapist } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState("monthly"); // monthly, quarterly, yearly
-  const [earningsData, setEarningsData] = useState([]);
-  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [timeframe, setTimeframe] = useState("monthly");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [realTransactions, setRealTransactions] = useState([]);
+  const [backendChartData, setBackendChartData] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
-    const fetchData = async () => {
+    let isMounted = true;
+    async function loadEarningsData() {
       try {
         setLoading(true);
-        // In a real app, we would fetch based on timeframe
-        // const res = await apiGet(`earnings/?timeframe=${timeframe}`);
-        
-        // Simulating API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        setEarningsData(dummyData);
-        setRecentTransactions([
-          { id: '1', date: '2026-04-24', client: 'Sarah Johnson', amount: 450, status: 'Settled' },
-          { id: '2', date: '2026-04-23', client: 'Michael Chen', amount: 450, status: 'Settled' },
-          { id: '3', date: '2026-04-22', client: 'Emma Wilson', amount: 600, status: 'Processing' },
-          { id: '4', date: '2026-04-21', client: 'David Smith', amount: 450, status: 'Settled' },
+        // Try dedicated earnings endpoint or derive from real appointments
+        const [earningsRes, apptsRes] = await Promise.allSettled([
+          apiGet("therapist/earnings/"),
+          apiGet("appointments/")
         ]);
-      } catch (err) {
-        toast({ title: "Failed to sync financial data", status: "error" });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [timeframe]);
 
-  const totalRevenue = useMemo(() => earningsData.reduce((acc, curr) => acc + curr.earnings, 0), [earningsData]);
-  const totalSessions = useMemo(() => earningsData.reduce((acc, curr) => acc + curr.sessions, 0), [earningsData]);
+        if (!isMounted) return;
+
+        let txList = [];
+        if (earningsRes.status === "fulfilled" && earningsRes.value?.transactions) {
+          txList = earningsRes.value.transactions;
+          setBackendChartData(earningsRes.value.chart_data || null);
+        } else if (apptsRes.status === "fulfilled") {
+          const appts = Array.isArray(apptsRes.value) ? apptsRes.value : (apptsRes.value?.results || []);
+          txList = appts.map((a) => {
+            const rawDate = a.date || a.start_time || new Date().toISOString();
+            const fee = a.fee || (a.is_first_session_free ? 0 : 2500);
+            return {
+              id: `TX-${a.id}`,
+              date: rawDate.split("T")[0],
+              client: a.client_name || (typeof a.client === "object" ? a.client?.name : "Client Session"),
+              sessionType: a.service_name || "Individual Therapy (60m)",
+              amount: fee,
+              status: ["completed", "attended"].includes(a.status?.toLowerCase()) ? "Settled" : "Processing"
+            };
+          });
+        }
+
+        setRealTransactions(txList);
+      } catch (err) {
+        console.warn("Failed to load real earnings data", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadEarningsData();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Frontend dummy data ONLY for dummy therapist account; all other accounts strictly use real backend data
+  const activeTransactions = useMemo(() => {
+    if (isDummyTherapist) return DUMMY_TRANSACTIONS;
+    return realTransactions;
+  }, [realTransactions, isDummyTherapist]);
+
+  const chartData = useMemo(() => {
+    if (isDummyTherapist) {
+      if (timeframe === "quarterly") return DUMMY_QUARTERLY_DATA;
+      if (timeframe === "yearly") return DUMMY_YEARLY_DATA;
+      return DUMMY_MONTHLY_DATA;
+    }
+
+    if (backendChartData && backendChartData[timeframe]) {
+      return backendChartData[timeframe];
+    }
+
+    // Dynamic aggregation from real transactions
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+
+    // Helper to extract numeric amount from any backend or mock transaction
+    const getTxAmount = (t) => {
+      if (typeof t.amount === "number") return t.amount;
+      if (typeof t.raw_net === "number") return t.raw_net;
+      const parsed = parseFloat(String(t.amount || t.net || t.gross || "").replace(/[^\d.]/g, ""));
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
+    if (timeframe === "monthly") {
+      const grouped = {};
+      months.forEach(m => { grouped[m] = { name: m, earnings: 0, sessions: 0 }; });
+      activeTransactions.forEach(t => {
+        const d = new Date(t.date);
+        if (!isNaN(d.getTime())) {
+          const mName = months[d.getMonth()];
+          grouped[mName].earnings += getTxAmount(t);
+          grouped[mName].sessions += 1;
+        }
+      });
+      return months.slice(0, 6).map(m => grouped[m]);
+    }
+
+    if (timeframe === "quarterly") {
+      const q = [
+        { name: 'Q1', earnings: 0, sessions: 0 },
+        { name: 'Q2', earnings: 0, sessions: 0 },
+        { name: 'Q3', earnings: 0, sessions: 0 },
+        { name: 'Q4', earnings: 0, sessions: 0 },
+      ];
+      activeTransactions.forEach(t => {
+        const d = new Date(t.date);
+        if (!isNaN(d.getTime())) {
+          const idx = Math.floor(d.getMonth() / 3);
+          if (q[idx]) {
+            q[idx].earnings += getTxAmount(t);
+            q[idx].sessions += 1;
+          }
+        }
+      });
+      return q;
+    }
+
+    // Yearly
+    const y = [
+      { name: String(currentYear - 2), earnings: 0, sessions: 0 },
+      { name: String(currentYear - 1), earnings: 0, sessions: 0 },
+      { name: String(currentYear), earnings: 0, sessions: 0 },
+    ];
+    activeTransactions.forEach(t => {
+      const d = new Date(t.date);
+      if (!isNaN(d.getTime())) {
+        const row = y.find(item => item.name === String(d.getFullYear()));
+        if (row) {
+          row.earnings += getTxAmount(t);
+          row.sessions += 1;
+        }
+      }
+    });
+    return y;
+  }, [backendChartData, timeframe, realTransactions.length, isDummyTherapist, activeTransactions]);
+
+  const totalRevenue = useMemo(() => chartData.reduce((acc, curr) => acc + curr.earnings, 0), [chartData]);
+  const totalSessions = useMemo(() => chartData.reduce((acc, curr) => acc + curr.sessions, 0), [chartData]);
+  const avgSessionValue = useMemo(() => Math.round(totalRevenue / (totalSessions || 1)), [totalRevenue, totalSessions]);
+
+  const filteredTransactions = useMemo(() => {
+    if (statusFilter === "ALL") return activeTransactions;
+    return activeTransactions.filter((tx) => tx.status.toUpperCase() === statusFilter);
+  }, [statusFilter, activeTransactions]);
+
+  const handleDownloadInvoice = (tx) => {
+    const invoiceContent = `MLC HEALTHCARE - THERAPIST SETTLEMENT RECEIPT\n` +
+      `--------------------------------------------------\n` +
+      `Transaction ID: ${tx.id}\n` +
+      `Date:           ${tx.date}\n` +
+      `Client:         ${tx.client}\n` +
+      `Service:        ${tx.sessionType}\n` +
+      `Amount:         INR ${tx.amount.toLocaleString()}\n` +
+      `Status:         ${tx.status}\n` +
+      `Therapist Payout Rate: 85%\n` +
+      `--------------------------------------------------\n` +
+      `Therapy by MLC • Confidential Medical Billing Document`;
+
+    const blob = new Blob([invoiceContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Invoice_${tx.id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      render: () => (
+        <Box p={3} px={4} bg="linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)" border="1px solid rgba(16, 185, 129, 0.35)" borderRadius="2xl" boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.16)">
+          <Text fontSize="13px" fontWeight="600" color="#065F46">Invoice Downloaded</Text>
+          <Text fontSize="12px" color="#047857">Receipt for {tx.id} saved to your device.</Text>
+        </Box>
+      ),
+      duration: 3500,
+      isClosable: true,
+      position: "bottom-right",
+    });
+  };
+
+  const handleGenerateReport = () => {
+    const reportData = `MLC HEALTHCARE - EARNINGS STATEMENT (${timeframe.toUpperCase()})\n` +
+      `Total Revenue: INR ${totalRevenue.toLocaleString()}\n` +
+      `Completed Sessions: ${totalSessions}\n` +
+      `Average Session Value: INR ${avgSessionValue.toLocaleString()}\n\n` +
+      `Period Breakdown:\n` +
+      chartData.map((d) => `${d.name}: INR ${d.earnings.toLocaleString()} (${d.sessions} sessions)`).join("\n") +
+      `\n\nTherapy by MLC • Certified Practice Financials`;
+
+    const blob = new Blob([reportData], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `MLC_Earnings_Report_${timeframe}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      render: () => (
+        <Box p={3} px={4} bg="linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)" border="1px solid rgba(16, 185, 129, 0.35)" borderRadius="2xl" boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.16)">
+          <Text fontSize="13px" fontWeight="600" color="#065F46">Financial Report Generated</Text>
+          <Text fontSize="12px" color="#047857">Statement for {timeframe} downloaded successfully.</Text>
+        </Box>
+      ),
+      duration: 3500,
+      isClosable: true,
+      position: "bottom-right",
+    });
+  };
 
   if (loading) {
     return (
-      <Center h="70vh">
-        <VStack spacing={4}>
-          <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756D" size="xl" />
-          <Text color="gray.500" fontWeight="600">Calculating your practice growth...</Text>
-        </VStack>
-      </Center>
+      <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" py={20}>
+        <Center>
+          <VStack spacing={3}>
+            <Spinner thickness="3px" speed="0.65s" emptyColor="rgba(86, 117, 109, 0.15)" color="#56756D" size="lg" />
+            <Text fontSize="13.5px" color="#5A6E65">Calculating clinical revenue & settlement records...</Text>
+          </VStack>
+        </Center>
+      </Box>
     );
   }
 
   return (
-    <Box position="relative" pb={20}>
-      <Container maxW="container.xl" p={0}>
-        {/* 🏔️ Header & Filters */}
-        <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} mb={10} gap={6}>
-          <VStack align="start" spacing={1}>
-            <Heading size="xl" color="#2E2E2E" fontFamily="'Playfair Display', serif">Earnings Overview</Heading>
-            <Text color="gray.500">Track your clinical revenue and session metrics.</Text>
-          </VStack>
-          
-          <HStack spacing={3}>
-            <Select 
-              value={timeframe} 
-              onChange={(e) => setTimeframe(e.target.value)} 
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* 🌿 1. UNIFIED HERO BANNER CARD (Golden Benchmark) */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', lg: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', lg: 'center' }}
+          gap={4}
+        >
+          {/* Left: Identity Badge + H1 + Subtitle */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiTrendingUp} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg="#10B981" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0" 
+              />
+            </Box>
+
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2} wrap="wrap">
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.1)" 
+                  color="#263A33" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.06em"
+                  textTransform="uppercase"
+                >
+                  Clinical Practice · Finance
+                </Badge>
+                <Badge 
+                  bg="#ECFDF5" 
+                  color="#065F46" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                >
+                  Active Payouts
+                </Badge>
+              </HStack>
+
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33" 
+                fontWeight="600"
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                Earnings Overview
+              </Heading>
+
+              <Text 
+                fontSize="13px" 
+                color="#5A6E65"
+                fontWeight="400"
+              >
+                Track clinical revenue trends, session volumes, and settlement payouts.
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Right: Metric Strip + Actions */}
+          <Stack 
+            direction={{ base: "column", xl: "row" }}
+            spacing={3} 
+            align={{ base: "stretch", xl: "center" }} 
+            w={{ base: "full", lg: "auto" }}
+            flexShrink={0}
+          >
+            <HStack 
+              spacing={{ base: 1.5, sm: 3 }} 
+              p={1.5} 
+              px={{ base: 2, sm: 2.5 }}
+              borderRadius="xl" 
+              bg="rgba(250, 248, 245, 0.9)"
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)"
+              w={{ base: "full", md: "auto" }}
+              justify="space-between"
+            >
+              <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D" flexShrink={0}>
+                  <Icon as={FaRupeeSign} boxSize="11px" />
+                </Circle>
+                <VStack align="start" spacing={0} minW="max-content">
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                    REVENUE
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                    ₹{totalRevenue.toLocaleString()}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+              <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D" flexShrink={0}>
+                  <Icon as={FiCalendar} boxSize="13px" />
+                </Circle>
+                <VStack align="start" spacing={0} minW="max-content">
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                    SESSIONS
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                    {totalSessions}
+                  </Text>
+                </VStack>
+              </HStack>
+
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+              <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D" flexShrink={0}>
+                  <Icon as={FiTrendingUp} boxSize="13px" />
+                </Circle>
+                <VStack align="start" spacing={0} minW="max-content">
+                  <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                    AVG VALUE
+                  </Text>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                    ₹{avgSessionValue.toLocaleString()}
+                  </Text>
+                </VStack>
+              </HStack>
+            </HStack>
+
+            <HStack spacing={2.5} w={{ base: "full", sm: "auto" }} justify={{ base: "flex-start", sm: "flex-end" }} flexShrink={0}>
+              <ModernSelect
+                value={timeframe}
+                onChange={(val) => setTimeframe(val)}
+                options={[
+                  { label: "This Month", value: "monthly" },
+                  { label: "Quarterly", value: "quarterly" },
+                  { label: "Yearly", value: "yearly" },
+                ]}
+                size="sm"
+              />
+
+              <Button
+                leftIcon={<FiDownload />}
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                h="38px"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                whiteSpace="nowrap"
+                onClick={handleGenerateReport}
+                _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+              >
+                Statement
+              </Button>
+            </HStack>
+          </Stack>
+        </Flex>
+      </Box>
+
+      {/* 📊 2. BALANCED BENTO GRID (7:5 Ratio) */}
+      <Grid templateColumns={{ base: "1fr", lg: "7fr 5fr" }} gap={6} alignItems="start" mb={6}>
+        {/* Left: Revenue Trends Chart */}
+        <Box 
+          bg="white" 
+          p={5} 
+          borderRadius="2xl" 
+          border="1px solid" 
+          borderColor="rgba(86, 117, 109, 0.14)" 
+          boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+        >
+          <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={2}>
+            <VStack align="start" spacing={0.5}>
+              <Heading 
+                as="h2" 
+                fontSize="15px" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                fontWeight="600" 
+                color="#263A33"
+              >
+                Revenue Trends
+              </Heading>
+              <Text fontSize="12.5px" color="#5A6E65">
+                Clinical earnings progression over selected period
+              </Text>
+            </VStack>
+            <Badge 
+              bg="#ECFDF5" 
+              color="#065F46" 
               borderRadius="full" 
-              bg="white" 
-              shadow="sm" 
-              w="160px"
-              fontSize="sm"
+              px={2.5} 
+              py={0.5} 
+              fontSize="11px" 
               fontWeight="600"
             >
-              <option value="monthly">This Month</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="yearly">Yearly</option>
-            </Select>
-            <Button leftIcon={<FiDownload />} variant="outline" borderRadius="full" px={6}>Generate Report</Button>
-          </HStack>
-        </Flex>
+              +14.2% vs previous period
+            </Badge>
+          </Flex>
 
-        {/* 📊 Stat Cards */}
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} mb={12}>
-          <StatCard 
-            label="Total Revenue" 
-            value={`INR ${totalRevenue.toLocaleString()}`} 
-            help="+12.5% from last period" 
-            icon={FaRupeeSign} 
-            color="teal.500" 
-            isIncrease 
-          />
-          <StatCard 
-            label="Total Sessions" 
-            value={totalSessions} 
-            help="+3 from last period" 
-            icon={FiCalendar} 
-            color="orange.400" 
-            isIncrease 
-          />
-          <StatCard 
-            label="Avg. Session Value" 
-            value="INR 480" 
-            help="Based on current rate" 
-            icon={FiTrendingUp} 
-            color="blue.400" 
-          />
-        </SimpleGrid>
-
-        <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={10} mb={12}>
-          {/* 📈 Main Earnings Chart */}
-          <Box gridColumn={{ lg: "span 2" }} bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-            <HStack justify="space-between" mb={8}>
-              <VStack align="start" spacing={0}>
-                <Heading size="sm" color="#2E2E2E">Revenue Trends</Heading>
-                <Text fontSize="xs" color="gray.500">Practice growth over time</Text>
-              </VStack>
-              <Icon as={FiArrowUpRight} color="teal.500" />
-            </HStack>
-            <Box h="300px" w="100%">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={earningsData}>
-                  <defs>
-                    <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#56756D" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#56756D" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#999' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#999' }} tickFormatter={(v) => `₹${v}`} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="earnings" 
-                    stroke="#56756D" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorEarnings)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Box>
+          <Box h="280px" w="100%" minW="0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={240}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="sageEarnings" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#56756D" stopOpacity={0.25}/>
+                    <stop offset="95%" stopColor="#56756D" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(86, 117, 109, 0.1)" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: '#718096', fontFamily: 'Inter' }} 
+                  dy={8} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 11, fill: '#718096', fontFamily: 'Inter' }} 
+                  tickFormatter={(v) => `₹${v >= 1000 ? `${v / 1000}k` : v}`} 
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    borderRadius: '14px', 
+                    border: '1px solid rgba(86, 117, 109, 0.15)', 
+                    boxShadow: '0 10px 25px -4px rgba(38, 58, 51, 0.12)',
+                    fontFamily: 'Inter',
+                    fontSize: '13px'
+                  }}
+                  formatter={(value) => [`₹${Number(value).toLocaleString()}`, 'Earnings']}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="earnings" 
+                  stroke="#56756D" 
+                  strokeWidth={2.5}
+                  fillOpacity={1} 
+                  fill="url(#sageEarnings)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </Box>
+        </Box>
 
-          {/* 🥧 Sessions Breakdown */}
-          <Box gridColumn={{ lg: "span 1" }} bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-            <HStack justify="space-between" mb={8}>
-              <Heading size="sm" color="#2E2E2E">Sessions Distribution</Heading>
-              <Icon as={FiPieChart} color="orange.400" />
-            </HStack>
-            <Box h="300px" w="100%">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={earningsData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#999' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#999' }} />
-                  <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} />
-                  <Bar dataKey="sessions" fill="#C9A960" radius={[10, 10, 10, 10]} barSize={20} />
+        {/* Right: Sessions Distribution & Settlement Stats */}
+        <VStack align="stretch" spacing={5}>
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="2xl" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+          >
+            <Flex justify="space-between" align="center" mb={5}>
+              <VStack align="start" spacing={0.5}>
+                <Heading 
+                  as="h2" 
+                  fontSize="15px" 
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                  fontWeight="600" 
+                  color="#263A33"
+                >
+                  Session Volume
+                </Heading>
+                <Text fontSize="12.5px" color="#5A6E65">
+                  Completed consultations by month
+                </Text>
+              </VStack>
+              <Circle size="32px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiPieChart} boxSize="15px" />
+              </Circle>
+            </Flex>
+
+            <Box h="170px" w="100%" minW="0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
+                <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(86, 117, 109, 0.1)" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 11, fill: '#718096', fontFamily: 'Inter' }} 
+                    dy={5} 
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 11, fill: '#718096', fontFamily: 'Inter' }} 
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(86, 117, 109, 0.05)' }} 
+                    contentStyle={{ 
+                      borderRadius: '12px', 
+                      border: '1px solid rgba(86, 117, 109, 0.15)', 
+                      boxShadow: '0 8px 20px -2px rgba(38, 58, 51, 0.1)',
+                      fontFamily: 'Inter',
+                      fontSize: '12.5px'
+                    }} 
+                    formatter={(value) => [`${value} Sessions`, 'Volume']}
+                  />
+                  <Bar dataKey="sessions" fill="#56756D" radius={[6, 6, 0, 0]} barSize={22} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
           </Box>
-        </SimpleGrid>
 
-        {/* 📜 Recent Transactions */}
-        <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-          <HStack justify="space-between" mb={8}>
-            <Heading size="sm" color="#2E2E2E">Recent Settlements</Heading>
-            <Button variant="link" size="sm" color="teal.500">View All</Button>
-          </HStack>
-          {/* Desktop Table */}
-          <Box display={{ base: "none", md: "block" }}>
-            <Table variant="simple" size="sm">
-              <Thead>
-                <Tr>
-                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">DATE</Th>
-                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">CLIENT</Th>
-                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">AMOUNT</Th>
-                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest">STATUS</Th>
-                  <Th color="gray.400" fontSize="2xs" letterSpacing="widest" textAlign="right">ACTION</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {recentTransactions.map((tx) => (
-                  <Tr key={tx.id} _hover={{ bg: "gray.50" }} transition="0.2s">
-                    <Td fontSize="sm" fontWeight="600">{new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Td>
-                    <Td fontSize="sm">{tx.client}</Td>
-                    <Td fontSize="sm" fontWeight="700">INR {tx.amount}</Td>
-                    <Td>
-                      <Badge 
-                        colorScheme={tx.status === 'Settled' ? 'green' : 'orange'} 
-                        variant="subtle" 
-                        borderRadius="full" 
-                        px={3}
-                        fontSize="2xs"
-                      >
-                        {tx.status}
-                      </Badge>
-                    </Td>
-                    <Td textAlign="right">
-                      <Button size="xs" variant="ghost" leftIcon={<FiFileText />}>Invoice</Button>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </Box>
+          {/* Quick Payout Summary Tile */}
+          <Box 
+            p={4} 
+            borderRadius="2xl" 
+            bg="rgba(250, 248, 245, 0.85)" 
+            border="1px solid rgba(86, 117, 109, 0.12)"
+          >
+            <HStack justify="space-between" mb={3}>
+              <HStack spacing={2.5}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                  <Icon as={FiCreditCard} boxSize="13px" />
+                </Circle>
+                <Text fontSize="13px" fontWeight="600" color="#263A33">
+                  Settlement Account
+                </Text>
+              </HStack>
+              <Badge bg="#ECFDF5" color="#065F46" fontSize="10px" fontWeight="700" borderRadius="full">
+                VERIFIED
+              </Badge>
+            </HStack>
 
-          {/* Mobile Card List */}
-          <VStack display={{ base: "flex", md: "none" }} spacing={4} align="stretch">
-            {recentTransactions.map((tx) => (
-              <Box 
-                key={tx.id} 
-                p={4} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="gray.100" 
-                bg="white"
-              >
-                <Flex justify="space-between" align="center" mb={3}>
-                  <VStack align="start" spacing={0}>
-                    <Text fontSize="xs" color="gray.400" fontWeight="bold">
-                      {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </Text>
-                    <Text fontWeight="bold" fontSize="sm">{tx.client}</Text>
-                  </VStack>
-                  <Badge 
-                    colorScheme={tx.status === 'Settled' ? 'green' : 'orange'} 
-                    variant="subtle" 
-                    borderRadius="full" 
-                    px={2}
-                    fontSize="2xs"
-                  >
-                    {tx.status.toUpperCase()}
-                  </Badge>
-                </Flex>
-                <HStack justify="space-between" pt={2} borderTop="1px solid" borderColor="gray.50">
-                  <Text fontSize="sm" fontWeight="800" color="teal.700">INR {tx.amount}</Text>
-                  <Button size="xs" variant="link" colorScheme="teal" leftIcon={<FiFileText />}>Invoice</Button>
-                </HStack>
+            <SimpleGrid columns={2} spacing={3} pt={1}>
+              <Box p={2.5} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">
+                  Next Payout
+                </Text>
+                <Text fontSize="14px" fontWeight="700" color="#263A33" pt={0.5}>
+                  ₹{(totalRevenue * 0.85).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </Text>
               </Box>
-            ))}
-          </VStack>
-        </Box>
-      </Container>
-    </Box>
-  );
-}
-
-function StatCard({ label, value, help, icon, color, isIncrease }) {
-  return (
-    <Box bg="white" p={8} borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-      <VStack align="start" spacing={4}>
-        <Circle size="40px" bg={`${color.split('.')[0]}.50`} color={color}>
-          <Icon as={icon} boxSize={5} />
-        </Circle>
-        <VStack align="start" spacing={1}>
-          <Text color="gray.500" fontSize="xs" fontWeight="800" letterSpacing="wider" textTransform="uppercase">{label}</Text>
-          <Heading size="lg" color="#2E2E2E">{value}</Heading>
+              <Box p={2.5} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.08)">
+                <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">
+                  Disbursement
+                </Text>
+                <Text fontSize="14px" fontWeight="700" color="#56756D" pt={0.5}>
+                  Weekly (Mon)
+                </Text>
+              </Box>
+            </SimpleGrid>
+          </Box>
         </VStack>
-        <Divider />
-        <HStack spacing={2} color="gray.500" fontSize="sm">
-          {isIncrease !== undefined && (
-            <Text color={isIncrease ? "green.500" : "red.500"}>{isIncrease ? "▲" : "▼"}</Text>
+      </Grid>
+
+      {/* 📜 3. RECENT SETTLEMENTS & TRANSACTIONS TABLE */}
+      <Box 
+        bg="white" 
+        p={5} 
+        borderRadius="2xl" 
+        border="1px solid" 
+        borderColor="rgba(86, 117, 109, 0.14)" 
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+      >
+        <Flex justify="space-between" align={{ base: "start", sm: "center" }} mb={5} wrap="wrap" gap={3}>
+          <HStack spacing={3}>
+            <Heading 
+              as="h2" 
+              fontSize="16px" 
+              fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+              fontWeight="600" 
+              color="#263A33"
+            >
+              Recent Settlements
+            </Heading>
+            <Badge 
+              bg="rgba(86, 117, 109, 0.1)" 
+              color="#263A33" 
+              borderRadius="full" 
+              px={2.5} 
+              py={0.5} 
+              fontSize="10.5px" 
+              fontWeight="700"
+            >
+              {filteredTransactions.length} Records
+            </Badge>
+          </HStack>
+
+          {/* Filter Pills */}
+          <HStack spacing={1.5}>
+            {["ALL", "SETTLED", "PROCESSING"].map((filter) => {
+              const active = statusFilter === filter;
+              return (
+                <Button
+                  key={filter}
+                  size="xs"
+                  borderRadius="full"
+                  px={3}
+                  py={1}
+                  fontSize="11px"
+                  fontWeight="600"
+                  bg={active ? "#56756D" : "rgba(250, 248, 245, 0.9)"}
+                  color={active ? "white" : "#5A6E65"}
+                  border="1px solid"
+                  borderColor={active ? "#56756D" : "rgba(86, 117, 109, 0.14)"}
+                  _hover={{ bg: active ? "#263A33" : "rgba(86, 117, 109, 0.08)" }}
+                  onClick={() => setStatusFilter(filter)}
+                >
+                  {filter}
+                </Button>
+              );
+            })}
+          </HStack>
+        </Flex>
+
+        {/* Desktop Table View */}
+        <Box display={{ base: "none", md: "block" }} overflowX="auto">
+          <Table variant="simple" size="sm">
+            <Thead bg="rgba(86, 117, 109, 0.06)">
+              <Tr>
+                <Th color="#263A33" fontSize="11px" fontWeight="700" letterSpacing="0.05em" textTransform="uppercase" py={3}>REF ID</Th>
+                <Th color="#263A33" fontSize="11px" fontWeight="700" letterSpacing="0.05em" textTransform="uppercase" py={3}>DATE</Th>
+                <Th color="#263A33" fontSize="11px" fontWeight="700" letterSpacing="0.05em" textTransform="uppercase" py={3}>CLIENT & SERVICE</Th>
+                <Th color="#263A33" fontSize="11px" fontWeight="700" letterSpacing="0.05em" textTransform="uppercase" py={3}>AMOUNT</Th>
+                <Th color="#263A33" fontSize="11px" fontWeight="700" letterSpacing="0.05em" textTransform="uppercase" py={3}>STATUS</Th>
+                <Th color="#263A33" fontSize="11px" fontWeight="700" letterSpacing="0.05em" textTransform="uppercase" py={3} textAlign="right">RECEIPT</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {filteredTransactions.map((tx) => (
+                <Tr key={tx.id} _hover={{ bg: "rgba(86, 117, 109, 0.03)" }} transition="0.15s">
+                  <Td fontSize="12.5px" fontWeight="600" color="#718096">{tx.id}</Td>
+                  <Td fontSize="13px" color="#5A6E65">
+                    {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </Td>
+                  <Td>
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="13px" fontWeight="600" color="#263A33">{tx.client}</Text>
+                      <Text fontSize="11.5px" color="#718096">{tx.sessionType}</Text>
+                    </VStack>
+                  </Td>
+                  <Td fontSize="13px" fontWeight="700" color="#263A33">₹{tx.amount.toLocaleString()}</Td>
+                  <Td>
+                    <Badge 
+                      bg={tx.status === 'Settled' ? '#ECFDF5' : '#FFFBEB'} 
+                      color={tx.status === 'Settled' ? '#065F46' : '#92400E'} 
+                      border="1px solid"
+                      borderColor={tx.status === 'Settled' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'}
+                      borderRadius="full" 
+                      px={2.5} 
+                      py={0.5} 
+                      fontSize="11px" 
+                      fontWeight="600"
+                    >
+                      {tx.status}
+                    </Badge>
+                  </Td>
+                  <Td textAlign="right">
+                    <Button 
+                      size="xs" 
+                      variant="outline" 
+                      borderColor="rgba(86, 117, 109, 0.2)"
+                      color="#263A33"
+                      borderRadius="full"
+                      px={3}
+                      leftIcon={<FiDownload />}
+                      _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                      onClick={() => handleDownloadInvoice(tx)}
+                    >
+                      Receipt
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+          {filteredTransactions.length === 0 && (
+            <VStack py={10} spacing={2} justify="center">
+              <Circle size="38px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiCreditCard} boxSize="18px" />
+              </Circle>
+              <Text fontSize="13px" fontWeight="600" color="#263A33">
+                No transactions recorded yet
+              </Text>
+              <Text fontSize="12px" color="#718096" textAlign="center" maxW="340px">
+                When appointments are completed, your session payouts and receipts will appear here automatically.
+              </Text>
+            </VStack>
           )}
-          <Text>{help}</Text>
-        </HStack>
-      </VStack>
+        </Box>
+
+        {/* Mobile Card List View */}
+        <VStack display={{ base: "flex", md: "none" }} spacing={3} align="stretch">
+          {filteredTransactions.length === 0 && (
+            <VStack py={8} spacing={2} justify="center">
+              <Circle size="36px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiCreditCard} boxSize="16px" />
+              </Circle>
+              <Text fontSize="12.5px" fontWeight="600" color="#263A33">
+                No transactions recorded yet
+              </Text>
+            </VStack>
+          )}
+          {filteredTransactions.map((tx) => (
+            <Box 
+              key={tx.id} 
+              p={3.5} 
+              borderRadius="xl" 
+              border="1px solid" 
+              borderColor="rgba(86, 117, 109, 0.12)" 
+              bg="rgba(250, 248, 245, 0.85)"
+            >
+              <Flex justify="space-between" align="start" mb={2}>
+                <VStack align="start" spacing={0.5}>
+                  <Text fontSize="13px" fontWeight="600" color="#263A33">{tx.client}</Text>
+                  <Text fontSize="11.5px" color="#718096">{tx.sessionType}</Text>
+                </VStack>
+                <Badge 
+                  bg={tx.status === 'Settled' ? '#ECFDF5' : '#FFFBEB'} 
+                  color={tx.status === 'Settled' ? '#065F46' : '#92400E'} 
+                  borderRadius="full" 
+                  px={2.5} 
+                  py={0.5} 
+                  fontSize="10.5px"
+                  fontWeight="600"
+                >
+                  {tx.status}
+                </Badge>
+              </Flex>
+              <Flex justify="space-between" align="center" pt={2} borderTop="1px solid rgba(86, 117, 109, 0.1)">
+                <HStack spacing={1}>
+                  <Text fontSize="13.5px" fontWeight="700" color="#263A33">₹{tx.amount.toLocaleString()}</Text>
+                  <Text fontSize="11px" color="#718096">• {tx.date}</Text>
+                </HStack>
+                <Button 
+                  size="xs" 
+                  variant="outline" 
+                  borderColor="rgba(86, 117, 109, 0.25)"
+                  color="#263A33"
+                  borderRadius="full" 
+                  leftIcon={<FiDownload />}
+                  onClick={() => handleDownloadInvoice(tx)}
+                >
+                  Receipt
+                </Button>
+              </Flex>
+            </Box>
+          ))}
+        </VStack>
+      </Box>
     </Box>
   );
 }
 
-const Circle = ({ children, size, bg, color, ...props }) => (
-  <Flex 
-    w={size} 
-    h={size} 
-    borderRadius="full" 
-    bg={bg} 
-    color={color} 
-    align="center" 
-    justify="center" 
-    {...props}
-  >
-    {children}
-  </Flex>
-);

@@ -92,8 +92,10 @@ export default function TherapistPublicClient({ therapist }) {
   const [isLoadingProfile, setIsLoadingProfile] = useState(!therapist);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [sessionType, setSessionType] = useState("individual"); // 'individual' | 'supervision'
   const [availableDates, setAvailableDates] = useState([]);
-  const toast = useToast();
+  const _toast = useToast();
 
   useEffect(() => {
     setIsMounted(true);
@@ -413,7 +415,7 @@ export default function TherapistPublicClient({ therapist }) {
                   borderRadius="full" 
                   fontSize="12.5px" 
                   fontWeight="600" 
-                  rightIcon={<FiCalendar boxSize="12px" />}
+                  rightIcon={<Icon as={FiCalendar} boxSize="12px" />}
                   _hover={{ bg: "#425C55", shadow: "0 6px 16px rgba(86,117,109,0.25)" }}
                   transition="all 0.2s ease"
                 >
@@ -431,7 +433,7 @@ export default function TherapistPublicClient({ therapist }) {
                   borderRadius="full" 
                   fontSize="12.5px" 
                   fontWeight="600" 
-                  leftIcon={<FiMessageCircle boxSize="12px" />}
+                  leftIcon={<Icon as={FiMessageCircle} boxSize="12px" />}
                   _hover={{ bg: "rgba(169,203,183,0.12)", borderColor: "#56756D" }}
                 >
                   Inquire
@@ -760,33 +762,102 @@ export default function TherapistPublicClient({ therapist }) {
                     </HStack>
                   </Flex>
 
-                  {/* Rates */}
-                  <VStack align="stretch" spacing={2} bg="rgba(86,117,109,0.03)" p={3.5} borderRadius="14px" border="1px solid" borderColor="rgba(86,117,109,0.08)">
-                    <Flex justify="space-between" align="center">
-                      <VStack align="start" spacing={0}>
-                        <Text fontSize="13px" fontWeight="700" color="#263A33">Individual Therapy</Text>
-                        <Text fontSize="11px" color="gray.500">{profile.session_duration || 50}-60 minute consultation</Text>
-                      </VStack>
-                      <Text fontSize="16px" fontWeight="800" color="#263A33">
-                        ₹{profile.hourly_rate || "1200"}
-                        <Text as="span" fontSize="11px" fontWeight="500" color="gray.500">/hr</Text>
-                      </Text>
-                    </Flex>
-
-                    {isSupervisor && (
-                      <>
-                        <Divider borderColor="rgba(86,117,109,0.1)" />
-                        <Flex justify="space-between" align="center">
+                  {/* Selectable Session Types */}
+                  <VStack align="stretch" spacing={2.5}>
+                    {/* Individual Therapy */}
+                    <Box
+                      as="button"
+                      type="button"
+                      textAlign="left"
+                      w="full"
+                      onClick={() => setSessionType("individual")}
+                      p={3.5}
+                      borderRadius="14px"
+                      border="1.5px solid"
+                      borderColor={sessionType === "individual" ? "#56756D" : "rgba(86,117,109,0.18)"}
+                      bg={sessionType === "individual" ? "rgba(86,117,109,0.08)" : "white"}
+                      boxShadow={sessionType === "individual" ? "0 2px 8px rgba(86,117,109,0.12)" : "none"}
+                      _hover={{ borderColor: "#56756D", bg: sessionType === "individual" ? "rgba(86,117,109,0.08)" : "rgba(86,117,109,0.03)" }}
+                      transition="all 0.18s ease"
+                    >
+                      <Flex justify="space-between" align="center">
+                        <HStack spacing={3} align="center">
+                          <Circle
+                            size="20px"
+                            border="1.5px solid"
+                            borderColor={sessionType === "individual" ? "#56756D" : "#CBD5E0"}
+                            bg={sessionType === "individual" ? "#56756D" : "transparent"}
+                            color="white"
+                            flexShrink={0}
+                          >
+                            {sessionType === "individual" && <Icon as={FiCheck} boxSize="11px" />}
+                          </Circle>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="13px" fontWeight="700" color="#8C6E2D">Clinical Supervision</Text>
-                            <Text fontSize="11px" color="gray.500">60 minute mentorship & case review</Text>
+                            <HStack spacing={2}>
+                              <Text fontSize="13px" fontWeight="700" color="#263A33">Individual Therapy</Text>
+                              {sessionType === "individual" && (
+                                <Badge bg="#56756D" color="white" fontSize="9px" borderRadius="full" px={1.5}>
+                                  Selected
+                                </Badge>
+                              )}
+                            </HStack>
+                            <Text fontSize="11px" color="gray.500">{profile.session_duration || 50}-60 minute consultation</Text>
                           </VStack>
+                        </HStack>
+                        <Text fontSize="16px" fontWeight="800" color="#263A33">
+                          ₹{profile.hourly_rate || "1200"}
+                          <Text as="span" fontSize="11px" fontWeight="500" color="gray.500">/hr</Text>
+                        </Text>
+                      </Flex>
+                    </Box>
+
+                    {/* Clinical Supervision (Only for Supervisors) */}
+                    {isSupervisor && (
+                      <Box
+                        as="button"
+                        type="button"
+                        textAlign="left"
+                        w="full"
+                        onClick={() => setSessionType("supervision")}
+                        p={3.5}
+                        borderRadius="14px"
+                        border="1.5px solid"
+                        borderColor={sessionType === "supervision" ? "#8C6E2D" : "rgba(86,117,109,0.18)"}
+                        bg={sessionType === "supervision" ? "rgba(140, 110, 45, 0.08)" : "white"}
+                        boxShadow={sessionType === "supervision" ? "0 2px 8px rgba(140, 110, 45, 0.15)" : "none"}
+                        _hover={{ borderColor: "#8C6E2D", bg: sessionType === "supervision" ? "rgba(140, 110, 45, 0.08)" : "rgba(86,117,109,0.03)" }}
+                        transition="all 0.18s ease"
+                      >
+                        <Flex justify="space-between" align="center">
+                          <HStack spacing={3} align="center">
+                            <Circle
+                              size="20px"
+                              border="1.5px solid"
+                              borderColor={sessionType === "supervision" ? "#8C6E2D" : "#CBD5E0"}
+                              bg={sessionType === "supervision" ? "#8C6E2D" : "transparent"}
+                              color="white"
+                              flexShrink={0}
+                            >
+                              {sessionType === "supervision" && <Icon as={FiCheck} boxSize="11px" />}
+                            </Circle>
+                            <VStack align="start" spacing={0}>
+                              <HStack spacing={2}>
+                                <Text fontSize="13px" fontWeight="700" color="#8C6E2D">Clinical Supervision</Text>
+                                {sessionType === "supervision" && (
+                                  <Badge bg="#8C6E2D" color="white" fontSize="9px" borderRadius="full" px={1.5}>
+                                    Selected
+                                  </Badge>
+                                )}
+                              </HStack>
+                              <Text fontSize="11px" color="gray.500">60 minute mentorship & case review</Text>
+                            </VStack>
+                          </HStack>
                           <Text fontSize="16px" fontWeight="800" color="#8C6E2D">
                             ₹{profile.supervision_hourly_rate || profile.hourly_rate || "1500"}
                             <Text as="span" fontSize="11px" fontWeight="500" color="gray.500">/hr</Text>
                           </Text>
                         </Flex>
-                      </>
+                      </Box>
                     )}
                   </VStack>
                 </Box>
@@ -857,7 +928,12 @@ export default function TherapistPublicClient({ therapist }) {
                           border="1px solid" 
                           borderColor={isSelected ? "#56756D" : isAvailable ? "rgba(86,117,109,0.25)" : "gray.100"}
                           _hover={isAvailable ? { transform: 'translateY(-1px)', borderColor: '#56756D' } : {}}
-                          onClick={() => isAvailable && setSelectedDate(dateStr)}
+                          onClick={() => {
+                            if (isAvailable) {
+                              setSelectedDate(dateStr);
+                              setSelectedSlot(null);
+                            }
+                          }}
                           spacing={0.5}
                           opacity={isAvailable ? 1 : 0.45}
                         >
@@ -910,27 +986,60 @@ export default function TherapistPublicClient({ therapist }) {
                     </Center>
                   ) : selectedDate ? (
                     slotsForSelectedDate.length > 0 ? (
-                      <SimpleGrid columns={3} spacing={2} maxH="220px" overflowY="auto" pr={1}>
-                        {slotsForSelectedDate.map(slot => (
+                      <VStack align="stretch" spacing={3}>
+                        <SimpleGrid columns={3} spacing={2} maxH="220px" overflowY="auto" pr={1}>
+                          {slotsForSelectedDate.map(slot => {
+                            const isSelected = selectedSlot?.id === slot.id;
+                            return (
+                              <Button
+                                key={slot.id} 
+                                variant={isSelected ? "solid" : "outline"} 
+                                size="sm"
+                                h="36px" 
+                                bg={isSelected ? "#56756D" : "white"}
+                                borderColor={isSelected ? "#56756D" : "rgba(86,117,109,0.3)"} 
+                                borderRadius="10px" 
+                                fontSize="11.5px"
+                                fontWeight="700" 
+                                color={isSelected ? "white" : "#263A33"}
+                                boxShadow={isSelected ? "0 2px 8px rgba(86,117,109,0.25)" : "none"}
+                                _hover={{
+                                  bg: isSelected ? "#46625B" : "rgba(86,117,109,0.08)",
+                                  borderColor: "#56756D",
+                                }}
+                                onClick={() => setSelectedSlot(isSelected ? null : slot)}
+                                transition="all 0.15s ease"
+                                px={1}
+                              >
+                                {new Date(slot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                              </Button>
+                            );
+                          })}
+                        </SimpleGrid>
+
+                        {selectedSlot && (
                           <Button
-                            key={slot.id} 
-                            variant="outline" 
-                            size="sm"
-                            h="34px" 
-                            borderColor="rgba(86,117,109,0.3)" 
-                            borderRadius="10px" 
-                            fontSize="11.5px"
-                            fontWeight="700" 
-                            color="#263A33"
-                            _hover={{ bg: '#56756D', color: 'white', borderColor: '#56756D' }}
-                            onClick={() => window.location.href = `/book/checkout?therapist=${profile.id}&slot=${slot.id}`}
-                            transition="all 0.15s ease"
-                            px={1}
+                            w="full"
+                            h="42px"
+                            bg={sessionType === "supervision" ? "#8C6E2D" : "#263A33"}
+                            color="white"
+                            borderRadius="full"
+                            fontSize="13px"
+                            fontWeight="600"
+                            leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+                            onClick={() => window.location.href = `/book/checkout?therapist=${profile.id}&slot=${selectedSlot.id}&type=${sessionType}`}
+                            _hover={{ 
+                              bg: sessionType === "supervision" ? "#6E5624" : "#56756D", 
+                              transform: "translateY(-1px)", 
+                              boxShadow: "0 4px 14px rgba(38, 58, 51, 0.2)" 
+                            }}
+                            transition="all 0.2s ease"
+                            mt={1}
                           >
-                            {new Date(slot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                            Book {sessionType === "supervision" ? "Supervision" : "Therapy"} · {new Date(selectedSlot.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                           </Button>
-                        ))}
-                      </SimpleGrid>
+                        )}
+                      </VStack>
                     ) : (
                       <Center p={4} bg="gray.50" borderRadius="12px" border="1px dashed" borderColor="gray.200">
                         <Text color="gray.500" fontSize="11.5px" textAlign="center">

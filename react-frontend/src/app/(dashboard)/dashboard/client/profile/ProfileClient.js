@@ -13,19 +13,17 @@ import {
   useToast,
   Avatar,
   Icon,
+  Circle,
   Divider,
   SimpleGrid,
-  Card,
-  CardBody,
-  Alert,
-  AlertIcon,
   Badge,
   IconButton,
   Spinner,
   Center,
+  Flex,
 } from "@chakra-ui/react";
 import { useState, useEffect, useRef } from "react";
-import { FiUser, FiMail, FiPhone, FiSave, FiAlertCircle, FiCamera } from "react-icons/fi";
+import { FiUser, FiMail, FiPhone, FiSave, FiAlertCircle, FiCamera, FiCheckCircle } from "react-icons/fi";
 import { useAuth } from "../../../../../context/AuthContext";
 import { apiPatch } from "../../../../../api.js";
 
@@ -74,9 +72,7 @@ export default function ProfileClient() {
         status: "success",
         duration: 3000,
         isClosable: true,
-        position: "top-right",
       });
-      // Optionally trigger a page refresh or context update
       window.location.reload(); 
     } catch (err) {
       console.error("Failed to update profile", err);
@@ -99,11 +95,11 @@ export default function ProfileClient() {
       await apiPost("clients/repair-account/");
       toast({
         title: "Account Repaired",
-        description: "Your profiles have been merged and your data should now be visible. Refreshing...",
+        description: "Your profiles have been merged and your records are now linked.",
         status: "success",
-        duration: 5000,
+        duration: 4000,
       });
-      setTimeout(() => window.location.reload(), 2000);
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
       toast({
         title: "Repair Failed",
@@ -118,7 +114,7 @@ export default function ProfileClient() {
   if (!isMounted || authLoading) {
     return (
       <Center h="60vh">
-        <Spinner size="xl" color="#56756D" thickness="4px" />
+        <Spinner size="lg" color="#56756D" thickness="3px" />
       </Center>
     );
   }
@@ -150,7 +146,7 @@ export default function ProfileClient() {
   };
 
   return (
-    <Box maxW="1000px" mx="auto">
+    <Box maxW="1240px" mx="auto" pb={12} fontFamily="'Inter', var(--font-inter), sans-serif">
       {/* Hidden File Input */}
       <input 
         type="file" 
@@ -160,189 +156,414 @@ export default function ProfileClient() {
         onChange={handlePhotoUpload} 
       />
       
-      <VStack align="start" spacing={1} mb={10}>
-        <HStack>
-            <Icon as={FiUser} color="#56756D" boxSize={6} />
-            <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">My Profile</Heading>
-        </HStack>
-        <Text color="gray.500">Manage your identity and clinical records link.</Text>
-      </VStack>
+      {/* 🌿 Framed Header Card */}
+      <Box 
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', md: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'start', md: 'center' }} 
+          gap={4}
+        >
+          {/* Identity & Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiUser} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg="#10B981" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0" 
+              />
+            </Box>
+
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2}>
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.12)" 
+                  color="#56756D" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full" 
+                  px={2.5} 
+                  py={0.5} 
+                  textTransform="uppercase" 
+                  letterSpacing="0.08em"
+                >
+                  Account & Preferences
+                </Badge>
+              </HStack>
+              <Heading 
+                as="h1"
+                fontSize={{ base: "21px", sm: "25px" }} 
+                fontWeight="600" 
+                color="#263A33" 
+                letterSpacing="-0.015em"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                lineHeight="1.25"
+              >
+                My Profile
+              </Heading>
+              <Text color="#5A6E65" fontSize="13px" fontWeight="400">
+                Manage your personal details, contact preferences, and clinical records link.
+              </Text>
+            </VStack>
+          </HStack>
+
+          <HStack spacing={3}>
+            <Badge
+              bg="rgba(16, 185, 129, 0.12)"
+              color="#059669"
+              fontSize="11px"
+              fontWeight="600"
+              borderRadius="full"
+              px={3}
+              py={1}
+            >
+              Active Client
+            </Badge>
+          </HStack>
+        </Flex>
+      </Box>
 
       {isGhost && (
-        <Alert status="warning" borderRadius="2xl" mb={10} variant="subtle" bg="orange.50" border="1px solid" borderColor="orange.100">
-          <AlertIcon color="orange.400" />
-          <Box>
-            <Text fontWeight="bold" color="orange.900">Identity Mismatch Detected</Text>
-            <Text fontSize="sm" color="orange.800">
-              Your profile currently uses a system ID. Please enter your <strong>actual name</strong> and <strong>real email</strong> below to ensure your therapist can find your records correctly.
-            </Text>
-          </Box>
-        </Alert>
+        <Box 
+          borderRadius="2xl" 
+          mb={8} 
+          p={5}
+          bg="linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" 
+          border="1px solid rgba(245, 158, 11, 0.3)"
+          boxShadow="0 4px 14px -2px rgba(245, 158, 11, 0.08)"
+        >
+          <HStack align="flex-start" spacing={3.5}>
+            <Circle size="34px" bg="rgba(245, 158, 11, 0.15)" color="#B45309" flexShrink={0} mt={0.5}>
+              <Icon as={FiAlertCircle} boxSize="17px" />
+            </Circle>
+            <VStack align="start" spacing={1} flex={1}>
+              <Text fontWeight="600" fontSize="14px" color="#92400E" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                Identity Mismatch Detected
+              </Text>
+              <Text fontSize="13px" color="#78350F" lineHeight="1.5">
+                Your profile currently uses a temporary system ID. Please enter your <strong>actual name</strong> and <strong>real email</strong> below to ensure your therapist can find your records correctly.
+              </Text>
+            </VStack>
+          </HStack>
+        </Box>
       )}
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={10}>
-        {/* Profile Card */}
+      <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
+        {/* 👤 Left Profile Summary Card */}
         <VStack spacing={6} align="stretch">
-          <Card borderRadius="3xl" overflow="hidden" shadow="sm" border="1px solid" borderColor="gray.100">
-            <CardBody p={8} textAlign="center">
-              <VStack spacing={6}>
-                <Box position="relative">
-                  <Avatar size="2xl" name={formData.name} border="4px solid white" shadow="xl" src={clientProfile?.profile_image} />
-                  <IconButton
-                    aria-label="Change photo"
-                    icon={<FiCamera />}
-                    size="sm"
-                    borderRadius="full"
-                    position="absolute"
-                    bottom="2"
-                    right="2"
-                    bg="white"
-                    shadow="md"
-                    _hover={{ bg: 'gray.50' }}
-                    onClick={handlePhotoClick}
-                    isLoading={isSaving}
-                  />
-                </Box>
-                <VStack spacing={1}>
-                  <Heading size="md" color="#2E2E2E">{formData.name || 'Anonymous User'}</Heading>
-                  <Text fontSize="sm" color="gray.500">{formData.occupation || 'Member'}</Text>
-                </VStack>
-                <Divider />
-                <VStack align="start" w="full" spacing={4}>
-                   <HStack color="gray.600">
-                      <Icon as={FiMail} />
-                      <Text fontSize="sm" noOfLines={1}>{formData.email}</Text>
-                   </HStack>
-                   <HStack color="gray.600">
-                      <Icon as={FiPhone} />
-                      <Text fontSize="sm">{formData.phone_number || 'No phone added'}</Text>
-                   </HStack>
-                </VStack>
+          <Box 
+            bg="white" 
+            borderRadius="2xl" 
+            p={{ base: 6, md: 7 }} 
+            border="1px solid rgba(86, 117, 109, 0.14)" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+            textAlign="center"
+          >
+            <VStack spacing={5}>
+              <Box position="relative">
+                <Avatar 
+                  size="2xl" 
+                  name={formData.name || "Client"} 
+                  src={clientProfile?.profile_image} 
+                  bg="#56756D"
+                  color="white"
+                  border="4px solid white" 
+                  boxShadow="0 4px 16px rgba(38, 58, 51, 0.12)"
+                />
+                <IconButton
+                  aria-label="Change photo"
+                  icon={<Icon as={FiCamera} boxSize="14px" />}
+                  size="sm"
+                  borderRadius="full"
+                  position="absolute"
+                  bottom="1"
+                  right="1"
+                  bg="white"
+                  color="#263A33"
+                  border="1px solid rgba(86, 117, 109, 0.2)"
+                  boxShadow="0 2px 6px rgba(0,0,0,0.1)"
+                  _hover={{ bg: "#FAF8F5", color: "#56756D" }}
+                  onClick={handlePhotoClick}
+                  isLoading={isSaving}
+                />
+              </Box>
+
+              <VStack spacing={1.5}>
+                <Heading 
+                  fontSize="18px" 
+                  fontWeight="600" 
+                  color="#263A33" 
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  {formData.name || 'Anonymous User'}
+                </Heading>
+                <Badge
+                  bg="rgba(86, 117, 109, 0.08)"
+                  color="#56756D"
+                  border="1px solid rgba(86, 117, 109, 0.2)"
+                  borderRadius="full"
+                  px={3}
+                  py={0.5}
+                  fontSize="11px"
+                  fontWeight="600"
+                  textTransform="capitalize"
+                >
+                  {formData.occupation || 'Client Member'}
+                </Badge>
               </VStack>
-            </CardBody>
-          </Card>
+
+              <Divider borderColor="rgba(86, 117, 109, 0.12)" />
+
+              <VStack align="start" w="full" spacing={3}>
+                <HStack color="#5A6E65" spacing={2.5} fontSize="13px">
+                  <Icon as={FiMail} color="#56756D" boxSize="14px" />
+                  <Text noOfLines={1} title={formData.email}>
+                    {formData.email || 'No email added'}
+                  </Text>
+                </HStack>
+                <HStack color="#5A6E65" spacing={2.5} fontSize="13px">
+                  <Icon as={FiPhone} color="#56756D" boxSize="14px" />
+                  <Text>{formData.phone_number || 'No phone added'}</Text>
+                </HStack>
+              </VStack>
+            </VStack>
+          </Box>
           
-          <Box p={6} bg="#F2F8F5" borderRadius="3xl">
-             <HStack mb={4}>
-                <Icon as={FiAlertCircle} color="#56756D" />
-                <Text fontWeight="bold" color="#56756D">Clinical Records</Text>
-             </HStack>
-             <Text fontSize="xs" color="gray.600" lineHeight="tall" mb={4}>
-                Updating your email will automatically attempt to link your account to any existing therapeutic records matching that email address.
-             </Text>
-             <Button 
-                size="sm" 
-                variant="outline" 
-                colorScheme="teal" 
-                w="full" 
-                borderRadius="full"
-                onClick={handleRepair}
-                isLoading={isSaving}
-                loadingText="Repairing..."
-             >
-                Repair & Merge Records
-             </Button>
+          {/* 🔗 Clinical Records Callout */}
+          <Box 
+            p={5} 
+            bg="rgba(86, 117, 109, 0.04)" 
+            borderRadius="2xl"
+            border="1px solid rgba(86, 117, 109, 0.15)"
+          >
+            <HStack mb={2.5} spacing={2.5}>
+              <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiAlertCircle} boxSize="14px" />
+              </Circle>
+              <Text 
+                fontWeight="600" 
+                fontSize="13.5px" 
+                color="#263A33" 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              >
+                Clinical Records Link
+              </Text>
+            </HStack>
+            <Text fontSize="12.5px" color="#5A6E65" lineHeight="1.5" mb={3.5}>
+              Updating your email will automatically link your account to existing therapeutic records and clinical history matching that address.
+            </Text>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              borderColor="rgba(86, 117, 109, 0.3)"
+              color="#263A33"
+              w="full" 
+              borderRadius="full"
+              fontSize="12.5px"
+              fontWeight="600"
+              height="34px"
+              onClick={handleRepair}
+              isLoading={isSaving}
+              loadingText="Repairing..."
+              _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+            >
+              Repair & Merge Records
+            </Button>
           </Box>
         </VStack>
 
-        {/* Editor Form */}
-        <Box gridColumn={{ md: "span 2" }}>
-           <Card borderRadius="3xl" shadow="sm" border="1px solid" borderColor="gray.100">
-              <CardBody p={8}>
-                 <VStack spacing={8} align="stretch">
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-                       <FormControl>
-                          <FormLabel fontSize="sm" color="gray.600">Full Name</FormLabel>
-                          <Input 
-                            name="name" 
-                            value={formData.name} 
-                            onChange={handleChange}
-                            placeholder="e.g. John Doe"
-                            borderRadius="xl"
-                            bg="gray.50"
-                            border="none"
-                            _focus={{ bg: 'white', border: '1px solid', borderColor: 'teal.200' }}
-                          />
-                       </FormControl>
-                       <FormControl>
-                          <FormLabel fontSize="sm" color="gray.600">Email Address</FormLabel>
-                          <Input 
-                            name="email" 
-                            value={formData.email} 
-                            onChange={handleChange}
-                            placeholder="your@email.com"
-                            borderRadius="xl"
-                            bg="gray.50"
-                            border="none"
-                            _focus={{ bg: 'white', border: '1px solid', borderColor: 'teal.200' }}
-                          />
-                       </FormControl>
-                       <FormControl>
-                          <FormLabel fontSize="sm" color="gray.600">Preferred Name</FormLabel>
-                          <Input 
-                            name="preferred_first_name" 
-                            value={formData.preferred_first_name} 
-                            onChange={handleChange}
-                            placeholder="What should we call you?"
-                            borderRadius="xl"
-                            bg="gray.50"
-                            border="none"
-                            _focus={{ bg: 'white', border: '1px solid', borderColor: 'teal.200' }}
-                          />
-                       </FormControl>
-                       <FormControl>
-                          <FormLabel fontSize="sm" color="gray.600">Occupation</FormLabel>
-                          <Input 
-                            name="occupation" 
-                            value={formData.occupation} 
-                            onChange={handleChange}
-                            placeholder="e.g. Graphic Designer"
-                            borderRadius="xl"
-                            bg="gray.50"
-                            border="none"
-                            _focus={{ bg: 'white', border: '1px solid', borderColor: 'teal.200' }}
-                          />
-                       </FormControl>
-                       <FormControl gridColumn={{ md: "span 2" }}>
-                          <FormLabel fontSize="sm" color="gray.600">Phone Number</FormLabel>
-                          <Input 
-                            name="phone_number" 
-                            value={formData.phone_number} 
-                            onChange={handleChange}
-                            placeholder="+1 (555) 000-0000"
-                            borderRadius="xl"
-                            bg="gray.50"
-                            border="none"
-                            _focus={{ bg: 'white', border: '1px solid', borderColor: 'teal.200' }}
-                          />
-                       </FormControl>
-                    </SimpleGrid>
+        {/* 📝 Right Profile Form Editor Card */}
+        <Box gridColumn={{ lg: "span 2" }}>
+          <Box 
+            bg="white" 
+            borderRadius="2xl" 
+            p={{ base: 6, md: 8 }} 
+            border="1px solid rgba(86, 117, 109, 0.14)" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+          >
+            <VStack spacing={6} align="stretch">
+              <Box mb={1}>
+                <Heading 
+                  fontSize="16px" 
+                  fontWeight="600" 
+                  color="#263A33" 
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  Personal Details
+                </Heading>
+                <Text color="#5A6E65" fontSize="13px" mt={1}>
+                  Update your contact details and display preferences.
+                </Text>
+              </Box>
 
-                    <Divider />
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                <FormControl>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5}>
+                    Full Name
+                  </FormLabel>
+                  <Input 
+                    name="name" 
+                    value={formData.name} 
+                    onChange={handleChange}
+                    placeholder="e.g. John Doe"
+                    borderRadius="xl"
+                    bg="#FAF8F5"
+                    height="42px"
+                    fontSize="13.5px"
+                    color="#263A33"
+                    border="1px solid rgba(86, 117, 109, 0.18)"
+                    _placeholder={{ color: "rgba(90, 110, 101, 0.55)" }}
+                    _focus={{ bg: 'white', borderColor: '#56756D', boxShadow: '0 0 0 1px #56756D' }}
+                  />
+                </FormControl>
 
-                    <HStack justify="flex-end" spacing={4}>
-                       <Button variant="ghost" borderRadius="full" px={8}>Cancel</Button>
-                       <Button 
-                        leftIcon={<FiSave />} 
-                        bg="#56756D" 
-                        color="white" 
-                        borderRadius="full" 
-                        px={10}
-                        isLoading={isSaving}
-                        loadingText="Saving..."
-                        onClick={handleSave}
-                        _hover={{ bg: '#455c56', transform: 'translateY(-2px)' }}
-                        _active={{ transform: 'translateY(0)' }}
-                        transition="all 0.3s"
-                       >
-                         Save Changes
-                       </Button>
-                    </HStack>
-                 </VStack>
-              </CardBody>
-           </Card>
+                <FormControl>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5}>
+                    Email Address
+                  </FormLabel>
+                  <Input 
+                    name="email" 
+                    value={formData.email} 
+                    onChange={handleChange}
+                    placeholder="your@email.com"
+                    borderRadius="xl"
+                    bg="#FAF8F5"
+                    height="42px"
+                    fontSize="13.5px"
+                    color="#263A33"
+                    border="1px solid rgba(86, 117, 109, 0.18)"
+                    _placeholder={{ color: "rgba(90, 110, 101, 0.55)" }}
+                    _focus={{ bg: 'white', borderColor: '#56756D', boxShadow: '0 0 0 1px #56756D' }}
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5}>
+                    Preferred Name
+                  </FormLabel>
+                  <Input 
+                    name="preferred_first_name" 
+                    value={formData.preferred_first_name} 
+                    onChange={handleChange}
+                    placeholder="What should we call you?"
+                    borderRadius="xl"
+                    bg="#FAF8F5"
+                    height="42px"
+                    fontSize="13.5px"
+                    color="#263A33"
+                    border="1px solid rgba(86, 117, 109, 0.18)"
+                    _placeholder={{ color: "rgba(90, 110, 101, 0.55)" }}
+                    _focus={{ bg: 'white', borderColor: '#56756D', boxShadow: '0 0 0 1px #56756D' }}
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5}>
+                    Occupation
+                  </FormLabel>
+                  <Input 
+                    name="occupation" 
+                    value={formData.occupation} 
+                    onChange={handleChange}
+                    placeholder="e.g. Graphic Designer"
+                    borderRadius="xl"
+                    bg="#FAF8F5"
+                    height="42px"
+                    fontSize="13.5px"
+                    color="#263A33"
+                    border="1px solid rgba(86, 117, 109, 0.18)"
+                    _placeholder={{ color: "rgba(90, 110, 101, 0.55)" }}
+                    _focus={{ bg: 'white', borderColor: '#56756D', boxShadow: '0 0 0 1px #56756D' }}
+                  />
+                </FormControl>
+
+                <FormControl gridColumn={{ md: "span 2" }}>
+                  <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33" mb={1.5}>
+                    Phone Number
+                  </FormLabel>
+                  <Input 
+                    name="phone_number" 
+                    value={formData.phone_number} 
+                    onChange={handleChange}
+                    placeholder="+1 (555) 000-0000"
+                    borderRadius="xl"
+                    bg="#FAF8F5"
+                    height="42px"
+                    fontSize="13.5px"
+                    color="#263A33"
+                    border="1px solid rgba(86, 117, 109, 0.18)"
+                    _placeholder={{ color: "rgba(90, 110, 101, 0.55)" }}
+                    _focus={{ bg: 'white', borderColor: '#56756D', boxShadow: '0 0 0 1px #56756D' }}
+                  />
+                </FormControl>
+              </SimpleGrid>
+
+              <Divider borderColor="rgba(86, 117, 109, 0.12)" pt={2} />
+
+              <HStack justify="flex-end" spacing={3}>
+                <Button 
+                  variant="ghost" 
+                  borderRadius="full" 
+                  px={6}
+                  height="40px"
+                  fontSize="13px"
+                  fontWeight="500"
+                  color="#5A6E65"
+                  _hover={{ bg: "rgba(86, 117, 109, 0.08)", color: "#263A33" }}
+                  onClick={() => {
+                    if (clientProfile) {
+                      setFormData({
+                        name: clientProfile.name || "",
+                        email: clientProfile.email || "",
+                        phone_number: clientProfile.phone_number || "",
+                        preferred_first_name: clientProfile.preferred_first_name || "",
+                        occupation: clientProfile.occupation || "",
+                      });
+                    }
+                  }}
+                >
+                  Reset
+                </Button>
+                <Button 
+                  leftIcon={<Icon as={FiSave} boxSize="14px" />} 
+                  bg="#56756D" 
+                  color="white" 
+                  borderRadius="full" 
+                  px={7}
+                  height="42px"
+                  fontSize="13px"
+                  fontWeight="600"
+                  isLoading={isSaving}
+                  loadingText="Saving..."
+                  onClick={handleSave}
+                  _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                  boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
+                  transition="all 0.2s"
+                >
+                  Save Changes
+                </Button>
+              </HStack>
+            </VStack>
+          </Box>
         </Box>
       </SimpleGrid>
     </Box>
   );
 }
+

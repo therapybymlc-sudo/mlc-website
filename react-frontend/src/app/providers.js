@@ -7,10 +7,19 @@ import { AuthProvider } from '../context/AuthContext'
 
 export function Providers({ children }) {
   return (
-    <ChakraProvider theme={theme}>
-      <Suspense fallback={null}>
+    <Suspense fallback={null}>
+      <ChakraProvider 
+        theme={theme}
+        toastOptions={{
+          defaultOptions: {
+            position: 'bottom-right',
+            duration: 4000,
+            isClosable: true,
+          }
+        }}
+      >
         <AuthProvider>{children}</AuthProvider>
-      </Suspense>
-    </ChakraProvider>
+      </ChakraProvider>
+    </Suspense>
   )
 }

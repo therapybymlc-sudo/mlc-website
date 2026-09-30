@@ -10,21 +10,30 @@ import {
   Textarea,
   useToast,
   Icon,
-  SimpleGrid,
-  Divider,
-  Alert,
-  AlertIcon,
+  Circle,
   Accordion,
   AccordionItem,
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
-  FormControl,
-  FormLabel,
   Stack,
+  Flex,
+  Badge,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiAlertTriangle, FiHeart, FiPhone, FiShield, FiSave, FiInfo } from "react-icons/fi";
+import { 
+  FiAlertTriangle, 
+  FiHeart, 
+  FiPhone, 
+  FiShield, 
+  FiSave, 
+  FiInfo, 
+  FiDownload, 
+  FiUsers, 
+  FiLifeBuoy, 
+  FiSun, 
+  FiHome 
+} from "react-icons/fi";
 import { apiGet, apiGetBlob, apiPut } from "../../../../../api.js";
 import { useAuth } from "../../../../../context/AuthContext";
 
@@ -101,113 +110,231 @@ export default function SafetyClient() {
   };
 
   return (
-    <Box maxW="900px" mx="auto">
-      <VStack id="tour-safety-header" align="start" spacing={1} mb={8}>
-        <Heading size="lg" color="#2E2E2E" fontFamily="'Playfair Display', serif">
-          Personal Safety Plan
-        </Heading>
-        <Text color="gray.500">A proactive guide to help you stay grounded and safe during difficult moments.</Text>
-      </VStack>
+    <Box maxW="1240px" mx="auto" pb={12} fontFamily="'Inter', var(--font-inter), sans-serif">
+      {/* 🌿 Framed Header Card */}
+      <Box 
+        id="tour-safety-header"
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', md: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'start', md: 'center' }} 
+          gap={4}
+        >
+          {/* Identity & Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative" flexShrink={0}>
+              <Circle size="48px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                <Icon as={FiHeart} boxSize="22px" />
+              </Circle>
+              <Circle 
+                size="11px" 
+                bg="#10B981" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0" 
+              />
+            </Box>
 
-      <Alert status="info" borderRadius="2xl" mb={8} bg="#E9F2ED" color="#56756D" border="1px solid" borderColor="teal.100">
-        <AlertIcon color="#56756D" />
-        <Box>
-           <Text fontWeight="700">Clinical Recommendation</Text>
-           <Text fontSize="sm">This plan is most effective when completed during a time of relative calm. You can update it whenever you feel your needs have changed.</Text>
-        </Box>
-      </Alert>
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2}>
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.12)" 
+                  color="#56756D" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full" 
+                  px={2.5} 
+                  py={0.5} 
+                  textTransform="uppercase" 
+                  letterSpacing="0.08em"
+                >
+                  Crisis Support
+                </Badge>
+              </HStack>
+              <Heading 
+                as="h1"
+                fontSize={{ base: "21px", sm: "25px" }} 
+                fontWeight="600" 
+                color="#263A33" 
+                letterSpacing="-0.015em"
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                lineHeight="1.25"
+              >
+                Personal Safety Plan
+              </Heading>
+              <Text color="#5A6E65" fontSize="13px" fontWeight="400">
+                A proactive, personalized guide to help you stay grounded and safe during difficult moments.
+              </Text>
+            </VStack>
+          </HStack>
 
+          <Button
+            size="sm"
+            height="38px"
+            variant="outline"
+            borderRadius="full"
+            borderColor="rgba(86, 117, 109, 0.25)"
+            color="#263A33"
+            fontSize="12.5px"
+            fontWeight="600"
+            px={4}
+            leftIcon={<Icon as={FiDownload} boxSize="13px" />}
+            onClick={handleExportPdf}
+            _hover={{ bg: "rgba(86, 117, 109, 0.06)", borderColor: "#56756D" }}
+            transition="all 0.2s"
+            whiteSpace="nowrap"
+            flexShrink={0}
+          >
+            Export PDF
+          </Button>
+        </Flex>
+      </Box>
+
+      {/* 🌿 Clinical Recommendation Callout */}
+      <Box 
+        borderRadius="2xl" 
+        mb={6} 
+        p={{ base: 4, md: 5 }}
+        bg="linear-gradient(135deg, rgba(86, 117, 109, 0.08) 0%, rgba(169, 203, 183, 0.06) 100%)"
+        border="1px solid rgba(86, 117, 109, 0.18)"
+      >
+        <HStack align="flex-start" spacing={3.5}>
+          <Circle size="34px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" flexShrink={0} mt={0.5}>
+            <Icon as={FiInfo} boxSize="16px" />
+          </Circle>
+          <VStack align="start" spacing={1} flex="1">
+            <Text 
+              fontWeight="600" 
+              fontSize="14px" 
+              color="#263A33" 
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+            >
+              Clinical Guidance
+            </Text>
+            <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
+              This plan is most effective when completed during a time of relative calm. You can update and adapt it whenever your circumstances or needs evolve.
+            </Text>
+          </VStack>
+        </HStack>
+      </Box>
+
+      {/* 📋 Safety Sections */}
       <VStack align="stretch" spacing={6}>
         <Box id="tour-safety-sections">
-        <Accordion allowMultiple defaultIndex={[0]}>
-          <SafetySection 
-            icon={FiAlertTriangle} 
-            title="1. Warning Signs" 
-            desc="Thoughts, images, mood, or behaviors that indicate this plan should be used."
-            value={plan.warning_signs}
-            onChange={(val) => handleChange('warning_signs', val)}
-          />
-          
-          <SafetySection 
-            icon={FiShield} 
-            title="2. Internal Coping Strategies" 
-            desc="Things I can do without contacting anyone else (e.g., breathing, walking, listening to music)."
-            value={plan.coping_strategies}
-            onChange={(val) => handleChange('coping_strategies', val)}
-          />
+          <Accordion allowMultiple defaultIndex={[0]}>
+            <SafetySection 
+              icon={FiAlertTriangle} 
+              title="1. Warning Signs" 
+              desc="Thoughts, images, mood, or behaviors that indicate this plan should be used."
+              value={plan.warning_signs}
+              onChange={(val) => handleChange('warning_signs', val)}
+            />
+            
+            <SafetySection 
+              icon={FiShield} 
+              title="2. Internal Coping Strategies" 
+              desc="Things I can do without contacting anyone else (e.g., breathing, walking, listening to music)."
+              value={plan.coping_strategies}
+              onChange={(val) => handleChange('coping_strategies', val)}
+            />
 
-          <SafetySection 
-            icon={FiInfo} 
-            title="3. Social Distractions" 
-            desc="People and social settings that provide distraction (places to go, people to talk to casually)."
-            value={plan.social_distractions}
-            onChange={(val) => handleChange('social_distractions', val)}
-          />
+            <SafetySection 
+              icon={FiUsers} 
+              title="3. Social Distractions" 
+              desc="People and social settings that provide distraction (places to go, people to talk to casually)."
+              value={plan.social_distractions}
+              onChange={(val) => handleChange('social_distractions', val)}
+            />
 
-          <SafetySection 
-            icon={FiPhone} 
-            title="4. Social Supports" 
-            desc="People who I can ask for help during a crisis."
-            value={plan.social_supports}
-            onChange={(val) => handleChange('social_supports', val)}
-          />
+            <SafetySection 
+              icon={FiPhone} 
+              title="4. Social Supports" 
+              desc="Friends and family members who I can reach out to for help during a difficult moment."
+              value={plan.social_supports}
+              onChange={(val) => handleChange('social_supports', val)}
+            />
 
-          <SafetySection 
-            icon={FiHeart} 
-            title="5. Professionals & Agencies" 
-            desc="Who to call in an emergency (MLC Crisis line, Local Emergency services)."
-            value={plan.professional_supports}
-            onChange={(val) => handleChange('professional_supports', val)}
-          />
+            <SafetySection 
+              icon={FiLifeBuoy} 
+              title="5. Professionals & Agencies" 
+              desc="Who to contact in an emergency (MLC Crisis line, Local Emergency services, therapist)."
+              value={plan.professional_supports}
+              onChange={(val) => handleChange('professional_supports', val)}
+            />
 
-          <SafetySection 
-            icon={FiShield} 
-            title="6. Making the Environment Safe" 
-            desc="How I can limit access to things I might use to harm myself."
-            value={plan.environment_safety}
-            onChange={(val) => handleChange('environment_safety', val)}
-          />
+            <SafetySection 
+              icon={FiHome} 
+              title="6. Making the Environment Safe" 
+              desc="Steps I can take to limit access to items or spaces that could compromise my safety."
+              value={plan.environment_safety}
+              onChange={(val) => handleChange('environment_safety', val)}
+            />
 
-          <SafetySection 
-            icon={FiHeart} 
-            title="7. One Thing Important to Me" 
-            desc="A reason for living, or something I want to keep working toward."
-            value={plan.reason_for_living}
-            onChange={(val) => handleChange('reason_for_living', val)}
-          />
-        </Accordion>
+            <SafetySection 
+              icon={FiSun} 
+              title="7. One Thing Important to Me" 
+              desc="A reason for living, a core value, or something meaningful I want to keep working toward."
+              value={plan.reason_for_living}
+              onChange={(val) => handleChange('reason_for_living', val)}
+            />
+          </Accordion>
         </Box>
 
-        <Box id="tour-safety-save" pt={6}>
-            <Stack direction={{ base: "column", md: "row" }} spacing={3}>
-              <Button
-                  flex="1"
-                  h="60px"
-                  bg="#56756D"
-                  color="white"
-                  borderRadius="2xl"
-                  leftIcon={<FiSave />}
-                  isLoading={saving}
-                  onClick={handleSave}
-                  _hover={{ bg: '#3E5B54' }}
-              >
-                  Save Safety Plan
-              </Button>
-              <Button
-                flex="1"
-                h="60px"
-                variant="outline"
-                borderRadius="2xl"
-                borderColor="#56756D"
-                color="#56756D"
-                onClick={handleExportPdf}
-              >
-                Export as PDF
-              </Button>
-            </Stack>
-            <Text textAlign="center" mt={4} fontSize="xs" color="gray.400">
-                Only you and your primary therapist can view this plan.
+        {/* 💾 Actions & Security Note */}
+        <Box id="tour-safety-save" pt={4}>
+          <HStack spacing={3} justify="flex-start" flexWrap="wrap">
+            <Button
+              height="42px"
+              bg="#56756D"
+              color="white"
+              borderRadius="full"
+              px={7}
+              fontSize="13px"
+              fontWeight="600"
+              leftIcon={<Icon as={FiSave} boxSize="14px" />}
+              isLoading={saving}
+              loadingText="Saving Plan..."
+              onClick={handleSave}
+              _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+              transition="all 0.2s"
+              boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
+            >
+              Save Safety Plan
+            </Button>
+
+            <Button
+              height="42px"
+              variant="outline"
+              borderRadius="full"
+              borderColor="rgba(86, 117, 109, 0.3)"
+              color="#263A33"
+              px={6}
+              fontSize="13px"
+              fontWeight="600"
+              leftIcon={<Icon as={FiDownload} boxSize="14px" />}
+              onClick={handleExportPdf}
+              _hover={{ bg: "rgba(86, 117, 109, 0.06)", borderColor: "#56756D" }}
+              transition="all 0.2s"
+            >
+              Export as PDF
+            </Button>
+          </HStack>
+
+          <HStack spacing={2} mt={4} color="#718096" align="center">
+            <Icon as={FiShield} boxSize="13px" color="#56756D" />
+            <Text fontSize="12px" fontWeight="500">
+              Encrypted & Private: Only you and your primary therapist have access to your personal safety plan.
             </Text>
+          </HStack>
         </Box>
       </VStack>
     </Box>
@@ -215,38 +342,80 @@ export default function SafetyClient() {
 }
 
 function SafetySection({ icon, title, desc, value, onChange }) {
-    return (
-        <AccordionItem border="none" mb={4}>
-            <AccordionButton 
-                p={6} 
-                bg="white" 
-                borderRadius="2xl" 
-                shadow="sm" 
-                _expanded={{ bg: 'gray.50', borderBottomRadius: 'none' }}
-                border="1px solid"
-                borderColor="gray.100"
-            >
-                <HStack flex="1" spacing={4}>
-                    <Box bg="#F2F1ED" p={2} borderRadius="lg">
-                        <Icon as={icon} color="#56756D" />
-                    </Box>
-                    <VStack align="start" spacing={0}>
-                        <Text fontWeight="700" color="#2E2E2E">{title}</Text>
-                        <Text fontSize="xs" color="gray.500">{desc}</Text>
-                    </VStack>
-                </HStack>
-                <AccordionIcon />
-            </AccordionButton>
-            <AccordionPanel pb={6} bg="gray.50" borderBottomRadius="2xl" border="1px solid" borderTop="none" borderColor="gray.100">
-                <Textarea 
-                    placeholder="Type your notes here..." 
-                    bg="white" 
-                    borderRadius="xl" 
-                    minH="120px"
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                />
-            </AccordionPanel>
-        </AccordionItem>
-    );
+  return (
+    <AccordionItem border="none" mb={3.5}>
+      {({ isExpanded }) => (
+        <Box
+          bg="white"
+          borderRadius="2xl"
+          border="1px solid"
+          borderColor={isExpanded ? "rgba(86, 117, 109, 0.28)" : "rgba(86, 117, 109, 0.14)"}
+          boxShadow={isExpanded ? "0 4px 18px -2px rgba(38, 58, 51, 0.06)" : "0 2px 6px rgba(38, 58, 51, 0.02)"}
+          transition="all 0.2s ease"
+          overflow="hidden"
+        >
+          <AccordionButton 
+            p={{ base: 4, md: 5 }}
+            bg={isExpanded ? "rgba(86, 117, 109, 0.03)" : "white"}
+            _hover={{ bg: "rgba(86, 117, 109, 0.04)" }}
+            transition="all 0.2s"
+          >
+            <HStack flex="1" spacing={3.5} align="center">
+              <Circle 
+                size="38px" 
+                bg={isExpanded ? "rgba(86, 117, 109, 0.12)" : "rgba(86, 117, 109, 0.07)"}
+                color="#56756D"
+                flexShrink={0}
+              >
+                <Icon as={icon} boxSize="17px" />
+              </Circle>
+              <VStack align="start" spacing={0.5} flex="1">
+                <Text 
+                  fontWeight="600" 
+                  color="#263A33"
+                  fontSize="15px"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  {title}
+                </Text>
+                <Text fontSize="12.5px" color="#5A6E65" lineHeight="1.4">
+                  {desc}
+                </Text>
+              </VStack>
+            </HStack>
+            <AccordionIcon color="#56756D" />
+          </AccordionButton>
+          <AccordionPanel 
+            p={{ base: 4, md: 5 }} 
+            pt={2} 
+            bg="white"
+            borderTop="1px solid"
+            borderColor="rgba(86, 117, 109, 0.08)"
+          >
+            <Textarea 
+              placeholder="Type your notes and thoughts here..." 
+              bg="#FAF8F5" 
+              borderRadius="xl" 
+              minH="110px"
+              value={value || ""}
+              onChange={(e) => onChange(e.target.value)}
+              fontSize="13.5px"
+              color="#263A33"
+              border="1px solid rgba(86, 117, 109, 0.16)"
+              _placeholder={{ color: "rgba(90, 110, 101, 0.6)" }}
+              _focus={{ 
+                bg: "white", 
+                borderColor: "#56756D", 
+                boxShadow: "0 0 0 1px #56756D" 
+              }}
+              lineHeight="1.6"
+              p={3.5}
+            />
+          </AccordionPanel>
+        </Box>
+      )}
+    </AccordionItem>
+  );
 }
+

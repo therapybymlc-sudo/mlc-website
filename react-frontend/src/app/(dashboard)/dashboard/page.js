@@ -19,6 +19,7 @@ export default function DashboardPage() {
     isAdmin,
     metadataRoles = [],
     reportRoleDashboardMismatchFromError,
+    therapistProfile,
     whoami,
     authReady,
   } = useAuth();
@@ -59,13 +60,21 @@ export default function DashboardPage() {
 
     // Case A: User signed in via Therapist Login (/login/therapist)
     if (autoRole === "therapist") {
-      if (isTherapist) {
+      if (isTherapist || !!whoami?.has_therapist_profile || !!therapistProfile) {
         router.replace("/dashboard/therapist");
         return;
       }
 
-      // Check if this account is actually a Client
-      const isClientAccount = isClient || !!whoami?.has_client_profile || metadataRoles.includes("client");
+      const hasTherapistIdentity =
+        isTherapist ||
+        !!whoami?.has_therapist_profile ||
+        !!therapistProfile ||
+        metadataRoles.includes("therapist");
+
+      // Check if this account is actually a Client (and strictly not a clinician)
+      const isClientAccount =
+        !hasTherapistIdentity &&
+        (isClient || !!whoami?.has_client_profile || metadataRoles.includes("client"));
       if (isClientAccount) {
         toast.closeAll();
         signOut().then(() => {
@@ -83,14 +92,19 @@ export default function DashboardPage() {
 
     // Case B: User signed in via Client Login (/login/client)
     if (autoRole === "client") {
-      if (isClient) {
+      const hasTherapistIdentity =
+        isTherapist ||
+        !!whoami?.has_therapist_profile ||
+        !!therapistProfile ||
+        metadataRoles.includes("therapist");
+
+      if (isClient && !hasTherapistIdentity) {
         router.replace("/dashboard/client");
         return;
       }
 
       // Check if this account is actually a Therapist
-      const isTherapistAccount = isTherapist || !!whoami?.has_therapist_profile || metadataRoles.includes("therapist");
-      if (isTherapistAccount) {
+      if (hasTherapistIdentity) {
         toast.closeAll();
         signOut().then(() => {
           router.replace("/login/therapist?mismatch=therapist");
@@ -116,8 +130,9 @@ export default function DashboardPage() {
     }
 
     // 🔄 3. Normal / Non-Hinted Route Dispatch:
-    if (hasExplicitRole) {
-      if (isTherapist) {
+    const hasPractitionerIdentity = isTherapist || !!whoami?.has_therapist_profile || !!therapistProfile;
+    if (hasExplicitRole || hasPractitionerIdentity) {
+      if (hasPractitionerIdentity) {
         router.replace("/dashboard/therapist");
       } else {
         router.replace("/dashboard/client");
@@ -128,6 +143,10 @@ export default function DashboardPage() {
     // 4. Metadata Role Fallback:
     if (hasMetadataRole) {
       const preferred = metadataRoles.includes("therapist") ? "therapist" : "client";
+      if (preferred === "therapist") {
+        router.replace("/dashboard/therapist");
+        return;
+      }
       if (!resolvingRole && attemptedRoleRef.current !== preferred) {
         handleResolveRole(preferred);
         return;
@@ -149,6 +168,7 @@ export default function DashboardPage() {
     autoRole,
     resolvingRole,
     metadataRoles,
+    therapistProfile,
     whoami,
     signOut,
     toast
@@ -184,9 +204,9 @@ export default function DashboardPage() {
         router.replace("/dashboard/client");
       }
     } catch (e) {
-      console.error(e);
       const mismatch = reportRoleDashboardMismatchFromError?.(e) || parseOnboardRoleDashboardMismatch(e);
       if (mismatch) {
+        console.warn("Role mismatch during onboarding redirect (handled):", mismatch);
         toast({
           status: "warning",
           title: mismatch.title,
@@ -196,6 +216,7 @@ export default function DashboardPage() {
         });
         router.replace(mismatch.correctHref);
       } else {
+        console.error("Onboarding error:", e);
         toast({
           status: "error",
           title: "Could not finalize account setup.",

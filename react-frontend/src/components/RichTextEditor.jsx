@@ -1,23 +1,44 @@
 'use client'
 
 import { useEffect, useRef } from "react";
-
-import { Box, Button, HStack, Text } from "@chakra-ui/react";
+import { Box, Button, HStack, Text, Icon } from "@chakra-ui/react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import { FiBold, FiItalic, FiUnderline, FiList, FiLink, FiImage } from "react-icons/fi";
 
-const ToolbarButton = ({ active, disabled, onClick, children }) => (
+const ToolbarButton = ({ active, disabled, onClick, children, title, icon }) => (
   <Button
-    size="sm"
-    variant={active ? "solid" : "ghost"}
+    size="xs"
+    height="30px"
+    minW="32px"
+    px={children ? 2.5 : 2}
+    fontSize="12px"
+    fontWeight="600"
+    fontFamily="'Inter', var(--font-inter), sans-serif"
+    bg={active ? "#263A33" : "white"}
+    color={active ? "white" : "#263A33"}
+    border="1px solid"
+    borderColor={active ? "#263A33" : "rgba(86, 117, 109, 0.2)"}
+    borderRadius="md"
     isDisabled={disabled}
     onClick={onClick}
-    borderRadius="full"
+    title={title}
+    boxShadow="0 1px 2px rgba(38, 58, 51, 0.04)"
+    _hover={{
+      bg: active ? "#182722" : "#FAF8F5",
+      borderColor: active ? "#182722" : "rgba(86, 117, 109, 0.35)",
+    }}
+    _active={{
+      bg: "#263A33",
+      color: "white",
+    }}
+    transition="all 0.15s"
   >
+    {icon && <Icon as={icon} boxSize="12px" mr={children ? 1.5 : 0} />}
     {children}
   </Button>
 );
@@ -35,6 +56,8 @@ export default function RichTextEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit,
+      Underline,
+      Link.configure({ openOnClick: false }),
       Image.configure({ allowBase64: true }),
       Placeholder.configure({ placeholder: placeholder || "Start writing..." }),
     ],
@@ -80,45 +103,75 @@ export default function RichTextEditor({
 
   return (
     <Box>
-      <HStack spacing={2} mb={2} flexWrap="wrap">
+      <HStack 
+        spacing={1.5} 
+        mb={2.5} 
+        flexWrap="wrap" 
+        p={1.5}
+        bg="rgba(86, 117, 109, 0.05)"
+        borderRadius="xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.12)"
+        w="fit-content"
+      >
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
+          title="Bold"
         >
-          B
+          <Text as="span" fontWeight="800">B</Text>
         </ToolbarButton>
+
         <ToolbarButton
           active={editor.isActive("italic")}
           onClick={() => editor.chain().focus().toggleItalic().run()}
+          title="Italic"
         >
-          I
+          <Text as="span" fontStyle="italic">I</Text>
         </ToolbarButton>
-        <ToolbarButton
-          active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-        >
-          •
-        </ToolbarButton>
-        <ToolbarButton
-          active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        >
-          1.
-        </ToolbarButton>
+
         <ToolbarButton
           active={editor.isActive("underline")}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
+          title="Underline"
         >
-          U
+          <Text as="span" textDecoration="underline">U</Text>
         </ToolbarButton>
-        <ToolbarButton onClick={setLink}>
+
+        <ToolbarButton
+          active={editor.isActive("bulletList")}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          title="Bullet List"
+        >
+          • List
+        </ToolbarButton>
+
+        <ToolbarButton
+          active={editor.isActive("orderedList")}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          title="Numbered List"
+        >
+          1. List
+        </ToolbarButton>
+
+        <ToolbarButton 
+          active={editor.isActive("link")}
+          onClick={setLink}
+          icon={FiLink}
+          title="Add Link"
+        >
           Link
         </ToolbarButton>
-        <ToolbarButton
-          onClick={() => fileInputRef.current?.click()}
-        >
-          Image
-        </ToolbarButton>
+
+        {allowImages && (
+          <ToolbarButton
+            onClick={() => fileInputRef.current?.click()}
+            icon={FiImage}
+            title="Upload Image"
+          >
+            Image
+          </ToolbarButton>
+        )}
       </HStack>
 
       <input
@@ -131,20 +184,69 @@ export default function RichTextEditor({
 
       <Box
         border="1px solid"
-        borderColor="gray.200"
-        borderRadius="2xl"
+        borderColor="rgba(86, 117, 109, 0.2)"
+        borderRadius="xl"
         bg="white"
-        px={4}
-        py={3}
+        px={{ base: 4, md: 5 }}
+        py={4}
         minH={minHeight}
+        transition="border-color 0.2s, box-shadow 0.2s"
+        _focusWithin={{
+          borderColor: "#56756D",
+          boxShadow: "0 0 0 1px #56756D",
+        }}
         sx={{
           ".ProseMirror": {
             outline: "none",
             minHeight,
+            fontSize: "13.5px",
+            color: "#263A33",
+            lineHeight: "1.65",
+            fontFamily: "'Inter', var(--font-inter), sans-serif",
+          },
+          ".ProseMirror ol": {
+            listStyleType: "decimal !important",
+            paddingLeft: "28px !important",
+            margin: "14px 0 !important",
+          },
+          ".ProseMirror ul": {
+            listStyleType: "disc !important",
+            paddingLeft: "28px !important",
+            margin: "14px 0 !important",
+          },
+          ".ProseMirror li": {
+            margin: "8px 0 !important",
+            lineHeight: "1.75 !important",
+            paddingLeft: "6px !important",
+          },
+          ".ProseMirror li p": {
+            margin: "0 !important",
+            display: "inline-block",
+            lineHeight: "1.75",
+          },
+          ".ProseMirror p": {
+            margin: "0.75em 0",
+            lineHeight: "1.75",
+          },
+          ".ProseMirror p:last-child": {
+            marginBottom: "0",
+          },
+          ".ProseMirror blockquote": {
+            borderLeft: "3px solid #56756D",
+            paddingLeft: "1rem",
+            margin: "0.75rem 0",
+            color: "#5A6E65",
+          },
+          ".ProseMirror p.is-editor-empty:first-of-type::before": {
+            color: "#A0AEC0",
+            content: "attr(data-placeholder)",
+            float: "left",
+            height: 0,
+            pointerEvents: "none",
           },
           ".ProseMirror img": {
             maxWidth: "100%",
-            borderRadius: "12px",
+            borderRadius: "10px",
             marginTop: "8px",
           },
         }}

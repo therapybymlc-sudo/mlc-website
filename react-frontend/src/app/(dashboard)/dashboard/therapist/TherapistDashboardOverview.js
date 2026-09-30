@@ -8,15 +8,13 @@ import {
   HStack,
   SimpleGrid,
   Button,
-  useToast,
   Avatar,
   Icon,
-  Divider,
   Flex,
   Badge,
-  Container,
   Circle,
-  Tooltip,
+  Grid,
+  Divider,
 } from "@chakra-ui/react";
 import { useState, useEffect, useMemo } from "react";
 import { 
@@ -24,186 +22,80 @@ import {
   FiCalendar, 
   FiClock, 
   FiFileText, 
-  FiSettings, 
   FiAward, 
   FiAlertCircle,
-  FiTrendingUp,
-  FiActivity,
-  FiStar,
-  FiPlus,
-  FiMessageSquare,
   FiShield,
   FiHeart,
   FiCheckCircle,
   FiVideo,
   FiInbox,
-  FiCompass,
-  FiBriefcase,
-  FiExternalLink,
   FiChevronRight,
   FiEdit3,
   FiDollarSign,
-  FiArrowUpRight
+  FiLock,
+  FiArrowRight,
+  FiCompass,
 } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
 import NextLink from 'next/link';
 import { apiGet } from "../../../../api.js";
 import TherapistGatedGateway from "../../../../components/TherapistGatedGateway";
 import { useTherapistSubscriptionGate } from "../../../../hooks/useTherapistSubscriptionGate";
-import { motion } from "framer-motion";
-import FeedbackWidget from "../../../../components/FeedbackWidget";
 
-const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
-
-/* 💎 Modern KPI Stat Card */
-const StatCard = ({ label, value, help, icon, color = "#56756D", href, badge }) => (
-  <MotionBox
-    as={href ? NextLink : "div"}
+/* 🛠️ Action Tool Tile for Ecosystem (Matching Client Dashboard Interactive Items) */
+const ActionTile = ({ icon, label, sublabel, href, color = "#56756D" }) => (
+  <HStack
+    as={NextLink}
     href={href}
-    whileHover={{ y: -3, transition: { duration: 0.2 } }}
-    bg="white"
-    p={5}
-    borderRadius="2xl"
+    py={3.5}
+    px={4}
+    borderRadius="xl"
+    bg="rgba(250, 248, 245, 0.85)"
     border="1px solid"
-    borderColor="rgba(86, 117, 109, 0.12)"
-    boxShadow="0 2px 12px rgba(38, 58, 51, 0.03)"
-    position="relative"
-    overflow="hidden"
-    cursor={href ? "pointer" : "default"}
-    transition="all 0.25s ease"
-    _hover={href ? { 
-      borderColor: "rgba(86, 117, 109, 0.28)", 
-      boxShadow: "0 8px 24px rgba(38, 58, 51, 0.08)",
-      transform: "translateY(-3px)" 
-    } : {}}
+    borderColor="rgba(86, 117, 109, 0.1)"
+    cursor="pointer"
+    transition="all 0.18s ease"
+    _hover={{
+      bg: "white",
+      borderColor: "rgba(86, 117, 109, 0.28)",
+      transform: "translateX(3px)",
+      boxShadow: "0 2px 8px rgba(38, 58, 51, 0.05)"
+    }}
+    spacing={3}
+    w="full"
+    justify="space-between"
   >
-    <Flex justify="space-between" align="start" mb={3}>
-      <HStack spacing={2}>
-        <Circle size="34px" bg="rgba(169, 203, 183, 0.12)" border="1px solid" borderColor="rgba(86, 117, 109, 0.1)">
-          <Icon as={icon} boxSize="16px" color={color} />
-        </Circle>
+    <HStack spacing={3} minW={0}>
+      <Circle size="34px" bg="rgba(86, 117, 109, 0.1)" color={color} flexShrink={0}>
+        <Icon as={icon} boxSize="15px" />
+      </Circle>
+      <VStack align="start" spacing={0} minW={0}>
         <Text 
-          fontSize="11px" 
-          fontWeight="700" 
-          color="#56756D" 
-          letterSpacing="0.1em" 
-          textTransform="uppercase"
+          fontSize="13.5px" 
+          fontWeight="600" 
+          color="#263A33"
           fontFamily="'Inter', var(--font-inter), sans-serif"
+          noOfLines={1}
         >
           {label}
         </Text>
-      </HStack>
-      {badge ? (
-        <Badge 
-          bg="rgba(169, 203, 183, 0.15)" 
-          color="#263A33" 
-          fontSize="10px" 
-          fontWeight="700"
-          px={2} 
-          py={0.5} 
-          borderRadius="full"
-        >
-          {badge}
-        </Badge>
-      ) : href ? (
-        <Icon as={FiArrowUpRight} boxSize="14px" color="gray.400" />
-      ) : null}
-    </Flex>
-
-    <Heading 
-      fontSize="28px" 
-      fontWeight="600" 
-      color="#263A33" 
-      fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-      mb={1}
-      lineHeight="1.1"
-    >
-      {value}
-    </Heading>
-    
-    <Text 
-      fontSize="12.5px" 
-      color="#5A6E65" 
-      noOfLines={1}
-      fontFamily="'Inter', var(--font-inter), sans-serif"
-    >
-      {help}
-    </Text>
-  </MotionBox>
-);
-
-/* 🛠️ Compact Action Tool Tile */
-const ActionTile = ({ icon, label, sublabel, onClick, href, color = "#56756D", isSoon = false }) => {
-  const content = (
-    <HStack
-      p={3.5}
-      borderRadius="xl"
-      bg="white"
-      border="1px solid"
-      borderColor="rgba(86, 117, 109, 0.1)"
-      cursor={isSoon ? "default" : "pointer"}
-      transition="all 0.2s ease"
-      opacity={isSoon ? 0.75 : 1}
-      _hover={isSoon ? {} : {
-        bg: "rgba(169, 203, 183, 0.08)",
-        borderColor: "rgba(86, 117, 109, 0.25)",
-        transform: "translateX(3px)",
-        boxShadow: "0 2px 8px rgba(38, 58, 51, 0.05)"
-      }}
-      spacing={3}
-      w="full"
-      justify="space-between"
-    >
-      <HStack spacing={3}>
-        <Circle size="36px" bg="rgba(169, 203, 183, 0.12)" color={color}>
-          <Icon as={icon} boxSize="17px" />
-        </Circle>
-        <VStack align="start" spacing={0}>
-          <Text 
-            fontSize="13px" 
-            fontWeight="600" 
-            color="#263A33"
-            fontFamily="'Inter', var(--font-inter), sans-serif"
-          >
-            {label}
+        {sublabel && (
+          <Text fontSize="12px" color="#5A6E65" noOfLines={1} fontFamily="'Inter', var(--font-inter), sans-serif">
+            {sublabel}
           </Text>
-          {sublabel && (
-            <Text fontSize="11px" color="#5A6E65" noOfLines={1}>
-              {sublabel}
-            </Text>
-          )}
-        </VStack>
-      </HStack>
-      {isSoon ? (
-        <Badge fontSize="9px" fontWeight="700" colorScheme="gray" borderRadius="full" px={2}>
-          SOON
-        </Badge>
-      ) : (
-        <Icon as={FiChevronRight} color="gray.400" boxSize="14px" />
-      )}
+        )}
+      </VStack>
     </HStack>
-  );
-
-  if (href && !isSoon) {
-    return <NextLink href={href} style={{ width: '100%' }}>{content}</NextLink>;
-  }
-
-  return (
-    <Box onClick={isSoon ? null : onClick} w="full">
-      {content}
-    </Box>
-  );
-};
+    <Icon as={FiChevronRight} color="#8EA99F" boxSize="14px" flexShrink={0} />
+  </HStack>
+);
 
 export default function TherapistDashboardOverview() {
   const { user } = useUser();
-  const toast = useToast();
   const [stats, setStats] = useState({ clients: 0, appointments: 0, requests: 0 });
   const [upcoming, setUpcoming] = useState([]);
   const [profile, setProfile] = useState(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
-  const [isApplying, setIsApplying] = useState(false);
   const { hasBasicAccess, requireBasicAccess, gateModal } = useTherapistSubscriptionGate();
 
   useEffect(() => {
@@ -266,820 +158,962 @@ export default function TherapistDashboardOverview() {
   const hasSupervisorTier = profile?.supervision_status === 'approved' || (profile?.years_experience >= 5);
 
   return (
-    <Box position="relative" pb={16} pt={2}>
-      {/* 🌿 Gentle Sanctuary Ambient Glows */}
+    <Box maxW="1240px" mx="auto" fontFamily="'Inter', var(--font-inter), sans-serif" pb={12}>
+      {/* 🌿 Gentle Ambient Glow */}
       <Box 
         position="absolute" 
         top="-60px" 
         right="-40px" 
         w="380px" 
         h="380px" 
-        bg="rgba(169, 203, 183, 0.12)" 
+        bg="rgba(169, 203, 183, 0.08)" 
         filter="blur(90px)" 
         borderRadius="full" 
         zIndex={-1} 
         pointerEvents="none"
       />
+
+      {/* 🏛️ 1. UNIFIED, AIRY HERO SANCTUARY HEADER (Strict Client Dashboard Architecture) */}
       <Box 
-        position="absolute" 
-        bottom="120px" 
-        left="-40px" 
-        w="280px" 
-        h="280px" 
-        bg="rgba(201, 169, 96, 0.08)" 
-        filter="blur(80px)" 
-        borderRadius="full" 
-        zIndex={-1} 
-        pointerEvents="none"
-      />
-
-      <Container maxW="container.xl" p={0}>
-        
-        {/* 🏛️ 1. Elevated Welcome Hero Banner */}
-        <Box
-          bg="white"
-          borderRadius="2xl"
-          p={{ base: 5, md: 7 }}
-          mb={6}
-          border="1px solid"
-          borderColor="rgba(86, 117, 109, 0.12)"
-          boxShadow="0 4px 20px rgba(38, 58, 51, 0.03)"
-          position="relative"
-          overflow="hidden"
+        bg="white"
+        p={{ base: 4, md: 5 }}
+        borderRadius="2xl"
+        border="1px solid"
+        borderColor="rgba(86, 117, 109, 0.14)"
+        boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.03)"
+        mb={6}
+      >
+        <Flex 
+          direction={{ base: 'column', lg: 'row' }} 
+          justify="space-between" 
+          align={{ base: 'flex-start', lg: 'center' }}
+          gap={4}
         >
-          {/* Subtle accent border line */}
-          <Box position="absolute" top={0} left={0} right={0} h="3px" bgGradient="linear(to-r, #56756D, #A9CBB7, #C9A960)" />
+          {/* Identity & Space Title */}
+          <HStack spacing={3.5} align="center">
+            <Box position="relative">
+              <Avatar 
+                size="md" 
+                name={displayName} 
+                src={user?.imageUrl} 
+                border="2px solid white" 
+                boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)" 
+              />
+              <Circle 
+                size="11px" 
+                bg="#38A169" 
+                border="2px solid white" 
+                position="absolute" 
+                bottom="0" 
+                right="0"
+              />
+            </Box>
 
-          <Flex direction={{ base: "column", lg: "row" }} justify="space-between" align={{ base: "stretch", lg: "center" }} gap={6}>
-            <HStack spacing={{ base: 4, md: 5 }} align="center">
-              <Box position="relative">
-                <Avatar 
-                  size="xl" 
-                  name={displayName} 
-                  src={user?.imageUrl} 
-                  border="3px solid white" 
-                  boxShadow="0 4px 14px rgba(38, 58, 51, 0.12)" 
-                />
-                <Box 
-                  position="absolute" 
-                  bottom={1} 
-                  right={1} 
-                  bg="#56756D" 
-                  w="14px" 
-                  h="14px" 
-                  borderRadius="full" 
-                  border="2px solid white" 
-                  boxShadow="sm"
-                />
-              </Box>
-              
-              <VStack align="start" spacing={1}>
-                <HStack spacing={2} wrap="wrap">
-                  <Text 
-                    fontSize="10.5px" 
-                    fontWeight="700" 
-                    letterSpacing="0.12em" 
-                    color="#56756D" 
-                    textTransform="uppercase"
-                    fontFamily="'Inter', var(--font-inter), sans-serif"
-                  >
-                    CLINICAL COMMAND CENTER
-                  </Text>
-                  <Text color="gray.300">•</Text>
-                  <Text fontSize="11px" color="#5A6E65" fontWeight="500">
-                    {todayFormatted}
-                  </Text>
-                </HStack>
+            <VStack align="start" spacing={0.5}>
+              <HStack spacing={2} wrap="wrap">
+                <Badge 
+                  bg="rgba(169, 203, 183, 0.2)" 
+                  color="#263A33" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.04em"
+                  textTransform="uppercase"
+                >
+                  {greeting}, {displayName} 🌿
+                </Badge>
+                <Badge 
+                  bg="rgba(86, 117, 109, 0.08)" 
+                  color="#56756D" 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                >
+                  {todayFormatted}
+                </Badge>
+                <Badge 
+                  bg={hasSupervisorTier ? "rgba(201, 169, 96, 0.16)" : "rgba(86, 117, 109, 0.12)"} 
+                  color={hasSupervisorTier ? "#856404" : "#263A33"} 
+                  fontSize="10px" 
+                  fontWeight="700" 
+                  borderRadius="full"
+                  px={2.5}
+                  py={0.5}
+                  letterSpacing="0.04em"
+                  textTransform="uppercase"
+                >
+                  {hasSupervisorTier ? "Supervisor Tier" : "Practitioner Tier"}
+                </Badge>
+              </HStack>
 
+              <Heading 
+                as="h1" 
+                fontSize={{ base: "21px", sm: "25px" }}
+                fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                color="#263A33" 
+                fontWeight="600"
+                lineHeight="1.25"
+                letterSpacing="-0.015em"
+              >
+                Clinical Practice Space
+              </Heading>
+
+              <Text 
+                fontSize="13px" 
+                color="#5A6E65"
+                fontWeight="400"
+              >
+                Your clinical practice is in active standing. Welcome to your care workspace.
+              </Text>
+            </VStack>
+          </HStack>
+
+          {/* Compact Metric Strip (Strictly matching Client: 3 Balanced Metric Nodes) */}
+          <HStack 
+            spacing={3} 
+            p={1.5} 
+            px={2.5}
+            borderRadius="xl" 
+            bg="rgba(250, 248, 245, 0.9)"
+            border="1px solid"
+            borderColor="rgba(86, 117, 109, 0.1)"
+            alignSelf={{ base: 'stretch', lg: 'auto' }}
+            justify="space-between"
+          >
+            <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+              <Circle size="28px" bg="rgba(16, 185, 129, 0.12)" color="#059669" flexShrink={0}>
+                <Icon as={FiUsers} boxSize="14px" />
+              </Circle>
+              <VStack align="start" spacing={0} minW="max-content">
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                  CASELOAD
+                </Text>
+                <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                  {stats.clients} Active
+                </Text>
+              </VStack>
+            </HStack>
+
+            <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+            <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+              <Circle size="28px" bg="rgba(245, 158, 11, 0.12)" color="#D97706" flexShrink={0}>
+                <Icon as={FiCalendar} boxSize="14px" />
+              </Circle>
+              <VStack align="start" spacing={0} minW="max-content">
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                  TODAY
+                </Text>
+                <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                  {stats.appointments} Sessions
+                </Text>
+              </VStack>
+            </HStack>
+
+            <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+
+            <HStack spacing={2} px={{ base: 1.5, sm: 2 }} py={1} minW="max-content" flex="1" justify="center">
+              <Circle size="28px" bg="rgba(224, 122, 95, 0.12)" color="#E07A5F" flexShrink={0}>
+                <Icon as={FiInbox} boxSize="14px" />
+              </Circle>
+              <VStack align="start" spacing={0} minW="max-content">
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase" whiteSpace="nowrap">
+                  INBOX
+                </Text>
+                <Text fontSize="13.5px" fontWeight="700" color="#263A33" whiteSpace="nowrap">
+                  {stats.requests} Pending
+                </Text>
+              </VStack>
+            </HStack>
+          </HStack>
+        </Flex>
+      </Box>
+
+      {/* ⚠️ Verification Notice if unverified (Soft Wash Alert) */}
+      {profileLoaded && profile?.is_verified === false && (
+        <Box 
+          mb={6} 
+          p={4} 
+          borderRadius="2xl" 
+          bg="linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" 
+          border="1px solid rgba(245, 158, 11, 0.3)" 
+          boxShadow="0 4px 18px -2px rgba(38, 58, 51, 0.04)"
+        >
+          <Flex direction={{ base: "column", md: "row" }} gap={3} justify="space-between" align={{ base: "start", md: "center" }}>
+            <HStack align="center" spacing={3}>
+              <Circle size="28px" bg="rgba(245, 158, 11, 0.2)" color="#B45309">
+                <Icon as={FiAlertCircle} boxSize="15px" />
+              </Circle>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="13px" fontWeight="600" color="#92400E" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                  Verification in Progress
+                </Text>
+                <Text color="#78350F" fontSize="12px" fontFamily="'Inter', var(--font-inter), sans-serif">
+                  Submit your credentials to finalize verification and unlock your public directory listing.
+                </Text>
+              </VStack>
+            </HStack>
+            <Button 
+              as={NextLink} 
+              href="/therapist-apply" 
+              size="sm" 
+              bg="#D97706"
+              color="white"
+              _hover={{ bg: "#B45309" }}
+              borderRadius="full" 
+              px={4.5}
+              h="34px"
+              fontSize="12px"
+              fontWeight="600"
+            >
+              Submit Application
+            </Button>
+          </Flex>
+        </Box>
+      )}
+
+      {/* 🏛️ 2. BALANCED TWO-COLUMN SANCTUARY ARCHITECTURE (gap={6}, spacing={5}) */}
+      <Grid 
+        templateColumns={{ base: "1fr", lg: "7fr 5fr" }} 
+        gap={6} 
+        alignItems="stretch"
+      >
+        {/* ================= LEFT COLUMN: Clinical Care & Journey (7fr) ================= */}
+        <VStack align="stretch" spacing={5} h="full">
+          
+          {/* Card 1: Today's Clinical Care Flow & Sessions (Spotlight Card) */}
+          <Box 
+            bg="white" 
+            p={5} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={4}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                  <Icon as={FiCalendar} boxSize="14px" />
+                </Circle>
+                <Text fontSize="11px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  CLINICAL AGENDA & SESSIONS
+                </Text>
+              </HStack>
+              <Button
+                as={NextLink}
+                href="/dashboard/therapist/schedule"
+                variant="ghost"
+                size="xs"
+                fontSize="12px"
+                fontWeight="600"
+                color="#56756D"
+                _hover={{ color: "#263A33", bg: "rgba(86, 117, 109, 0.08)" }}
+                rightIcon={<Icon as={FiChevronRight} boxSize="13px" />}
+              >
+                Full Calendar
+              </Button>
+            </Flex>
+
+            <VStack align="stretch" spacing={4}>
+              {upcoming.length > 0 ? (
+                upcoming.map((appt) => {
+                  const startTime = appt.start_time ? new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                  const endTime = appt.end_time ? new Date(appt.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  return (
+                    <VStack key={appt.id} align="stretch" spacing={3}>
+                      {/* Session DateTime & Practitioner Identity */}
+                      <Flex 
+                        direction={{ base: "column", sm: "row" }} 
+                        justify="space-between" 
+                        align={{ base: "start", sm: "center" }} 
+                        gap={3.5}
+                        p={3.5}
+                        borderRadius="xl"
+                        bg="rgba(250, 248, 245, 0.85)"
+                        border="1px solid"
+                        borderColor="rgba(86, 117, 109, 0.1)"
+                      >
+                        <HStack spacing={3}>
+                          <VStack 
+                            align="center" 
+                            justify="center"
+                            bg="white" 
+                            p={2} 
+                            borderRadius="lg" 
+                            minW="48px"
+                            boxShadow="0 2px 6px rgba(0,0,0,0.04)"
+                            border="1px solid"
+                            borderColor="rgba(86, 117, 109, 0.1)"
+                          >
+                            <Text fontSize="18px" fontWeight="800" color="#263A33" lineHeight="1">
+                              {new Date(appt.start_time).getDate()}
+                            </Text>
+                            <Text fontSize="9.5px" fontWeight="700" color="#56756D" letterSpacing="0.05em">
+                              {new Date(appt.start_time).toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
+                            </Text>
+                          </VStack>
+
+                          <VStack align="start" spacing={0}>
+                            <HStack spacing={2}>
+                              <Circle size="6px" bg="#10B981" />
+                              <Text fontWeight="700" fontSize="14.5px" color="#263A33">
+                                {startTime}{endTime ? ` – ${endTime}` : ''}
+                              </Text>
+                              <Badge bg="rgba(16, 185, 129, 0.15)" color="#047857" fontSize="10px" fontWeight="700" borderRadius="full" px={2}>
+                                CONFIRMED
+                              </Badge>
+                            </HStack>
+                            <Text fontSize="12.5px" color="#5A6E65">
+                              Virtual 1-on-1 Session
+                            </Text>
+                          </VStack>
+                        </HStack>
+
+                        <HStack spacing={2.5}>
+                          <Avatar size="sm" name={appt.client_name || "Client"} bg="#56756D" color="white" />
+                          <VStack align="start" spacing={0}>
+                            <Text fontSize="13px" fontWeight="600" color="#263A33">
+                              {appt.client_name || "Client"}
+                            </Text>
+                            <Text fontSize="11px" color="#718096">
+                              Individual Therapy
+                            </Text>
+                          </VStack>
+                        </HStack>
+                      </Flex>
+
+                      {/* Session Actions Strip */}
+                      <HStack spacing={2.5}>
+                        <Button 
+                          as={NextLink}
+                          href={`/conference/MLC_${appt.id}`}
+                          flex="1" 
+                          bg="#263A33" 
+                          color="white" 
+                          borderRadius="full" 
+                          fontSize="13px" 
+                          fontWeight="600"
+                          height="38px"
+                          leftIcon={<Icon as={FiVideo} boxSize="14px" color="#A9CBB7" />}
+                          _hover={{ bg: '#182722', transform: 'translateY(-1px)' }}
+                          transition="all 0.2s"
+                          boxShadow="0 4px 12px rgba(38, 58, 51, 0.12)"
+                        >
+                          Enter Video Room
+                        </Button>
+                        <Button
+                          as={NextLink}
+                          href="/dashboard/therapist/notes"
+                          variant="outline"
+                          borderColor="rgba(86, 117, 109, 0.25)"
+                          color="#263A33"
+                          borderRadius="full"
+                          fontSize="12.5px"
+                          fontWeight="600"
+                          height="38px"
+                          px={4}
+                          leftIcon={<Icon as={FiEdit3} boxSize="13px" />}
+                          _hover={{ bg: 'rgba(169, 203, 183, 0.1)' }}
+                        >
+                          SOAP Notes
+                        </Button>
+                      </HStack>
+                    </VStack>
+                  );
+                })
+              ) : (
+                <VStack align="stretch" spacing={4} py={1}>
+                  <HStack spacing={3.5} align="flex-start">
+                    <Circle size="42px" bg="rgba(86, 117, 109, 0.1)" color="#56756D" flexShrink={0} mt={0.5}>
+                      <Icon as={FiCompass} boxSize="19px" />
+                    </Circle>
+                    <VStack align="start" spacing={1}>
+                      <Text fontSize="15px" fontWeight="600" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                        Your clinical agenda is serene today
+                      </Text>
+                      <Text fontSize="13px" color="#5A6E65" lineHeight="1.5">
+                        No client sessions scheduled for today. Dedicated time for case formulation, clinical documentation, and mindful self-care.
+                      </Text>
+                    </VStack>
+                  </HStack>
+
+                  <HStack spacing={3} pt={1}>
+                    <Button 
+                      as={NextLink}
+                      href="/dashboard/therapist/schedule"
+                      bg="#56756D" 
+                      color="white" 
+                      size="sm" 
+                      height="38px"
+                      borderRadius="full"
+                      fontSize="13px"
+                      fontWeight="600"
+                      px={5}
+                      leftIcon={<Icon as={FiCalendar} boxSize="13px" />}
+                      _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                      transition="all 0.2s"
+                    >
+                      View Weekly Calendar
+                    </Button>
+                    <Button 
+                      as={NextLink}
+                      href="/dashboard/therapist/availability"
+                      size="sm" 
+                      height="38px"
+                      variant="outline" 
+                      borderColor="rgba(86, 117, 109, 0.25)"
+                      color="#263A33" 
+                      borderRadius="full"
+                      fontSize="12.5px"
+                      fontWeight="600"
+                      px={4}
+                      leftIcon={<Icon as={FiClock} boxSize="13px" />}
+                      _hover={{ bg: 'rgba(169, 203, 183, 0.1)' }}
+                      transition="all 0.2s"
+                    >
+                      Adjust Availability
+                    </Button>
+                  </HStack>
+                </VStack>
+              )}
+            </VStack>
+          </Box>
+
+          {/* Card 2: Clinical Documentation Suite (Matching Client Card 2) */}
+          <Box 
+            bg="white" 
+            p={{ base: 5, md: 6 }} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={3.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                  <Icon as={FiFileText} boxSize="14px" />
+                </Circle>
                 <Heading 
-                  as="h1" 
-                  fontSize={{ base: "24px", sm: "28px", md: "32px" }} 
+                  fontSize="15.5px" 
+                  fontWeight="600" 
+                  color="#263A33"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
+                >
+                  Clinical Documentation Suite
+                </Heading>
+              </HStack>
+              <Badge 
+                bg="rgba(86, 117, 109, 0.08)" 
+                color="#56756D" 
+                fontSize="9.5px" 
+                fontWeight="700" 
+                px={2.5} 
+                py="1.5px" 
+                borderRadius="full"
+              >
+                HIPAA · DPDP COMPLIANT
+              </Badge>
+            </Flex>
+
+            <Text fontSize="13px" color="#5A6E65" mb={4} lineHeight="1.5">
+              Standardized clinical records, SOAP assessments, and collaborative crisis safety planning for active caseloads.
+            </Text>
+
+            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3.5} mb={4}>
+              <Box 
+                as={NextLink}
+                href="/dashboard/therapist/notes"
+                p={4} 
+                borderRadius="xl" 
+                bg="rgba(250, 248, 245, 0.85)" 
+                border="1px solid" 
+                borderColor="rgba(86, 117, 109, 0.12)"
+                cursor="pointer"
+                transition="all 0.18s"
+                _hover={{ borderColor: "#56756D", bg: "white", transform: "translateY(-1px)", boxShadow: "0 4px 14px rgba(38,58,51,0.05)" }}
+              >
+                <Flex justify="space-between" align="center" mb={1.5}>
+                  <HStack spacing={2}>
+                    <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                      <Icon as={FiEdit3} boxSize="14px" />
+                    </Circle>
+                    <Text fontSize="13.5px" fontWeight="600" color="#263A33">
+                      Session Blueprints
+                    </Text>
+                  </HStack>
+                  <Icon as={FiArrowRight} color="#8EA99F" boxSize="13px" />
+                </Flex>
+                <Text fontSize="12px" color="#5A6E65" lineHeight="1.45" mb={2.5}>
+                  Structured SOAP formatting, intake formulations, and clinical treatment milestones.
+                </Text>
+                <Badge bg="rgba(86, 117, 109, 0.08)" color="#56756D" fontSize="9.5px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                  SOAP PROTOCOL
+                </Badge>
+              </Box>
+
+              <Box 
+                as={NextLink}
+                href="/dashboard/therapist/care"
+                p={4} 
+                borderRadius="xl" 
+                bg="rgba(250, 248, 245, 0.85)" 
+                border="1px solid" 
+                borderColor="rgba(86, 117, 109, 0.12)"
+                cursor="pointer"
+                transition="all 0.18s"
+                _hover={{ borderColor: "#56756D", bg: "white", transform: "translateY(-1px)", boxShadow: "0 4px 14px rgba(38,58,51,0.05)" }}
+              >
+                <Flex justify="space-between" align="center" mb={1.5}>
+                  <HStack spacing={2}>
+                    <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
+                      <Icon as={FiShield} boxSize="14px" />
+                    </Circle>
+                    <Text fontSize="13.5px" fontWeight="600" color="#263A33">
+                      Care Space & Safety
+                    </Text>
+                  </HStack>
+                  <Icon as={FiArrowRight} color="#8EA99F" boxSize="13px" />
+                </Flex>
+                <Text fontSize="12px" color="#5A6E65" lineHeight="1.45" mb={2.5}>
+                  Collaborative safety planning, worksheets, and crisis escalation protocols.
+                </Text>
+                <Badge bg="rgba(86, 117, 109, 0.08)" color="#56756D" fontSize="9.5px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                  CRISIS PROTOCOL
+                </Badge>
+              </Box>
+            </SimpleGrid>
+
+            <HStack 
+              p={3} 
+              px={3.5} 
+              bg="rgba(86, 117, 109, 0.05)" 
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)" 
+              borderRadius="xl" 
+              spacing={3}
+              justify="space-between"
+              align="center"
+            >
+              <HStack spacing={2.5}>
+                <Circle size="24px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" flexShrink={0}>
+                  <Icon as={FiLock} boxSize="12px" />
+                </Circle>
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="12px" fontWeight="600" color="#263A33">
+                    End-to-End Clinical Records Isolation
+                  </Text>
+                  <Text fontSize="11px" color="#5A6E65">
+                    Zero cross-practitioner access. Strictly compliant with HIPAA & DPDP standards.
+                  </Text>
+                </VStack>
+              </HStack>
+              <Badge 
+                bg="white" 
+                color="#56756D" 
+                fontSize="9px" 
+                fontWeight="700" 
+                px={2.5} 
+                py={0.5} 
+                borderRadius="full" 
+                border="1px solid rgba(86, 117, 109, 0.15)"
+                display={{ base: "none", sm: "inline-flex" }}
+              >
+                VERIFIED ENCRYPTED
+              </Badge>
+            </HStack>
+          </Box>
+
+          {/* Card 3: Practitioner Care & Boundaries (Matching Client Card 3) */}
+          <Box 
+            bg="white" 
+            p={{ base: 5, md: 6 }} 
+            borderRadius="2xl" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+          >
+            <Flex justify="space-between" align="center" mb={2.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                  <Icon as={FiHeart} boxSize="14px" />
+                </Circle>
+                <Text fontSize="11px" fontWeight="700" color="#718096" letterSpacing="0.08em" textTransform="uppercase">
+                  PRACTITIONER WELLBEING & BOUNDARIES
+                </Text>
+              </HStack>
+              <Badge 
+                bg="rgba(16, 185, 129, 0.12)" 
+                color="#047857" 
+                fontSize="10px" 
+                fontWeight="700" 
+                borderRadius="full" 
+                px={2.5} 
+                py={0.5}
+              >
+                ACTIVE SAFEGUARDS
+              </Badge>
+            </Flex>
+
+            <Heading 
+              fontSize="15.5px" 
+              fontWeight="600" 
+              color="#263A33" 
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              letterSpacing="-0.01em"
+              mb={1.5}
+            >
+              Protecting Your Presence and Emotional Reserve
+            </Heading>
+
+            <Text fontSize="12.5px" color="#5A6E65" mb={3.5} lineHeight="1.5">
+              MLC actively shields clinicians from burnout: in-portal encrypted communications preserve personal privacy, and automated 15-minute buffers ensure decompression.
+            </Text>
+
+            {/* Mindful Grounding Quote Box (Strictly mirroring Client Dashboard Mindful card) */}
+            <Box 
+              bg="rgba(250, 248, 245, 0.85)" 
+              p={3.5} 
+              borderRadius="xl" 
+              mb={3.5} 
+              border="1px solid" 
+              borderColor="rgba(86, 117, 109, 0.12)"
+            >
+              <Text fontSize="10.5px" fontWeight="700" color="#56756D" letterSpacing="0.06em" textTransform="uppercase" mb={1}>
+                BETWEEN-SESSION GROUNDING
+              </Text>
+              <Text fontSize="12.5px" color="#4A5568" lineHeight="1.5" fontWeight="400">
+                "Take 90 seconds of gentle unhurried breathing between sessions. Soften your shoulders away from your ears and reset your nervous system before opening your next clinical file."
+              </Text>
+            </Box>
+
+            {/* 3 Safeguard Badges */}
+            <Flex wrap="wrap" gap={2} mb={4}>
+              <HStack py={1.5} px={3} bg="rgba(250, 248, 245, 0.9)" border="1px solid rgba(86, 117, 109, 0.12)" borderRadius="full" spacing={2}>
+                <Icon as={FiCheckCircle} color="#56756D" boxSize="12.5px" />
+                <Text fontSize="11.5px" fontWeight="500" color="#263A33">
+                  Encrypted In-Portal Messaging
+                </Text>
+              </HStack>
+              <HStack py={1.5} px={3} bg="rgba(250, 248, 245, 0.9)" border="1px solid rgba(86, 117, 109, 0.12)" borderRadius="full" spacing={2}>
+                <Icon as={FiCheckCircle} color="#56756D" boxSize="12.5px" />
+                <Text fontSize="11.5px" fontWeight="500" color="#263A33">
+                  Automated 15m Buffer Gaps
+                </Text>
+              </HStack>
+              <HStack py={1.5} px={3} bg="rgba(250, 248, 245, 0.9)" border="1px solid rgba(86, 117, 109, 0.12)" borderRadius="full" spacing={2}>
+                <Icon as={FiCheckCircle} color="#56756D" boxSize="12.5px" />
+                <Text fontSize="11.5px" fontWeight="500" color="#263A33">
+                  Caseload Fatigue Safeguards
+                </Text>
+              </HStack>
+            </Flex>
+
+            {/* Action Footer (Strictly mirroring Client Dashboard Mindful card line 950) */}
+            <HStack justify="space-between" pt={1}>
+              <Button 
+                as={NextLink}
+                href="/dashboard/therapist/availability"
+                bg="#56756D" 
+                color="white" 
+                size="sm" 
+                height="34px"
+                borderRadius="full" 
+                px={4}
+                fontSize="12px"
+                fontWeight="600"
+                _hover={{ bg: '#263A33' }}
+              >
+                Configure Buffers
+              </Button>
+              <Button
+                as={NextLink}
+                href="/dashboard/therapist/care"
+                variant="link"
+                color="#56756D"
+                fontSize="12px"
+                fontWeight="600"
+                _hover={{ color: '#263A33', textDecoration: 'underline' }}
+              >
+                Care Space Tools ➔
+              </Button>
+            </HStack>
+          </Box>
+        </VStack>
+
+        {/* ================= RIGHT COLUMN: Practice Tools & Standing (5fr) ================= */}
+        <VStack align="stretch" spacing={5} h="full">
+          
+          {/* Card 1: Practice Ecosystem (Direct Access Shortcuts) */}
+          <Box 
+            bg="white" 
+            p={{ base: 5, md: 6 }} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={3.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                  <Icon as={FiClock} boxSize="14px" />
+                </Circle>
+                <Heading 
+                  fontSize="15.5px" 
                   fontWeight="600" 
                   color="#263A33" 
-                  fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                  lineHeight="1.2"
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                  letterSpacing="-0.01em"
                 >
-                  {greeting}, {displayName}
+                  Practice Ecosystem
                 </Heading>
+              </HStack>
+              <Badge 
+                fontSize="9.5px" 
+                fontWeight="700" 
+                bg="rgba(86, 117, 109, 0.08)"
+                color="#56756D" 
+                borderRadius="full"
+                px={2.5}
+                py="1.5px"
+              >
+                DIRECT ACCESS
+              </Badge>
+            </Flex>
 
-                <Text 
-                  fontSize="13.5px" 
-                  fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                  fontStyle="italic"
-                  color="#56756D"
-                  lineHeight="1.4"
+            <VStack spacing={2.5} align="stretch">
+              <ActionTile 
+                icon={FiUsers} 
+                label="Client Caseload" 
+                sublabel="Active files, history & treatment plans" 
+                href="/dashboard/therapist/clients" 
+              />
+              <ActionTile 
+                icon={FiFileText} 
+                label="Clinical Notes" 
+                sublabel="Create or review SOAP entries" 
+                href="/dashboard/therapist/notes" 
+              />
+              <ActionTile 
+                icon={FiClock} 
+                label="Availability & Buffers" 
+                sublabel="Weekly calendar slots & buffer settings" 
+                href="/dashboard/therapist/availability" 
+              />
+              <ActionTile 
+                icon={FiDollarSign} 
+                label="Practice Earnings" 
+                sublabel="Session revenue, invoices & payouts" 
+                href="/dashboard/therapist/earnings" 
+              />
+            </VStack>
+          </Box>
+
+          {/* Card 2: Verified Clinical Profile */}
+          <Box 
+            bg="white" 
+            p={{ base: 5, md: 6 }} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
+            border="1px solid" 
+            borderColor="rgba(86, 117, 109, 0.14)"
+          >
+            <Flex justify="space-between" align="center" mb={3.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(201, 169, 96, 0.15)" color="#C9A960">
+                  <Icon as={FiAward} boxSize="14px" />
+                </Circle>
+                <Heading 
+                  fontSize="15.5px" 
+                  fontWeight="600" 
+                  color="#263A33" 
+                  fontFamily="'Outfit', var(--font-outfit), sans-serif"
                 >
-                  {stats.appointments > 0 
-                    ? `You have ${stats.appointments} session${stats.appointments === 1 ? '' : 's'} scheduled for today.`
-                    : "Your clinical agenda is serene today. Caseload is in active standing."}
+                  Verified Clinical Profile
+                </Heading>
+              </HStack>
+              <Badge 
+                bg={profile?.is_verified ? "rgba(16, 185, 129, 0.12)" : "#FEF3C7"} 
+                color={profile?.is_verified ? "#047857" : "#92400E"} 
+                fontSize="9.5px" 
+                fontWeight="700" 
+                borderRadius="full" 
+                px={2.5} 
+                py="1.5px"
+              >
+                {profile?.is_verified ? "VERIFIED PRACTITIONER" : "PENDING REVIEW"}
+              </Badge>
+            </Flex>
+
+            <HStack spacing={3.5} align="center" mb={3.5}>
+              <Box position="relative">
+                <Avatar 
+                  size="md" 
+                  name={profile?.name || displayName} 
+                  src={user?.imageUrl} 
+                  border="2px solid white" 
+                  boxShadow="0 2px 6px rgba(38, 58, 51, 0.08)"
+                />
+                <Circle 
+                  size="10px" 
+                  bg="#10B981" 
+                  border="2px solid white" 
+                  position="absolute" 
+                  bottom="0" 
+                  right="0"
+                />
+              </Box>
+              <VStack align="start" spacing={0.5} minW={0}>
+                <Text fontSize="14.5px" fontWeight="600" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" noOfLines={1}>
+                  {profile?.name || displayName}
                 </Text>
-
-                {/* Badges strip */}
-                <HStack spacing={2} pt={1} wrap="wrap">
-                  <Badge 
-                    bg="rgba(169, 203, 183, 0.18)" 
-                    color="#263A33" 
-                    fontSize="10.5px" 
-                    fontWeight="600" 
-                    px={2.5} 
-                    py={0.5} 
-                    borderRadius="full"
-                    border="1px solid rgba(86, 117, 109, 0.12)"
-                  >
-                    {profile?.is_premium ? 'MLC PRO · ANNUAL' : hasBasicAccess ? 'MLC PRO ACTIVE' : 'PRACTITIONER'}
-                  </Badge>
-
-                  {hasSupervisorTier && (
-                    <Badge 
-                      bg="rgba(201, 169, 96, 0.15)" 
-                      color="#856404" 
-                      fontSize="10.5px" 
-                      fontWeight="600" 
-                      px={2.5} 
-                      py={0.5} 
-                      borderRadius="full"
-                      border="1px solid rgba(201, 169, 96, 0.25)"
-                    >
-                      SUPERVISOR TIER
-                    </Badge>
-                  )}
-
-                  {profile?.hourly_rate && (
-                    <Badge 
-                      bg="gray.100" 
-                      color="#4A5568" 
-                      fontSize="10.5px" 
-                      fontWeight="500" 
-                      px={2.5} 
-                      py={0.5} 
-                      borderRadius="full"
-                    >
-                      ₹{Number(profile.hourly_rate).toLocaleString()} / session
-                    </Badge>
+                <Text fontSize="12.5px" color="#5A6E65" noOfLines={1}>
+                  {profile?.highest_qualification || "Licensed Clinical Psychologist"}
+                </Text>
+                <HStack spacing={1.5} fontSize="11.5px" color="#718096" pt={0.5} wrap="wrap">
+                  <Text noOfLines={1}>{profile?.city || "Mumbai"}, {profile?.state || "India"}</Text>
+                  {profile?.years_experience && (
+                    <>
+                      <Text color="gray.300">•</Text>
+                      <Text color="#56756D" fontWeight="500">{profile.years_experience} yrs exp</Text>
+                    </>
                   )}
                 </HStack>
               </VStack>
             </HStack>
 
-            {/* Quick Action Header Buttons */}
-            <HStack spacing={3} alignSelf={{ base: "start", sm: "center" }} wrap="wrap">
-              <Button 
-                as={NextLink} 
-                href="/dashboard/therapist/schedule" 
-                leftIcon={<FiCalendar />} 
-                variant="outline"
-                borderColor="rgba(86, 117, 109, 0.2)"
-                color="#263A33"
-                borderRadius="full" 
-                h="40px"
-                px={5}
-                fontSize="13px"
-                fontWeight="500"
-                _hover={{ bg: "rgba(169, 203, 183, 0.1)", borderColor: "#56756D" }}
-                transition="all 0.2s"
-              >
-                My Schedule
-              </Button>
-
-              <Button 
-                as={NextLink}
-                href="/conference/lobby"
-                leftIcon={<FiVideo />}
-                bg="#56756D" 
-                color="white" 
-                borderRadius="full" 
-                h="40px"
-                px={6} 
-                fontSize="13px"
-                fontWeight="600"
-                boxShadow="0 4px 12px rgba(86, 117, 109, 0.2)"
-                _hover={{ bg: "#263A33", transform: "translateY(-1px)", boxShadow: "0 6px 16px rgba(38, 58, 51, 0.25)" }}
-                transition="all 0.2s"
-              >
-                Launch Sanctuary Lounge
-              </Button>
+            {/* Clinical Credentials & Rates Strip */}
+            <HStack 
+              spacing={3} 
+              p={3} 
+              px={3.5} 
+              borderRadius="xl" 
+              bg="rgba(250, 248, 245, 0.85)" 
+              border="1px solid"
+              borderColor="rgba(86, 117, 109, 0.1)"
+              justify="space-between"
+              mb={3.5}
+            >
+              <VStack align="start" spacing={0}>
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                  SESSION RATE
+                </Text>
+                <Text fontSize="13px" fontWeight="700" color="#263A33">
+                  {profile?.hourly_rate ? `₹${profile.hourly_rate} / hr` : '₹2,500 / hr'}
+                </Text>
+              </VStack>
+              <Divider orientation="vertical" h="22px" borderColor="rgba(86, 117, 109, 0.15)" />
+              <VStack align="start" spacing={0}>
+                <Text fontSize="9.5px" fontWeight="700" color="#718096" letterSpacing="0.06em" textTransform="uppercase">
+                  DIRECTORY STATUS
+                </Text>
+                <HStack spacing={1}>
+                  <Circle size="6px" bg="#10B981" />
+                  <Text fontSize="12px" fontWeight="600" color="#047857">
+                    Public & Active
+                  </Text>
+                </HStack>
+              </VStack>
             </HStack>
-          </Flex>
-        </Box>
 
-        {/* ⚠️ Application / Verification Notice if unverified */}
-        {profileLoaded && profile?.is_verified === false && (
+            <Button 
+              as={NextLink} 
+              href="/dashboard/therapist/profile" 
+              size="sm" 
+              variant="outline" 
+              borderColor="rgba(86, 117, 109, 0.25)"
+              color="#263A33" 
+              borderRadius="full" 
+              w="full" 
+              h="38px"
+              fontSize="13px"
+              fontWeight="600"
+              _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+            >
+              Edit Profile & Rates
+            </Button>
+          </Box>
+
+          {/* Card 3: Supervision Suite */}
           <Box 
-            mb={6} 
-            p={4} 
-            borderRadius="xl" 
-            bg="#FFF8E7" 
+            bg="white" 
+            p={{ base: 5, md: 6 }} 
+            borderRadius="2xl" 
+            boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)" 
             border="1px solid" 
-            borderColor="#FFE0B2" 
-            shadow="xs"
+            borderColor="rgba(86, 117, 109, 0.14)"
           >
-            <Flex direction={{ base: "column", md: "row" }} gap={3} justify="space-between" align={{ base: "start", md: "center" }}>
-              <HStack align="center" spacing={3}>
-                <Circle size="30px" bg="#FFE0B2" color="#E65100">
-                  <Icon as={FiAlertCircle} boxSize="16px" />
+            <Flex justify="space-between" align="center" mb={2.5}>
+              <HStack spacing={2}>
+                <Circle size="28px" bg="rgba(201, 169, 96, 0.15)">
+                  <Icon as={FiAward} color="#C9A960" boxSize="14px" />
                 </Circle>
-                <VStack align="start" spacing={0}>
-                  <Text fontSize="13px" fontWeight="700" color="#B78103">Verification in Progress</Text>
-                  <Text color="#5A6E65" fontSize="12.5px">
-                    Submit your credentials to finalize verification and unlock your public directory listing.
-                  </Text>
-                </VStack>
+                <Text 
+                  fontSize="11px" 
+                  fontWeight="700" 
+                  color="#718096" 
+                  letterSpacing="0.08em" 
+                  textTransform="uppercase"
+                >
+                  SUPERVISION HUB
+                </Text>
               </HStack>
-              <Button 
-                as={NextLink} 
-                href="/therapist-apply" 
-                size="sm" 
-                colorScheme="orange" 
+              <Badge 
+                bg="rgba(201, 169, 96, 0.15)" 
+                color="#856404" 
+                fontSize="9.5px" 
+                fontWeight="700" 
                 borderRadius="full" 
-                px={5}
-                h="34px"
-                fontSize="12.5px"
+                px={2.5} 
+                py="1px"
               >
-                Submit Application
-              </Button>
+                {hasSupervisorTier ? "SUPERVISOR TIER" : "SUPERVISEE TIER"}
+              </Badge>
             </Flex>
-          </Box>
-        )}
 
-        {/* 📊 2. Key Practice Metrics Row */}
-        <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} spacing={4} mb={8}>
-          <StatCard 
-            label="Active Caseload" 
-            value={stats.clients} 
-            help="Active treatment relationships" 
-            icon={FiUsers} 
-            color="#56756D" 
-            href="/dashboard/therapist/clients"
-            badge={stats.clients > 0 ? `${stats.clients} Active` : null}
-          />
-          <StatCard 
-            label="Today's Sessions" 
-            value={stats.appointments} 
-            help={stats.appointments > 0 ? "Care sessions scheduled" : "No sessions today"} 
-            icon={FiCalendar} 
-            color="#C9A960" 
-            href="/dashboard/therapist/schedule" 
-            badge={stats.appointments > 0 ? "Scheduled" : "Clear"}
-          />
-          <StatCard 
-            label="Client Inquiries" 
-            value={stats.requests} 
-            help={stats.requests > 0 ? "Awaiting your response" : "Inbox up to date"} 
-            icon={FiInbox} 
-            color={stats.requests > 0 ? "#E07A5F" : "#56756D"} 
-            href="/dashboard/therapist/booking-requests" 
-            badge={stats.requests > 0 ? "Action required" : "Zero pending"}
-          />
-          <StatCard 
-            label="Supervision Tier" 
-            value={hasSupervisorTier ? "Supervisor" : "Supervisee"} 
-            help={hasSupervisorTier ? "Mentorship & oversight" : "Professional growth track"} 
-            icon={FiAward} 
-            color="#56756D" 
-            href={hasSupervisorTier ? "/dashboard/therapist/supervision" : "/dashboard/therapist/supervisee"} 
-            badge={hasSupervisorTier ? "Senior Tier" : "Eligible"}
-          />
-        </SimpleGrid>
+            <Heading 
+              fontSize="15.5px" 
+              fontWeight="600" 
+              color="#263A33" 
+              fontFamily="'Outfit', var(--font-outfit), sans-serif"
+              letterSpacing="-0.01em"
+              mb={1.5}
+            >
+              {hasSupervisorTier ? "Clinical Mentorship & Case Oversight" : "Supervisee Guidance & Consultations"}
+            </Heading>
+            
+            <Text fontSize="12.5px" color="#5A6E65" mb={4} lineHeight="1.5">
+              {hasSupervisorTier 
+                ? "Mentor clinicians, review accredited case logs, and oversee clinical treatment plans across the network."
+                : "Access accredited clinical supervisors, case consultation sessions, and peer feedback."}
+            </Text>
 
-        {/* 🏛️ 3. Main Dashboard Workspace Grid */}
-        <SimpleGrid columns={{ base: 1, lg: 12 }} spacing={6}>
-          
-          {/* 📅 LEFT COLUMN: Care Flow & Patient Management (8 Cols) */}
-          <Box gridColumn={{ lg: "span 8" }}>
-            <VStack align="stretch" spacing={6}>
-              
-              {/* Card 1: Today's Clinical Care Flow & Sessions */}
-              <Box 
-                bg="white" 
-                p={{ base: 5, md: 6 }} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="rgba(86, 117, 109, 0.12)" 
-                boxShadow="0 2px 12px rgba(38, 58, 51, 0.03)"
-              >
-                <Flex justify="space-between" align="center" mb={5}>
-                  <HStack spacing={3}>
-                    <Circle size="34px" bg="rgba(169, 203, 183, 0.12)" color="#56756D">
-                      <Icon as={FiCalendar} boxSize="16px" />
-                    </Circle>
-                    <VStack align="start" spacing={0}>
-                      <Heading 
-                        fontSize="17px" 
-                        fontWeight="600" 
-                        color="#263A33" 
-                        fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                      >
-                        Today's Clinical Agenda
-                      </Heading>
-                      <Text fontSize="12px" color="#5A6E65">
-                        Integrated video sessions and instant documentation.
-                      </Text>
-                    </VStack>
-                  </HStack>
-
-                  <Button
-                    as={NextLink}
-                    href="/dashboard/therapist/schedule"
-                    variant="ghost"
-                    size="sm"
-                    fontSize="12.5px"
-                    color="#56756D"
-                    _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
-                    rightIcon={<FiChevronRight />}
-                  >
-                    Full Calendar
-                  </Button>
-                </Flex>
-
-                <VStack align="stretch" spacing={3}>
-                  {upcoming.length > 0 ? (
-                    upcoming.map((appt) => {
-                      const startTime = appt.start_time ? new Date(appt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                      const endTime = appt.end_time ? new Date(appt.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                      return (
-                        <Flex 
-                          key={appt.id} 
-                          direction={{ base: "column", sm: "row" }}
-                          align={{ base: "start", sm: "center" }} 
-                          justify="space-between"
-                          p={4} 
-                          bg="#FBFDFC" 
-                          borderRadius="xl" 
-                          border="1px solid"
-                          borderColor="rgba(86, 117, 109, 0.12)"
-                          transition="all 0.2s ease" 
-                          _hover={{ 
-                            bg: "white", 
-                            borderColor: "rgba(86, 117, 109, 0.3)", 
-                            boxShadow: "0 4px 12px rgba(38, 58, 51, 0.05)" 
-                          }}
-                          gap={3}
-                        >
-                          <HStack spacing={3}>
-                            <Avatar size="sm" name={appt.client_name || "Client"} bg="#56756D" color="white" />
-                            <VStack align="start" spacing={0}>
-                              <HStack spacing={2}>
-                                <Text fontWeight="600" fontSize="14px" color="#263A33">
-                                  {appt.client_name || "Client"}
-                                </Text>
-                                <Badge fontSize="10px" colorScheme="teal" borderRadius="full" px={2}>
-                                  Confirmed
-                                </Badge>
-                              </HStack>
-                              <HStack spacing={2} color="#5A6E65" fontSize="12px">
-                                <Icon as={FiClock} boxSize="12px" />
-                                <Text>{startTime}{endTime ? ` – ${endTime}` : ''}</Text>
-                                <Text color="gray.300">•</Text>
-                                <Text color="#56756D" fontWeight="500">Virtual Sanctuary</Text>
-                              </HStack>
-                            </VStack>
-                          </HStack>
-
-                          <HStack spacing={2} alignSelf={{ base: "stretch", sm: "auto" }}>
-                            <Button 
-                              as={NextLink} 
-                              href="/dashboard/therapist/notes" 
-                              variant="ghost" 
-                              size="sm" 
-                              h="34px"
-                              fontSize="12.5px"
-                              color="#56756D"
-                              borderRadius="full"
-                              _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
-                            >
-                              Notes
-                            </Button>
-                            <Button 
-                              as={NextLink} 
-                              href={`/conference/MLC_${appt.id}`} 
-                              size="sm" 
-                              bg="#56756D" 
-                              color="white" 
-                              borderRadius="full" 
-                              px={5}
-                              h="34px"
-                              fontSize="12.5px"
-                              fontWeight="600"
-                              leftIcon={<FiVideo />}
-                              _hover={{ bg: "#263A33" }}
-                              boxShadow="sm"
-                            >
-                              Enter Session
-                            </Button>
-                          </HStack>
-                        </Flex>
-                      );
-                    })
-                  ) : (
-                    <Box 
-                      py={8} 
-                      px={4}
-                      textAlign="center" 
-                      borderRadius="xl" 
-                      border="1px dashed" 
-                      borderColor="rgba(86, 117, 109, 0.2)"
-                      bg="#FAFBFB"
-                    >
-                      <Circle size="42px" bg="rgba(169, 203, 183, 0.15)" color="#56756D" mx="auto" mb={2.5}>
-                        <Icon as={FiCompass} boxSize="20px" />
-                      </Circle>
-                      <Heading 
-                        fontSize="15px" 
-                        fontWeight="600" 
-                        color="#263A33" 
-                        fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                        mb={1}
-                      >
-                        Your clinical agenda is serene today
-                      </Heading>
-                      <Text fontSize="12.5px" color="#5A6E65" maxW="380px" mx="auto" mb={4}>
-                        No scheduled client sessions today. Use this space for treatment formulation, reviewing notes, or self-care.
-                      </Text>
-                      <Button 
-                        as={NextLink} 
-                        href="/dashboard/therapist/schedule" 
-                        size="sm" 
-                        variant="outline" 
-                        borderColor="rgba(86, 117, 109, 0.2)"
-                        color="#263A33"
-                        borderRadius="full" 
-                        px={5}
-                        h="34px"
-                        fontSize="12px"
-                        _hover={{ bg: "rgba(169, 203, 183, 0.08)" }}
-                      >
-                        Review Weekly Schedule
-                      </Button>
-                    </Box>
-                  )}
-                </VStack>
-              </Box>
-
-              {/* Card 2: Clinical Blueprints & Care Suite */}
-              <Box 
-                bg="white" 
-                p={{ base: 5, md: 6 }} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="rgba(86, 117, 109, 0.12)" 
-                boxShadow="0 2px 12px rgba(38, 58, 51, 0.03)"
-              >
-                <HStack justify="space-between" mb={4}>
-                  <HStack spacing={3}>
-                    <Circle size="34px" bg="rgba(169, 203, 183, 0.12)" color="#56756D">
-                      <Icon as={FiFileText} boxSize="16px" />
-                    </Circle>
-                    <VStack align="start" spacing={0}>
-                      <Heading 
-                        fontSize="17px" 
-                        fontWeight="600" 
-                        color="#263A33" 
-                        fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                      >
-                        Clinical Blueprints & Care Flow
-                      </Heading>
-                      <Text fontSize="12px" color="#5A6E65">
-                        Streamlined clinical documentation from first screening to discharge.
-                      </Text>
-                    </VStack>
-                  </HStack>
-                  <Badge 
-                    bg="rgba(169, 203, 183, 0.12)" 
-                    color="#263A33" 
-                    fontSize="10px" 
-                    fontWeight="700" 
-                    px={2.5} 
-                    py={0.5} 
-                    borderRadius="full"
-                  >
-                    HIPAA · DPDP COMPLIANT
-                  </Badge>
-                </HStack>
-
-                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3} mb={4}>
-                  <Box 
-                    p={4} 
-                    borderRadius="xl" 
-                    bg="#F7FAF8" 
-                    border="1px solid" 
-                    borderColor="rgba(169, 203, 183, 0.18)"
-                    cursor="pointer"
-                    transition="all 0.2s"
-                    _hover={{ borderColor: "#56756D", transform: "translateY(-2px)" }}
-                    onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/notes"))}
-                  >
-                    <HStack spacing={2.5} mb={1.5}>
-                      <Icon as={FiEdit3} color="#56756D" boxSize="16px" />
-                      <Text fontSize="13.5px" fontWeight="600" color="#263A33">Session Blueprints</Text>
-                    </HStack>
-                    <Text fontSize="12px" color="#5A6E65">
-                      Fast, standardized clinical notes, SOAP formatting, and treatment tracking.
-                    </Text>
-                  </Box>
-
-                  <Box 
-                    p={4} 
-                    borderRadius="xl" 
-                    bg="#F7FAF8" 
-                    border="1px solid" 
-                    borderColor="rgba(169, 203, 183, 0.18)"
-                    cursor="pointer"
-                    transition="all 0.2s"
-                    _hover={{ borderColor: "#56756D", transform: "translateY(-2px)" }}
-                    onClick={() => requireBasicAccess(() => (window.location.href = "/dashboard/therapist/care"))}
-                  >
-                    <HStack spacing={2.5} mb={1.5}>
-                      <Icon as={FiShield} color="#56756D" boxSize="16px" />
-                      <Text fontSize="13.5px" fontWeight="600" color="#263A33">Care Space & Safety</Text>
-                    </HStack>
-                    <Text fontSize="12px" color="#5A6E65">
-                      Collaborative safety planning, worksheets, and emergency escalation guides.
-                    </Text>
-                  </Box>
-                </SimpleGrid>
-
-                <HStack p={3} bg="rgba(169, 203, 183, 0.08)" borderRadius="lg" spacing={2.5}>
-                  <Icon as={FiCheckCircle} color="#56756D" boxSize="14px" flexShrink={0} />
-                  <Text fontSize="12px" color="#4A5568">
-                    All client interactions and blueprints are isolated by relationship ID, ensuring strict confidentiality.
-                  </Text>
-                </HStack>
-              </Box>
-
-              {/* Card 3: Practitioner Sanctuary & Boundary Guard */}
-              <Box 
-                bgGradient="linear(to-br, #263A33, #355345)" 
-                p={{ base: 5, md: 6 }} 
-                borderRadius="2xl" 
-                color="white" 
-                boxShadow="0 8px 24px rgba(38, 58, 51, 0.15)"
-                position="relative"
-                overflow="hidden"
-              >
-                <Box position="absolute" top="-20px" right="-20px" opacity={0.06}>
-                  <Icon as={FiShield} boxSize="160px" />
-                </Box>
-                
-                <HStack spacing={2} mb={2}>
-                  <Circle size="24px" bg="whiteAlpha.200">
-                    <Icon as={FiHeart} boxSize="12px" color="#A9CBB7" />
-                  </Circle>
-                  <Text 
-                    fontSize="10.5px" 
-                    fontWeight="700" 
-                    letterSpacing="0.12em" 
-                    color="#A9CBB7" 
-                    textTransform="uppercase"
-                  >
-                    PRACTITIONER WELLBEING & BOUNDARIES
-                  </Text>
-                </HStack>
-
-                <Heading 
-                  fontSize="20px" 
-                  fontWeight="500" 
-                  fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                  color="white"
-                  mb={2}
-                >
-                  Protecting Your Time and Emotional Space
-                </Heading>
-
-                <Text fontSize="13px" color="whiteAlpha.800" maxW="540px" mb={5} lineHeight="1.6">
-                  MLC protects your professional boundaries: in-portal encrypted communications mean you never have to exchange personal phone numbers, and built-in scheduling buffers prevent clinical burnout.
-                </Text>
-
-                <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={3} pt={1}>
-                  <HStack p={2.5} bg="whiteAlpha.100" borderRadius="lg" spacing={2}>
-                    <Icon as={FiCheckCircle} color="#A9CBB7" boxSize="13px" />
-                    <Text fontSize="11.5px" fontWeight="500" color="whiteAlpha.900">Encrypted Messaging</Text>
-                  </HStack>
-                  <HStack p={2.5} bg="whiteAlpha.100" borderRadius="lg" spacing={2}>
-                    <Icon as={FiCheckCircle} color="#A9CBB7" boxSize="13px" />
-                    <Text fontSize="11.5px" fontWeight="500" color="whiteAlpha.900">Automated Buffers</Text>
-                  </HStack>
-                  <HStack p={2.5} bg="whiteAlpha.100" borderRadius="lg" spacing={2}>
-                    <Icon as={FiCheckCircle} color="#A9CBB7" boxSize="13px" />
-                    <Text fontSize="11.5px" fontWeight="500" color="whiteAlpha.900">Burnout Safeguards</Text>
-                  </HStack>
-                </SimpleGrid>
-              </Box>
-
-            </VStack>
+            <Button 
+              as={NextLink} 
+              href={hasSupervisorTier ? "/dashboard/therapist/supervision" : "/dashboard/therapist/supervisee"} 
+              size="sm" 
+              bg="#56756D" 
+              color="white" 
+              borderRadius="full" 
+              w="full" 
+              h="38px" 
+              fontSize="13px" 
+              fontWeight="600" 
+              boxShadow="0 2px 6px rgba(86, 117, 109, 0.2)" 
+              _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+              transition="all 0.2s"
+            >
+              {hasSupervisorTier ? "Enter Supervision Hub" : "View Supervisee Suite"}
+            </Button>
           </Box>
 
-          {/* 🛠️ RIGHT COLUMN: Quick Toolset & Professional Profile (4 Cols) */}
-          <Box gridColumn={{ lg: "span 4" }}>
-            <VStack align="stretch" spacing={6}>
+        </VStack>
 
-              {/* Side Card 1: Clinical Ecosystem Shortcuts */}
-              <Box 
-                bg="white" 
-                p={5} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="rgba(86, 117, 109, 0.12)" 
-                boxShadow="0 2px 12px rgba(38, 58, 51, 0.03)"
-              >
-                <HStack justify="space-between" mb={3}>
-                  <Heading 
-                    fontSize="16px" 
-                    fontWeight="600" 
-                    color="#263A33" 
-                    fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                  >
-                    Clinical Ecosystem
-                  </Heading>
-                  <Badge 
-                    fontSize="9.5px" 
-                    fontWeight="700" 
-                    colorScheme="teal" 
-                    variant="subtle" 
-                    borderRadius="full"
-                  >
-                    SHORTCUTS
-                  </Badge>
-                </HStack>
-
-                <VStack spacing={2} align="stretch">
-                  <ActionTile 
-                    icon={FiUsers} 
-                    label="Client Caseload" 
-                    sublabel="Active files, history & plans" 
-                    href="/dashboard/therapist/clients" 
-                  />
-                  <ActionTile 
-                    icon={FiFileText} 
-                    label="Clinical Notes" 
-                    sublabel="Create or edit SOAP entries" 
-                    href="/dashboard/therapist/notes" 
-                  />
-                  <ActionTile 
-                    icon={FiClock} 
-                    label="Availability & Hours" 
-                    sublabel="Manage buffers & weekly calendar" 
-                    href="/dashboard/therapist/availability" 
-                  />
-                  <ActionTile 
-                    icon={FiDollarSign} 
-                    label="Practice Earnings" 
-                    sublabel="Session revenue & payouts" 
-                    href="/dashboard/therapist/earnings" 
-                  />
-                  <ActionTile 
-                    icon={FiActivity} 
-                    label="Billing Analytics" 
-                    sublabel="Practice trends & forecasts" 
-                    isSoon={true} 
-                  />
-                </VStack>
-              </Box>
-
-              {/* Side Card 2: Professional Profile Snapshot */}
-              <Box 
-                bg="#F7FAF8" 
-                p={5} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="rgba(169, 203, 183, 0.25)"
-              >
-                <HStack justify="space-between" mb={3}>
-                  <HStack spacing={2}>
-                    <Icon as={FiAward} color="#C9A960" boxSize="17px" />
-                    <Heading 
-                      fontSize="14.5px" 
-                      fontWeight="600" 
-                      color="#263A33" 
-                      fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                    >
-                      Professional Profile
-                    </Heading>
-                  </HStack>
-                  <Badge 
-                    bg={profile?.is_verified ? "green.100" : "orange.100"} 
-                    color={profile?.is_verified ? "green.800" : "orange.800"} 
-                    fontSize="10px" 
-                    fontWeight="700"
-                    borderRadius="full"
-                    px={2}
-                  >
-                    {profile?.is_verified ? "VERIFIED" : "PENDING"}
-                  </Badge>
-                </HStack>
-
-                <VStack align="start" spacing={1.5} mb={3.5}>
-                  <Text fontSize="13px" fontWeight="600" color="#263A33">
-                    {profile?.name || displayName}
-                  </Text>
-                  <Text fontSize="12px" color="#5A6E65">
-                    {profile?.highest_qualification || "Licensed Clinical Psychologist"}
-                  </Text>
-                  <Text fontSize="11.5px" color="#5A6E65">
-                    📍 {profile?.city || "Mumbai"}, {profile?.state || "India"}
-                  </Text>
-                  {profile?.years_experience && (
-                    <Text fontSize="11.5px" color="#56756D" fontWeight="500">
-                      🌿 {profile.years_experience} Years Clinical Experience
-                    </Text>
-                  )}
-                </VStack>
-
-                <Button 
-                  as={NextLink} 
-                  href="/dashboard/therapist/profile" 
-                  size="sm" 
-                  variant="outline" 
-                  borderColor="rgba(86, 117, 109, 0.25)"
-                  color="#263A33" 
-                  borderRadius="full" 
-                  w="full" 
-                  h="34px"
-                  fontSize="12.5px"
-                  _hover={{ bg: "white", borderColor: "#56756D" }}
-                >
-                  Edit Profile & Rates
-                </Button>
-              </Box>
-
-              {/* Side Card 3: Supervision Hub / Community */}
-              <Box 
-                bg="white" 
-                p={5} 
-                borderRadius="2xl" 
-                border="1px solid" 
-                borderColor="rgba(86, 117, 109, 0.12)" 
-                boxShadow="0 2px 12px rgba(38, 58, 51, 0.03)"
-              >
-                <HStack spacing={2} mb={2}>
-                  <Circle size="24px" bg="rgba(201, 169, 96, 0.15)">
-                    <Icon as={FiAward} color="#C9A960" boxSize="13px" />
-                  </Circle>
-                  <Text 
-                    fontSize="11px" 
-                    fontWeight="700" 
-                    color="#56756D" 
-                    letterSpacing="0.1em" 
-                    textTransform="uppercase"
-                  >
-                    SUPERVISION SUITE
-                  </Text>
-                </HStack>
-                <Heading 
-                  fontSize="15px" 
-                  fontWeight="600" 
-                  color="#263A33" 
-                  fontFamily="'Playfair Display', var(--font-playfair), Georgia, serif"
-                  mb={1.5}
-                >
-                  {hasSupervisorTier ? "Clinical Mentorship & Oversight" : "Supervisee Guidance"}
-                </Heading>
-                <Text fontSize="12.5px" color="#5A6E65" mb={4} lineHeight="1.5">
-                  {hasSupervisorTier 
-                    ? "Mentor the next generation of clinicians with structured session logs and peer reviews."
-                    : "Access clinical supervision, case consultation, and accredited guidance."}
-                </Text>
-                <Button 
-                  as={NextLink} 
-                  href={hasSupervisorTier ? "/dashboard/therapist/supervision" : "/dashboard/therapist/supervisee"} 
-                  size="sm" 
-                  bg="#56756D" 
-                  color="white" 
-                  borderRadius="full" 
-                  w="full" 
-                  h="36px"
-                  fontSize="12.5px"
-                  fontWeight="600"
-                  _hover={{ bg: "#263A33" }}
-                >
-                  {hasSupervisorTier ? "Enter Supervision Hub" : "View Supervisee Suite"}
-                </Button>
-              </Box>
-
-              {/* Side Card 4: Feedback & Help */}
-              <Box 
-                p={4} 
-                bg="#F7FAF8" 
-                borderRadius="xl" 
-                border="1px dashed" 
-                borderColor="rgba(86, 117, 109, 0.2)"
-              >
-                <HStack spacing={2} mb={1.5}>
-                  <Icon as={FiMessageSquare} color="#56756D" boxSize="14px" />
-                  <Text fontSize="12px" fontWeight="700" color="#263A33">
-                    Shape the Workspace
-                  </Text>
-                </HStack>
-                <Text fontSize="11.5px" color="#5A6E65" mb={3}>
-                  Have an idea to streamline your clinical practice? Let us know.
-                </Text>
-                <FeedbackWidget variant="inline" />
-              </Box>
-
-            </VStack>
-          </Box>
-
-        </SimpleGrid>
-      </Container>
+      </Grid>
       
       <TherapistGatedGateway 
         isOpen={gateModal.isOpen} 
