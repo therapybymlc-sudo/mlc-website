@@ -1717,11 +1717,11 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
             w_mod = str(local_st.isoweekday() % 7)
             w_iso = str(local_st.isoweekday())
             d_name = DAY_MAP.get(w_mod)
-            allowed = (
-                business_hours.get(w_mod)
-                or business_hours.get(w_iso)
-                or business_hours.get(d_name)
-            )
+            allowed = None
+            for key in [w_mod, w_iso, d_name]:
+                if key and key in business_hours:
+                    allowed = business_hours[key]
+                    break
             if allowed is not None:
                 time_str = local_st.strftime("%H:%M")
                 matches = any(
@@ -1817,11 +1817,11 @@ class AvailabilitySlotPublicView(APIView):
                     w_iso = str(local_st.isoweekday())
                     d_name = DAY_MAP.get(w_mod)
 
-                    day_hours = (
-                        profile.business_hours.get(w_mod)
-                        or profile.business_hours.get(w_iso)
-                        or profile.business_hours.get(d_name)
-                    )
+                    day_hours = None
+                    for key in [w_mod, w_iso, d_name]:
+                        if key and key in profile.business_hours:
+                            day_hours = profile.business_hours[key]
+                            break
                     if day_hours is not None:
                         time_str = local_st.strftime("%H:%M")
                         matches_pattern = any(
@@ -1851,12 +1851,13 @@ class AvailabilitySlotPublicView(APIView):
                     weekday_iso = str(check_date.isoweekday())
                     day_name = DAY_MAP.get(weekday_idx)
                     
-                    day_blocks = (
-                        profile.business_hours.get(weekday_idx) 
-                        or profile.business_hours.get(weekday_iso) 
-                        or profile.business_hours.get(day_name) 
-                        or []
-                    )
+                    day_blocks = None
+                    for key in [weekday_idx, weekday_iso, day_name]:
+                        if key and key in profile.business_hours:
+                            day_blocks = profile.business_hours[key]
+                            break
+                    if not day_blocks:
+                        day_blocks = []
                     for block in day_blocks:
                         try:
                             # Re-parse time robustly
