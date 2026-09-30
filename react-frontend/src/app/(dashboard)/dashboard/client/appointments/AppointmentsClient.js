@@ -600,19 +600,21 @@ export default function AppointmentsClient() {
                 ? The slot will be released back to the calendar.
               </Text>
             </ModalBody>
-            <ModalFooter pt={4}>
-              <HStack spacing={3}>
+            <ModalFooter pt={4} pb={6} px={6} borderTop="1px solid rgba(86, 117, 109, 0.1)" mt={2}>
+              <HStack spacing={{ base: 3, sm: 4 }} justify="center" align="center" w="full">
                 <Button
                   variant="outline"
                   borderColor="rgba(86, 117, 109, 0.25)"
                   color="#263A33"
                   borderRadius="full"
-                  height="38px"
-                  fontSize="12.5px"
+                  height="40px"
+                  fontSize="13px"
                   fontWeight="600"
-                  px={5}
+                  px={6}
+                  minW={{ base: '130px', sm: '145px' }}
                   onClick={onCancelClose}
                   isDisabled={isCancelling}
+                  _hover={{ bg: 'rgba(86, 117, 109, 0.06)', borderColor: '#56756D' }}
                 >
                   Keep Session
                 </Button>
@@ -620,11 +622,14 @@ export default function AppointmentsClient() {
                   bg="#DC2626"
                   color="white"
                   borderRadius="full"
-                  height="38px"
+                  height="40px"
                   fontSize="13px"
                   fontWeight="600"
-                  px={5}
-                  _hover={{ bg: "#B91C1C" }}
+                  px={6}
+                  minW={{ base: '150px', sm: '175px' }}
+                  _hover={{ bg: "#B91C1C", transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(220, 38, 38, 0.32)' }}
+                  _active={{ transform: 'translateY(0)' }}
+                  boxShadow="0 2px 8px rgba(220, 38, 38, 0.22)"
                   isLoading={isCancelling}
                   onClick={handleCancelAppointment}
                 >

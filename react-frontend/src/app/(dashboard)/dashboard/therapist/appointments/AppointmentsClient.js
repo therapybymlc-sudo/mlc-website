@@ -1235,21 +1235,22 @@ export default function TherapistAppointmentsClient() {
 
           <ModalFooter
             px={6}
-            pt={3.5}
-            pb={5}
+            pt={4}
+            pb={6}
             borderTop="1px solid rgba(86, 117, 109, 0.1)"
             mt={2}
           >
-            <HStack spacing={3} justify="flex-end" w="full">
+            <HStack spacing={{ base: 3, sm: 4 }} justify="center" align="center" w="full">
               <Button
                 variant="outline"
                 borderColor="rgba(86, 117, 109, 0.25)"
                 color="#263A33"
                 borderRadius="full"
-                height="38px"
+                height="40px"
                 fontSize="13px"
                 fontWeight="600"
-                px={5}
+                px={6}
+                minW={{ base: '130px', sm: '145px' }}
                 onClick={onCancelClose}
                 isDisabled={isSubmittingCancel}
                 _hover={{ bg: 'rgba(86, 117, 109, 0.06)', borderColor: '#56756D' }}
@@ -1260,10 +1261,11 @@ export default function TherapistAppointmentsClient() {
                 bg="#DC2626"
                 color="white"
                 borderRadius="full"
-                height="38px"
+                height="40px"
                 fontSize="13px"
                 fontWeight="600"
-                px={5.5}
+                px={6}
+                minW={{ base: '150px', sm: '175px' }}
                 onClick={handleConfirmCancel}
                 isLoading={isSubmittingCancel}
                 boxShadow="0 2px 8px rgba(220, 38, 38, 0.22)"
