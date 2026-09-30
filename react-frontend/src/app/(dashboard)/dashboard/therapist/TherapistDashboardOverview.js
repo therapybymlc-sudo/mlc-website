@@ -119,10 +119,10 @@ export default function TherapistDashboardOverview() {
       const now = new Date();
       const today = now.toDateString();
       
-      const todayAppts = allAppts.filter(a => {
-        if (!a.start_time) return false;
-        return new Date(a.start_time).toDateString() === today;
-      });
+      const activeAppts = allAppts.filter(a => a.start_time && a.status !== "cancelled");
+      const todayAppts = activeAppts.filter(a => new Date(a.start_time).toDateString() === today);
+      const futureOrToday = activeAppts.filter(a => new Date(a.start_time) >= new Date(new Date().setHours(0, 0, 0, 0)))
+        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
       setStats({
         clients: Array.isArray(clientData) ? clientData.length : (clientData?.results?.length || 0),
@@ -130,8 +130,7 @@ export default function TherapistDashboardOverview() {
         requests: pendingRequests,
       });
 
-      const sortedToday = [...todayAppts].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-      setUpcoming(sortedToday);
+      setUpcoming(futureOrToday.slice(0, 5));
       
       setProfile(profileData);
       setProfileLoaded(true);

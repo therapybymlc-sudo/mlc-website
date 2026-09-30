@@ -15,7 +15,7 @@ import {
   Divider,
 } from "@chakra-ui/react";
 import { FiClock, FiSave, FiCopy, FiTrash2 } from "react-icons/fi";
-import { apiGet, apiPatch } from "../../../../../api";
+import { apiGet, apiPatch, apiPost } from "../../../../../api";
 import ModernSelect from "../../../../../components/ModernSelect";
 
 const RANGE_OPTIONS = Array.from({ length: 24 }).map((_, i) => {
@@ -178,9 +178,10 @@ export default function TherapistAvailabilityWrapper() {
     try {
       setSaving(true);
       await apiPatch(`therapists/${profile.id}/`, { business_hours: businessHours });
+      await apiPost("availability-slots/sync-with-hours/").catch(() => null);
       toast({ 
         title: "Availability Updated", 
-        description: "Your weekly clinical hours were successfully saved.",
+        description: "Your weekly clinical hours and open slots were successfully synced.",
         status: "success" 
       });
       loadData();

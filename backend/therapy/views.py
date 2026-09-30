@@ -1681,6 +1681,58 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
             
         return Response({"detail": f"Successfully generated {created_slots} slots based on your weekly hours."})
 
+    @action(detail=False, methods=["post"], url_path="clear-unbooked")
+    def clear_unbooked(self, request):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return Response({"detail": "Therapist profile required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        now = timezone.now()
+        deleted_count, _ = AvailabilitySlot.objects.filter(
+            therapist=therapist,
+            status=AvailabilitySlot.Status.OPEN,
+            start_time__gt=now,
+        ).delete()
+        
+        return Response({"detail": f"Cleared {deleted_count} unbooked slots."})
+
+    @action(detail=False, methods=["post"], url_path="sync-with-hours")
+    def sync_with_hours(self, request):
+        therapist = _resolve_therapist_from_request(self.request, allow_create=False)
+        if not therapist:
+            return Response({"detail": "Therapist profile required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        business_hours = therapist.business_hours or {}
+        now = timezone.now()
+        DAY_MAP = {"0": "sunday", "1": "monday", "2": "tuesday", "3": "wednesday", "4": "thursday", "5": "friday", "6": "saturday"}
+        
+        unbooked_slots = AvailabilitySlot.objects.filter(
+            therapist=therapist,
+            status=AvailabilitySlot.Status.OPEN,
+            start_time__gt=now,
+        )
+        deleted_count = 0
+        for slot in unbooked_slots:
+            local_st = timezone.localtime(slot.start_time)
+            w_mod = str(local_st.isoweekday() % 7)
+            w_iso = str(local_st.isoweekday())
+            d_name = DAY_MAP.get(w_mod)
+            allowed = (
+                business_hours.get(w_mod)
+                or business_hours.get(w_iso)
+                or business_hours.get(d_name)
+            )
+            if allowed is not None:
+                time_str = local_st.strftime("%H:%M")
+                matches = any(
+                    (h == time_str or (isinstance(h, dict) and h.get("startTime") == time_str))
+                    for h in allowed
+                )
+                if not matches:
+                    slot.delete()
+                    deleted_count += 1
+        return Response({"detail": f"Synced slots with business hours. Removed {deleted_count} orphaned unbooked slots."})
+
 
 class AvailabilitySlotPublicView(APIView):
     permission_classes = [AllowAny]
@@ -1725,31 +1777,86 @@ class AvailabilitySlotPublicView(APIView):
 
             # 2. Get manual slots with specific visibility
             for_supervision = self.request.query_params.get("for_sv") == "true"
-            
             visibility_filter = Q(visible_to_supervisees=True) if for_supervision else Q(visible_to_clients=True)
 
-            existing_slots = AvailabilitySlot.objects.filter(
+            DAY_MAP = {"0": "sunday", "1": "monday", "2": "tuesday", "3": "wednesday", "4": "thursday", "5": "friday", "6": "saturday"}
+
+            # Collect active booked appointment windows to prevent double booking
+            booked_times = list(
+                Appointment.objects.filter(
+                    therapist__email__iexact=profile.email,
+                    status__in=[Appointment.Status.SCHEDULED, Appointment.Status.RESCHEDULED],
+                    start_time__gt=start_buffer,
+                    start_time__lte=end_buffer,
+                ).values_list("start_time", "end_time")
+            )
+
+            existing_slots_qs = AvailabilitySlot.objects.filter(
                 visibility_filter,
                 therapist__email__iexact=profile.email,
                 status=AvailabilitySlot.Status.OPEN,
                 start_time__gt=start_buffer,
                 start_time__lte=end_buffer,
             )
-            serializer = AvailabilitySlotPublicSerializer(existing_slots, many=True)
+
+            filtered_existing = []
+            for slot in existing_slots_qs:
+                # Collision check with booked appointments
+                has_appt_collision = any(
+                    appt_st <= slot.start_time < appt_et or slot.start_time <= appt_st < slot.end_time
+                    for appt_st, appt_et in booked_times
+                )
+                if has_appt_collision:
+                    continue
+
+                # Business hours verification: If therapist configured business hours,
+                # any slot that belongs to a day with 0 hours (e.g. cleared day) or unmatching hour is pruned
+                if profile.business_hours:
+                    local_st = timezone.localtime(slot.start_time)
+                    w_mod = str(local_st.isoweekday() % 7)
+                    w_iso = str(local_st.isoweekday())
+                    d_name = DAY_MAP.get(w_mod)
+
+                    day_hours = (
+                        profile.business_hours.get(w_mod)
+                        or profile.business_hours.get(w_iso)
+                        or profile.business_hours.get(d_name)
+                    )
+                    if day_hours is not None:
+                        time_str = local_st.strftime("%H:%M")
+                        matches_pattern = any(
+                            (h == time_str or (isinstance(h, dict) and h.get("startTime") == time_str))
+                            for h in day_hours
+                        )
+                        if not matches_pattern:
+                            # Prune orphan unbooked slot so it doesn't linger
+                            try:
+                                slot.delete()
+                            except Exception:
+                                pass
+                            continue
+
+                filtered_existing.append(slot)
+
+            serializer = AvailabilitySlotPublicSerializer(filtered_existing, many=True)
             final_data = serializer.data
 
             # 3. Dynamic Injection from Weekly Hours
             dynamic_slots = []
             if profile.business_hours:
                 current_day = timezone.now().date()
-                DAY_MAP = {"0": "sunday", "1": "monday", "2": "tuesday", "3": "wednesday", "4": "thursday", "5": "friday", "6": "saturday"}
-                
                 for i in range(14): 
                     check_date = current_day + timedelta(days=i)
                     weekday_idx = str(check_date.isoweekday() % 7)
+                    weekday_iso = str(check_date.isoweekday())
                     day_name = DAY_MAP.get(weekday_idx)
                     
-                    day_blocks = profile.business_hours.get(weekday_idx) or profile.business_hours.get(day_name) or []
+                    day_blocks = (
+                        profile.business_hours.get(weekday_idx) 
+                        or profile.business_hours.get(weekday_iso) 
+                        or profile.business_hours.get(day_name) 
+                        or []
+                    )
                     for block in day_blocks:
                         try:
                             # Re-parse time robustly
@@ -1764,7 +1871,32 @@ class AvailabilitySlotPublicView(APIView):
                             
                             if start_t < timezone.now(): continue
                             
-                            if not ScheduleEvent.objects.filter(therapist__email__iexact=profile.email, start_time__lt=end_t, end_time__gt=start_t).exists():
+                            # Comprehensive conflict check:
+                            # 1) Schedule events
+                            # 2) Booked/held/blocked database slots
+                            # 3) Active appointments
+                            # 4) Already present in filtered_existing
+                            has_conflict = (
+                                ScheduleEvent.objects.filter(
+                                    therapist__email__iexact=profile.email, 
+                                    start_time__lt=end_t, 
+                                    end_time__gt=start_t
+                                ).exists()
+                                or AvailabilitySlot.objects.filter(
+                                    therapist__email__iexact=profile.email,
+                                    status__in=[AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BLOCKED],
+                                    start_time__lt=end_t,
+                                    end_time__gt=start_t,
+                                ).exists()
+                                or any(
+                                    appt_st <= start_t < appt_et or start_t <= appt_st < end_t
+                                    for appt_st, appt_et in booked_times
+                                )
+                                or any(
+                                    s.start_time == start_t for s in filtered_existing
+                                )
+                            )
+                            if not has_conflict:
                                 dynamic_slots.append({
                                     "id": f"dyn-{start_t.timestamp()}",
                                     "therapist": profile.id,

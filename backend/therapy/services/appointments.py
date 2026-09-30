@@ -26,10 +26,28 @@ def cancel_appointment(appointment: Appointment, cancelled_by=None, reason="", r
         booking_request.save(update_fields=["status", "responded_at", "updated_at"])
 
     slot = appointment.availability_slot
-    if reopen_slot and slot and slot.start_time and slot.start_time > timezone.now():
-        slot.status = AvailabilitySlot.Status.OPEN
-        slot.held_until = None
-        slot.save(update_fields=["status", "held_until", "updated_at"])
+    if not slot and appointment.start_time:
+        slot = AvailabilitySlot.objects.filter(
+            therapist=appointment.therapist,
+            start_time=appointment.start_time,
+        ).first()
+
+    if reopen_slot:
+        if slot and slot.start_time and slot.start_time > timezone.now():
+            slot.status = AvailabilitySlot.Status.OPEN
+            slot.held_until = None
+            slot.save(update_fields=["status", "held_until", "updated_at"])
+        elif not slot and appointment.start_time and appointment.start_time > timezone.now():
+            end_t = appointment.end_time or (appointment.start_time + timezone.timedelta(hours=1))
+            new_slot = AvailabilitySlot.objects.create(
+                therapist=appointment.therapist,
+                start_time=appointment.start_time,
+                end_time=end_t,
+                status=AvailabilitySlot.Status.OPEN,
+                visible_to_clients=True,
+            )
+            appointment.availability_slot = new_slot
+            appointment.save(update_fields=["availability_slot", "updated_at"])
 
     if getattr(appointment.client, "user", None):
         Notification.objects.create(

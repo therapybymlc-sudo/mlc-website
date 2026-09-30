@@ -191,22 +191,23 @@ export default function ScheduleClient() {
 
       // Process Booked Appointments (skip rows mirrored from schedule events — those render as schedule-events)
       const bookedAppointments = appointmentData
-        .filter((apt) => !apt.schedule_event && !!apt.booking_request)
+        .filter((apt) => !apt.schedule_event && apt.status !== "cancelled")
         .map((apt) => {
         return {
           id: `apt-${apt.id}`,
           originalId: apt.id,
           model: 'appointment',
-          title: `[Booked] ${apt.client_name || apt.client_display_name || 'Patient'}`,
+          title: `[Booked] ${apt.client_name || apt.client_display_name || 'Client'}`,
           start: apt.start_time,
           end: apt.end_time,
-          backgroundColor: "#2C8B9A", // Distinct color for booked appts
-          borderColor: "#2C8B9A",
+          backgroundColor: "#56756D",
+          borderColor: "#56756D",
           extendedProps: {
               client_id: apt.client,
               client_name: apt.client_name,
               status: apt.status,
               notes: apt.notes,
+              meeting_link: apt.meeting_link,
               is_appointment: true
           }
         };
