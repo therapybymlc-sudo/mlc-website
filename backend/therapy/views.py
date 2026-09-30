@@ -1173,6 +1173,7 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
 
         return Response({
             "token": token,
+            "app_id": (getattr(settings, "JITSI_APP_ID", "") or "").strip(),
             "display_name": resolve_jitsi_display_name(request.user),
             "mode": "standard_jitsi" if not token else "jaas_jwt",
             "subject": session_info.get("subject"),
@@ -1243,6 +1244,7 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
 
         return Response({
             "token": token,
+            "app_id": (getattr(settings, "JITSI_APP_ID", "") or "").strip(),
             "display_name": resolve_jitsi_display_name(request.user),
             "mode": "standard_jitsi" if not token else "jaas_jwt",
             "subject": session_info.get("subject"),

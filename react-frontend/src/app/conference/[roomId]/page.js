@@ -36,6 +36,7 @@ export default function ConferencePage() {
   const apptNum = normalizedRoomId.match(/\d+/)?.[0];
   
   const [jwt, setJwt] = useState(null);
+  const [appId, setAppId] = useState(null);
   const [jitsiDisplayName, setJitsiDisplayName] = useState(null);
   const [sessionSubject, setSessionSubject] = useState(
     apptNum ? `Virtual Session #${apptNum} • MLC Clinical Consultation` : 'MLC Virtual Clinical Session'
@@ -64,6 +65,9 @@ export default function ConferencePage() {
         const res = await apiGet(`${endpoint}/jitsi-token/?room=${normalizedRoomId}`);
         if (res?.token) {
           setJwt(res.token);
+        }
+        if (res?.app_id) {
+          setAppId(res.app_id);
         }
         if (res?.subject) {
           setSessionSubject(res.subject);
@@ -189,6 +193,7 @@ export default function ConferencePage() {
         roomUrl={`https://mlchealth.in/conference/${roomId}`} 
         onLeave={handleLeave}
         jwt={jwt}
+        appId={appId}
         displayName={jitsiDisplayName || fallbackDisplayName}
         subject={sessionSubject}
         sessionDetails={sessionDetails}

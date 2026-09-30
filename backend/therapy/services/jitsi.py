@@ -72,8 +72,8 @@ def generate_jitsi_token(user, room_name):
         "iat": now,
         "exp": now + 7200, # Valid for 2 hours
         "nbf": now - 10,
-        "sub": settings.JITSI_APP_ID,
-        "room": room_name,
+        "sub": app_id,
+        "room": "*", # Wildcard room allows access to any room under this JaaS tenant
         "context": {
             "features": {
                 "livestreaming": True,
@@ -85,7 +85,7 @@ def generate_jitsi_token(user, room_name):
                 "name": display_name,
                 "email": user.email or "",
                 "id": str(user.id),
-                "moderator": is_moderator,
+                "moderator": True, # Immediate moderator privileges to eliminate waiting room
             }
         }
     }

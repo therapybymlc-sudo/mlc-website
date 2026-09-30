@@ -1908,11 +1908,11 @@ export default function AdminDashboard() {
   };
 
   const tabSubtitles = {
-    overview: "Real-time command center, operational metrics, and immediate triage.",
+    overview: "Real-time command center, operational metrics, and urgent review.",
     messages: "Public user messages and direct client contact submissions.",
     bookings: "Live clinical appointments, scheduled tele-therapy sessions, and inbound booking leads.",
     support_tickets: "Therapist and client platform support inquiries and resolutions.",
-    vetting: "Candidate triage, clinical qualifications, and live discovery directory management.",
+    vetting: "Candidate applications, clinical qualifications, and live discovery directory management.",
     reports: "Platform health, financial performance, and executive analytics.",
     home: "Curate hero sections, value propositions, and interactive portal copy.",
     services_list: "Manage clinical offerings, therapy modalities, and direct booking links.",
@@ -2010,7 +2010,7 @@ export default function AdminDashboard() {
                     _hover={{ bg: "#FEF3C7" }}
                     cursor="pointer"
                   >
-                    ⚡ {pendingVettingCount} Pending Triage
+                    ⚡ {pendingVettingCount} Pending Review
                   </Badge>
                 ) : activeTab === "vetting" ? (
                   <Badge 
@@ -2022,7 +2022,7 @@ export default function AdminDashboard() {
                     px={2.5} 
                     py={0.5}
                   >
-                    ✓ All Triaged
+                    ✓ All Reviewed
                   </Badge>
                 ) : null}
               </HStack>
@@ -2379,7 +2379,7 @@ export default function AdminDashboard() {
                   onClick={() => handleTabChange("support_tickets")}
                   _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
                 >
-                  Triage
+                  Review
                 </Button>
               </HStack>
             </Box>
@@ -2446,7 +2446,7 @@ export default function AdminDashboard() {
               </Heading>
               <HStack justify="space-between" mt={3} pt={2} borderTop="1px solid rgba(86, 117, 109, 0.08)">
                 <Text fontSize="12px" color="#5A6E65">
-                  Platform friction & triage
+                  Platform alerts & review
                 </Text>
                 <Button
                   as={Link}
@@ -2466,7 +2466,7 @@ export default function AdminDashboard() {
 
           {/* 7:5 Bento Grid (Rule 5 & 8) */}
           <Grid templateColumns={{ base: "1fr", lg: "7fr 5fr" }} gap={6} alignItems="start">
-            {/* Left Column (7 cols): Operational Triage */}
+            {/* Left Column (7 cols): Operational Reviews */}
             <VStack align="stretch" spacing={5}>
               {/* Priority Directory Card */}
               <Box
@@ -2761,7 +2761,7 @@ export default function AdminDashboard() {
                           Improvement Architect
                         </Text>
                         <Text fontSize="11px" color="#5A6E65">
-                          User feedback, triage & UX friction
+                          User feedback, resolutions & UX insights
                         </Text>
                       </VStack>
                     </HStack>
@@ -4457,7 +4457,7 @@ export default function AdminDashboard() {
                           Directory Queue Clear
                         </Text>
                         <Text fontSize="13px" color="#5A6E65" maxW="440px">
-                          All submitted clinician applications and registered practitioner accounts have been triaged and verified.
+                          All submitted clinician applications and registered practitioner accounts have been reviewed and verified.
                         </Text>
                         <Button
                           size="sm"

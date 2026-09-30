@@ -27,7 +27,15 @@ const JitsiMeeting = dynamic(
   }
 );
 
-export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName, subject, sessionDetails }) {
+export default function TherapyRoom({ 
+  roomUrl, 
+  onLeave, 
+  jwt, 
+  appId,
+  displayName, 
+  subject, 
+  sessionDetails 
+}) {
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [api, setApi] = useState(null);
@@ -47,20 +55,25 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName, subjec
     }
   }, [api, displayName]);
 
-  // Standard Jitsi Room (Option B - Free, no paid 8x8 JaaS keys required)
+  const jaasAppId = (appId || process.env.NEXT_PUBLIC_JITSI_APP_ID || "vpaas-magic-cookie-0d29cfbee27644b2ad432cdd4f043406").trim();
+  const isJaas = Boolean(jwt && jaasAppId);
+
   const rawRoom = (roomUrl 
     ? roomUrl.split('/').filter(Boolean).pop() 
-    : "MLC-Secure-Lounge").toLowerCase().replace(/[^a-z0-9_-]/gi, '');
+    : "mlc-secure-lounge").toLowerCase().replace(/[^a-z0-9_-]/gi, '');
   const cleanId = rawRoom.replace(/^mlc[_-]/i, '');
-  const roomName = `mlc-consultation-${cleanId || "room"}`;
+  const roomName = rawRoom || "mlc-secure-lounge";
+  const targetRoom = isJaas ? `${jaasAppId}/${roomName}` : roomName;
+  const targetDomain = isJaas ? "8x8.vc" : "meet.jit.si";
   const meetingSubject = subject || (cleanId ? `Virtual Session #${cleanId}` : 'MLC Clinical Consultation');
   
-  console.log("🌿 [TherapyRoom] Initializing session (Option B Jitsi):", {
+  console.log("🌿 [TherapyRoom] Initializing session:", {
     rawRoom,
     cleanId,
     roomName,
-    meetingSubject,
-    domain: "meet.jit.si",
+    targetRoom,
+    targetDomain,
+    isJaas,
     hasJwt: !!jwt
   });
 
@@ -79,6 +92,15 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName, subjec
       }
     }
     
+    // Set conference subject once the call has officially started
+    jitsiApi.addEventListener('videoConferenceJoined', () => {
+      try {
+        jitsiApi.executeCommand('subject', meetingSubject);
+      } catch (_) {
+        /* non-fatal */
+      }
+    });
+
     // Add listeners with a small guard to prevent "Double Exit" on login redirects
     jitsiApi.addEventListener('videoConferenceLeft', () => {
       // Small delay prevents the "Session Concluded" screen from appearing
@@ -121,17 +143,18 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName, subjec
 
       <Box h="full" w="full">
         <JitsiMeeting
-          domain="meet.jit.si"
-          roomName={roomName}
+          domain={targetDomain}
+          roomName={targetRoom}
           jwt={jwt || undefined}
           configOverwrite={{
-            subject: meetingSubject,
+            subject: ' ',
             startWithAudioMuted: false,
             disableModeratorIndicator: false,
             startWithVideoMuted: false,
             enableEmailInStats: false,
             disableDeepLinking: true,
             prejoinPageEnabled: false,
+            enableLobby: false,
             enableE2EP: true, // End-to-end encryption for security
             toolbarButtons: [
               'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
@@ -161,59 +184,70 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName, subjec
         />
       </Box>
 
-      {/* 🛡️ Secure Session Badge */}
-      <HStack 
+      {/* 🛡️ Clinical Session Details in the Middle (2-3 Lines, Zero Dots) */}
+      <Box 
         position="absolute" 
-        top={4} 
-        left={6} 
-        zIndex={5} 
-        spacing={2.5}
-        maxW="calc(100vw - 48px)"
+        top={{ base: 3, md: 5 }} 
+        left="50%" 
+        transform="translateX(-50%)" 
+        zIndex={10} 
+        maxW={{ base: "calc(100vw - 32px)", sm: "460px" }}
+        w="full"
+        pointerEvents="none"
       >
-        <HStack
-          bg="rgba(10, 15, 13, 0.75)" 
+        <VStack
+          bg="rgba(10, 15, 13, 0.85)" 
           backdropFilter="blur(16px)" 
-          px={3.5} 
-          py={1.5} 
-          borderRadius="full"
+          px={5} 
+          py={2.5} 
+          borderRadius="2xl"
           border="1px solid rgba(86, 117, 109, 0.3)"
-          boxShadow="0 4px 12px rgba(0,0,0,0.25)"
-          spacing={2}
+          boxShadow="0 8px 24px rgba(0,0,0,0.35)"
+          spacing={1}
+          align="center"
+          textAlign="center"
         >
-          <Circle size="7px" bg="#10B981" />
-          <Text color="white" fontWeight="700" fontSize="10.5px" letterSpacing="0.08em" textTransform="uppercase">
-            {sessionDetails?.session_title || "MLC SECURE SESSION"}
-          </Text>
-        </HStack>
-
-        {(sessionDetails?.therapist_name || sessionDetails?.time_str || subject) && (
-          <HStack
-            bg="rgba(10, 15, 13, 0.7)" 
-            backdropFilter="blur(16px)" 
-            px={3.5} 
-            py={1.5} 
-            borderRadius="full"
-            border="1px solid rgba(255, 255, 255, 0.12)"
-            boxShadow="0 4px 12px rgba(0,0,0,0.2)"
-            spacing={2}
-            display={{ base: "none", sm: "flex" }}
-          >
-            <Text color="whiteAlpha.900" fontWeight="500" fontSize="11px">
-              {sessionDetails?.therapist_name && sessionDetails?.client_name
-                ? `${sessionDetails.therapist_name} & ${sessionDetails.client_name}`
-                : subject}
+          {/* Line 1: Session Format & Live Status */}
+          <HStack spacing={1.5} align="center">
+            <Circle size="6px" bg="#10B981" />
+            <Text 
+              color="#A9CBB7" 
+              fontWeight="700" 
+              fontSize="10px" 
+              letterSpacing="0.08em" 
+              textTransform="uppercase"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
+            >
+              {sessionDetails?.session_title?.split('•')[0]?.trim() || "Virtual 1-on-1 Session"}
             </Text>
-            {sessionDetails?.time_str && (
-              <>
-                <Box w="1px" h="10px" bg="whiteAlpha.400" />
-                <Text color="whiteAlpha.700" fontWeight="400" fontSize="10.5px">
-                  {sessionDetails.time_str}
-                </Text>
-              </>
-            )}
           </HStack>
-        )}
-      </HStack>
+
+          {/* Line 2: Participants */}
+          <Text 
+            color="white" 
+            fontWeight="600" 
+            fontSize="13.5px" 
+            fontFamily="'Outfit', var(--font-outfit), sans-serif"
+            lineHeight="1.25"
+          >
+            {sessionDetails?.therapist_name && sessionDetails?.client_name
+              ? `${sessionDetails.therapist_name} & ${sessionDetails.client_name}`
+              : sessionDetails?.session_title || subject || "MLC Clinical Consultation"}
+          </Text>
+
+          {/* Line 3: Date & Time */}
+          {sessionDetails?.time_str && (
+            <Text 
+              color="whiteAlpha.750" 
+              fontWeight="400" 
+              fontSize="11px" 
+              fontFamily="'Inter', var(--font-inter), sans-serif"
+            >
+              {sessionDetails.time_str}
+            </Text>
+          )}
+        </VStack>
+      </Box>
     </Box>
   );
 }

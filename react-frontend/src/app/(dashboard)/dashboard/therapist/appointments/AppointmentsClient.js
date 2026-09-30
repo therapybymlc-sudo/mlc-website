@@ -485,13 +485,13 @@ export default function TherapistAppointmentsClient() {
         mb={6}
       >
         <Flex
-          direction={{ base: 'column', md: 'row' }}
+          direction={{ base: 'column', lg: 'row' }}
           justify="space-between"
-          align={{ base: 'stretch', md: 'center' }}
+          align={{ base: 'stretch', lg: 'center' }}
           gap={3.5}
         >
           {/* Segmented Pill Tabs (Rule 11) */}
-          <HStack spacing={2} overflowX="auto" pb={{ base: 2, md: 0 }}>
+          <HStack spacing={2} overflowX="auto" pb={{ base: 2, lg: 0 }} flexShrink={0}>
             {[
               { id: 'upcoming', label: 'Upcoming', count: metrics.upcoming },
               { id: 'history', label: 'Session History', count: metrics.completed },
@@ -539,9 +539,15 @@ export default function TherapistAppointmentsClient() {
             })}
           </HStack>
 
-          {/* Search & Filter Strip */}
-          <HStack spacing={3} flexWrap="wrap">
-            <InputGroup size="sm" maxW={{ base: 'full', sm: '260px' }}>
+          {/* Search, Filter & Reload Strip (Inline, Zero Wrapping) */}
+          <HStack 
+            spacing={2} 
+            align="center" 
+            w={{ base: 'full', lg: 'auto' }} 
+            justify={{ base: 'flex-start', lg: 'flex-end' }}
+            flexWrap={{ base: 'wrap', sm: 'nowrap' }}
+          >
+            <InputGroup size="sm" w={{ base: 'full', sm: '200px', md: '220px' }}>
               <InputLeftElement pointerEvents="none">
                 <Icon as={FiSearch} color="#718096" />
               </InputLeftElement>
@@ -559,7 +565,7 @@ export default function TherapistAppointmentsClient() {
               />
             </InputGroup>
 
-            <Box minW="160px">
+            <Box w={{ base: 'calc(100% - 46px)', sm: '145px' }} flexShrink={0}>
               <ModernSelect
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val)}
@@ -578,7 +584,9 @@ export default function TherapistAppointmentsClient() {
                 size="sm"
                 h="36px"
                 w="36px"
+                minW="36px"
                 p={0}
+                flexShrink={0}
                 borderRadius="xl"
                 borderColor="rgba(86, 117, 109, 0.2)"
                 color="#56756D"
