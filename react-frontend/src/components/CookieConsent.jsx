@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -7,24 +7,23 @@ import {
   HStack,
   Text,
   VStack,
-  Collapse,
-  useDisclosure,
   Icon,
   Link,
   Portal,
-  ScaleFade
+  ScaleFade,
+  Circle,
+  Badge,
 } from '@chakra-ui/react';
-import { FiShield, FiInfo, FiCheck } from 'react-icons/fi';
+import { FiShield, FiCheck } from 'react-icons/fi';
 import NextLink from 'next/link';
 
 export default function CookieConsent() {
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const consent = localStorage.getItem('mlc_cookie_consent');
     if (!consent) {
-      const timer = setTimeout(() => setIsVisible(true), 1500);
+      const timer = setTimeout(() => setIsVisible(true), 1200);
       return () => clearTimeout(timer);
     }
 
@@ -50,56 +49,101 @@ export default function CookieConsent() {
     <Portal>
       <Box
         position="fixed"
-        bottom={{ base: 4, md: 8 }}
-        left={{ base: 4, md: 8 }}
-        right={{ base: 4, md: 'auto' }}
-        maxW={{ base: "full", md: "420px" }}
+        bottom={{ base: 3, md: 5 }}
+        left={{ base: 3, md: 5 }}
+        right={{ base: 3, sm: 'auto' }}
+        maxW={{ base: 'full', sm: '350px' }}
+        w="full"
         zIndex={9999}
+        fontFamily="'Inter', var(--font-inter), sans-serif"
       >
-        <ScaleFade initialScale={0.9} in={isVisible}>
+        <ScaleFade initialScale={0.94} in={isVisible}>
           <Box
-            bg="white"
-            p={6}
+            bg="rgba(255, 255, 255, 0.96)"
+            backdropFilter="blur(16px)"
+            px={4}
+            py={3.5}
             borderRadius="2xl"
-            shadow="2xl"
             border="1px solid"
-            borderColor="gray.100"
+            borderColor="rgba(86, 117, 109, 0.16)"
+            boxShadow="0 14px 34px -4px rgba(38, 58, 51, 0.16), 0 2px 8px rgba(0, 0, 0, 0.04)"
           >
-            <VStack align="stretch" spacing={4}>
-              <HStack spacing={3}>
-                <Box p={2} bg="rgba(169,203,183,0.1)" borderRadius="lg" color="#56756D">
-                  <Icon as={FiShield} boxSize={5} />
-                </Box>
-                <VStack align="start" spacing={0}>
-                  <Text fontWeight="800" fontSize="sm" color="gray.800">Cookie Privacy</Text>
-                  <Text fontSize="xs" color="rgba(46,46,46,0.6)">How we use data</Text>
-                </VStack>
+            <VStack align="stretch" spacing={2.5}>
+              {/* Header Row */}
+              <HStack justify="space-between" align="center">
+                <HStack spacing={2.5} align="center">
+                  <Circle size="26px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" flexShrink={0}>
+                    <Icon as={FiShield} boxSize="13px" />
+                  </Circle>
+                  <Text
+                    fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                    fontWeight="600"
+                    fontSize="13.5px"
+                    color="#263A33"
+                    letterSpacing="-0.01em"
+                    lineHeight="1.2"
+                  >
+                    Cookie Privacy
+                  </Text>
+                </HStack>
+                <Badge
+                  bg="rgba(86, 117, 109, 0.08)"
+                  color="#56756D"
+                  fontSize="9px"
+                  fontWeight="700"
+                  borderRadius="full"
+                  px={2}
+                  py={0.5}
+                  textTransform="uppercase"
+                  letterSpacing="0.08em"
+                >
+                  MLC Portal
+                </Badge>
               </HStack>
 
-              <Text fontSize="sm" color="rgba(46,46,46,0.75)" lineHeight="tall">
-                We use cookies to enhance your clinical portal experience, remember your preferences, and ensure secure authentication. By continuing, you agree to our <Link as={NextLink} href="/privacy" color="#6B8B7B" fontWeight="600">Privacy Policy</Link>.
+              {/* Crisp Short Description */}
+              <Text fontSize="12px" color="#5A6E65" lineHeight="1.45">
+                We use cookies to maintain secure sessions and remember your clinical preferences. Read our{' '}
+                <Link
+                  as={NextLink}
+                  href="/privacy"
+                  color="#56756D"
+                  fontWeight="600"
+                  textDecoration="underline"
+                  _hover={{ color: '#263A33' }}
+                >
+                  Privacy Policy
+                </Link>
+                .
               </Text>
 
-              <HStack spacing={3} pt={2}>
-                <Button 
+              {/* Action Buttons Row */}
+              <HStack spacing={2} pt={0.5}>
+                <Button
                   flex={1}
-                  bg="#56756D" 
-                  color="white" 
-                  fontSize="xs"
+                  bg="#56756D"
+                  color="white"
+                  fontSize="11.5px"
+                  fontWeight="600"
                   borderRadius="full"
-                  h={10}
-                  _hover={{ bg: "#263A33" }}
+                  h="32px"
+                  boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                  transition="all 0.2s"
                   onClick={handleAccept}
-                  leftIcon={<Icon as={FiCheck} />}
+                  leftIcon={<Icon as={FiCheck} boxSize="12px" />}
                 >
                   Accept All
                 </Button>
-                <Button 
+                <Button
                   variant="ghost"
-                  fontSize="xs"
-                  color="rgba(46,46,46,0.6)"
-                  h={10}
+                  fontSize="11.5px"
+                  fontWeight="500"
+                  color="#5A6E65"
+                  h="32px"
+                  px={3}
                   borderRadius="full"
+                  _hover={{ bg: 'rgba(86, 117, 109, 0.08)', color: '#263A33' }}
                   onClick={handleDecline}
                 >
                   Essential Only
