@@ -20,6 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const iconThemes = {
   'Overview': { color: '#56756D', bg: 'rgba(86, 117, 109, 0.12)' },
+  'Bookings & Sessions': { color: '#56756D', bg: 'rgba(86, 117, 109, 0.12)' },
   'Contact Inquiries': { color: '#319795', bg: 'rgba(49, 151, 149, 0.12)' },
   'Booking Leads': { color: '#D69E2E', bg: 'rgba(214, 158, 46, 0.12)' },
   'Support Tickets': { color: '#E53E3E', bg: 'rgba(229, 62, 62, 0.12)' },

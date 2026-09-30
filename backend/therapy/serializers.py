@@ -109,7 +109,10 @@ class ClientProfileSerializer(serializers.ModelSerializer):
 class AppointmentSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
     client_display_name = serializers.SerializerMethodField()
+    client_email = serializers.CharField(source="client.email", read_only=True)
     therapist_name = serializers.CharField(source="therapist.name", read_only=True)
+    therapist_email = serializers.CharField(source="therapist.email", read_only=True)
+    service_type = serializers.SerializerMethodField()
     payment_status = serializers.SerializerMethodField()
     status_label = serializers.CharField(source="get_status_display", read_only=True)
     meeting_link = serializers.SerializerMethodField()
@@ -120,6 +123,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
         from django.conf import settings
         frontend_url = getattr(settings, "FRONTEND_URL", "https://www.mlchealth.in").rstrip("/")
         return f"{frontend_url}/conference/MLC_{obj.id}"
+
+    def get_service_type(self, obj):
+        if obj.booking_request and getattr(obj.booking_request, "service_type", None):
+            return obj.booking_request.service_type
+        return "Virtual 1-on-1 Session"
 
     class Meta:
         model = Appointment
@@ -138,10 +146,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "updated_at",
             "cancelled_at",
             "completed_at",
+            "cancellation_reason",
+            "notes",
             "meeting_link",
             "client_name",
             "client_display_name",
+            "client_email",
             "therapist_name",
+            "therapist_email",
+            "service_type",
             "payment_status",
         ]
         read_only_fields = [
@@ -150,9 +163,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "updated_at",
             "client_name",
             "client_display_name",
+            "client_email",
             "schedule_event",
             "therapist_name",
+            "therapist_email",
+            "service_type",
             "payment_status",
+            "cancellation_reason",
         ]
 
     def get_client_name(self, obj):

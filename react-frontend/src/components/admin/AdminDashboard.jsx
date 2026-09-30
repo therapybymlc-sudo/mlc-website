@@ -1178,6 +1178,13 @@ export default function AdminDashboard() {
 
   const [contactMessages, setContactMessages] = useState([]);
   const [quickBookings, setQuickBookings] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [bookingSubTab, setBookingSubTab] = useState("appointments");
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
+  const [selectedBookingDetail, setSelectedBookingDetail] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [reportPeriod, setReportPeriod] = useState("monthly");
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
   const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
@@ -1212,6 +1219,18 @@ export default function AdminDashboard() {
       const data = await apiGet("quick-bookings/");
       setQuickBookings(Array.isArray(data) ? data : (data.results || []));
     } catch (err) { console.error(err); }
+  };
+
+  const fetchAllAppointments = async () => {
+    try {
+      setAppointmentsLoading(true);
+      const data = await apiGet("appointments/");
+      setAllAppointments(Array.isArray(data) ? data : (data.results || []));
+    } catch (err) {
+      console.error("Failed to fetch appointments", err);
+    } finally {
+      setAppointmentsLoading(false);
+    }
   };
 
   const reportQueryString = () =>
@@ -1793,7 +1812,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (activeTab === "messages") fetchContactMessages();
-    if (activeTab === "bookings") fetchQuickBookings();
+    if (activeTab === "bookings") {
+      fetchQuickBookings();
+      fetchAllAppointments();
+    }
     if (activeTab === "support_tickets") fetchSupportTickets();
   }, [activeTab]);
 
@@ -1869,7 +1891,7 @@ export default function AdminDashboard() {
   const tabTitles = {
     overview: "Executive Overview",
     messages: "Contact Inquiries",
-    bookings: "Booking Leads",
+    bookings: "Bookings & Sessions",
     support_tickets: "Support Tickets",
     vetting: "Therapist Directory",
     reports: "Business Reports & Intelligence",
@@ -1888,7 +1910,7 @@ export default function AdminDashboard() {
   const tabSubtitles = {
     overview: "Real-time command center, operational metrics, and immediate triage.",
     messages: "Public user messages and direct client contact submissions.",
-    bookings: "Inbound quick booking requests and client intake prospects.",
+    bookings: "Live clinical appointments, scheduled tele-therapy sessions, and inbound booking leads.",
     support_tickets: "Therapist and client platform support inquiries and resolutions.",
     vetting: "Candidate triage, clinical qualifications, and live discovery directory management.",
     reports: "Platform health, financial performance, and executive analytics.",
@@ -1904,7 +1926,7 @@ export default function AdminDashboard() {
     vetting: FiUsers,
     reports: FiTrendingUp,
     messages: FiMail,
-    bookings: FiInbox,
+    bookings: FiCalendar,
     support_tickets: FiHelpCircle,
     home: FiHome,
     services_list: FiBriefcase,
@@ -5139,117 +5161,588 @@ export default function AdminDashboard() {
   </Box>
 )}
 
-{activeTab === "bookings" && (
-  <Box 
-    bg="white" 
-    p={6} 
-    borderRadius="2xl" 
-    border="1px solid rgba(86, 117, 109, 0.14)" 
-    boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
-  >
-    <HStack justify="space-between" mb={5} flexWrap="wrap" gap={3}>
-      <VStack align="start" spacing={0.5}>
-        <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
-          Booking Leads
-        </Heading>
-        <Text fontSize="13px" color="#5A6E65">
-          Inbound client consultation and session booking requests
-        </Text>
-      </VStack>
-      <Badge 
-        bg="rgba(214, 158, 46, 0.12)" 
-        color="#D69E2E" 
-        fontSize="11px" 
-        fontWeight="700" 
-        borderRadius="full" 
-        px={2.5} 
-        py={0.5}
+{activeTab === "bookings" && (() => {
+  const filteredAppointments = allAppointments.filter((appt) => {
+    const q = bookingSearch.trim().toLowerCase();
+    const statusMatch =
+      bookingStatusFilter === "all" ||
+      (appt.status || "").toLowerCase() === bookingStatusFilter.toLowerCase();
+
+    if (!statusMatch) return false;
+    if (!q) return true;
+
+    const cName = (appt.client_name || appt.client_display_name || "").toLowerCase();
+    const cEmail = (appt.client_email || "").toLowerCase();
+    const tName = (appt.therapist_name || "").toLowerCase();
+    const idStr = String(appt.id);
+    return cName.includes(q) || cEmail.includes(q) || tName.includes(q) || idStr.includes(q);
+  });
+
+  const scheduledCount = allAppointments.filter(
+    (a) => a.status === "scheduled" || a.status === "rescheduled"
+  ).length;
+  const completedCount = allAppointments.filter((a) => a.status === "completed").length;
+  const cancelledCount = allAppointments.filter((a) => a.status === "cancelled").length;
+
+  return (
+    <Box 
+      bg="white" 
+      p={{ base: 5, md: 6 }} 
+      borderRadius="2xl" 
+      border="1px solid rgba(86, 117, 109, 0.14)" 
+      boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.04)"
+    >
+      {/* 🌿 Top Controls Bar: Sub-tabs & Refresh */}
+      <Flex 
+        justify="space-between" 
+        align={{ base: "flex-start", sm: "center" }} 
+        direction={{ base: "column", sm: "row" }} 
+        gap={4} 
+        mb={6} 
+        pb={5} 
+        borderBottom="1px solid rgba(86, 117, 109, 0.12)"
       >
-        {quickBookings.length} Leads
-      </Badge>
-    </HStack>
+        <VStack align="start" spacing={0.5}>
+          <Heading size="md" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600">
+            Bookings & Sessions Command Center
+          </Heading>
+          <Text fontSize="13px" color="#5A6E65">
+            Audit clinical tele-therapy appointments and review inbound intake leads
+          </Text>
+        </VStack>
 
-    {quickBookings.length === 0 ? (
-      <VStack py={12} spacing={3} textAlign="center">
-        <Circle size="48px" bg="rgba(214, 158, 46, 0.12)" color="#D69E2E">
-          <Icon as={FiInbox} boxSize="22px" />
-        </Circle>
-        <Text fontSize="14px" fontWeight="600" color="#263A33">No booking leads yet</Text>
-        <Text fontSize="12.5px" color="#5A6E65">Quick intake requests from the landing page will stream in here.</Text>
-      </VStack>
-    ) : (
-      <VStack align="stretch" spacing={4}>
-        {quickBookings.map(b => (
-          <Box 
-            key={b.id} 
-            p={5} 
-            border="1px solid" 
-            borderColor="rgba(86, 117, 109, 0.12)" 
-            borderRadius="xl"
-            bg="white"
-            boxShadow="0 2px 6px -2px rgba(38, 58, 51, 0.03)"
+        <HStack spacing={3} w={{ base: "full", sm: "auto" }} justify={{ base: "space-between", sm: "flex-end" }}>
+          {/* Segmented Rail (Rule 7 dimensions) */}
+          <HStack 
+            bg="rgba(250, 248, 245, 0.95)" 
+            p={1} 
+            borderRadius="full" 
+            border="1px solid rgba(86, 117, 109, 0.14)" 
+            spacing={1}
+            boxShadow="inset 0 1px 2px rgba(38, 58, 51, 0.03)"
           >
-            <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={2} mb={3}>
-              <HStack spacing={3}>
-                <Circle size="34px" bg="rgba(214, 158, 46, 0.15)" color="#D69E2E" fontWeight="700" fontSize="13px">
-                  {(b.full_name || "L").charAt(0).toUpperCase()}
-                </Circle>
-                <VStack align="flex-start" spacing={0}>
-                  <Text fontWeight="600" fontSize="14px" color="#263A33">{b.full_name}</Text>
-                  <HStack spacing={2} fontSize="12px" color="#5A6E65">
-                    <Text as="a" href={'mailto:' + b.email} color="#56756D" _hover={{ textDecoration: "underline" }}>
-                      {b.email}
-                    </Text>
-                    {b.phone && (
-                      <>
-                        <Text color="gray.300">•</Text>
-                        <Text as="a" href={'tel:' + b.phone} color="#56756D" _hover={{ textDecoration: "underline" }}>
-                          {b.phone}
-                        </Text>
-                      </>
-                    )}
-                  </HStack>
-                </VStack>
-              </HStack>
-              <Badge 
-                bg="rgba(86, 117, 109, 0.12)" 
-                color="#56756D" 
-                fontSize="10.5px" 
-                fontWeight="700" 
-                borderRadius="full" 
-                px={3} 
-                py={0.5}
-              >
-                {b.service_type || "Therapy Intake"}
-              </Badge>
-            </Flex>
+            <Button
+              size="sm"
+              h="34px"
+              borderRadius="full"
+              fontSize="12.5px"
+              fontWeight="600"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
+              px={4}
+              bg={bookingSubTab === "appointments" ? "#56756D" : "transparent"}
+              color={bookingSubTab === "appointments" ? "white" : "#5A6E65"}
+              boxShadow={bookingSubTab === "appointments" ? "0 2px 6px rgba(86, 117, 109, 0.22)" : "none"}
+              _hover={{ bg: bookingSubTab === "appointments" ? "#3D564F" : "rgba(86, 117, 109, 0.08)" }}
+              onClick={() => setBookingSubTab("appointments")}
+            >
+              Clinical Sessions ({allAppointments.length})
+            </Button>
+            <Button
+              size="sm"
+              h="34px"
+              borderRadius="full"
+              fontSize="12.5px"
+              fontWeight="600"
+              fontFamily="'Inter', var(--font-inter), sans-serif"
+              px={4}
+              bg={bookingSubTab === "leads" ? "#56756D" : "transparent"}
+              color={bookingSubTab === "leads" ? "white" : "#5A6E65"}
+              boxShadow={bookingSubTab === "leads" ? "0 2px 6px rgba(86, 117, 109, 0.22)" : "none"}
+              _hover={{ bg: bookingSubTab === "leads" ? "#3D564F" : "rgba(86, 117, 109, 0.08)" }}
+              onClick={() => setBookingSubTab("leads")}
+            >
+              Inbound Leads ({quickBookings.length})
+            </Button>
+          </HStack>
 
-            {/* Preferred slot strip */}
-            <HStack spacing={6} mb={3} p={3} bg="rgba(250, 248, 245, 0.85)" borderRadius="lg" border="1px solid rgba(86, 117, 109, 0.08)">
-              <Box>
-                <Text fontSize="9.5px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">PREFERRED DATE</Text>
-                <Text fontSize="13px" fontWeight="600" color="#263A33">{b.preferred_date || 'Flexible'}</Text>
-              </Box>
-              <Box>
-                <Text fontSize="9.5px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">PREFERRED TIME</Text>
-                <Text fontSize="13px" fontWeight="600" color="#263A33">{b.preferred_time || 'Anytime'}</Text>
-              </Box>
-            </HStack>
+          <IconButton
+            aria-label="Refresh bookings"
+            icon={<Icon as={FiRefreshCw} />}
+            size="sm"
+            h="36px"
+            w="36px"
+            borderRadius="full"
+            variant="outline"
+            borderColor="rgba(86, 117, 109, 0.25)"
+            color="#263A33"
+            _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+            isLoading={appointmentsLoading}
+            onClick={() => {
+              fetchAllAppointments();
+              fetchQuickBookings();
+            }}
+          />
+        </HStack>
+      </Flex>
 
-            {b.notes && (
-              <Box p={3} borderRadius="lg" bg="white" border="1px dashed rgba(86, 117, 109, 0.2)">
-                <Text fontSize="12.5px" color="#5A6E65">
-                  <Text as="span" fontWeight="600" color="#263A33">Notes: </Text>
-                  {b.notes}
-                </Text>
-              </Box>
-            )}
+      {/* 🏛️ VIEW 1: CLINICAL APPOINTMENTS */}
+      {bookingSubTab === "appointments" && (
+        <VStack align="stretch" spacing={6}>
+          {/* Metric Strip (Rule 8 & 10) */}
+          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+            <Box p={4} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.12)">
+              <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">TOTAL BOOKINGS</Text>
+              <Text fontSize="22px" fontWeight="700" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" mt={1}>
+                {allAppointments.length}
+              </Text>
+            </Box>
+            <Box p={4} borderRadius="xl" bg="rgba(236, 253, 245, 0.6)" border="1px solid rgba(16, 185, 129, 0.25)">
+              <Text fontSize="10px" fontWeight="700" color="#059669" textTransform="uppercase" letterSpacing="0.08em">SCHEDULED / ACTIVE</Text>
+              <Text fontSize="22px" fontWeight="700" color="#065F46" fontFamily="'Outfit', var(--font-outfit), sans-serif" mt={1}>
+                {scheduledCount}
+              </Text>
+            </Box>
+            <Box p={4} borderRadius="xl" bg="rgba(86, 117, 109, 0.08)" border="1px solid rgba(86, 117, 109, 0.2)">
+              <Text fontSize="10px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em">COMPLETED</Text>
+              <Text fontSize="22px" fontWeight="700" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif" mt={1}>
+                {completedCount}
+              </Text>
+            </Box>
+            <Box p={4} borderRadius="xl" bg="rgba(254, 242, 242, 0.6)" border="1px solid rgba(239, 68, 68, 0.25)">
+              <Text fontSize="10px" fontWeight="700" color="#DC2626" textTransform="uppercase" letterSpacing="0.08em">CANCELLED</Text>
+              <Text fontSize="22px" fontWeight="700" color="#991B1B" fontFamily="'Outfit', var(--font-outfit), sans-serif" mt={1}>
+                {cancelledCount}
+              </Text>
+            </Box>
+          </SimpleGrid>
+
+          {/* Filter & Search Bar */}
+          <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "stretch", sm: "center" }} gap={3}>
+            <InputGroup maxW={{ base: "full", sm: "340px" }}>
+              <InputLeftElement pointerEvents="none" h="38px">
+                <Icon as={FiSearch} color="#718096" boxSize="14px" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search by client, therapist, or #ID..."
+                value={bookingSearch}
+                onChange={(e) => setBookingSearch(e.target.value)}
+                h="38px"
+                borderRadius="xl"
+                fontSize="13px"
+                borderColor="rgba(86, 117, 109, 0.2)"
+                _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }}
+                bg="white"
+              />
+            </InputGroup>
+
+            <Box w={{ base: "full", sm: "200px" }}>
+              <ModernSelect
+                size="sm"
+                value={bookingStatusFilter}
+                onChange={(val) => setBookingStatusFilter(val)}
+                options={[
+                  { value: "all", label: "All Statuses" },
+                  { value: "scheduled", label: "Scheduled / Active" },
+                  { value: "completed", label: "Completed" },
+                  { value: "cancelled", label: "Cancelled" },
+                ]}
+              />
+            </Box>
+          </Flex>
+
+          {/* Table Container (Rule 12 Admin Standards) */}
+          <Box overflowX="auto" w="full" minW="0" borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.12)">
+            <Table variant="simple" size="sm">
+              <Thead bg="rgba(250, 248, 245, 0.75)">
+                <Tr borderBottom="1px solid rgba(86, 117, 109, 0.12)">
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>
+                    Date & Time
+                  </Th>
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>
+                    Client
+                  </Th>
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>
+                    Therapist
+                  </Th>
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>
+                    Format
+                  </Th>
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>
+                    Status
+                  </Th>
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5}>
+                    Payment
+                  </Th>
+                  <Th fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" py={3.5} textAlign="right">
+                    Actions
+                  </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {filteredAppointments.map((appt) => {
+                  const s = (appt.status || "").toLowerCase();
+                  const isScheduled = s === "scheduled" || s === "rescheduled";
+                  const isCompleted = s === "completed";
+                  const isCancelled = s === "cancelled";
+
+                  const statusBadgeBg = isScheduled
+                    ? "rgba(16, 185, 129, 0.12)"
+                    : isCompleted
+                    ? "rgba(86, 117, 109, 0.12)"
+                    : "rgba(239, 68, 68, 0.12)";
+                  const statusBadgeColor = isScheduled
+                    ? "#059669"
+                    : isCompleted
+                    ? "#263A33"
+                    : "#DC2626";
+
+                  const isPaid = appt.payment_status === "paid";
+
+                  return (
+                    <Tr 
+                      key={appt.id} 
+                      borderBottom="1px solid rgba(86, 117, 109, 0.08)"
+                      _hover={{ bg: "rgba(250, 248, 245, 0.6)" }}
+                      transition="background 0.15s"
+                    >
+                      <Td py={3.5}>
+                        <VStack align="start" spacing={0.5}>
+                          <Text fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" fontSize="13px" color="#263A33" whiteSpace="nowrap">
+                            {appt.start_time
+                              ? new Date(appt.start_time).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+                              : "Unscheduled"}
+                          </Text>
+                          <HStack spacing={1.5}>
+                            <Circle size="6px" bg={isScheduled ? "#10B981" : isCompleted ? "#56756D" : "#EF4444"} />
+                            <Text fontSize="11.5px" color="#5A6E65" whiteSpace="nowrap">
+                              {appt.start_time
+                                ? new Date(appt.start_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                : "--"}
+                            </Text>
+                          </HStack>
+                        </VStack>
+                      </Td>
+
+                      <Td py={3.5}>
+                        <HStack spacing={2.5}>
+                          <Avatar size="sm" name={appt.client_name || appt.client_display_name || "Client"} bg="#56756D" color="white" />
+                          <VStack align="start" spacing={0}>
+                            <Text fontSize="13px" fontWeight="600" color="#263A33" noOfLines={1}>
+                              {appt.client_name || appt.client_display_name || "Client"}
+                            </Text>
+                            {appt.client_email && (
+                              <Text fontSize="11px" color="#718096" noOfLines={1}>
+                                {appt.client_email}
+                              </Text>
+                            )}
+                          </VStack>
+                        </HStack>
+                      </Td>
+
+                      <Td py={3.5}>
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="13px" fontWeight="600" color="#263A33" noOfLines={1}>
+                            {appt.therapist_name || "Therapist"}
+                          </Text>
+                          {appt.therapist_email && (
+                            <Text fontSize="11px" color="#718096" noOfLines={1}>
+                              {appt.therapist_email}
+                            </Text>
+                          )}
+                        </VStack>
+                      </Td>
+
+                      <Td py={3.5}>
+                        <Badge 
+                          bg="rgba(86, 117, 109, 0.08)" 
+                          color="#263A33" 
+                          border="1px solid rgba(86, 117, 109, 0.15)"
+                          borderRadius="full" 
+                          px={2.5} 
+                          py={0.5} 
+                          fontSize="10px" 
+                          fontWeight="700"
+                        >
+                          {appt.service_type || "Virtual 1-on-1"}
+                        </Badge>
+                      </Td>
+
+                      <Td py={3.5}>
+                        <Badge 
+                          bg={statusBadgeBg} 
+                          color={statusBadgeColor} 
+                          borderRadius="full" 
+                          px={2.5} 
+                          py={0.5} 
+                          fontSize="10px" 
+                          fontWeight="700"
+                          textTransform="uppercase"
+                        >
+                          {appt.status_label || appt.status || "Scheduled"}
+                        </Badge>
+                      </Td>
+
+                      <Td py={3.5}>
+                        <Badge 
+                          bg={isPaid ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)"} 
+                          color={isPaid ? "#059669" : "#D97706"} 
+                          borderRadius="full" 
+                          px={2.5} 
+                          py={0.5} 
+                          fontSize="10px" 
+                          fontWeight="700"
+                          textTransform="uppercase"
+                        >
+                          {isPaid ? "Paid" : "Pending"}
+                        </Badge>
+                      </Td>
+
+                      <Td py={3.5} textAlign="right">
+                        <HStack spacing={2} justify="flex-end">
+                          <Button
+                            size="sm"
+                            h="30px"
+                            variant="outline"
+                            borderColor="rgba(86, 117, 109, 0.25)"
+                            color="#263A33"
+                            borderRadius="full"
+                            fontSize="11.5px"
+                            fontWeight="600"
+                            px={3}
+                            _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
+                            onClick={() => {
+                              setSelectedBookingDetail(appt);
+                              setIsDetailModalOpen(true);
+                            }}
+                          >
+                            Details
+                          </Button>
+                          {!isCancelled && (
+                            <Button
+                              size="sm"
+                              h="30px"
+                              bg="#263A33"
+                              color="white"
+                              borderRadius="full"
+                              fontSize="11.5px"
+                              fontWeight="600"
+                              px={3}
+                              leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="11px" />}
+                              _hover={{ bg: "#182722" }}
+                              onClick={() => window.open(`/conference/MLC_${appt.id}`, "_blank")}
+                            >
+                              Join Room
+                            </Button>
+                          )}
+                        </HStack>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+
+                {filteredAppointments.length === 0 && (
+                  <Tr>
+                    <Td colSpan={7} textAlign="center" py={12} color="#718096" fontSize="13px">
+                      No clinical session bookings found matching your filter criteria.
+                    </Td>
+                  </Tr>
+                )}
+              </Tbody>
+            </Table>
           </Box>
-        ))}
-      </VStack>
-    )}
-  </Box>
-)}
+        </VStack>
+      )}
+
+      {/* 📬 VIEW 2: QUICK INTAKE LEADS */}
+      {bookingSubTab === "leads" && (
+        <VStack align="stretch" spacing={4}>
+          {quickBookings.length === 0 ? (
+            <VStack py={12} spacing={3} textAlign="center">
+              <Circle size="48px" bg="rgba(214, 158, 46, 0.12)" color="#D69E2E">
+                <Icon as={FiInbox} boxSize="22px" />
+              </Circle>
+              <Text fontSize="14px" fontWeight="600" color="#263A33">No booking leads yet</Text>
+              <Text fontSize="12.5px" color="#5A6E65">Quick intake requests from the landing page will stream in here.</Text>
+            </VStack>
+          ) : (
+            quickBookings.map((b) => (
+              <Box 
+                key={b.id} 
+                p={5} 
+                border="1px solid" 
+                borderColor="rgba(86, 117, 109, 0.12)" 
+                borderRadius="xl"
+                bg="white"
+                boxShadow="0 2px 6px -2px rgba(38, 58, 51, 0.03)"
+              >
+                <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={2} mb={3}>
+                  <HStack spacing={3}>
+                    <Circle size="34px" bg="rgba(214, 158, 46, 0.15)" color="#D69E2E" fontWeight="700" fontSize="13px">
+                      {(b.full_name || "L").charAt(0).toUpperCase()}
+                    </Circle>
+                    <VStack align="flex-start" spacing={0}>
+                      <Text fontWeight="600" fontSize="14px" color="#263A33">{b.full_name}</Text>
+                      <HStack spacing={2} fontSize="12px" color="#5A6E65">
+                        <Text as="a" href={'mailto:' + b.email} color="#56756D" _hover={{ textDecoration: "underline" }}>
+                          {b.email}
+                        </Text>
+                        {b.phone && (
+                          <>
+                            <Text color="gray.300">•</Text>
+                            <Text as="a" href={'tel:' + b.phone} color="#56756D" _hover={{ textDecoration: "underline" }}>
+                              {b.phone}
+                            </Text>
+                          </>
+                        )}
+                      </HStack>
+                    </VStack>
+                  </HStack>
+                  <Badge 
+                    bg="rgba(86, 117, 109, 0.12)" 
+                    color="#56756D" 
+                    fontSize="10.5px" 
+                    fontWeight="700" 
+                    borderRadius="full" 
+                    px={3} 
+                    py={0.5}
+                  >
+                    {b.service_type || "Therapy Intake"}
+                  </Badge>
+                </Flex>
+
+                <HStack spacing={6} mb={3} p={3} bg="rgba(250, 248, 245, 0.85)" borderRadius="lg" border="1px solid rgba(86, 117, 109, 0.08)">
+                  <Box>
+                    <Text fontSize="9.5px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">PREFERRED DATE</Text>
+                    <Text fontSize="13px" fontWeight="600" color="#263A33">{b.preferred_date || 'Flexible'}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="9.5px" color="#718096" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em">PREFERRED TIME</Text>
+                    <Text fontSize="13px" fontWeight="600" color="#263A33">{b.preferred_time || 'Anytime'}</Text>
+                  </Box>
+                </HStack>
+
+                {b.notes && (
+                  <Box p={3} borderRadius="lg" bg="white" border="1px dashed rgba(86, 117, 109, 0.2)">
+                    <Text fontSize="12.5px" color="#5A6E65">
+                      <Text as="span" fontWeight="600" color="#263A33">Notes: </Text>
+                      {b.notes}
+                    </Text>
+                  </Box>
+                )}
+              </Box>
+            ))
+          )}
+        </VStack>
+      )}
+
+      {/* 🔍 APPOINTMENT DETAILS MODAL */}
+      <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} isCentered size="lg">
+        <ModalOverlay bg="rgba(38, 58, 51, 0.4)" backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="2xl" p={2} border="1px solid rgba(86, 117, 109, 0.14)" bg="white">
+          <ModalHeader fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" fontSize="18px" color="#263A33" pb={1}>
+            Session Booking #{selectedBookingDetail?.id}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedBookingDetail && (
+              <VStack align="stretch" spacing={4} pt={2}>
+                <SimpleGrid columns={2} spacing={3} p={3.5} bg="rgba(250, 248, 245, 0.85)" borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.1)">
+                  <Box>
+                    <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase">CLIENT</Text>
+                    <Text fontSize="13.5px" fontWeight="600" color="#263A33" mt={0.5}>
+                      {selectedBookingDetail.client_name || selectedBookingDetail.client_display_name || "Client"}
+                    </Text>
+                    <Text fontSize="11.5px" color="#5A6E65">{selectedBookingDetail.client_email || "No email"}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase">ASSIGNED THERAPIST</Text>
+                    <Text fontSize="13.5px" fontWeight="600" color="#263A33" mt={0.5}>
+                      {selectedBookingDetail.therapist_name || "Therapist"}
+                    </Text>
+                    <Text fontSize="11.5px" color="#5A6E65">{selectedBookingDetail.therapist_email || "No email"}</Text>
+                  </Box>
+                </SimpleGrid>
+
+                <SimpleGrid columns={3} spacing={3}>
+                  <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase">SCHEDULED TIME</Text>
+                    <Text fontSize="12.5px" fontWeight="600" color="#263A33" mt={0.5}>
+                      {selectedBookingDetail.start_time
+                        ? new Date(selectedBookingDetail.start_time).toLocaleString([], { dateStyle: "short", timeStyle: "short" })
+                        : "N/A"}
+                    </Text>
+                  </Box>
+                  <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase">STATUS</Text>
+                    <Text fontSize="12.5px" fontWeight="600" color="#263A33" mt={0.5} textTransform="capitalize">
+                      {selectedBookingDetail.status_label || selectedBookingDetail.status || "Scheduled"}
+                    </Text>
+                  </Box>
+                  <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                    <Text fontSize="9.5px" fontWeight="700" color="#718096" textTransform="uppercase">PAYMENT</Text>
+                    <Text fontSize="12.5px" fontWeight="600" color="#263A33" mt={0.5} textTransform="capitalize">
+                      {selectedBookingDetail.payment_status || "Pending"}
+                    </Text>
+                  </Box>
+                </SimpleGrid>
+
+                {selectedBookingDetail.meeting_link && (
+                  <Box p={3.5} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.16)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase">SESSION VIDEO ROOM</Text>
+                    <Text fontSize="12px" color="#263A33" fontFamily="monospace" mt={1} wordBreak="break-all">
+                      {selectedBookingDetail.meeting_link}
+                    </Text>
+                  </Box>
+                )}
+
+                {selectedBookingDetail.cancellation_reason && (
+                  <Box p={3.5} borderRadius="xl" bg="#FEF2F2" border="1px solid rgba(239, 68, 68, 0.3)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#DC2626" textTransform="uppercase">CANCELLATION REASON</Text>
+                    <Text fontSize="12.5px" color="#991B1B" mt={0.5}>
+                      {selectedBookingDetail.cancellation_reason}
+                    </Text>
+                  </Box>
+                )}
+
+                {selectedBookingDetail.notes && (
+                  <Box p={3.5} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
+                    <Text fontSize="10.5px" fontWeight="700" color="#718096" textTransform="uppercase">CLINICAL NOTES</Text>
+                    <Text fontSize="12.5px" color="#5A6E65" mt={0.5}>
+                      {selectedBookingDetail.notes}
+                    </Text>
+                  </Box>
+                )}
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter pt={4}>
+            <HStack spacing={3}>
+              <Button
+                variant="outline"
+                borderColor="rgba(86, 117, 109, 0.25)"
+                color="#263A33"
+                borderRadius="full"
+                height="36px"
+                fontSize="12.5px"
+                fontWeight="600"
+                px={4}
+                onClick={() => setIsDetailModalOpen(false)}
+              >
+                Close
+              </Button>
+              {selectedBookingDetail?.meeting_link && selectedBookingDetail.status !== "cancelled" && (
+                <Button
+                  bg="#263A33"
+                  color="white"
+                  borderRadius="full"
+                  height="36px"
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  px={4}
+                  leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="12px" />}
+                  _hover={{ bg: "#182722" }}
+                  onClick={() => window.open(selectedBookingDetail.meeting_link, "_blank")}
+                >
+                  Launch Room
+                </Button>
+              )}
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
+})()}
 
 {activeTab === "support_tickets" && (
   <Box 
@@ -5681,7 +6174,7 @@ export default function AdminDashboard() {
                              </Circle>
                              <Text fontWeight="700" fontSize="13px" color="#059669">SDK Status: Operational</Text>
                           </HStack>
-                          <Text fontSize="12.5px" color="#263A33" lineHeight="1.5">The Daily.co clinical engine is initialized and ready for encrypted tele-therapy streams.</Text>
+                          <Text fontSize="12.5px" color="#263A33" lineHeight="1.5">The MLC WebRTC clinical video engine is initialized and ready for encrypted tele-health streams.</Text>
                        </VStack>
                     </Box>
 
@@ -5700,7 +6193,7 @@ export default function AdminDashboard() {
                             h="34px"
                             px={4}
                             mt={1}
-                            onClick={() => window.open("/dashboard/client/session?url=https://meet.jit.si/MLC-Secure-Test-Lounge", "_blank")}
+                            onClick={() => window.open("/conference/MLC-Secure-Test-Lounge", "_blank")}
                             _hover={{ bg: '#3D564F' }}
                           >
                             Launch Live Test Room

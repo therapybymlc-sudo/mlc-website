@@ -1522,6 +1522,22 @@ class AppointmentViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsTherapistOwnerOfAppointment]
 
     def get_queryset(self):
+        roles = _extract_roles_from_auth(self.request)
+        if "admin" in roles or getattr(self.request.user, "is_staff", False):
+            qs = Appointment.objects.all().select_related("therapist", "client").order_by("-start_time", "-date", "-id")
+            therapist_id = self.request.query_params.get("therapist")
+            if therapist_id:
+                qs = qs.filter(therapist_id=therapist_id)
+            client_id = self.request.query_params.get("client")
+            if client_id:
+                clean_id = "".join(filter(str.isdigit, str(client_id)))
+                if clean_id:
+                    qs = qs.filter(client_id=clean_id)
+            status_param = self.request.query_params.get("status")
+            if status_param:
+                qs = qs.filter(status=status_param)
+            return qs
+
         therapist = _resolve_therapist_from_request(self.request, allow_create=False)
         if not therapist:
             return Appointment.objects.none()

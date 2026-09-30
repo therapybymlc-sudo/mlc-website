@@ -34,7 +34,8 @@ import {
   FiFileText, 
   FiCompass, 
   FiVideo,
-  FiExternalLink
+  FiExternalLink,
+  FiCalendar,
 } from 'react-icons/fi';
 import { useUser, useClerk } from '@clerk/nextjs';
 import NextLink from 'next/link';
@@ -48,8 +49,8 @@ import { useAuth } from '../../context/AuthContext';
 const adminLinks = [
   { type: 'header', label: 'Operations' },
   { label: 'Overview', icon: FiLayout, href: '/admin', tab: 'overview' },
+  { label: 'Bookings & Sessions', icon: FiCalendar, href: '/admin?tab=bookings', tab: 'bookings' },
   { label: 'Contact Inquiries', icon: FiMail, href: '/admin?tab=messages', tab: 'messages' },
-  { label: 'Booking Leads', icon: FiInbox, href: '/admin?tab=bookings', tab: 'bookings' },
   { label: 'Support Tickets', icon: FiHelpCircle, href: '/admin?tab=support_tickets', tab: 'support_tickets' },
   { label: 'Therapist Directory', icon: FiUsers, href: '/admin?tab=vetting', tab: 'vetting' },
 
