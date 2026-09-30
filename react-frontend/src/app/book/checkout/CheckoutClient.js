@@ -160,12 +160,12 @@ export default function CheckoutClient() {
           ondismiss: async () => {
             try {
               if (order.booking_request_id) {
-                await apiPost(`booking-requests/${order.booking_request_id}/cancel`, {
-                  message_from_client: "Payment cancelled",
+                await apiPost(`booking-requests/${order.booking_request_id}/payment-failed/`, {
+                  reason: "Payment window was closed before completion",
                 });
               }
             } catch (e) {
-              console.warn("Failed to cancel pending booking request", e);
+              console.warn("Failed to mark booking request payment failed", e);
             } finally {
               setIsProcessing(false);
             }
@@ -182,6 +182,25 @@ export default function CheckoutClient() {
       };
 
       const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", async function (response) {
+        try {
+          if (order.booking_request_id) {
+            await apiPost(`booking-requests/${order.booking_request_id}/payment-failed/`, {
+              reason: response.error?.description || "Payment failed",
+            });
+          }
+        } catch (e) {
+          console.warn("Failed to record payment failure", e);
+        } finally {
+          setIsProcessing(false);
+        }
+        toast({
+          title: "Payment Failed",
+          description: response.error?.description || "Your transaction was not completed. The slot has been released back.",
+          status: "error",
+          duration: 8000,
+        });
+      });
       rzp.open();
     } catch (e) {
       console.error(e);

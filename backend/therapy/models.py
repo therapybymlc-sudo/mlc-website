@@ -693,6 +693,8 @@ class BookingRequest(models.Model):
         CANCELLED_BY_CLIENT = "cancelled_by_client", "Cancelled by client"
         CANCELLED_BY_THERAPIST = "cancelled_by_therapist", "Cancelled by therapist"
         EXPIRED = "expired", "Expired"
+        PAYMENT_FAILED = "payment_failed", "Payment Failed"
+        PAYMENT_PENDING = "payment_pending", "Pending Payment"
 
     client = models.ForeignKey(
         ClientProfile,
@@ -993,7 +995,7 @@ class BookingRequest(models.Model):
 
         if self.availability_slot_id:
             slot = AvailabilitySlot.objects.filter(pk=self.availability_slot_id).first()
-            if slot and slot.status in {AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.OPEN} and slot.start_time > timezone.now():
+            if slot and slot.status in {AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.OPEN} and slot.start_time > timezone.now():
                 slot.status = AvailabilitySlot.Status.OPEN
                 slot.held_until = None
                 slot.save(update_fields=["status", "held_until", "updated_at"])
@@ -1021,7 +1023,7 @@ class BookingRequest(models.Model):
 
         if self.availability_slot_id:
             slot = AvailabilitySlot.objects.filter(pk=self.availability_slot_id).first()
-            if slot and slot.status in {AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.OPEN} and slot.start_time > timezone.now():
+            if slot and slot.status in {AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.OPEN} and slot.start_time > timezone.now():
                 slot.status = AvailabilitySlot.Status.OPEN
                 slot.held_until = None
                 slot.save(update_fields=["status", "held_until", "updated_at"])
@@ -1036,6 +1038,24 @@ class BookingRequest(models.Model):
                 recipient=getattr(self.client, "user", None),
             ),
         )
+        return self
+
+    def mark_payment_failed(self, reason="Payment failed or cancelled"):
+        if self.status == self.Status.CONFIRMED:
+            raise ValidationError("Confirmed booking requests cannot be marked payment failed.")
+        self.status = self.Status.PAYMENT_FAILED
+        self.responded_at = timezone.now()
+        if reason:
+            self.message_from_client = reason
+        self.save(update_fields=["status", "responded_at", "message_from_client", "updated_at"])
+
+        if self.availability_slot_id:
+            slot = AvailabilitySlot.objects.filter(pk=self.availability_slot_id).first()
+            if slot and slot.status in {AvailabilitySlot.Status.HELD, AvailabilitySlot.Status.BOOKED, AvailabilitySlot.Status.OPEN} and slot.start_time > timezone.now():
+                slot.status = AvailabilitySlot.Status.OPEN
+                slot.held_until = None
+                slot.save(update_fields=["status", "held_until", "updated_at"])
+
         return self
 
 

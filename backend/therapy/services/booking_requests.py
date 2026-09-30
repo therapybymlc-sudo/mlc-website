@@ -25,3 +25,8 @@ def cancel_pending_by_therapist(booking_request: BookingRequest, reason=""):
     if booking_request.status != BookingRequest.Status.PENDING:
         raise ValidationError("Only pending requests can be cancelled by therapist.")
     return booking_request.cancel_by_therapist(reason=reason or "")
+
+
+def mark_booking_request_payment_failed(booking_request: BookingRequest, reason=""):
+    return booking_request.mark_payment_failed(reason=reason or "Payment failed or cancelled")
+

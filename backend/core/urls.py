@@ -54,6 +54,7 @@ from therapy.views import (
     TherapistApplyContentViewSet,
     AvailabilitySlotPublicView,
     PublicTherapistDirectoryView,
+    CleanupExpiredBookingsView,
     terminate_relationship,
     OnboardUserRoleView,
     TherapistMatchView,
@@ -330,6 +331,7 @@ urlpatterns = [
     path("api/therapist-applications/", TherapistApplicationCreateView.as_view(), name="therapist_applications"),
     path("api/therapist/earnings/", TherapistEarningsView.as_view(), name="therapist-earnings"),
     path("api/messages/threads/", MessageThreadsView.as_view(), name="message-threads"),
+    path("api/cleanup-expired/", CleanupExpiredBookingsView.as_view(), name="cleanup-expired"),
 
     # Simple health check
     path("healthz", healthz, name="healthz"),

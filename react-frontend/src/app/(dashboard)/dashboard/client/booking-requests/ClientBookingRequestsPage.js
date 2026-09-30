@@ -309,7 +309,9 @@ export default function ClientBookingRequestsPage() {
           {requests.map((req) => {
             const isPending = req.status === "pending";
             const isConfirmed = req.status === "confirmed";
-            const isCancelled = req.status === "cancelled" || req.status === "expired";
+            const isPaymentFailed = req.status === "payment_failed";
+            const isPaymentPending = req.status === "payment_pending";
+            const isCancelled = req.status === "cancelled" || req.status === "expired" || req.status === "cancelled_by_client" || req.status === "cancelled_by_therapist";
 
             return (
               <Box
@@ -357,14 +359,18 @@ export default function ClientBookingRequestsPage() {
                     bg={
                       isConfirmed 
                         ? "rgba(16, 185, 129, 0.12)" 
-                        : isPending 
+                        : isPaymentFailed
+                        ? "rgba(239, 68, 68, 0.12)"
+                        : isPending || isPaymentPending
                         ? "rgba(245, 158, 11, 0.12)" 
                         : "rgba(86, 117, 109, 0.1)"
                     }
                     color={
                       isConfirmed 
                         ? "#047857" 
-                        : isPending 
+                        : isPaymentFailed
+                        ? "#DC2626"
+                        : isPending || isPaymentPending
                         ? "#B45309" 
                         : "#4A5568"
                     }
@@ -372,7 +378,9 @@ export default function ClientBookingRequestsPage() {
                     borderColor={
                       isConfirmed 
                         ? "rgba(16, 185, 129, 0.25)" 
-                        : isPending 
+                        : isPaymentFailed
+                        ? "rgba(239, 68, 68, 0.25)"
+                        : isPending || isPaymentPending
                         ? "rgba(245, 158, 11, 0.25)" 
                         : "rgba(86, 117, 109, 0.18)"
                     }
@@ -472,6 +480,25 @@ export default function ClientBookingRequestsPage() {
                       _hover={{ bg: "#182722" }}
                     >
                       View in Appointments ➔
+                    </Button>
+                  )}
+
+                  {isPaymentFailed && (
+                    <Button
+                      as={NextLink}
+                      href="/therapists/discovery"
+                      size="sm"
+                      height="32px"
+                      variant="outline"
+                      borderColor="rgba(86, 117, 109, 0.25)"
+                      color="#263A33"
+                      borderRadius="full"
+                      fontSize="12px"
+                      fontWeight="600"
+                      px={4}
+                      _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                    >
+                      Re-book Session ➔
                     </Button>
                   )}
                 </HStack>

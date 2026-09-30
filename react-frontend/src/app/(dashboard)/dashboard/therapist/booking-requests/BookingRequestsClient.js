@@ -638,6 +638,7 @@ export default function BookingRequestsClient() {
                 {otherRequests.map((req) => {
                   const isConfirmed = req.status === "confirmed";
                   const isDeclined = req.status === "declined";
+                  const isPaymentFailed = req.status === "payment_failed";
 
                   return (
                     <Box
@@ -655,15 +656,15 @@ export default function BookingRequestsClient() {
                           bg={
                             isConfirmed 
                               ? "rgba(16, 185, 129, 0.12)" 
-                              : isDeclined 
+                              : isPaymentFailed || isDeclined 
                               ? "rgba(239, 68, 68, 0.1)" 
                               : "rgba(86, 117, 109, 0.1)"
                           }
                           color={
                             isConfirmed 
                               ? "#047857" 
-                              : isDeclined 
-                              ? "#B91C1C" 
+                              : isPaymentFailed || isDeclined 
+                              ? "#DC2626" 
                               : "#4A5568"
                           }
                           fontSize="9.5px" 

@@ -8,6 +8,8 @@ const STATUS_LABELS = {
   cancelled_by_client: "Cancelled",
   cancelled_by_therapist: "Cancelled",
   expired: "Expired",
+  payment_failed: "Payment Failed",
+  payment_pending: "Payment Pending",
   scheduled: "Scheduled",
   completed: "Completed",
   no_show: "No show",
@@ -22,6 +24,8 @@ const STATUS_LABELS = {
 
 const STATUS_STYLES = {
   pending: { bg: "rgba(245, 158, 11, 0.08)", color: "#B45309", border: "rgba(245, 158, 11, 0.25)" },
+  payment_pending: { bg: "rgba(245, 158, 11, 0.08)", color: "#B45309", border: "rgba(245, 158, 11, 0.25)" },
+  payment_failed: { bg: "rgba(239, 68, 68, 0.08)", color: "#DC2626", border: "rgba(239, 68, 68, 0.25)" },
   confirmed: { bg: "rgba(16, 185, 129, 0.08)", color: "#065F46", border: "rgba(16, 185, 129, 0.25)" },
   scheduled: { bg: "rgba(16, 185, 129, 0.08)", color: "#065F46", border: "rgba(16, 185, 129, 0.25)" },
   completed: { bg: "rgba(16, 185, 129, 0.08)", color: "#065F46", border: "rgba(16, 185, 129, 0.25)" },

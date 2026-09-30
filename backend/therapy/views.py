@@ -285,6 +285,7 @@ from therapy.services.booking_requests import (
     decline_booking_request,
     cancel_pending_by_client,
     cancel_pending_by_therapist,
+    mark_booking_request_payment_failed,
 )
 from therapy.services.resources import assign_resource_to_client
 from therapy.notifications import get_scheduling_action_url
@@ -581,6 +582,53 @@ def _active_client_ids_for_therapist(therapist):
 
 def _ensure_relationship(therapist, client, make_primary=False):
     return ensure_therapeutic_relationship(therapist, client, make_primary=make_primary)
+
+
+def auto_release_expired_slots_and_bookings():
+    """
+    Zero-cost, Free-tier friendly lazy expiration for Render & Vercel.
+    Automatically called on slot queries, booking request queries, and checkout init.
+    Reopens any HELD slots whose held_until has passed (15 mins), and marks expired pending
+    booking requests as PAYMENT_FAILED so they don't linger as pending or display as cancelled by client.
+    """
+    try:
+        now = timezone.now()
+        # 1. Any slot that is HELD and held_until <= now
+        # Release back to OPEN if future, or EXPIRED if past
+        AvailabilitySlot.objects.filter(
+            status=AvailabilitySlot.Status.HELD,
+            held_until__lte=now,
+            start_time__gt=now,
+        ).update(status=AvailabilitySlot.Status.OPEN, held_until=None)
+
+        AvailabilitySlot.objects.filter(
+            status=AvailabilitySlot.Status.HELD,
+            held_until__lte=now,
+            start_time__lte=now,
+        ).update(status=AvailabilitySlot.Status.EXPIRED, held_until=None)
+
+        # 2. Any BookingRequest that is PENDING and expires_at <= now
+        expired_requests = BookingRequest.objects.filter(
+            status=BookingRequest.Status.PENDING,
+            expires_at__isnull=False,
+            expires_at__lte=now,
+        )
+        for req in expired_requests:
+            has_payment = RazorpayPayment.objects.filter(booking_request=req).exists()
+            req.status = BookingRequest.Status.PAYMENT_FAILED if has_payment else BookingRequest.Status.EXPIRED
+            req.responded_at = now
+            if has_payment and not req.message_from_client:
+                req.message_from_client = "Payment session expired after 15 minutes."
+            req.save(update_fields=["status", "responded_at", "message_from_client", "updated_at"])
+
+            if req.availability_slot_id:
+                slot = req.availability_slot
+                if slot and slot.status == AvailabilitySlot.Status.HELD:
+                    slot.status = AvailabilitySlot.Status.OPEN if (slot.start_time and slot.start_time > now) else AvailabilitySlot.Status.EXPIRED
+                    slot.held_until = None
+                    slot.save(update_fields=["status", "held_until", "updated_at"])
+    except Exception as exc:
+        logger.warning("Error in auto_release_expired_slots_and_bookings: %s", exc)
 
 
 def _client_has_active_booking_with_other_therapist(client, therapist):
@@ -1589,6 +1637,7 @@ class AvailabilitySlotViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsTherapistOwnerOfSlot]
 
     def get_queryset(self):
+        auto_release_expired_slots_and_bookings()
         therapist = _resolve_therapist_from_request(self.request, allow_create=False)
         if not therapist:
             return AvailabilitySlot.objects.none()
@@ -1788,6 +1837,9 @@ class AvailabilitySlotPublicView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
+        # Free-tier friendly lazy cleanup: auto-release expired HELD slots and pending requests
+        auto_release_expired_slots_and_bookings()
+
         # We no longer require a client profile just to VIEW public slots.
         # Booking still requires authentication and a profile elsewhere.
 
@@ -2046,6 +2098,7 @@ class RazorpayCreateOrderView(APIView):
 
     def post(self, request):
         try:
+            auto_release_expired_slots_and_bookings()
             client = _resolve_client_from_request(request)
             if not client:
                 return _profile_required_response("client")
@@ -2830,6 +2883,7 @@ class BookingRequestViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
+        auto_release_expired_slots_and_bookings()
         client = _resolve_client_from_request(self.request)
         if not client:
             return BookingRequest.objects.none()
@@ -2945,12 +2999,26 @@ class BookingRequestViewSet(viewsets.ModelViewSet):
             return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
         return Response(BookingRequestSerializer(booking_request).data)
 
+    @action(detail=True, methods=["post"], url_path="payment-failed", permission_classes=[IsAuthenticated, IsClientOwnerOfBookingRequest])
+    def payment_failed(self, request, pk=None):
+        booking_request = self.get_object()
+        reason = request.data.get("reason") or request.data.get("message_from_client") or "Payment cancelled or abandoned"
+        try:
+            booking_request = mark_booking_request_payment_failed(booking_request, reason=reason)
+            RazorpayPayment.objects.filter(booking_request=booking_request, status=RazorpayPayment.Status.CREATED).update(
+                status=RazorpayPayment.Status.FAILED
+            )
+        except ValidationError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(BookingRequestSerializer(booking_request).data)
+
 
 class TherapistBookingRequestViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = BookingRequestSerializer
     permission_classes = [IsAuthenticated, IsTherapistOwnerOfBookingRequest]
 
     def get_queryset(self):
+        auto_release_expired_slots_and_bookings()
         therapist = _resolve_therapist_from_request(self.request, allow_create=False)
         if not therapist:
             return BookingRequest.objects.none()
@@ -5800,4 +5868,17 @@ class MessageThreadsView(APIView):
         if not text:
             return Response({"detail": "Message text is required."}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"status": "sent", "text": text, "time": timezone.now().strftime("%I:%M %p")})
+
+
+class CleanupExpiredBookingsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        auto_release_expired_slots_and_bookings()
+        return Response({"status": "ok", "message": "Expired held slots and pending bookings released."})
+
+    def post(self, request):
+        auto_release_expired_slots_and_bookings()
+        return Response({"status": "ok", "message": "Expired held slots and pending bookings released."})
+
 

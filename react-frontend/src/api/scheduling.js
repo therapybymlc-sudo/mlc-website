@@ -67,6 +67,14 @@ export const schedulingApi = {
       message_from_client: message_from_client || "",
     });
   },
+  markBookingRequestPaymentFailed(id, reason) {
+    return apiPost(`booking-requests/${id}/payment-failed/`, {
+      reason: reason || "Payment cancelled or abandoned",
+    });
+  },
+  triggerCleanupExpired() {
+    return apiPost("cleanup-expired/", {});
+  },
   listNotifications() {
     return apiGet("notifications/");
   },
