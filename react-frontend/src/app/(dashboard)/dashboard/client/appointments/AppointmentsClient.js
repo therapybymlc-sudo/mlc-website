@@ -21,10 +21,17 @@ import {
   Stack,
   Avatar,
   Circle,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { FiVideo, FiCalendar, FiClock, FiCheckCircle, FiFileText } from "react-icons/fi";
-import { apiGet } from "../../../../../api.js";
+import { FiVideo, FiCalendar, FiClock, FiCheckCircle, FiFileText, FiXCircle } from "react-icons/fi";
+import { apiGet, apiPost } from "../../../../../api.js";
 import NextLink from 'next/link';
 import { useAuth } from "../../../../../context/AuthContext";
 
@@ -34,6 +41,9 @@ export default function AppointmentsClient() {
   const [isMounted, setIsMounted] = useState(false);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingAppt, setCancellingAppt] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const { isOpen: isCancelOpen, onOpen: onCancelOpen, onClose: onCancelClose } = useDisclosure();
 
   const getPaymentMeta = (appt) => {
     const paid = appt.payment_status === "paid";
@@ -103,6 +113,32 @@ export default function AppointmentsClient() {
       setLoading(false);
     }
   }
+
+  const handleCancelAppointment = async () => {
+    if (!cancellingAppt) return;
+    try {
+      setIsCancelling(true);
+      await apiPost(`client-appointments/${cancellingAppt.id}/cancel/`, {
+        cancellation_reason: "Cancelled by client",
+        reopen_slot: true,
+      });
+      toast({
+        title: "Session Cancelled",
+        description: "Your session has been cancelled and the slot released.",
+        status: "success",
+      });
+      onCancelClose();
+      fetchAppointments();
+    } catch (err) {
+      toast({
+        title: "Cancellation Failed",
+        description: err.response?.data?.detail || "Could not cancel appointment.",
+        status: "error",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -345,24 +381,45 @@ export default function AppointmentsClient() {
                                             View Invoice
                                         </Button>
                                       )}
-                                      <Button 
-                                          as={NextLink}
-                                          href={`/conference/MLC_${appt.id}`}
-                                          size="sm" 
-                                          height="34px"
-                                          bg="#263A33" 
-                                          color="white" 
-                                          borderRadius="full"
-                                          fontSize="12.5px"
-                                          fontWeight="600"
-                                          px={4}
-                                          leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="13px" />}
-                                          _hover={{ bg: '#182722', transform: 'translateY(-1px)' }}
-                                          transition="all 0.2s"
-                                          boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
-                                      >
-                                          Join Room
-                                      </Button>
+                                      {appt.status !== "cancelled" && (
+                                        <>
+                                          <Button
+                                            size="sm"
+                                            height="34px"
+                                            variant="ghost"
+                                            color="#DC2626"
+                                            borderRadius="full"
+                                            fontSize="12px"
+                                            fontWeight="600"
+                                            px={3}
+                                            _hover={{ bg: "rgba(239, 68, 68, 0.08)" }}
+                                            onClick={() => {
+                                              setCancellingAppt(appt);
+                                              onCancelOpen();
+                                            }}
+                                          >
+                                            Cancel
+                                          </Button>
+                                          <Button 
+                                              as={NextLink}
+                                              href={`/conference/MLC_${appt.id}`}
+                                              size="sm" 
+                                              height="34px"
+                                              bg="#263A33" 
+                                              color="white" 
+                                              borderRadius="full"
+                                              fontSize="12.5px"
+                                              fontWeight="600"
+                                              px={4}
+                                              leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="13px" />}
+                                              _hover={{ bg: '#182722', transform: 'translateY(-1px)' }}
+                                              transition="all 0.2s"
+                                              boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
+                                          >
+                                              Join Room
+                                          </Button>
+                                        </>
+                                      )}
                                     </HStack>
                                 </Td>
                             </Tr>
@@ -477,22 +534,43 @@ export default function AppointmentsClient() {
                                 Invoice
                               </Button>
                             )}
-                            <Button
-                              as={NextLink}
-                              href={`/conference/MLC_${appt.id}`}
-                              size="sm"
-                              height="36px"
-                              flex="1"
-                              bg="#263A33"
-                              color="white"
-                              borderRadius="full"
-                              _hover={{ bg: '#182722' }}
-                              leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="13px" />}
-                              fontSize="12.5px"
-                              fontWeight="600"
-                            >
-                              Join Room
-                            </Button>
+                            {appt.status !== "cancelled" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  height="36px"
+                                  flex="1"
+                                  variant="ghost"
+                                  color="#DC2626"
+                                  borderRadius="full"
+                                  fontSize="12px"
+                                  fontWeight="600"
+                                  _hover={{ bg: "rgba(239, 68, 68, 0.08)" }}
+                                  onClick={() => {
+                                    setCancellingAppt(appt);
+                                    onCancelOpen();
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  as={NextLink}
+                                  href={`/conference/MLC_${appt.id}`}
+                                  size="sm"
+                                  height="36px"
+                                  flex="1"
+                                  bg="#263A33"
+                                  color="white"
+                                  borderRadius="full"
+                                  _hover={{ bg: '#182722' }}
+                                  leftIcon={<Icon as={FiVideo} color="#A9CBB7" boxSize="13px" />}
+                                  fontSize="12.5px"
+                                  fontWeight="600"
+                                >
+                                  Join Room
+                                </Button>
+                              </>
+                            )}
                           </HStack>
                         </VStack>
                       </Box>
@@ -505,6 +583,57 @@ export default function AppointmentsClient() {
                 </>
             )}
         </Box>
+
+        {/* 🌿 Session Cancellation Confirmation Modal */}
+        <Modal isOpen={isCancelOpen} onClose={onCancelClose} isCentered size="md">
+          <ModalOverlay bg="rgba(38, 58, 51, 0.4)" backdropFilter="blur(8px)" />
+          <ModalContent borderRadius="2xl" p={2} border="1px solid rgba(86, 117, 109, 0.14)" bg="white">
+            <ModalHeader fontFamily="'Outfit', var(--font-outfit), sans-serif" fontWeight="600" fontSize="18px" color="#263A33" pb={1}>
+              Cancel Session
+            </ModalHeader>
+            <ModalBody>
+              <Text fontSize="13px" color="#5A6E65" lineHeight="1.6">
+                Are you sure you want to cancel your session scheduled for{" "}
+                <Text as="span" fontWeight="600" color="#263A33">
+                  {cancellingAppt && new Date(cancellingAppt.start_time).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                </Text>
+                ? The slot will be released back to the calendar.
+              </Text>
+            </ModalBody>
+            <ModalFooter pt={4}>
+              <HStack spacing={3}>
+                <Button
+                  variant="outline"
+                  borderColor="rgba(86, 117, 109, 0.25)"
+                  color="#263A33"
+                  borderRadius="full"
+                  height="38px"
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  px={5}
+                  onClick={onCancelClose}
+                  isDisabled={isCancelling}
+                >
+                  Keep Session
+                </Button>
+                <Button
+                  bg="#DC2626"
+                  color="white"
+                  borderRadius="full"
+                  height="38px"
+                  fontSize="13px"
+                  fontWeight="600"
+                  px={5}
+                  _hover={{ bg: "#B91C1C" }}
+                  isLoading={isCancelling}
+                  onClick={handleCancelAppointment}
+                >
+                  Confirm Cancellation
+                </Button>
+              </HStack>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
     </Box>
   );
 }

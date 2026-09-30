@@ -309,3 +309,9 @@ CORS_EXPOSE_HEADERS = ["Content-Type", "Authorization"]
 JITSI_APP_ID = os.getenv("JITSI_APP_ID")
 JITSI_KID = os.getenv("JITSI_KID")
 JITSI_PRIVATE_KEY = os.getenv("JITSI_PRIVATE_KEY")
+
+# ==========================
+# Appointment Policy
+# ==========================
+ALLOW_CLIENT_APPOINTMENT_CANCEL = True
+

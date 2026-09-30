@@ -2960,7 +2960,7 @@ class ClientAppointmentViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsClientOwnerOfAppointment])
     def cancel(self, request, pk=None):
-        allow_client_cancel = getattr(settings, "ALLOW_CLIENT_APPOINTMENT_CANCEL", False)
+        allow_client_cancel = getattr(settings, "ALLOW_CLIENT_APPOINTMENT_CANCEL", True)
         if not allow_client_cancel:
             raise exceptions.PermissionDenied("Client appointment cancellation is not enabled.")
         appointment = self.get_object()
