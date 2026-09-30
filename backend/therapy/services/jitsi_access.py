@@ -225,3 +225,75 @@ def assert_jitsi_room_allowed(user, room_name: str) -> tuple[bool, str | None]:
         return False, "Session room not found."
 
     return False, "Unrecognized meeting room."
+
+
+def resolve_jitsi_session_details(room: str) -> dict:
+    from therapy.utils import client_preferred_display_name
+
+    n = normalize_room_token(room)
+    target_id = None
+    m_appt = re.match(r"^mlc_(\d+)$", n)
+    if m_appt:
+        target_id = int(m_appt.group(1))
+    else:
+        m_rel = re.match(r"^mlc_session_(\d+)$", n)
+        if m_rel:
+            target_id = int(m_rel.group(1))
+
+    if not target_id:
+        m_any = re.search(r"(\d+)", n)
+        if m_any:
+            target_id = int(m_any.group(1))
+
+    if not target_id:
+        return {
+            "subject": "MLC Secure Clinical Session",
+            "session_title": "Virtual Consultation",
+            "therapist_name": "",
+            "client_name": "",
+            "time_str": "",
+        }
+
+    appt = (
+        Appointment.objects.filter(pk=target_id)
+        .select_related("therapist", "client")
+        .first()
+    )
+    if not appt:
+        br = BookingRequest.objects.filter(pk=target_id).select_related("therapist", "client", "appointment").first()
+        if br and br.appointment:
+            appt = br.appointment
+
+    if appt:
+        th_name = getattr(appt.therapist, "name", "Therapist") or "Therapist"
+        cl_name = "Client"
+        if appt.client:
+            cl_name = client_preferred_display_name(appt.client)
+
+        time_str = ""
+        if appt.start_time:
+            local_st = timezone.localtime(appt.start_time)
+            time_str = local_st.strftime("%a, %b %d • %I:%M %p")
+
+        if time_str:
+            subject = f"Clinical Session: {th_name} & {cl_name} ({time_str})"
+        else:
+            subject = f"Clinical Session: {th_name} & {cl_name}"
+
+        return {
+            "subject": subject,
+            "session_title": f"Virtual 1-on-1 Session • {th_name}",
+            "therapist_name": th_name,
+            "client_name": cl_name,
+            "time_str": time_str,
+            "appointment_id": appt.id,
+        }
+
+    return {
+        "subject": f"MLC Clinical Session #{target_id}",
+        "session_title": f"Virtual Consultation #{target_id}",
+        "therapist_name": "",
+        "client_name": "",
+        "time_str": "",
+        "appointment_id": target_id,
+    }

@@ -33,9 +33,14 @@ export default function ConferencePage() {
   } = useAuth();
   const roomId = params.roomId;
   const normalizedRoomId = String(roomId || "").toLowerCase();
+  const apptNum = normalizedRoomId.match(/\d+/)?.[0];
   
   const [jwt, setJwt] = useState(null);
   const [jitsiDisplayName, setJitsiDisplayName] = useState(null);
+  const [sessionSubject, setSessionSubject] = useState(
+    apptNum ? `Virtual Session #${apptNum} • MLC Clinical Consultation` : 'MLC Virtual Clinical Session'
+  );
+  const [sessionDetails, setSessionDetails] = useState(null);
   const [tokenLoading, setTokenLoading] = useState(true);
   const [tokenError, setTokenError] = useState(null);
 
@@ -60,6 +65,12 @@ export default function ConferencePage() {
         if (res?.token) {
           setJwt(res.token);
         }
+        if (res?.subject) {
+          setSessionSubject(res.subject);
+        }
+        if (res?.session_details) {
+          setSessionDetails(res.session_details);
+        }
         if (res?.display_name) {
           setJitsiDisplayName(res.display_name);
         } else {
@@ -71,13 +82,40 @@ export default function ConferencePage() {
         // If JWT generation is unavailable or restricted by time window,
         // proceed directly to standard secure room instead of blocking the user
         setJitsiDisplayName(therapistProfile?.name || clientProfile?.name || user?.fullName || 'MLC Participant');
+        if (apptNum) {
+          try {
+            const apptRes = isTherapist 
+              ? await apiGet(`appointments/${apptNum}/`)
+              : await apiGet(`client-appointments/${apptNum}/`);
+            if (apptRes) {
+              const th = apptRes.therapist_name || 'Therapist';
+              const cl = apptRes.client_name || apptRes.client_display_name || 'Client';
+              const timeStr = apptRes.start_time 
+                ? new Date(apptRes.start_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '';
+              const subj = timeStr 
+                ? `Virtual Session: ${th} & ${cl} (${timeStr})`
+                : `Virtual Session: ${th} & ${cl}`;
+              setSessionSubject(subj);
+              setSessionDetails({
+                session_title: `Virtual 1-on-1 Session • ${th}`,
+                therapist_name: th,
+                client_name: cl,
+                time_str: timeStr,
+                appointment_id: apptRes.id,
+              });
+            }
+          } catch (apptErr) {
+            console.debug("Appointment fallback not available:", apptErr);
+          }
+        }
       } finally {
         setTokenLoading(false);
       }
     };
 
     fetchToken();
-  }, [normalizedRoomId, isTherapist, isClient, isAuthenticated, authLoading]);
+  }, [normalizedRoomId, isTherapist, isClient, isAuthenticated, authLoading, apptNum, therapistProfile?.name, clientProfile?.name, user?.fullName]);
 
   if (authLoading || tokenLoading) {
     return (
@@ -152,6 +190,8 @@ export default function ConferencePage() {
         onLeave={handleLeave}
         jwt={jwt}
         displayName={jitsiDisplayName || fallbackDisplayName}
+        subject={sessionSubject}
+        sessionDetails={sessionDetails}
       />
     </Box>
   );

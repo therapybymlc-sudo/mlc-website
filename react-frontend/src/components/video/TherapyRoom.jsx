@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   VStack,
@@ -27,7 +27,7 @@ const JitsiMeeting = dynamic(
   }
 );
 
-export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
+export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName, subject, sessionDetails }) {
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [api, setApi] = useState(null);
@@ -51,11 +51,15 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
   const rawRoom = (roomUrl 
     ? roomUrl.split('/').filter(Boolean).pop() 
     : "MLC-Secure-Lounge").toLowerCase().replace(/[^a-z0-9_-]/gi, '');
-  const roomName = `mlc-session-${rawRoom || "lounge"}`;
+  const cleanId = rawRoom.replace(/^mlc[_-]/i, '');
+  const roomName = `mlc-consultation-${cleanId || "room"}`;
+  const meetingSubject = subject || (cleanId ? `Virtual Session #${cleanId}` : 'MLC Clinical Consultation');
   
   console.log("🌿 [TherapyRoom] Initializing session (Option B Jitsi):", {
     rawRoom,
+    cleanId,
     roomName,
+    meetingSubject,
     domain: "meet.jit.si",
     hasJwt: !!jwt
   });
@@ -65,7 +69,7 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
     setLoading(false);
 
     // Custom clinical setup
-    jitsiApi.executeCommand('subject', 'MLC Secure Clinical Session');
+    jitsiApi.executeCommand('subject', meetingSubject);
     const name = (displayName && String(displayName).trim()) || '';
     if (name) {
       try {
@@ -121,6 +125,7 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
           roomName={roomName}
           jwt={jwt || undefined}
           configOverwrite={{
+            subject: meetingSubject,
             startWithAudioMuted: false,
             disableModeratorIndicator: false,
             startWithVideoMuted: false,
@@ -157,24 +162,58 @@ export default function TherapyRoom({ roomUrl, onLeave, jwt, displayName }) {
       </Box>
 
       {/* 🛡️ Secure Session Badge */}
-      <Box 
+      <HStack 
         position="absolute" 
         top={4} 
         left={6} 
         zIndex={5} 
-        bg="rgba(0,0,0,0.5)" 
-        backdropFilter="blur(10px)" 
-        px={4} 
-        py={2} 
-        borderRadius="full"
-        border="1px solid"
-        borderColor="whiteAlpha.200"
+        spacing={2.5}
+        maxW="calc(100vw - 48px)"
       >
-         <HStack spacing={2}>
-            <Icon as={FiLock} color="teal.400" boxSize={3} />
-            <Text color="white" fontWeight="900" fontSize="10px" letterSpacing="0.1em">MLC SECURE SESSION</Text>
-         </HStack>
-      </Box>
+        <HStack
+          bg="rgba(10, 15, 13, 0.75)" 
+          backdropFilter="blur(16px)" 
+          px={3.5} 
+          py={1.5} 
+          borderRadius="full"
+          border="1px solid rgba(86, 117, 109, 0.3)"
+          boxShadow="0 4px 12px rgba(0,0,0,0.25)"
+          spacing={2}
+        >
+          <Circle size="7px" bg="#10B981" />
+          <Text color="white" fontWeight="700" fontSize="10.5px" letterSpacing="0.08em" textTransform="uppercase">
+            {sessionDetails?.session_title || "MLC SECURE SESSION"}
+          </Text>
+        </HStack>
+
+        {(sessionDetails?.therapist_name || sessionDetails?.time_str || subject) && (
+          <HStack
+            bg="rgba(10, 15, 13, 0.7)" 
+            backdropFilter="blur(16px)" 
+            px={3.5} 
+            py={1.5} 
+            borderRadius="full"
+            border="1px solid rgba(255, 255, 255, 0.12)"
+            boxShadow="0 4px 12px rgba(0,0,0,0.2)"
+            spacing={2}
+            display={{ base: "none", sm: "flex" }}
+          >
+            <Text color="whiteAlpha.900" fontWeight="500" fontSize="11px">
+              {sessionDetails?.therapist_name && sessionDetails?.client_name
+                ? `${sessionDetails.therapist_name} & ${sessionDetails.client_name}`
+                : subject}
+            </Text>
+            {sessionDetails?.time_str && (
+              <>
+                <Box w="1px" h="10px" bg="whiteAlpha.400" />
+                <Text color="whiteAlpha.700" fontWeight="400" fontSize="10.5px">
+                  {sessionDetails.time_str}
+                </Text>
+              </>
+            )}
+          </HStack>
+        )}
+      </HStack>
     </Box>
   );
 }

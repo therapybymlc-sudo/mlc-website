@@ -1149,6 +1149,7 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="jitsi-token")
     def jitsi_token(self, request):
+        from therapy.services.jitsi_access import assert_jitsi_room_allowed, resolve_jitsi_session_details
         room_name = request.query_params.get("room", "MLC-Secure-Lounge")
         ok, err = assert_jitsi_room_allowed(request.user, room_name)
         if not ok:
@@ -1157,10 +1158,13 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         token = generate_jitsi_token(request.user, room_name)
+        session_info = resolve_jitsi_session_details(room_name)
         return Response({
             "token": token,
             "display_name": resolve_jitsi_display_name(request.user),
             "mode": "standard_jitsi" if not token else "jaas_jwt",
+            "subject": session_info.get("subject"),
+            "session_details": session_info,
         })
 
 
@@ -1203,6 +1207,7 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="jitsi-token")
     def jitsi_token(self, request):
+        from therapy.services.jitsi_access import assert_jitsi_room_allowed, resolve_jitsi_session_details
         room_name = request.query_params.get("room", "MLC-Secure-Lounge")
         ok, err = assert_jitsi_room_allowed(request.user, room_name)
         if not ok:
@@ -1211,10 +1216,13 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
         token = generate_jitsi_token(request.user, room_name)
+        session_info = resolve_jitsi_session_details(room_name)
         return Response({
             "token": token,
             "display_name": resolve_jitsi_display_name(request.user),
             "mode": "standard_jitsi" if not token else "jaas_jwt",
+            "subject": session_info.get("subject"),
+            "session_details": session_info,
         })
 
     def update(self, request, *args, **kwargs):
