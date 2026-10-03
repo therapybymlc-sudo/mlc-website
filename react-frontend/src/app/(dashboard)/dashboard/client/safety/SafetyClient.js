@@ -98,8 +98,12 @@ export default function SafetyClient() {
       link.download = "safety-plan.pdf";
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      setTimeout(() => {
+        try {
+          if (document.body.contains(link)) document.body.removeChild(link);
+        } catch {}
+        window.URL.revokeObjectURL(url);
+      }, 60000);
     } catch (err) {
       toast({ title: "Failed to export safety plan", status: "error" });
     }

@@ -34,6 +34,7 @@ import { FiVideo, FiCalendar, FiClock, FiCheckCircle, FiFileText, FiXCircle } fr
 import { apiGet, apiPost } from "../../../../../api.js";
 import NextLink from 'next/link';
 import { useAuth } from "../../../../../context/AuthContext";
+import { openInvoiceModal } from "../../../../../components/InvoiceModal";
 
 export default function AppointmentsClient() {
   const toast = useToast();
@@ -364,8 +365,7 @@ export default function AppointmentsClient() {
                                         </Text>
                                       ) : (
                                         <Button
-                                            as={NextLink}
-                                            href={paymentMeta.actionHref}
+                                            onClick={() => openInvoiceModal(appt.id)}
                                             size="sm"
                                             height="32px"
                                             variant="outline"
@@ -519,8 +519,7 @@ export default function AppointmentsClient() {
                           <HStack spacing={2} pt={2}>
                             {!paymentMeta.actionDisabled && (
                               <Button
-                                as={NextLink}
-                                href={paymentMeta.actionHref}
+                                onClick={() => openInvoiceModal(appt.id)}
                                 size="sm"
                                 height="36px"
                                 flex="1"

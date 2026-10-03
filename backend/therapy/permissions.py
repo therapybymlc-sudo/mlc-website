@@ -16,7 +16,7 @@ from .models import (
 from .utils import resolve_user_display_name, sync_client_profile_identity
 
 
-def get_current_therapist_profile(user):
+def get_current_therapist_profile(user, request=None):
     if not user or not user.is_authenticated:
         return None
     try:
@@ -25,15 +25,27 @@ def get_current_therapist_profile(user):
     except Exception:
         pass
 
-    # Fail-safe email matching (Mirroring the view resolver for consistency)
-    email = getattr(user, "email", None)
-    if email:
-        therapist = TherapistProfile.objects.filter(email__iexact=email).first()
+    auth_email = getattr(user, "email", None)
+    if not auth_email and request:
+        payload = getattr(request, "auth", {})
+        if isinstance(payload, dict):
+            auth_email = payload.get("email") or payload.get("email_address")
+
+    if auth_email:
+        therapist = TherapistProfile.objects.filter(email__iexact=str(auth_email).strip()).first()
         if therapist:
             if therapist.user_id != user.id:
                 therapist.user = user
                 therapist.save(update_fields=["user"])
             return therapist
+
+    if request:
+        try:
+            from .utils import _resolve_therapist_from_request
+            return _resolve_therapist_from_request(request, allow_create=False)
+        except Exception:
+            pass
+
     return None
 
 
@@ -97,12 +109,22 @@ def is_request_owned_by_client(user, booking_request: BookingRequest):
     return bool(client and booking_request.client_id == client.id)
 
 
-def _is_admin_user(user):
+def _is_admin_user(user, request=None):
     if not user or not user.is_authenticated:
         return False
-    if user.is_staff or user.is_superuser:
+    if getattr(user, "is_staff", False) or getattr(user, "is_superuser", False):
         return True
     
+    # Check Clerk JWT roles if request is available
+    if request:
+        try:
+            from .views import _extract_roles_from_auth
+            roles = _extract_roles_from_auth(request)
+            if "admin" in roles:
+                return True
+        except Exception:
+            pass
+
     # Check custom admin emails from settings
     from django.conf import settings
     admin_emails = [
@@ -111,7 +133,11 @@ def _is_admin_user(user):
         if e.strip()
     ]
     email = getattr(user, "email", None)
-    return bool(email and email.lower() in admin_emails)
+    if not email and request:
+        payload = getattr(request, "auth", {})
+        if isinstance(payload, dict):
+            email = payload.get("email") or payload.get("email_address")
+    return bool(email and str(email).strip().lower() in admin_emails)
 
 
 def _raise_profile_missing(profile_type: str):
@@ -230,16 +256,17 @@ class IsTherapistOwnerOfAppointment(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if _is_admin_user(request.user):
+        if _is_admin_user(request.user, request=request):
             return True
-        if get_current_therapist_profile(request.user) is None:
+        therapist = get_current_therapist_profile(request.user, request=request)
+        if therapist is None:
             _raise_profile_missing("therapist")
         return True
 
     def has_object_permission(self, request, view, obj: Appointment):
-        if _is_admin_user(request.user):
+        if _is_admin_user(request.user, request=request):
             return True
-        therapist = get_current_therapist_profile(request.user)
+        therapist = get_current_therapist_profile(request.user, request=request)
         return bool(therapist and obj.therapist_id == therapist.id)
 
 

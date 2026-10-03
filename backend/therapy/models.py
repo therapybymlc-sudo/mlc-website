@@ -59,7 +59,15 @@ class TherapistProfile(models.Model):
     )
     is_verified = models.BooleanField(default=False)
     bio = models.TextField(blank=True, null=True)
+    profile_image = models.FileField(
+        upload_to="therapist_profile/photos/",
+        blank=True,
+        null=True,
+    )
     profile_image_url = models.URLField(blank=True, null=True)
+    title = models.CharField(max_length=150, blank=True, null=True)
+    pronouns = models.CharField(max_length=50, blank=True, null=True)
+    headline = models.CharField(max_length=255, blank=True, null=True)
     specialties = models.JSONField(default=list, blank=True)
     
     # Discovery & Matching Fields
@@ -71,6 +79,11 @@ class TherapistProfile(models.Model):
     state = models.CharField(max_length=100, blank=True, null=True)
     years_experience = models.PositiveIntegerField(default=0)
     highest_qualification = models.CharField(max_length=255, blank=True, null=True)
+    qualification_title = models.CharField(max_length=255, blank=True, null=True)
+    university = models.CharField(max_length=255, blank=True, null=True)
+    year_completed = models.CharField(max_length=20, blank=True, null=True)
+    experience_post_qual = models.PositiveIntegerField(default=0, blank=True, null=True)
+    license_details = models.TextField(blank=True, null=True)
     highest_qualification_proof = models.FileField(
         upload_to="therapist_profile/qualification_proofs/",
         blank=True,
@@ -88,6 +101,45 @@ class TherapistProfile(models.Model):
     concerns = models.JSONField(default=list, blank=True) # Tags like "Anxiety", "Depression", etc.
     affiliations = models.TextField(blank=True, null=True) # e.g. "Psychiatric Social Worker at Amaha"
     modalities = models.JSONField(default=list, blank=True) # e.g. ["CBT", "DBT"]
+
+    # Scope & Presentations
+    professional_role = models.CharField(max_length=150, blank=True, null=True)
+    complexity_comfort = models.CharField(max_length=50, default="Moderate", blank=True, null=True)
+    independence_level = models.CharField(max_length=50, default="Independent", blank=True, null=True)
+    scope_of_practice = models.TextField(blank=True, null=True)
+    not_treated = models.TextField(blank=True, null=True)
+    exclusions = models.TextField(blank=True, null=True)
+    age_groups = models.JSONField(default=list, blank=True)
+    identity_contexts = models.JSONField(default=list, blank=True)
+    languages_info = models.JSONField(default=list, blank=True)
+    concerns_levels = models.JSONField(default=dict, blank=True)
+
+    # Modalities & Approach Dynamics
+    primary_orientation = models.CharField(max_length=150, blank=True, null=True)
+    secondary_modalities = models.JSONField(default=list, blank=True)
+    modalities_info = models.JSONField(default=list, blank=True)
+    primary_lens = models.CharField(max_length=150, blank=True, null=True)
+    structure = models.PositiveIntegerField(default=50, blank=True, null=True)
+    orientation = models.PositiveIntegerField(default=50, blank=True, null=True)
+    pacing = models.PositiveIntegerField(default=50, blank=True, null=True)
+    action = models.PositiveIntegerField(default=50, blank=True, null=True)
+
+    # Fees & Availability
+    currency = models.CharField(max_length=20, default="KD", blank=True, null=True)
+    is_accepting_new = models.BooleanField(default=True)
+    cancellation_policy = models.CharField(max_length=255, default="24-hour notice required", blank=True, null=True)
+    session_modes = models.JSONField(default=list, blank=True)
+    locations = models.TextField(blank=True, null=True)
+
+    # Media, Bio & FAQs
+    welcome_note = models.TextField(blank=True, null=True)
+    faqs = models.JSONField(default=list, blank=True)
+    keywords = models.JSONField(default=list, blank=True)
+
+    # Internal Governance & Risk
+    internal_risk_level = models.CharField(max_length=50, default="Moderate", blank=True, null=True)
+    risk_protocols = models.JSONField(default=dict, blank=True)
+    best_fit_notes = models.TextField(blank=True, null=True)
     
     # Supervision Role Management
     is_supervisor = models.BooleanField(default=False)
@@ -161,6 +213,17 @@ class TherapistProfile(models.Model):
             ),
         ]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.profile_image and hasattr(self.profile_image, "url"):
+            try:
+                url = self.profile_image.url
+                if url and self.profile_image_url != url:
+                    TherapistProfile.objects.filter(pk=self.pk).update(profile_image_url=url)
+                    self.profile_image_url = url
+            except Exception:
+                pass
+
     def __str__(self) -> str:
         return self.name
 
@@ -200,6 +263,11 @@ class ClientProfile(models.Model):
     )
     # Core identity
     name = models.CharField(max_length=100)
+    profile_image = models.FileField(
+        upload_to="client_profile/photos/",
+        blank=True,
+        null=True,
+    )
     title = models.CharField(max_length=50, blank=True, null=True)
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)

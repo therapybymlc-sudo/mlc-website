@@ -18,9 +18,14 @@ import {
   Divider,
   Spinner,
   Flex,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
-import { FiChevronLeft, FiChevronRight, FiX, FiDownload, FiBookOpen, FiArrowRight } from "react-icons/fi";
-import { generateJournalPDF } from './journalPdfExporter';
+import { FiChevronLeft, FiChevronRight, FiX, FiDownload, FiBookOpen, FiArrowRight, FiChevronDown, FiFileText } from "react-icons/fi";
+import { generateJournalPDF, triggerBlobDownload } from './journalPdfExporter';
+import { generateJournalEpub } from './epubExporter';
 
 // Page component
 const Page = forwardRef((props, ref) => {
@@ -138,22 +143,26 @@ export default function JournalBookView({ entries, onClose, userName }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [flipNext, flipPrev, onClose]);
 
-  const handleExport = async () => {
+  const [exportFormat, setExportFormat] = useState('pdf');
+
+  const handleExport = async (format = 'pdf') => {
     setExporting(true);
+    setExportFormat(format);
     try {
-      const blob = await generateJournalPDF(entries, userName);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `My_Therapeutic_Journey_${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `My_Therapeutic_Journey_${dateStr}.${format}`;
+      let blob;
+      if (format === 'epub') {
+        blob = await generateJournalEpub(entries, userName);
+      } else {
+        blob = await generateJournalPDF(entries, userName);
+      }
+      triggerBlobDownload(blob, filename);
     } catch (err) {
-      console.error("PDF export error:", err);
+      console.error(`${format.toUpperCase()} export error:`, err);
     } finally {
       setExporting(false);
+      setExportFormat('pdf');
     }
   };
 
@@ -195,23 +204,90 @@ export default function JournalBookView({ entries, onClose, userName }) {
          </VStack>
          
          <HStack spacing={3}>
-            <Button 
-                leftIcon={<Icon as={FiDownload} boxSize="13px" />} 
-                size="sm" 
-                height="34px"
-                borderRadius="full" 
-                bg="#56756D" 
-                color="white" 
-                fontSize="12.5px"
-                fontWeight="600"
-                px={4}
-                onClick={handleExport}
-                isLoading={exporting}
-                loadingText="Exporting..."
-                _hover={{ bg: '#263A33' }}
-            >
-                Export PDF
-            </Button>
+            <Menu placement="bottom-end" autoSelect={false}>
+              {({ isOpen }) => (
+                <>
+                  <MenuButton
+                    as={Button}
+                    size="sm"
+                    height="34px"
+                    borderRadius="full"
+                    bg="#56756D"
+                    color="white"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    px={4}
+                    leftIcon={<Icon as={FiDownload} boxSize="13px" />}
+                    rightIcon={
+                      <Icon
+                        as={FiChevronDown}
+                        boxSize="13px"
+                        transform={isOpen ? "rotate(180deg)" : "none"}
+                        transition="transform 0.2s"
+                      />
+                    }
+                    isLoading={exporting}
+                    loadingText={exportFormat === 'epub' ? "Exporting ePub..." : "Exporting PDF..."}
+                    _hover={{ bg: '#263A33' }}
+                    _active={{ bg: '#182722' }}
+                  >
+                    Export
+                  </MenuButton>
+                  <MenuList
+                    bg="white"
+                    borderRadius="xl"
+                    p={1.5}
+                    border="1px solid rgba(86, 117, 109, 0.15)"
+                    boxShadow="0 14px 34px -4px rgba(38, 58, 51, 0.2), 0 2px 8px rgba(0, 0, 0, 0.04)"
+                    zIndex={2200}
+                    minW="210px"
+                  >
+                    <MenuItem
+                      borderRadius="lg"
+                      px={3}
+                      py={2.5}
+                      fontSize="12.5px"
+                      fontFamily="'Inter', sans-serif"
+                      fontWeight="500"
+                      color="#263A33"
+                      _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                      onClick={() => handleExport('pdf')}
+                    >
+                      <HStack spacing={2.5}>
+                        <Circle size="26px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                          <Icon as={FiFileText} boxSize="13px" />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <Text fontWeight="600" fontSize="12.5px" color="#263A33">PDF Document</Text>
+                          <Text fontSize="10.5px" color="#718096">Printable formatted archive (.pdf)</Text>
+                        </VStack>
+                      </HStack>
+                    </MenuItem>
+                    <MenuItem
+                      borderRadius="lg"
+                      px={3}
+                      py={2.5}
+                      fontSize="12.5px"
+                      fontFamily="'Inter', sans-serif"
+                      fontWeight="500"
+                      color="#263A33"
+                      _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                      onClick={() => handleExport('epub')}
+                    >
+                      <HStack spacing={2.5}>
+                        <Circle size="26px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                          <Icon as={FiBookOpen} boxSize="13px" />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <Text fontWeight="600" fontSize="12.5px" color="#263A33">ePub eBook</Text>
+                          <Text fontSize="10.5px" color="#718096">E-reader and Apple Books (.epub)</Text>
+                        </VStack>
+                      </HStack>
+                    </MenuItem>
+                  </MenuList>
+                </>
+              )}
+            </Menu>
             <IconButton 
                 icon={<Icon as={FiX} boxSize="18px" />} 
                 onClick={onClose} 

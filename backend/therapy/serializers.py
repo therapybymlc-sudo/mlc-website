@@ -73,12 +73,63 @@ import json
 # Therapist / Client / Appointment
 # ----------------------------
 class TherapistProfileSerializer(serializers.ModelSerializer):
+    profile_image = serializers.FileField(required=False, allow_null=True)
+    highest_qualification_proof = serializers.FileField(required=False, allow_null=True)
+    resume_file = serializers.FileField(required=False, allow_null=True)
+
     class Meta:
         model = TherapistProfile
         fields = "__all__"
         extra_kwargs = {
             "email": {"validators": []} # Handled manually in ViewSet for resilience
         }
+
+    def to_internal_value(self, data):
+        # Frontend alias resilience:
+        # Map experience_years -> years_experience if needed
+        # Map qualification_highest -> highest_qualification if needed
+        mutable_data = data.copy() if hasattr(data, "copy") else dict(data)
+        if "experience_years" in mutable_data and "years_experience" not in mutable_data:
+            mutable_data["years_experience"] = mutable_data["experience_years"]
+        if "qualification_highest" in mutable_data and "highest_qualification" not in mutable_data:
+            mutable_data["highest_qualification"] = mutable_data["qualification_highest"]
+        return super().to_internal_value(mutable_data)
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Expose friendly aliases for frontend profile components
+        data["experience_years"] = instance.years_experience
+        data["qualification_highest"] = instance.highest_qualification
+
+        # Absolute URL formatting for profile_image and profile_image_url
+        request = self.context.get("request")
+        img_url = None
+        if instance.profile_image:
+            try:
+                img_url = instance.profile_image.url
+            except Exception:
+                img_url = None
+        if not img_url and instance.profile_image_url:
+            img_url = instance.profile_image_url
+
+        if img_url:
+            if request and not img_url.startswith("http"):
+                img_url = request.build_absolute_uri(img_url)
+            data["profile_image"] = img_url
+            data["profile_image_url"] = img_url
+            data["imageUrl"] = img_url
+
+        for fld in ["highest_qualification_proof", "resume_file"]:
+            f = getattr(instance, fld, None)
+            if f:
+                try:
+                    f_url = f.url
+                    if request and not f_url.startswith("http"):
+                        f_url = request.build_absolute_uri(f_url)
+                    data[fld] = f_url
+                except Exception:
+                    pass
+        return data
 
 
 class TherapistSessionLinkSerializer(serializers.ModelSerializer):
@@ -96,6 +147,7 @@ class ClientProfileSerializer(serializers.ModelSerializer):
     therapist = TherapistProfileSerializer(read_only=True)
     has_active_relationship = serializers.BooleanField(read_only=True)
     is_first_session_eligible = serializers.BooleanField(read_only=True)
+    profile_image = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = ClientProfile
@@ -104,6 +156,20 @@ class ClientProfileSerializer(serializers.ModelSerializer):
             "therapist": {"read_only": True},
             "email": {"validators": []}
         }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.profile_image:
+            try:
+                img_url = instance.profile_image.url
+                request = self.context.get("request")
+                if request and not img_url.startswith("http"):
+                    img_url = request.build_absolute_uri(img_url)
+                data["profile_image"] = img_url
+                data["imageUrl"] = img_url
+            except Exception:
+                pass
+        return data
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -1123,6 +1189,25 @@ class QuickBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuickBooking
         fields = "__all__"
+
+    def to_internal_value(self, data):
+        data = data.copy() if hasattr(data, "copy") else dict(data)
+        time_val = data.get("preferred_time")
+        if time_val and isinstance(time_val, str):
+            time_lower = time_val.lower().strip()
+            if "morn" in time_lower:
+                data["preferred_time"] = "09:00:00"
+            elif "after" in time_lower:
+                data["preferred_time"] = "13:00:00"
+            elif "even" in time_lower:
+                data["preferred_time"] = "17:00:00"
+            elif "week" in time_lower:
+                data["preferred_time"] = None
+                notes = data.get("notes") or ""
+                data["notes"] = f"[Preferred Time: Weekend Preferred]\n{notes}".strip()
+            elif not any(char.isdigit() for char in time_lower):
+                data["preferred_time"] = None
+        return super().to_internal_value(data)
 
 class SafetyPlanSerializer(serializers.ModelSerializer):
     class Meta:

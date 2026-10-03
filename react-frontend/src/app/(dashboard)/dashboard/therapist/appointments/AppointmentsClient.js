@@ -57,6 +57,7 @@ import {
 import NextLink from 'next/link';
 import { schedulingApi } from '../../../../../api/scheduling';
 import ModernSelect from '../../../../../components/ModernSelect';
+import { openInvoiceModal } from '../../../../../components/InvoiceModal';
 
 export default function TherapistAppointmentsClient() {
   const toast = useToast();
@@ -95,14 +96,18 @@ export default function TherapistAppointmentsClient() {
       else setRefreshing(true);
       const data = await schedulingApi.listTherapistAppointments();
       setAppointments(Array.isArray(data) ? data : data?.results || []);
-    } catch (_err) {
-      toast({
-        title: 'Connection Notice',
-        description: 'Unable to refresh appointments list.',
-        status: 'warning',
-        duration: 4000,
-        isClosable: true,
-      });
+    } catch (err) {
+      if (err?.response?.status === 403 || err?.response?.status === 404) {
+        setAppointments([]);
+      } else {
+        toast({
+          title: 'Connection Notice',
+          description: 'Unable to refresh appointments list.',
+          status: 'warning',
+          duration: 4000,
+          isClosable: true,
+        });
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -799,6 +804,24 @@ export default function TherapistAppointmentsClient() {
                     </Button>
 
                     <Button
+                      onClick={() => openInvoiceModal(appt.id)}
+                      size="sm"
+                      h="36px"
+                      px={3.5}
+                      borderRadius="full"
+                      variant="outline"
+                      borderColor="rgba(86, 117, 109, 0.25)"
+                      color="#263A33"
+                      fontSize="12px"
+                      fontWeight="600"
+                      leftIcon={<Icon as={FiFileText} boxSize="12px" color="#56756D" />}
+                      _hover={{ bg: 'rgba(86, 117, 109, 0.06)', borderColor: '#56756D' }}
+                      whiteSpace="nowrap"
+                    >
+                      Invoice
+                    </Button>
+
+                    <Button
                       onClick={() => {
                         setSelectedAppt(appt);
                         onDetailOpen();
@@ -991,6 +1014,23 @@ export default function TherapistAppointmentsClient() {
                     <Td py={3.5} textAlign="right">
                       <HStack spacing={2} justify="flex-end">
                         <Button
+                          onClick={() => openInvoiceModal(appt.id)}
+                          size="xs"
+                          h="28px"
+                          px={2.5}
+                          borderRadius="full"
+                          variant="outline"
+                          borderColor="rgba(86, 117, 109, 0.2)"
+                          color="#263A33"
+                          fontSize="11.5px"
+                          fontWeight="600"
+                          leftIcon={<Icon as={FiFileText} boxSize="11px" color="#56756D" />}
+                          _hover={{ bg: 'rgba(86, 117, 109, 0.06)', borderColor: '#56756D' }}
+                        >
+                          Invoice
+                        </Button>
+
+                        <Button
                           onClick={() => {
                             setSelectedAppt(appt);
                             onDetailOpen();
@@ -1149,9 +1189,29 @@ export default function TherapistAppointmentsClient() {
             )}
           </ModalBody>
           <ModalFooter pt={2}>
-            <Button size="sm" borderRadius="full" onClick={onDetailClose} variant="ghost" color="#56756D">
-              Close
-            </Button>
+            <HStack spacing={2.5}>
+              {selectedAppt && (
+                <Button
+                  onClick={() => openInvoiceModal(selectedAppt.id)}
+                  size="sm"
+                  h="36px"
+                  borderRadius="full"
+                  variant="outline"
+                  borderColor="rgba(86, 117, 109, 0.25)"
+                  color="#263A33"
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  px={4}
+                  leftIcon={<Icon as={FiFileText} boxSize="13px" color="#56756D" />}
+                  _hover={{ bg: 'rgba(86, 117, 109, 0.08)', borderColor: '#56756D' }}
+                >
+                  View Invoice
+                </Button>
+              )}
+              <Button size="sm" borderRadius="full" onClick={onDetailClose} variant="ghost" color="#56756D">
+                Close
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>

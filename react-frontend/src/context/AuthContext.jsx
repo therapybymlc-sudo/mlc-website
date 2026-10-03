@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useAuth as useClerkAuth, useClerk, useUser } from "@clerk/nextjs";
@@ -21,8 +21,9 @@ export const AuthProvider = ({ children }) => {
       : null);
 
   const urlRole = (searchParams?.get("role") || "").toLowerCase();
-  const onTherapistRoute = pathname.startsWith("/dashboard/therapist");
-  const onClientRoute = pathname.startsWith("/dashboard/client");
+  const isInvoiceRoute = pathname?.includes("/invoice/");
+  const onTherapistRoute = pathname.startsWith("/dashboard/therapist") && !isInvoiceRoute;
+  const onClientRoute = pathname.startsWith("/dashboard/client") && !isInvoiceRoute;
 
   const metadataRoles = useMemo(() => {
     const metaRoles = user?.publicMetadata?.roles || user?.unsafeMetadata?.roles;
@@ -48,13 +49,17 @@ export const AuthProvider = ({ children }) => {
     return parsed;
   }, []);
   const isLikelyJwt = (token) => typeof token === "string" && token.split(".").length === 3;
+  const failedTemplateRef = useRef(false);
+  const hasLoadedProfilesRef = useRef(false);
+  const metadataRolesKey = metadataRoles.join(",");
 
   const getApiToken = async () => {
-    if (tokenTemplate) {
+    if (tokenTemplate && !failedTemplateRef.current) {
       try {
         const templated = await getToken({ template: tokenTemplate });
         if (isLikelyJwt(templated)) return templated;
       } catch (e) {
+        failedTemplateRef.current = true;
         console.warn("Clerk templated token fetch failed, falling back to default token", e);
       }
     }
@@ -70,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     const loadProfiles = async () => {
       if (!isLoaded || !isSignedIn) {
         if (mounted) {
+          hasLoadedProfilesRef.current = false;
           setWhoami(null);
           setTherapistProfile(null);
           setClientProfile(null);
@@ -78,7 +84,10 @@ export const AuthProvider = ({ children }) => {
         }
         return;
       }
-      if (mounted) setIsProfileLoading(true);
+      // Only show full-screen skeleton on the first load, never on silent background token rotations
+      if (mounted && !hasLoadedProfilesRef.current) {
+        setIsProfileLoading(true);
+      }
       try {
         // DB-backed canonical role context (source of truth).
         const who = await apiGet("whoami/").catch(() => null);
@@ -171,6 +180,7 @@ export const AuthProvider = ({ children }) => {
         console.warn("Profile load failed", err);
       } finally {
         if (mounted) {
+          hasLoadedProfilesRef.current = true;
           setIsProfileLoading(false);
         }
       }
@@ -182,9 +192,8 @@ export const AuthProvider = ({ children }) => {
   }, [
     isLoaded,
     isSignedIn,
-    getToken,
     tokenTemplate,
-    metadataRoles,
+    metadataRolesKey,
     wantsTherapistOnly,
     onClientRoute,
   ]);

@@ -30,6 +30,9 @@ import {
   Tabs,
   TabList,
   Tab,
+  TabPanels,
+  TabPanel,
+  Progress,
   Badge,
   Circle,
   Grid,
@@ -78,6 +81,14 @@ import {
   FiEyeOff,
   FiUsers,
   FiRefreshCw,
+  FiUser,
+  FiAward,
+  FiTarget,
+  FiHeart,
+  FiBook,
+  FiMapPin,
+  FiPhone,
+  FiLock,
   FiHome,
   FiBriefcase,
   FiLayers,
@@ -105,6 +116,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import InvoiceModal from "../InvoiceModal";
 import { apiGet, apiGetBlob, apiPost, apiPut, apiPatch, apiDelete } from "../../api.js";
 import { 
   HomeEditor, 
@@ -1118,6 +1130,7 @@ const growthSectionBody = (sec) => {
 };
 
 export default function AdminDashboard() {
+  const [invoiceModalApptId, setInvoiceModalApptId] = useState(null);
   const [isMounted, setIsMounted] = useState(false);
   const { user } = useUser();
   const router = useRouter();
@@ -1175,6 +1188,40 @@ export default function AdminDashboard() {
   const [unpublishTarget, setUnpublishTarget] = useState(null);
   const [unpublishing, setUnpublishing] = useState(false);
   const [selectedClinician, setSelectedClinician] = useState(null);
+  const [fullClinicianData, setFullClinicianData] = useState(null);
+  const [loadingClinicianDetails, setLoadingClinicianDetails] = useState(false);
+  const [clinicianModalTab, setClinicianModalTab] = useState(0);
+
+  useEffect(() => {
+    if (!selectedClinician) {
+      setFullClinicianData(null);
+      setClinicianModalTab(0);
+      return;
+    }
+    let active = true;
+    setLoadingClinicianDetails(true);
+    const q = selectedClinician.id
+      ? `id=${selectedClinician.id}`
+      : `email=${encodeURIComponent(selectedClinician.email || "")}`;
+
+    fetch(`/api/profile/therapist?${q}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (active && data && !data.error) {
+          setFullClinicianData(data);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load enriched therapist profile:", err);
+      })
+      .finally(() => {
+        if (active) setLoadingClinicianDetails(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedClinician?.id, selectedClinician?.email]);
 
   const [contactMessages, setContactMessages] = useState([]);
   const [quickBookings, setQuickBookings] = useState([]);
@@ -1735,16 +1782,30 @@ export default function AdminDashboard() {
     if (!unpublishTarget?.id) return;
     setUnpublishing(true);
     try {
-      try {
-        await apiPatch(`therapists/${unpublishTarget.id}/`, {
+      // 1. Direct update to database (always reliable, handles DB constraints)
+      const res = await fetch("/api/profile/therapist", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: unpublishTarget.id,
           is_verified: false,
           profile_status: "draft",
-        });
-      } catch (patchErr) {
-        console.warn("Direct PATCH unpublish failed, attempting request-profile-changes fallback", patchErr);
-        await apiPost(`therapists/${unpublishTarget.id}/request-profile-changes/`, {
-          feedback: "Unpublished from directory by administrator.",
-        });
+          supervision_status: (unpublishTarget.supervision_status === "approved" || unpublishTarget.supervision_status === "awaiting_contract")
+            ? "pending"
+            : (unpublishTarget.supervision_status || "none"),
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Database unpublish failed with status ${res.status}`);
+      }
+
+      // 2. Also inform Django backend if reachable
+      try {
+        await apiPost(`therapists/${unpublishTarget.id}/unpublish/`);
+      } catch (djangoErr) {
+        console.warn("Django unpublish action fallback:", djangoErr);
       }
 
       toast({
@@ -1763,7 +1824,7 @@ export default function AdminDashboard() {
       toast({
         status: "error",
         title: "Unpublish failed",
-        description: apiErrorDetail(err, "Could not unpublish clinician profile. Please try again."),
+        description: err.message || apiErrorDetail(err, "Could not unpublish clinician profile. Please try again."),
       });
     } finally {
       setUnpublishing(false);
@@ -5499,6 +5560,22 @@ export default function AdminDashboard() {
                             fontSize="11.5px"
                             fontWeight="600"
                             px={3}
+                            onClick={() => setInvoiceModalApptId(appt.id)}
+                            leftIcon={<Icon as={FiFileText} boxSize="11px" color="#56756D" />}
+                            _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                          >
+                            Invoice
+                          </Button>
+                          <Button
+                            size="sm"
+                            h="30px"
+                            variant="outline"
+                            borderColor="rgba(86, 117, 109, 0.25)"
+                            color="#263A33"
+                            borderRadius="full"
+                            fontSize="11.5px"
+                            fontWeight="600"
+                            px={3}
                             _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}
                             onClick={() => {
                               setSelectedBookingDetail(appt);
@@ -5720,6 +5797,23 @@ export default function AdminDashboard() {
               >
                 Close
               </Button>
+              {selectedBookingDetail?.id && (
+                <Button
+                  onClick={() => setInvoiceModalApptId(selectedBookingDetail.id)}
+                  variant="outline"
+                  borderColor="rgba(86, 117, 109, 0.25)"
+                  color="#263A33"
+                  borderRadius="full"
+                  height="36px"
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  px={4}
+                  leftIcon={<Icon as={FiFileText} color="#56756D" boxSize="12px" />}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                >
+                  Session Invoice
+                </Button>
+              )}
               {selectedBookingDetail?.meeting_link && selectedBookingDetail.status !== "cancelled" && (
                 <Button
                   bg="#263A33"
@@ -6351,12 +6445,12 @@ export default function AdminDashboard() {
         </ModalContent>
       </Modal>
 
-      {/* 🌿 CLINICIAN DETAILS POPUP MODAL */}
+      {/* 🌿 CLINICIAN DETAILS POPUP MODAL (COMPREHENSIVE SECTION-WISE PROFILE REVIEW) */}
       <Modal 
         isOpen={!!selectedClinician} 
         onClose={() => setSelectedClinician(null)} 
         isCentered
-        size="2xl"
+        size="6xl"
         scrollBehavior="inside"
       >
         <ModalOverlay bg="rgba(38, 58, 51, 0.45)" backdropFilter="blur(8px)" />
@@ -6367,282 +6461,907 @@ export default function AdminDashboard() {
           overflow="hidden"
           bg="white"
           fontFamily="'Inter', var(--font-inter), sans-serif"
+          maxW={{ base: "96vw", lg: "1000px" }}
+          maxH="90vh"
         >
           {selectedClinician && (() => {
-            const isPublished = selectedClinician.is_verified || selectedClinician.profile_status === "approved";
-            const specs = Array.isArray(selectedClinician.specializations) 
-              ? selectedClinician.specializations 
-              : Array.isArray(selectedClinician.specialties) 
-              ? selectedClinician.specialties 
+            const c = { ...selectedClinician, ...(fullClinicianData || {}) };
+            const isPublished = c.is_verified || c.profile_status === "approved";
+            const specs = Array.isArray(c.specializations) 
+              ? c.specializations 
+              : Array.isArray(c.specialties) 
+              ? c.specialties 
               : [];
-            const mods = Array.isArray(selectedClinician.modalities) ? selectedClinician.modalities : [];
-            const concernsList = Array.isArray(selectedClinician.concerns) ? selectedClinician.concerns : [];
-            const langs = Array.isArray(selectedClinician.languages) ? selectedClinician.languages : ["English"];
+            const mods = Array.isArray(c.modalities) ? c.modalities : [];
+            const secondaryMods = Array.isArray(c.secondary_modalities) ? c.secondary_modalities : [];
+            const modsInfo = Array.isArray(c.modalities_info) ? c.modalities_info : [];
+            const concernsList = Array.isArray(c.concerns) ? c.concerns : [];
+            const concernsLevels = (c.concerns_levels && typeof c.concerns_levels === 'object') ? c.concerns_levels : {};
+            const langs = Array.isArray(c.languages) ? c.languages : (c.languages_info ? Object.keys(c.languages_info) : ["English"]);
+            const langsInfo = (c.languages_info && typeof c.languages_info === 'object') ? c.languages_info : {};
+            const ageGroups = Array.isArray(c.age_groups) ? c.age_groups : [];
+            const identityContexts = Array.isArray(c.identity_contexts) ? c.identity_contexts : [];
+            const judgmentAnswers = (c.clinical_judgment_answers && typeof c.clinical_judgment_answers === 'object') ? c.clinical_judgment_answers : {};
+            const riskProtocols = (c.risk_protocols && typeof c.risk_protocols === 'object') ? c.risk_protocols : {};
+            const sessionModes = Array.isArray(c.session_modes) ? c.session_modes : (c.has_physical_space ? ["Online", "In-Person"] : ["Online"]);
+            const physicalImages = Array.isArray(c.physical_space_images) ? c.physical_space_images : [];
+
+            // Group concerns by level if available
+            const tier1Core = Object.entries(concernsLevels).filter(([k, v]) => v === "Core Focus").map(([k]) => k);
+            const tier2Exp = Object.entries(concernsLevels).filter(([k, v]) => v === "Experienced With").map(([k]) => k);
+            const tier3Found = Object.entries(concernsLevels).filter(([k, v]) => v === "Foundational").map(([k]) => k);
+            const tier4Refer = Object.entries(concernsLevels).filter(([k, v]) => v === "Refer Out").map(([k]) => k);
 
             return (
               <>
                 <ModalHeader 
-                  bg="rgba(250, 248, 245, 0.9)" 
+                  bg="rgba(250, 248, 245, 0.95)" 
                   borderBottom="1px solid rgba(86, 117, 109, 0.12)" 
                   py={4} 
                   px={6}
                 >
-                  <HStack spacing={4} align="center">
-                    <Box position="relative" flexShrink={0}>
-                      <Avatar 
-                        size="lg" 
-                        name={selectedClinician.name || selectedClinician.email} 
-                        src={selectedClinician.photo_url || selectedClinician.profile_image_url} 
-                        border="2px solid white"
-                        boxShadow="0 2px 8px rgba(38, 58, 51, 0.1)"
-                      />
-                      <Circle 
-                        size="13px" 
-                        bg={isPublished ? "#10B981" : "#F59E0B"} 
-                        border="2px solid white" 
-                        position="absolute" 
-                        bottom="0" 
-                        right="0" 
-                      />
-                    </Box>
-                    <VStack align="start" spacing={1} flex={1}>
-                      <HStack spacing={2} wrap="wrap">
-                        <Heading 
-                          fontSize="18px" 
-                          fontWeight="600" 
-                          color="#263A33" 
-                          fontFamily="'Outfit', var(--font-outfit), sans-serif"
-                        >
-                          {selectedClinician.name}
-                        </Heading>
-                        <Badge 
-                          bg={isPublished ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)"} 
-                          color={isPublished ? "#059669" : "#D97706"} 
-                          fontSize="10px" 
-                          fontWeight="700" 
-                          borderRadius="full" 
-                          px={2.5} 
-                          py={0.5}
-                        >
-                          {isPublished ? "PUBLISHED LIVE" : "PENDING DIRECT VERIFICATION"}
-                        </Badge>
-                        {selectedClinician.is_supervisor && (
-                          <Badge bg="rgba(99, 102, 241, 0.12)" color="#4F46E5" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
-                            SUPERVISOR
+                  <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "flex-start", sm: "center" }} gap={3}>
+                    <HStack spacing={4} align="center">
+                      <Box position="relative" flexShrink={0}>
+                        <Avatar 
+                          size="lg" 
+                          name={c.name || c.email} 
+                          src={c.photo_url || c.profile_image_url || c.profile_image} 
+                          border="2px solid white"
+                          boxShadow="0 2px 8px rgba(38, 58, 51, 0.12)"
+                        />
+                        <Circle 
+                          size="14px" 
+                          bg={isPublished ? "#10B981" : (c.profile_status === "awaiting_contract" ? "#6366F1" : "#F59E0B")} 
+                          border="2px solid white" 
+                          position="absolute" 
+                          bottom="0" 
+                          right="0" 
+                        />
+                      </Box>
+                      <VStack align="start" spacing={1}>
+                        <HStack spacing={2} wrap="wrap">
+                          <Heading 
+                            fontSize="19px" 
+                            fontWeight="600" 
+                            color="#263A33" 
+                            fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                          >
+                            {c.name || "Clinician"}
+                          </Heading>
+                          <Badge 
+                            bg={isPublished ? "rgba(16, 185, 129, 0.12)" : (c.profile_status === "awaiting_contract" ? "rgba(99, 102, 241, 0.12)" : "rgba(245, 158, 11, 0.12)")} 
+                            color={isPublished ? "#059669" : (c.profile_status === "awaiting_contract" ? "#4F46E5" : "#D97706")} 
+                            fontSize="10px" 
+                            fontWeight="700" 
+                            borderRadius="full" 
+                            px={2.5} 
+                            py={0.5}
+                          >
+                            {isPublished ? "PUBLISHED LIVE" : (c.profile_status === "awaiting_contract" ? "AWAITING CONTRACT" : "PENDING DIRECT VERIFICATION")}
                           </Badge>
-                        )}
-                        {selectedClinician.is_queer_affirmative && (
-                          <Badge bg="rgba(16, 185, 129, 0.08)" color="#047857" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
-                            QUEER AFFIRMATIVE 🌈
-                          </Badge>
-                        )}
+                          {c.is_supervisor && (
+                            <Badge bg="rgba(99, 102, 241, 0.12)" color="#4F46E5" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                              SUPERVISOR
+                            </Badge>
+                          )}
+                          {c.is_queer_affirmative && (
+                            <Badge bg="rgba(16, 185, 129, 0.08)" color="#047857" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                              QUEER AFFIRMATIVE 🌈
+                            </Badge>
+                          )}
+                          {c.is_accepting_new === false ? (
+                            <Badge bg="rgba(239, 68, 68, 0.08)" color="#DC2626" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                              WAITLIST ONLY
+                            </Badge>
+                          ) : (
+                            <Badge bg="rgba(16, 185, 129, 0.08)" color="#059669" fontSize="10px" fontWeight="700" borderRadius="full" px={2} py={0.5}>
+                              ACCEPTING CLIENTS
+                            </Badge>
+                          )}
+                        </HStack>
+                        <Text fontSize="13px" color="#5A6E65" fontWeight="500">
+                          {c.headline || c.title || c.highest_qualification || "Licensed Clinician"}
+                        </Text>
+                        <HStack spacing={2} wrap="wrap" fontSize="11.5px" color="#718096">
+                          {[c.qualification_title, c.university, c.year_completed ? `Class of ${c.year_completed}` : null].filter(Boolean).map((t, idx) => (
+                            <Text key={idx}>{idx > 0 && "• "}{t}</Text>
+                          ))}
+                        </HStack>
+                      </VStack>
+                    </HStack>
+
+                    {loadingClinicianDetails && (
+                      <HStack spacing={1.5} px={2.5} py={1} borderRadius="full" bg="rgba(86, 117, 109, 0.08)" alignSelf={{ base: "flex-start", sm: "center" }}>
+                        <Spinner size="xs" color="#56756D" />
+                        <Text fontSize="11px" color="#56756D" fontWeight="600">Syncing live records...</Text>
                       </HStack>
-                      <Text fontSize="13px" color="#5A6E65">
-                        {selectedClinician.title || selectedClinician.highest_qualification || "Licensed Clinician"}
-                      </Text>
-                    </VStack>
-                  </HStack>
+                    )}
+                  </Flex>
                 </ModalHeader>
                 <ModalCloseButton top={4} right={4} borderRadius="full" />
 
-                <ModalBody py={5} px={6}>
-                  <VStack align="stretch" spacing={5}>
-                    {/* Key Metrics Grid */}
+                <ModalBody py={4} px={{ base: 4, md: 6 }}>
+                  <VStack align="stretch" spacing={4}>
+                    {/* Key Metrics Strip */}
                     <SimpleGrid columns={{ base: 2, sm: 4 }} spacing={3}>
                       <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
                         <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">HOURLY RATE</Text>
                         <Text fontSize="14px" fontWeight="700" color="#263A33" mt={0.5}>
-                          {selectedClinician.hourly_rate != null ? `₹${selectedClinician.hourly_rate}/hr` : "Not specified"}
+                          {c.hourly_rate != null ? `${c.currency || '₹'}${c.hourly_rate}/hr` : "Not specified"}
                         </Text>
                       </Box>
                       <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
                         <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">EXPERIENCE</Text>
                         <Text fontSize="14px" fontWeight="700" color="#263A33" mt={0.5}>
-                          {selectedClinician.years_experience != null && selectedClinician.years_experience !== "" ? `${selectedClinician.years_experience}+ Years` : "Not specified"}
+                          {c.years_experience != null && c.years_experience !== "" ? `${c.years_experience}+ Years` : (c.experience_years != null ? `${c.experience_years}+ Years` : "Not specified")}
                         </Text>
+                        {c.experience_post_qual && (
+                          <Text fontSize="10px" color="#718096">({c.experience_post_qual} yrs post-qual)</Text>
+                        )}
                       </Box>
                       <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
-                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">DURATION</Text>
+                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">SESSION DURATION</Text>
                         <Text fontSize="14px" fontWeight="700" color="#263A33" mt={0.5}>
-                          {selectedClinician.session_duration ? `${selectedClinician.session_duration} mins` : "50 mins (standard)"}
+                          {c.session_duration ? `${c.session_duration} mins` : "50 mins (standard)"}
                         </Text>
                       </Box>
                       <Box p={3} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)">
-                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">LOCATION</Text>
+                        <Text fontSize="10px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em">PRACTICE MODE</Text>
                         <Text fontSize="13px" fontWeight="600" color="#263A33" mt={0.5} noOfLines={1}>
-                          {[selectedClinician.city, selectedClinician.state].filter(Boolean).join(", ") || "Pan-India / Remote"}
+                          {c.has_physical_space ? "Clinic + Online" : "Online Only"}
+                        </Text>
+                        <Text fontSize="10.5px" color="#718096" noOfLines={1}>
+                          {[c.city, c.state].filter(Boolean).join(", ") || c.locations || "Pan-India"}
                         </Text>
                       </Box>
                     </SimpleGrid>
 
-                    {/* Contact & Platform Metadata */}
-                    <Box p={4} borderRadius="xl" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.12)">
-                      <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                        Contact & Account Information
-                      </Text>
-                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5}>
-                        <HStack spacing={2}>
-                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Email:</Text>
-                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.email}</Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Phone:</Text>
-                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.phone || "Not specified"}</Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Clinician ID:</Text>
-                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">#{selectedClinician.id}</Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Public Slug:</Text>
-                          <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.slug || selectedClinician.id}</Text>
-                        </HStack>
-                        {selectedClinician.gender && (
-                          <HStack spacing={2}>
-                            <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Gender:</Text>
-                            <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.gender}</Text>
-                          </HStack>
-                        )}
-                        {selectedClinician.affiliations && (
-                          <HStack spacing={2}>
-                            <Text fontSize="12px" color="#718096" fontWeight="600" w="70px">Affiliation:</Text>
-                            <Text fontSize="12.5px" color="#263A33" fontWeight="500">{selectedClinician.affiliations}</Text>
-                          </HStack>
-                        )}
-                      </SimpleGrid>
-                    </Box>
-
-                    {/* Clinical Bio / About */}
-                    <Box>
-                      <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={1.5}>
-                        CLINICAL BIO & SUMMARY
-                      </Text>
-                      <Text fontSize="13px" color="#263A33" lineHeight="1.6" bg="rgba(250, 248, 245, 0.5)" p={3.5} borderRadius="xl" border="1px solid rgba(86, 117, 109, 0.08)">
-                        {selectedClinician.bio || "No clinical bio has been provided by this clinician yet."}
-                      </Text>
-                    </Box>
-
-                    {/* Specializations & Modalities */}
-                    <Box>
-                      <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                        SPECIALIZATIONS & CLINICAL FOCUS
-                      </Text>
-                      {specs.length > 0 ? (
-                        <Wrap spacing={1.5}>
-                          {specs.map((s, idx) => (
-                            <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="11px" fontWeight="500">
-                              {typeof s === 'object' ? (s.name || JSON.stringify(s)) : String(s)}
-                            </Badge>
-                          ))}
-                        </Wrap>
-                      ) : (
-                        <Text fontSize="12.5px" color="#718096">No specializations specified.</Text>
-                      )}
-                    </Box>
-
-                    {mods.length > 0 && (
-                      <Box>
-                        <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                          THERAPEUTIC MODALITIES
-                        </Text>
-                        <Wrap spacing={1.5}>
-                          {mods.map((m, idx) => (
-                            <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="rgba(79, 70, 229, 0.08)" color="#4F46E5" fontSize="11px" fontWeight="500">
-                              {typeof m === 'object' ? (m.name || JSON.stringify(m)) : String(m)}
-                            </Badge>
-                          ))}
-                        </Wrap>
-                      </Box>
-                    )}
-
-                    {concernsList.length > 0 && (
-                      <Box>
-                        <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                          AREAS & CONCERNS
-                        </Text>
-                        <Wrap spacing={1.5}>
-                          {concernsList.map((c, idx) => (
-                            <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="rgba(214, 158, 46, 0.1)" color="#B45309" fontSize="11px" fontWeight="500">
-                              {typeof c === 'object' ? (c.name || JSON.stringify(c)) : String(c)}
-                            </Badge>
-                          ))}
-                        </Wrap>
-                      </Box>
-                    )}
-
-                    {/* Languages */}
-                    <Box>
-                      <Text fontSize="11px" fontWeight="700" color="#718096" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
-                        SPOKEN LANGUAGES
-                      </Text>
-                      <Wrap spacing={1.5}>
-                        {langs.map((l, idx) => (
-                          <Badge key={idx} px={2.5} py={1} borderRadius="md" bg="white" border="1px solid rgba(86, 117, 109, 0.2)" color="#263A33" fontSize="11px" fontWeight="500">
-                            {typeof l === 'object' ? (l.name || JSON.stringify(l)) : String(l)}
-                          </Badge>
+                    {/* Section-Wise Tabs */}
+                    <Tabs index={clinicianModalTab} onChange={setClinicianModalTab} variant="unstyled" w="full">
+                      <TabList 
+                        display="flex" 
+                        gap={1.5} 
+                        overflowX="auto" 
+                        pb={2} 
+                        borderBottom="1px solid rgba(86, 117, 109, 0.12)"
+                        css={{
+                          "&::-webkit-scrollbar": { height: "4px" },
+                          "&::-webkit-scrollbar-thumb": { background: "rgba(86, 117, 109, 0.2)", borderRadius: "4px" }
+                        }}
+                      >
+                        {[
+                          { icon: FiUser, label: "Overview & Identity" },
+                          { icon: FiAward, label: "Credentials & Docs" },
+                          { icon: FiUsers, label: "Scope & Populations" },
+                          { icon: FiAlertCircle, label: "Clinical Judgment" },
+                          { icon: FiHeart, label: "Approach & Modalities" },
+                          { icon: FiShield, label: "Governance & Space" },
+                        ].map((t, idx) => (
+                          <Tab
+                            key={idx}
+                            borderRadius="full"
+                            px={3.5}
+                            py={1.5}
+                            fontSize="12px"
+                            fontWeight="600"
+                            whiteSpace="nowrap"
+                            border="1px solid rgba(86, 117, 109, 0.16)"
+                            color="#5A6E65"
+                            bg="white"
+                            _selected={{
+                              bg: "#56756D",
+                              color: "white",
+                              borderColor: "#56756D",
+                              boxShadow: "0 2px 6px rgba(86, 117, 109, 0.22)"
+                            }}
+                            _hover={{
+                              borderColor: "#56756D",
+                              color: "#263A33"
+                            }}
+                          >
+                            <HStack spacing={1.5}>
+                              <Icon as={t.icon} boxSize="12px" />
+                              <Text>{t.label}</Text>
+                            </HStack>
+                          </Tab>
                         ))}
-                      </Wrap>
-                    </Box>
+                      </TabList>
 
-                    {/* Proof Documents & External Links */}
-                    {(selectedClinician.highest_qualification_proof || selectedClinician.resume_file || selectedClinician.linkedin_url) && (
-                      <Box p={3.5} borderRadius="xl" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.12)">
-                        <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2.5}>
-                          Credentials & Documents
-                        </Text>
-                        <HStack spacing={2.5} wrap="wrap">
-                          {selectedClinician.highest_qualification_proof && (
-                            <Button 
-                              as="a" 
-                              href={selectedClinician.highest_qualification_proof} 
-                              target="_blank" 
-                              size="xs" 
-                              variant="outline" 
-                              borderRadius="full"
-                              borderColor="rgba(86, 117, 109, 0.25)"
-                              rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
-                            >
-                              Degree / Qualification Proof
-                            </Button>
-                          )}
-                          {selectedClinician.resume_file && (
-                            <Button 
-                              as="a" 
-                              href={selectedClinician.resume_file} 
-                              target="_blank" 
-                              size="xs" 
-                              variant="outline" 
-                              borderRadius="full"
-                              borderColor="rgba(86, 117, 109, 0.25)"
-                              rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
-                            >
-                              Resume / CV
-                            </Button>
-                          )}
-                          {selectedClinician.linkedin_url && (
-                            <Button 
-                              as="a" 
-                              href={selectedClinician.linkedin_url} 
-                              target="_blank" 
-                              size="xs" 
-                              variant="outline" 
-                              borderRadius="full"
-                              borderColor="rgba(86, 117, 109, 0.25)"
-                              rightIcon={<Icon as={FiExternalLink} boxSize="10px" />}
-                            >
-                              LinkedIn Profile
-                            </Button>
-                          )}
-                        </HStack>
-                      </Box>
-                    )}
+                      <TabPanels pt={4}>
+                        {/* TAB 0: OVERVIEW & IDENTITY */}
+                        <TabPanel p={0}>
+                          <VStack align="stretch" spacing={4}>
+                            {/* Bio & Welcome */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                                Clinical Bio & Summary
+                              </Text>
+                              <Text fontSize="13px" color="#263A33" lineHeight="1.6" bg="rgba(250, 248, 245, 0.6)" p={3.5} borderRadius="lg" border="1px solid rgba(86, 117, 109, 0.08)">
+                                {c.bio || "No clinical bio has been provided by this clinician yet."}
+                              </Text>
+
+                              {c.welcome_note && (
+                                <Box mt={3}>
+                                  <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={1.5}>
+                                    Welcome Note to Prospective Clients
+                                  </Text>
+                                  <Text fontSize="12.5px" color="#263A33" lineHeight="1.6" bg="rgba(238, 242, 255, 0.4)" p={3} borderRadius="lg" border="1px solid rgba(99, 102, 241, 0.15)">
+                                    {c.welcome_note}
+                                  </Text>
+                                </Box>
+                              )}
+                            </Box>
+
+                            {/* Contact & Account Metadata */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Contact & Account Identification
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={3}>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Email</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.email}</Text>
+                                </Box>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Phone</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.phone || "Not specified"}</Text>
+                                </Box>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Clinician ID & Slug</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>#{c.id} ({c.slug || c.id})</Text>
+                                </Box>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Pronouns</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.pronouns || "Not specified"}</Text>
+                                </Box>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Gender Identity</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.gender || "Not specified"}</Text>
+                                </Box>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Institutional Affiliation</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.affiliations || "Independent Practice"}</Text>
+                                </Box>
+                              </SimpleGrid>
+                            </Box>
+
+                            {/* Practice & Policies */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Practice Policies & Search Keywords
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Cancellation Policy</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.cancellation_policy || "Standard 24-hour advance notice required"}</Text>
+                                </Box>
+                                <Box p={2.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Practice Locations / Coverage</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.locations || [c.city, c.state].filter(Boolean).join(", ") || "Pan-India / Remote"}</Text>
+                                </Box>
+                              </SimpleGrid>
+                              {Array.isArray(c.keywords) && c.keywords.length > 0 && (
+                                <Box mt={3}>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase" mb={1.5}>Client Search Keywords</Text>
+                                  <Wrap spacing={1.5}>
+                                    {c.keywords.map((kw, i) => (
+                                      <Badge key={i} px={2} py={0.5} borderRadius="full" bg="rgba(86, 117, 109, 0.08)" color="#56756D" fontSize="11px">
+                                        #{kw}
+                                      </Badge>
+                                    ))}
+                                  </Wrap>
+                                </Box>
+                              )}
+                            </Box>
+                          </VStack>
+                        </TabPanel>
+
+                        {/* TAB 1: CREDENTIALS & DOCS */}
+                        <TabPanel p={0}>
+                          <VStack align="stretch" spacing={4}>
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Academic Qualifications & Clinical Credentials
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Highest Qualification</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.highest_qualification || c.qualification_highest || "Not specified"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Exact Degree Title</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.qualification_title || "Not specified"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Awarding University / Institution</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.university || "Not specified"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Year Completed</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.year_completed || "Not specified"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Total Clinical Experience</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.years_experience || c.experience_years || "Not specified"} Years</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Post-Qualification Experience</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.experience_post_qual ? `${c.experience_post_qual} Years` : "Not specified"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)" gridColumn={{ base: "span 1", sm: "span 2" }}>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">License / Registration Details</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.license_details || (c.is_supervisor_licensed ? "Supervisor Licensed Clinician" : "Registered Clinician")}</Text>
+                                </Box>
+                              </SimpleGrid>
+                            </Box>
+
+                            {/* Verification Proof Documents & Links */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                                Verification Proof Documents & External Profiles
+                              </Text>
+                              <Text fontSize="12px" color="#5A6E65" mb={3}>
+                                Direct documents uploaded by the clinician for qualification and credential authentication.
+                              </Text>
+                              {(c.highest_qualification_proof || c.resume_file || c.linkedin_url) ? (
+                                <HStack spacing={3} wrap="wrap">
+                                  {c.highest_qualification_proof && (
+                                    <Button 
+                                      as="a" 
+                                      href={c.highest_qualification_proof} 
+                                      target="_blank" 
+                                      size="sm" 
+                                      variant="outline" 
+                                      borderRadius="full"
+                                      borderColor="rgba(86, 117, 109, 0.3)"
+                                      color="#263A33"
+                                      leftIcon={<Icon as={FiAward} boxSize="13px" color="#56756D" />}
+                                      rightIcon={<Icon as={FiExternalLink} boxSize="11px" />}
+                                      _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                                    >
+                                      Degree / Qualification Proof
+                                    </Button>
+                                  )}
+                                  {c.resume_file && (
+                                    <Button 
+                                      as="a" 
+                                      href={c.resume_file} 
+                                      target="_blank" 
+                                      size="sm" 
+                                      variant="outline" 
+                                      borderRadius="full"
+                                      borderColor="rgba(86, 117, 109, 0.3)"
+                                      color="#263A33"
+                                      leftIcon={<Icon as={FiFileText} boxSize="13px" color="#56756D" />}
+                                      rightIcon={<Icon as={FiExternalLink} boxSize="11px" />}
+                                      _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                                    >
+                                      Curriculum Vitae / Resume
+                                    </Button>
+                                  )}
+                                  {c.linkedin_url && (
+                                    <Button 
+                                      as="a" 
+                                      href={c.linkedin_url} 
+                                      target="_blank" 
+                                      size="sm" 
+                                      variant="outline" 
+                                      borderRadius="full"
+                                      borderColor="rgba(86, 117, 109, 0.3)"
+                                      color="#263A33"
+                                      leftIcon={<Icon as={FiExternalLink} boxSize="13px" color="#56756D" />}
+                                      _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
+                                    >
+                                      LinkedIn Profile
+                                    </Button>
+                                  )}
+                                </HStack>
+                              ) : (
+                                <Text fontSize="12.5px" color="#718096" p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.5)">
+                                  No external qualification certificates or CV files uploaded yet.
+                                </Text>
+                              )}
+                            </Box>
+                          </VStack>
+                        </TabPanel>
+
+                        {/* TAB 2: SCOPE & POPULATIONS */}
+                        <TabPanel p={0}>
+                          <VStack align="stretch" spacing={4}>
+                            {/* Demographics */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Target Demographics & Cultural Competencies
+                              </Text>
+                              <VStack align="stretch" spacing={3}>
+                                <Box>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase" mb={1.5}>Age Groups Served</Text>
+                                  {ageGroups.length > 0 ? (
+                                    <Wrap spacing={1.5}>
+                                      {ageGroups.map((ag, i) => (
+                                        <Badge key={i} px={2.5} py={1} borderRadius="md" bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="11.5px">
+                                          {ag}
+                                        </Badge>
+                                      ))}
+                                    </Wrap>
+                                  ) : (
+                                    <Text fontSize="12.5px" color="#718096">Adults (Default)</Text>
+                                  )}
+                                </Box>
+
+                                <Box>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase" mb={1.5}>Identity & Lived-Experience Contexts</Text>
+                                  {identityContexts.length > 0 ? (
+                                    <Wrap spacing={1.5}>
+                                      {identityContexts.map((ic, i) => (
+                                        <Badge key={i} px={2.5} py={1} borderRadius="md" bg="rgba(99, 102, 241, 0.08)" color="#4F46E5" fontSize="11.5px">
+                                          {ic}
+                                        </Badge>
+                                      ))}
+                                    </Wrap>
+                                  ) : (
+                                    <Text fontSize="12.5px" color="#718096">None specified</Text>
+                                  )}
+                                </Box>
+
+                                <Box>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase" mb={1.5}>Languages & Fluency Levels</Text>
+                                  <Wrap spacing={2}>
+                                    {langs.map((l, i) => {
+                                      const fluency = langsInfo[l] || (typeof l === 'object' ? l.level : null);
+                                      const label = typeof l === 'object' ? l.name : l;
+                                      return (
+                                        <Badge key={i} px={2.5} py={1} borderRadius="md" bg="white" border="1px solid rgba(86, 117, 109, 0.25)" color="#263A33" fontSize="11.5px">
+                                          {label} {fluency && <Text as="span" color="#56756D" fontWeight="600">({fluency})</Text>}
+                                        </Badge>
+                                      );
+                                    })}
+                                  </Wrap>
+                                </Box>
+                              </VStack>
+                            </Box>
+
+                            {/* Clinical Concerns Competency Tiers */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                                Clinical Competency Tiers (Matching Logic)
+                              </Text>
+                              <Text fontSize="12px" color="#5A6E65" mb={3}>
+                                Clinician self-reported depth of competence across client concern domains.
+                              </Text>
+
+                              {Object.keys(concernsLevels).length > 0 ? (
+                                <VStack align="stretch" spacing={3}>
+                                  {tier1Core.length > 0 && (
+                                    <Box p={3} borderRadius="lg" bg="rgba(16, 185, 129, 0.06)" border="1px solid rgba(16, 185, 129, 0.2)">
+                                      <Text fontSize="10.5px" fontWeight="700" color="#059669" textTransform="uppercase" letterSpacing="0.05em" mb={1.5}>
+                                        Tier 1: Core Clinical Focus (Deep Specialization)
+                                      </Text>
+                                      <Wrap spacing={1.5}>
+                                        {tier1Core.map((cName, i) => (
+                                          <Badge key={i} px={2} py={0.5} borderRadius="md" bg="#10B981" color="white" fontSize="11px">
+                                            {cName}
+                                          </Badge>
+                                        ))}
+                                      </Wrap>
+                                    </Box>
+                                  )}
+
+                                  {tier2Exp.length > 0 && (
+                                    <Box p={3} borderRadius="lg" bg="rgba(59, 130, 246, 0.06)" border="1px solid rgba(59, 130, 246, 0.2)">
+                                      <Text fontSize="10.5px" fontWeight="700" color="#2563EB" textTransform="uppercase" letterSpacing="0.05em" mb={1.5}>
+                                        Tier 2: Experienced With (Regular Positive Outcomes)
+                                      </Text>
+                                      <Wrap spacing={1.5}>
+                                        {tier2Exp.map((cName, i) => (
+                                          <Badge key={i} px={2} py={0.5} borderRadius="md" bg="#3B82F6" color="white" fontSize="11px">
+                                            {cName}
+                                          </Badge>
+                                        ))}
+                                      </Wrap>
+                                    </Box>
+                                  )}
+
+                                  {tier3Found.length > 0 && (
+                                    <Box p={3} borderRadius="lg" bg="rgba(86, 117, 109, 0.06)" border="1px solid rgba(86, 117, 109, 0.15)">
+                                      <Text fontSize="10.5px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.05em" mb={1.5}>
+                                        Tier 3: Foundational Competence
+                                      </Text>
+                                      <Wrap spacing={1.5}>
+                                        {tier3Found.map((cName, i) => (
+                                          <Badge key={i} px={2} py={0.5} borderRadius="md" bg="rgba(86, 117, 109, 0.15)" color="#263A33" fontSize="11px">
+                                            {cName}
+                                          </Badge>
+                                        ))}
+                                      </Wrap>
+                                    </Box>
+                                  )}
+
+                                  {tier4Refer.length > 0 && (
+                                    <Box p={3} borderRadius="lg" bg="rgba(239, 68, 68, 0.06)" border="1px solid rgba(239, 68, 68, 0.2)">
+                                      <Text fontSize="10.5px" fontWeight="700" color="#DC2626" textTransform="uppercase" letterSpacing="0.05em" mb={1.5}>
+                                        Tier 4: Refer Out / Excluded From Practice
+                                      </Text>
+                                      <Wrap spacing={1.5}>
+                                        {tier4Refer.map((cName, i) => (
+                                          <Badge key={i} px={2} py={0.5} borderRadius="md" bg="rgba(239, 68, 68, 0.15)" color="#DC2626" fontSize="11px">
+                                            {cName}
+                                          </Badge>
+                                        ))}
+                                      </Wrap>
+                                    </Box>
+                                  )}
+                                </VStack>
+                              ) : (
+                                <Wrap spacing={1.5}>
+                                  {(specs.length > 0 ? specs : concernsList).map((cName, i) => (
+                                    <Badge key={i} px={2.5} py={1} borderRadius="md" bg="rgba(86, 117, 109, 0.08)" color="#263A33" fontSize="11.5px">
+                                      {typeof cName === 'object' ? (cName.name || JSON.stringify(cName)) : String(cName)}
+                                    </Badge>
+                                  ))}
+                                </Wrap>
+                              )}
+                            </Box>
+
+                            {/* Exclusions & Complexity */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Clinical Scope, Exclusions & Complexity Comfort
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Clinical Complexity Comfort</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.complexity_comfort || "Standard outpatient practice"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Practice Independence Level</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.independence_level || "Autonomous practice"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(254, 242, 242, 0.5)" border="1px solid rgba(239, 68, 68, 0.12)" gridColumn={{ base: "span 1", sm: "span 2" }}>
+                                  <Text fontSize="10.5px" color="#DC2626" fontWeight="600" textTransform="uppercase">Not Treated / Explicit Clinical Exclusions</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.not_treated || c.exclusions || "None recorded"}</Text>
+                                </Box>
+                              </SimpleGrid>
+                            </Box>
+                          </VStack>
+                        </TabPanel>
+
+                        {/* TAB 3: CLINICAL JUDGMENT (VETTING CASES) */}
+                        <TabPanel p={0}>
+                          <VStack align="stretch" spacing={4}>
+                            <Box p={3.5} borderRadius="xl" bg="rgba(238, 242, 255, 0.5)" border="1px solid rgba(99, 102, 241, 0.2)">
+                              <HStack spacing={2.5}>
+                                <Icon as={FiAlertCircle} boxSize="16px" color="#4F46E5" flexShrink={0} />
+                                <Box>
+                                  <Text fontSize="12px" fontWeight="700" color="#4F46E5">
+                                    Vetting & Formulation Submissions (5 Core Case Scenarios)
+                                  </Text>
+                                  <Text fontSize="11.5px" color="#5A6E65">
+                                    Review the clinician's responses to standard ethical and formulation prompts before granting directory approval.
+                                  </Text>
+                                </Box>
+                              </HStack>
+                            </Box>
+
+                            {[
+                              {
+                                key: "first_10_min_response",
+                                num: "1",
+                                title: "Initial Attunement & Safety Assessment",
+                                prompt: "How do you structure the first 10 minutes of an intake to assess client readiness and establish safety?"
+                              },
+                              {
+                                key: "stalled_therapy_case",
+                                num: "2",
+                                title: "Stalled Therapy & Formulation Adjustment",
+                                prompt: "Describe a clinical dynamic where therapy hit resistance or stalled. How did you formulate and adapt?"
+                              },
+                              {
+                                key: "scope_and_referral_judgment",
+                                num: "3",
+                                title: "Scope of Practice & Warm Referral Criteria",
+                                prompt: "What specific indicators signal that a client falls outside your clinical competence, and how do you execute a warm transfer?"
+                              },
+                              {
+                                key: "suicidal_ideation_response",
+                                num: "4",
+                                title: "Suicidal Ideation & Acute Remote Crisis Protocol",
+                                prompt: "Walk through your step-by-step risk assessment, safety planning, and emergency escalation protocol for remote clients."
+                              },
+                              {
+                                key: "difficult_clients_self_management",
+                                num: "5",
+                                title: "Countertransference & Self-Management",
+                                prompt: "How do you recognize and manage your own emotional reactivity, boundary pressures, and countertransference?"
+                              },
+                            ].map((q) => {
+                              const ans = judgmentAnswers[q.key];
+                              return (
+                                <Box key={q.key} p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)" boxShadow="0 2px 6px -2px rgba(38, 58, 51, 0.02)">
+                                  <HStack spacing={2} mb={1.5}>
+                                    <Circle size="20px" bg="rgba(86, 117, 109, 0.12)" color="#56756D" fontSize="11px" fontWeight="700">
+                                      {q.num}
+                                    </Circle>
+                                    <Text fontSize="12.5px" fontWeight="700" color="#263A33" fontFamily="'Outfit', var(--font-outfit), sans-serif">
+                                      {q.title}
+                                    </Text>
+                                  </HStack>
+                                  <Text fontSize="12px" color="#718096" mb={2.5} pl={7}>
+                                    {q.prompt}
+                                  </Text>
+                                  <Box p={3.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.85)" border="1px solid rgba(86, 117, 109, 0.1)" ml={{ base: 0, sm: 7 }}>
+                                    <Text fontSize="12.5px" color={ans ? "#263A33" : "#A0AEC0"} lineHeight="1.6" whiteSpace="pre-wrap">
+                                      {ans || "No response provided for this case scenario."}
+                                    </Text>
+                                  </Box>
+                                </Box>
+                              );
+                            })}
+                          </VStack>
+                        </TabPanel>
+
+                        {/* TAB 4: APPROACH & MODALITIES */}
+                        <TabPanel p={0}>
+                          <VStack align="stretch" spacing={4}>
+                            {/* Orientation */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Theoretical Orientation & Modalities
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3} mb={3}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Primary Orientation</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.primary_orientation || "Integrative / Pluralistic"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Primary Therapeutic Lens</Text>
+                                  <Text fontSize="13px" color="#263A33" fontWeight="600" mt={0.5}>{c.primary_lens || "Relational & Developmental"}</Text>
+                                </Box>
+                              </SimpleGrid>
+
+                              {secondaryMods.length > 0 && (
+                                <Box mt={2}>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase" mb={1.5}>Secondary Integrated Modalities</Text>
+                                  <Wrap spacing={1.5}>
+                                    {secondaryMods.map((sm, i) => (
+                                      <Badge key={i} px={2.5} py={1} borderRadius="md" bg="rgba(79, 70, 229, 0.08)" color="#4F46E5" fontSize="11.5px">
+                                        {sm}
+                                      </Badge>
+                                    ))}
+                                  </Wrap>
+                                </Box>
+                              )}
+                            </Box>
+
+                            {/* Modality Training & Supervision Logs */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                                Modality-Specific Training & Supervision Logs
+                              </Text>
+                              <Text fontSize="12px" color="#5A6E65" mb={3}>
+                                Verification log of practical training and clinical supervision for each claimed modality.
+                              </Text>
+
+                              {modsInfo.length > 0 ? (
+                                <VStack align="stretch" spacing={3}>
+                                  {modsInfo.map((m, i) => (
+                                    <Box key={i} p={3.5} borderRadius="lg" bg="rgba(250, 248, 245, 0.75)" border="1px solid rgba(86, 117, 109, 0.12)">
+                                      <HStack justify="space-between" mb={2}>
+                                        <Text fontSize="13px" fontWeight="700" color="#263A33">{m.name || "Modality"}</Text>
+                                        <Badge px={2} py={0.5} borderRadius="full" bg="rgba(86, 117, 109, 0.12)" color="#56756D" fontSize="10px">
+                                          TRAINED
+                                        </Badge>
+                                      </HStack>
+                                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5}>
+                                        <Box>
+                                          <Text fontSize="10px" color="#718096" fontWeight="600" textTransform="uppercase">Formal Training</Text>
+                                          <Text fontSize="12px" color="#263A33" mt={0.5}>{m.training || "Not specified"}</Text>
+                                        </Box>
+                                        <Box>
+                                          <Text fontSize="10px" color="#718096" fontWeight="600" textTransform="uppercase">Clinical Supervision</Text>
+                                          <Text fontSize="12px" color="#263A33" mt={0.5}>{m.supervision || "Not specified"}</Text>
+                                        </Box>
+                                      </SimpleGrid>
+                                    </Box>
+                                  ))}
+                                </VStack>
+                              ) : mods.length > 0 ? (
+                                <Wrap spacing={1.5}>
+                                  {mods.map((m, i) => (
+                                    <Badge key={i} px={2.5} py={1} borderRadius="md" bg="rgba(79, 70, 229, 0.08)" color="#4F46E5" fontSize="11.5px">
+                                      {typeof m === 'object' ? (m.name || JSON.stringify(m)) : String(m)}
+                                    </Badge>
+                                  ))}
+                                </Wrap>
+                              ) : (
+                                <Text fontSize="12.5px" color="#718096">No specific modality details logged.</Text>
+                              )}
+                            </Box>
+
+                            {/* Therapy Dynamics Spectrum */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={2}>
+                                Therapy Delivery Dynamics Spectrum
+                              </Text>
+                              <Text fontSize="12px" color="#5A6E65" mb={3.5}>
+                                Client compatibility sliders indicating how sessions unfold clinically.
+                              </Text>
+
+                              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Flex justify="space-between" mb={1}>
+                                    <Text fontSize="11.5px" fontWeight="600" color="#263A33">Structure</Text>
+                                    <Text fontSize="11px" fontWeight="700" color="#56756D">{c.structure != null ? `${c.structure}%` : "50%"}</Text>
+                                  </Flex>
+                                  <Progress value={c.structure ?? 50} size="xs" borderRadius="full" colorScheme="teal" bg="rgba(86, 117, 109, 0.15)" />
+                                  <Flex justify="space-between" mt={1} fontSize="9.5px" color="#718096">
+                                    <Text>Exploratory</Text>
+                                    <Text>Highly Structured</Text>
+                                  </Flex>
+                                </Box>
+
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Flex justify="space-between" mb={1}>
+                                    <Text fontSize="11.5px" fontWeight="600" color="#263A33">Orientation</Text>
+                                    <Text fontSize="11px" fontWeight="700" color="#56756D">{c.orientation != null ? `${c.orientation}%` : "50%"}</Text>
+                                  </Flex>
+                                  <Progress value={c.orientation ?? 50} size="xs" borderRadius="full" colorScheme="teal" bg="rgba(86, 117, 109, 0.15)" />
+                                  <Flex justify="space-between" mt={1} fontSize="9.5px" color="#718096">
+                                    <Text>Past / Root Causes</Text>
+                                    <Text>Present / Solutions</Text>
+                                  </Flex>
+                                </Box>
+
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Flex justify="space-between" mb={1}>
+                                    <Text fontSize="11.5px" fontWeight="600" color="#263A33">Pacing</Text>
+                                    <Text fontSize="11px" fontWeight="700" color="#56756D">{c.pacing != null ? `${c.pacing}%` : "50%"}</Text>
+                                  </Flex>
+                                  <Progress value={c.pacing ?? 50} size="xs" borderRadius="full" colorScheme="teal" bg="rgba(86, 117, 109, 0.15)" />
+                                  <Flex justify="space-between" mt={1} fontSize="9.5px" color="#718096">
+                                    <Text>Gentle & Reflective</Text>
+                                    <Text>Dynamic & Active</Text>
+                                  </Flex>
+                                </Box>
+
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" border="1px solid rgba(86, 117, 109, 0.08)">
+                                  <Flex justify="space-between" mb={1}>
+                                    <Text fontSize="11.5px" fontWeight="600" color="#263A33">Action Style</Text>
+                                    <Text fontSize="11px" fontWeight="700" color="#56756D">{c.action != null ? `${c.action}%` : "50%"}</Text>
+                                  </Flex>
+                                  <Progress value={c.action ?? 50} size="xs" borderRadius="full" colorScheme="teal" bg="rgba(86, 117, 109, 0.15)" />
+                                  <Flex justify="space-between" mt={1} fontSize="9.5px" color="#718096">
+                                    <Text>In-Session Processing</Text>
+                                    <Text>Homework & Behavioral</Text>
+                                  </Flex>
+                                </Box>
+                              </SimpleGrid>
+                            </Box>
+                          </VStack>
+                        </TabPanel>
+
+                        {/* TAB 5: GOVERNANCE & SPACE */}
+                        <TabPanel p={0}>
+                          <VStack align="stretch" spacing={4}>
+                            {/* Clinical Risk & Emergency Escalation */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Clinical Risk & Emergency Escalation Protocols
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Collaborating Psychiatrist</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{riskProtocols.collaborating_psychiatrist || "None on file"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Primary Emergency Hospital</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{riskProtocols.emergency_hospital || "Local Tertiary Facility"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Hospital City / Location</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{riskProtocols.hospital_location || c.city || "Not specified"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Internal Risk Level</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.internal_risk_level || "Standard Outpatient (Level 1)"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" gridColumn={{ base: "span 1", sm: "span 2" }}>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Crisis Protocol Notes</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{riskProtocols.crisis_protocol_notes || "Standard MLC Emergency Escalation & Local Support"}</Text>
+                                </Box>
+                              </SimpleGrid>
+                            </Box>
+
+                            {/* Physical Office Space & Clinic Rooms */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Physical Space & In-Person Practice
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3} mb={3}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">In-Person Space Available</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>
+                                    {c.has_physical_space ? "Yes — Dedicated Physical Space" : "No — Remote / Telehealth Only"}
+                                  </Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Supported Session Modes</Text>
+                                  <Wrap spacing={1} mt={0.5}>
+                                    {sessionModes.map((sm, i) => (
+                                      <Badge key={i} px={2} py={0.5} borderRadius="full" bg="rgba(86, 117, 109, 0.12)" color="#263A33" fontSize="10.5px">
+                                        {sm}
+                                      </Badge>
+                                    ))}
+                                  </Wrap>
+                                </Box>
+                                {c.has_physical_space && (
+                                  <>
+                                    <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" gridColumn={{ base: "span 1", sm: "span 2" }}>
+                                      <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Clinic Location / Space Address</Text>
+                                      <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.physical_space_location || "Not specified"}</Text>
+                                    </Box>
+                                    <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" gridColumn={{ base: "span 1", sm: "span 2" }}>
+                                      <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Clinic Environment & Accessibility Notes</Text>
+                                      <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.physical_space_notes || "Not specified"}</Text>
+                                    </Box>
+                                  </>
+                                )}
+                              </SimpleGrid>
+
+                              {physicalImages.length > 0 && (
+                                <Box mt={2}>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase" mb={2}>Physical Space Images</Text>
+                                  <HStack spacing={2} overflowX="auto" pb={2}>
+                                    {physicalImages.map((img, i) => (
+                                      <Image 
+                                        key={i} 
+                                        src={typeof img === 'string' ? img : img.url} 
+                                        alt="Clinic Room" 
+                                        boxSize="90px" 
+                                        objectFit="cover" 
+                                        borderRadius="lg" 
+                                        border="1px solid rgba(86, 117, 109, 0.2)" 
+                                      />
+                                    ))}
+                                  </HStack>
+                                </Box>
+                              )}
+                            </Box>
+
+                            {/* Supervision Status & Admin Matching */}
+                            <Box p={4} borderRadius="xl" bg="white" border="1px solid rgba(86, 117, 109, 0.14)">
+                              <Text fontSize="11px" fontWeight="700" color="#56756D" textTransform="uppercase" letterSpacing="0.08em" mb={3}>
+                                Supervision Profile & Internal Administrative Notes
+                              </Text>
+                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Supervision Role</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>
+                                    {c.is_supervisor ? (c.supervision_status || "Approved Supervisor") : "Not registered for supervision"}
+                                  </Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)">
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Supervision Years Experience</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="600" mt={0.5}>{c.supervision_years_experience ? `${c.supervision_years_experience} Years` : "N/A"}</Text>
+                                </Box>
+                                <Box p={3} borderRadius="lg" bg="rgba(250, 248, 245, 0.6)" gridColumn={{ base: "span 1", sm: "span 2" }}>
+                                  <Text fontSize="10.5px" color="#718096" fontWeight="600" textTransform="uppercase">Admin Matching / Best-Fit Notes</Text>
+                                  <Text fontSize="12.5px" color="#263A33" fontWeight="500" mt={0.5}>{c.best_fit_notes || "No internal matching notes recorded."}</Text>
+                                </Box>
+                              </SimpleGrid>
+                            </Box>
+                          </VStack>
+                        </TabPanel>
+                      </TabPanels>
+                    </Tabs>
                   </VStack>
                 </ModalBody>
 
                 <ModalFooter 
-                  bg="rgba(250, 248, 245, 0.75)" 
+                  bg="rgba(250, 248, 245, 0.85)" 
                   borderTop="1px solid rgba(86, 117, 109, 0.14)" 
-                  py={4} 
+                  py={3.5} 
                   px={6} 
                   display="flex" 
                   justifyContent="space-between" 
@@ -6654,7 +7373,7 @@ export default function AdminDashboard() {
                     {isPublished ? (
                       <Button
                         as="a"
-                        href={'/therapists/' + (selectedClinician.slug || selectedClinician.id)}
+                        href={'/therapists/' + (c.slug || c.id)}
                         target="_blank"
                         h="38px"
                         bg="#56756D"
@@ -6682,7 +7401,7 @@ export default function AdminDashboard() {
                         boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
                         _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
                         onClick={() => {
-                          handleVerifyTherapist(selectedClinician.id, selectedClinician.name);
+                          handleVerifyTherapist(c.id, c.name);
                           setSelectedClinician(null);
                         }}
                         whiteSpace="nowrap"
@@ -6692,7 +7411,7 @@ export default function AdminDashboard() {
                     )}
                   </Box>
 
-                  {/* Right Side: Secondary Actions with generous breathing room */}
+                  {/* Right Side: Secondary Actions */}
                   <HStack spacing={3}>
                     {isPublished && (
                       <Button
@@ -6708,7 +7427,7 @@ export default function AdminDashboard() {
                         _hover={{ bg: "#FEF2F2", borderColor: "#DC2626" }}
                         whiteSpace="nowrap"
                         onClick={() => {
-                          setUnpublishTarget(selectedClinician);
+                          setUnpublishTarget(c);
                           setSelectedClinician(null);
                         }}
                       >
@@ -6737,6 +7456,13 @@ export default function AdminDashboard() {
           })()}
         </ModalContent>
       </Modal>
+
+      {/* 📄 Clinical Invoice Popup Modal */}
+      <InvoiceModal
+        isOpen={!!invoiceModalApptId}
+        onClose={() => setInvoiceModalApptId(null)}
+        appointmentId={invoiceModalApptId}
+      />
     </Box>
   );
 }

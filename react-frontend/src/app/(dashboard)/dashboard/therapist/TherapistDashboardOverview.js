@@ -38,6 +38,7 @@ import {
 } from "react-icons/fi";
 import { useUser } from "@clerk/nextjs";
 import NextLink from 'next/link';
+import { openInvoiceModal } from "../../../../components/InvoiceModal";
 import { apiGet } from "../../../../api.js";
 import TherapistGatedGateway from "../../../../components/TherapistGatedGateway";
 import { useTherapistSubscriptionGate } from "../../../../hooks/useTherapistSubscriptionGate";
@@ -519,6 +520,21 @@ export default function TherapistDashboardOverview() {
                           _hover={{ bg: 'rgba(169, 203, 183, 0.1)' }}
                         >
                           SOAP Notes
+                        </Button>
+                        <Button
+                          onClick={() => openInvoiceModal(appt.id)}
+                          variant="outline"
+                          borderColor="rgba(86, 117, 109, 0.25)"
+                          color="#263A33"
+                          borderRadius="full"
+                          fontSize="12.5px"
+                          fontWeight="600"
+                          height="38px"
+                          px={3.5}
+                          leftIcon={<Icon as={FiFileText} boxSize="13px" color="#56756D" />}
+                          _hover={{ bg: 'rgba(86, 117, 109, 0.08)', borderColor: '#56756D' }}
+                        >
+                          Invoice
                         </Button>
                       </HStack>
                     </VStack>

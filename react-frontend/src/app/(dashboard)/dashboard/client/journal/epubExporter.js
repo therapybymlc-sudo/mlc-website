@@ -4,10 +4,19 @@
  */
 import JSZip from 'jszip';
 
-export async function generateJournalEpub(entries, userName = "MLC Client") {
+function sanitizeForXhtml(html = "") {
+  if (!html) return "<p>No reflection text recorded.</p>";
+  return String(html)
+    .replace(/<img([^>]*?)(?<!\/)>/gi, '<img$1 />')
+    .replace(/<br(?!\s*\/)([^>]*)>/gi, '<br />')
+    .replace(/<hr(?!\s*\/)([^>]*)>/gi, '<hr />')
+    .replace(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[a-f\d]+);)/gi, '&amp;');
+}
+
+export async function generateJournalEpub(entries = [], userName = "MLC Client") {
   const zip = new JSZip();
 
-  // 1. Mimetype - MUST be the first file and not compressed
+  // 1. Mimetype - MUST be the first file and uncompressed
   zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
 
   // 2. container.xml
@@ -52,11 +61,14 @@ export async function generateJournalEpub(entries, userName = "MLC Client") {
   zip.folder('OEBPS').file('content.opf', contentOpf);
 
   // 4. toc.ncx
-  const navPoints = entries.map((entry, i) => `
+  const navPoints = entries.map((entry, i) => {
+    const d = entry.created_at ? new Date(entry.created_at).toLocaleDateString() : `Entry ${i + 1}`;
+    return `
     <navPoint id="navPoint-${i+1}" playOrder="${i+2}">
-      <navLabel><text>${new Date(entry.created_at).toLocaleDateString()}</text></navLabel>
+      <navLabel><text>${d} - ${entry.mood || 'Reflection'}</text></navLabel>
       <content src="chapter${i}.xhtml"/>
-    </navPoint>`).join('');
+    </navPoint>`;
+  }).join('');
 
   const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
@@ -77,12 +89,13 @@ export async function generateJournalEpub(entries, userName = "MLC Client") {
 
   // 5. Styles
   const css = `
-    body { font-family: 'Serif', 'Playfair Display', Georgia, serif; line-height: 1.6; padding: 5%; color: #333; }
-    h1 { color: #56756D; text-align: center; margin-top: 20%; }
-    .date { color: #888; font-size: 0.9em; text-align: center; margin-bottom: 2em; }
-    .mood { display: inline-block; background: #E9F2ED; padding: 2px 10px; border-radius: 10px; font-size: 0.8em; color: #56756D; }
-    .entry-body { margin-top: 2em; }
-    .tag { font-size: 0.7em; color: #666; font-style: italic; margin-right: 5px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 6%; color: #263A33; }
+    h1 { color: #56756D; text-align: center; margin-top: 15%; font-weight: 600; font-size: 2em; }
+    .date { color: #718096; font-size: 0.85em; text-align: center; margin-bottom: 1.5em; text-transform: uppercase; letter-spacing: 0.05em; }
+    .mood { display: inline-block; background: rgba(86, 117, 109, 0.12); padding: 4px 14px; border-radius: 9999px; font-size: 0.85em; color: #56756D; font-weight: 600; margin-bottom: 1.5em; }
+    .entry-body { margin-top: 1.5em; line-height: 1.7; color: #263A33; }
+    .tag { font-size: 0.75em; color: #5A6E65; background: #FAF8F5; border: 1px solid rgba(86, 117, 109, 0.16); padding: 3px 8px; border-radius: 6px; margin-right: 6px; display: inline-block; }
+    .footer-note { margin-top: 3em; font-size: 0.75em; color: #718096; border-top: 1px solid rgba(86, 117, 109, 0.15); padding-top: 1em; text-align: center; }
   `;
   zip.file('OEBPS/style.css', css);
 
@@ -95,11 +108,15 @@ export async function generateJournalEpub(entries, userName = "MLC Client") {
   <link rel="stylesheet" type="text/css" href="style.css"/>
 </head>
 <body>
-  <div style="text-align: center; margin-top: 30%;">
-    <h1 style="font-size: 2.5em;">My Therapeutic Journey</h1>
-    <p>A collection of reflections and growth.</p>
-    <p style="margin-top: 10%; color: #C9A960; font-weight: bold;">MLC HEALTH</p>
-    <p style="font-size: 0.8em; color: #999;">${new Date().toLocaleDateString()}</p>
+  <div style="text-align: center; margin-top: 25%;">
+    <p style="color: #56756D; font-weight: 700; letter-spacing: 0.08em; font-size: 0.85em; text-transform: uppercase;">MLC Therapy &amp; Wellness</p>
+    <h1>My Therapeutic Journey</h1>
+    <p style="color: #5A6E65; font-size: 1.05em; margin-top: 0.5em;">Personal Journal &amp; Mindful Reflections</p>
+    <div style="margin-top: 18%; padding: 1.5em; background: #FAF8F5; border-radius: 12px; display: inline-block; border: 1px solid rgba(86, 117, 109, 0.14);">
+      <p style="font-weight: 600; color: #263A33;">Client: ${userName}</p>
+      <p style="font-size: 0.85em; color: #5A6E65; margin-top: 0.4em;">Total Reflections: ${entries.length}</p>
+      <p style="font-size: 0.8em; color: #718096; margin-top: 0.4em;">Archived: ${new Date().toLocaleDateString()}</p>
+    </div>
   </div>
 </body>
 </html>`;
@@ -107,24 +124,28 @@ export async function generateJournalEpub(entries, userName = "MLC Client") {
 
   // 7. Chapters (Entries)
   entries.forEach((entry, i) => {
+    const rawDate = entry.created_at ? new Date(entry.created_at) : new Date();
+    const timeFormatted = !isNaN(rawDate.getTime()) ? rawDate.toLocaleString() : "Reflection";
+    const dateTitle = !isNaN(rawDate.getTime()) ? rawDate.toLocaleDateString() : `Entry ${i + 1}`;
+    const cleanEntry = sanitizeForXhtml(entry.entry);
+    const tags = Array.isArray(entry.extra_data?.tags) ? entry.extra_data.tags : [];
+
     const chapterHtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>${new Date(entry.created_at).toLocaleDateString()}</title>
+  <title>${dateTitle}</title>
   <link rel="stylesheet" type="text/css" href="style.css"/>
 </head>
 <body>
-  <div class="date">${new Date(entry.created_at).toLocaleString()}</div>
+  <div class="date">${timeFormatted}</div>
   <div style="text-align: center;">
-    <span class="mood">${entry.mood}</span>
+    <span class="mood">${entry.mood || 'Reflection'}</span>
   </div>
   <div class="entry-body">
-    ${entry.entry}
+    ${cleanEntry}
   </div>
-  <div style="margin-top: 2em;">
-    ${(entry.extra_data?.tags || []).map(t => `<span class="tag">#${t}</span>`).join(' ')}
-  </div>
+  ${tags.length > 0 ? `<div style="margin-top: 2em;">${tags.map(t => `<span class="tag">#${t}</span>`).join(' ')}</div>` : ''}
 </body>
 </html>`;
     zip.file(`OEBPS/chapter${i}.xhtml`, chapterHtml);

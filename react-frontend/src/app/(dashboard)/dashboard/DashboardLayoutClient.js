@@ -57,6 +57,7 @@ import WelcomeOnboarding from '../../../components/WelcomeOnboarding';
 import { useAuth } from '../../../context/AuthContext';
 import FeedbackWidget from '../../../components/FeedbackWidget';
 import OnboardingModal from './client/OnboardingModal';
+import InvoiceModal from '../../../components/InvoiceModal';
 
 export default function DashboardLayout({ children }) {
   const { user, isLoaded } = useUser();
@@ -77,11 +78,41 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const toast = useToast();
   const [mounted, setMounted] = useState(false);
-  const onClientDashboardRoute = pathname?.startsWith('/dashboard/client');
-  const onTherapistDashboardRoute = pathname?.startsWith('/dashboard/therapist');
+  const [invoiceModalApptId, setInvoiceModalApptId] = useState(null);
+  const isInvoiceRoute = pathname?.includes('/invoice/');
+  const onClientDashboardRoute = pathname?.startsWith('/dashboard/client') && !isInvoiceRoute;
+  const onTherapistDashboardRoute = pathname?.startsWith('/dashboard/therapist') && !isInvoiceRoute;
 
   useEffect(() => {
     setMounted(true);
+
+    const handleCustomOpen = (e) => {
+      if (e.detail?.appointmentId) {
+        setInvoiceModalApptId(String(e.detail.appointmentId));
+      }
+    };
+    window.addEventListener('mlc:open-invoice', handleCustomOpen);
+
+    // Global interceptor: Any click on a link to an invoice route opens in popup instead of navigating/opening new tab
+    const handleLinkClick = (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (href && href.includes('/invoice/')) {
+        const match = href.match(/\/invoice\/([^/?#]+)/);
+        if (match && match[1]) {
+          e.preventDefault();
+          e.stopPropagation();
+          setInvoiceModalApptId(match[1]);
+        }
+      }
+    };
+    document.addEventListener('click', handleLinkClick, true);
+
+    return () => {
+      window.removeEventListener('mlc:open-invoice', handleCustomOpen);
+      document.removeEventListener('click', handleLinkClick, true);
+    };
   }, []);
 
   const hasPractitionerIdentity =
@@ -249,6 +280,10 @@ export default function DashboardLayout({ children }) {
             <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="#56756C" size="xl" />
         </Center>
     );
+  }
+
+  if (isInvoiceRoute) {
+    return <Box minH="100vh" bg="#FAF8F5">{children}</Box>;
   }
 
   // Derive human-readable page name for breadcrumb
@@ -583,6 +618,13 @@ export default function DashboardLayout({ children }) {
       </Drawer>
       {/* Floating Feedback Widget */}
       <FeedbackWidget variant="floating" />
+
+      {/* 📄 Global Clinical Invoice Popup Modal */}
+      <InvoiceModal
+        isOpen={!!invoiceModalApptId}
+        onClose={() => setInvoiceModalApptId(null)}
+        appointmentId={invoiceModalApptId}
+      />
     </Flex>
   );
 }

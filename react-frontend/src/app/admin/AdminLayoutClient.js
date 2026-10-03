@@ -40,11 +40,12 @@ import {
 import { useUser, useClerk } from '@clerk/nextjs';
 import NextLink from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import AdminSidebarContent from './AdminSidebarContent';
 import NotificationCenter from '../../components/NotificationCenter';
 import FeedbackWidget from '../../components/FeedbackWidget';
 import { useAuth } from '../../context/AuthContext';
+import InvoiceModal from '../../components/InvoiceModal';
 
 const adminLinks = [
   { type: 'header', label: 'Operations' },
@@ -79,6 +80,36 @@ function AdminLayoutShell({ children }) {
   const pathname = usePathname() || '/admin';
   const searchParams = useSearchParams();
   const currentTab = searchParams.get('tab') || 'overview';
+  const [invoiceModalApptId, setInvoiceModalApptId] = useState(null);
+
+  useEffect(() => {
+    const handleCustomOpen = (e) => {
+      if (e.detail?.appointmentId) {
+        setInvoiceModalApptId(String(e.detail.appointmentId));
+      }
+    };
+    window.addEventListener('mlc:open-invoice', handleCustomOpen);
+
+    const handleLinkClick = (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (href && href.includes('/invoice/')) {
+        const match = href.match(/\/invoice\/([^/?#]+)/);
+        if (match && match[1]) {
+          e.preventDefault();
+          e.stopPropagation();
+          setInvoiceModalApptId(match[1]);
+        }
+      }
+    };
+    document.addEventListener('click', handleLinkClick, true);
+
+    return () => {
+      window.removeEventListener('mlc:open-invoice', handleCustomOpen);
+      document.removeEventListener('click', handleLinkClick, true);
+    };
+  }, []);
 
   const pageTitle = useMemo(() => {
     const clean = pathname.replace(/\/+$/, '') || '/admin';
@@ -325,6 +356,13 @@ function AdminLayoutShell({ children }) {
 
       {/* Floating Feedback Widget */}
       <FeedbackWidget variant="floating" />
+
+      {/* 📄 Global Clinical Invoice Popup Modal */}
+      <InvoiceModal
+        isOpen={!!invoiceModalApptId}
+        onClose={() => setInvoiceModalApptId(null)}
+        appointmentId={invoiceModalApptId}
+      />
     </Flex>
   );
 }

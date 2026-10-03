@@ -2,7 +2,7 @@
  * Utility to generate a high-fidelity PDF document from client journal entries.
  * Uses jsPDF with automated multi-page handling and institutional branding.
  */
-export async function generateJournalPDF(entries, userName = "MLC Client") {
+export async function generateJournalPDF(entries, userName = "MLC Client", saveFilename = null) {
   const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -159,5 +159,44 @@ export async function generateJournalPDF(entries, userName = "MLC Client") {
     doc.text(`${doc.internal.getNumberOfPages()}`, pageWidth / 2, pageHeight - 10, { align: "center" });
   });
 
-  return doc.output('blob');
+  const blob = doc.output('blob');
+  if (saveFilename) {
+    triggerBlobDownload(blob, saveFilename);
+  }
+  return blob;
+}
+
+/**
+ * Universal safe blob downloader that prevents premature URL revocation
+ * in Chromium-based browsers (Chrome, Edge) where immediate revocation aborts downloads.
+ */
+export function triggerBlobDownload(blob, filename) {
+  if (typeof window === 'undefined' || !blob) return;
+
+  // 1. Sanitize filename for Windows & OS filesystem compatibility
+  const safeFilename = (filename || 'My_Therapeutic_Journey.pdf')
+    .replace(/[/\\?%*:|"<>]/g, '-')
+    .replace(/\s+/g, '_');
+
+  // 2. Create object URL
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = safeFilename;
+  a.setAttribute('download', safeFilename);
+  document.body.appendChild(a);
+
+  // 3. Trigger native download click
+  a.click();
+
+  // 4. Defer revocation by 2 minutes so browser download manager has plenty of time
+  setTimeout(() => {
+    try {
+      if (document.body.contains(a)) {
+        document.body.removeChild(a);
+      }
+    } catch {}
+    window.URL.revokeObjectURL(url);
+  }, 120000);
 }

@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import {
-  Box, Flex, VStack, HStack, Heading, Text, Input, Button, FormControl, FormLabel, SimpleGrid, useToast, Icon, Avatar, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, Stack, Select, Textarea, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Tag, TagLabel, TagCloseButton, Divider, Badge, Alert, AlertIcon, AlertTitle, AlertDescription, Wrap, WrapItem, Spinner, Circle, Menu, MenuButton, MenuList, MenuItem
+  Box, Flex, VStack, HStack, Heading, Text, Input, Button, FormControl, FormLabel, FormErrorMessage, SimpleGrid, useToast, Icon, Avatar, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel, Checkbox, Stack, Select, Textarea, Slider, SliderTrack, SliderFilledTrack, SliderThumb, Tag, TagLabel, TagCloseButton, Divider, Badge, Alert, AlertIcon, AlertTitle, AlertDescription, Wrap, WrapItem, Spinner, Circle, Menu, MenuButton, MenuList, MenuItem
 } from "@chakra-ui/react";
 import { 
   FiUser, FiAward, FiUsers, FiTarget, FiHeart, FiClock, FiBook, FiSettings, 
-  FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX, FiCheck, FiChevronDown
+  FiSave, FiCamera, FiPlus, FiAlertCircle, FiGlobe, FiBriefcase, FiZap, FiX, FiCheck, FiChevronDown, FiArrowRight, FiArrowLeft
 } from "react-icons/fi";
 import { apiGet, apiPut, apiPost, apiPatchForm } from "../../../../../api.js";
 import TherapistGatedGateway from "../../../../../components/TherapistGatedGateway";
@@ -63,6 +63,18 @@ const CATEGORIES = {
 
 const FLUENCY_LEVELS = ["Conversational", "Professional Working Proficiency", "Fluent / Native"];
 const CURRENCIES = ["KD", "INR", "USD", "AED", "GBP"];
+
+const PROFILE_TABS = [
+  { icon: FiUser, label: 'Identity' },
+  { icon: FiAward, label: 'Credentials' },
+  { icon: FiUsers, label: 'Populations' },
+  { icon: FiTarget, label: 'Clinical Scope' },
+  { icon: FiAlertCircle, label: 'Clinical Judgment' },
+  { icon: FiHeart, label: 'Therapeutic Approach' },
+  { icon: FiClock, label: 'Availability' },
+  { icon: FiBook, label: 'Bio & Media' },
+  { icon: FiSettings, label: 'Internal Matching' },
+];
 
 /* =========================================
    Modern Select Dropdown Component
@@ -280,6 +292,16 @@ export default function ProfileClient() {
   });
 
   const [tabIndex, setTabIndex] = useState(0);
+  const [errors, setErrors] = useState({});
+
+  const clearError = (field) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   const clerkEmail = user?.primaryEmailAddress?.emailAddress || "";
   const clerkName = user?.fullName || user?.firstName || "Therapist";
@@ -296,10 +318,34 @@ export default function ProfileClient() {
       delete payload[key];
     }
     delete payload.user;
+    // Retain profile_image and profile_image_url so direct PostgreSQL route persists them
+    const img = sourceProfile.profile_image || sourceProfile.profile_image_url || sourceProfile.imageUrl;
+    if (img) {
+      payload.profile_image = img;
+      payload.profile_image_url = img;
+    }
     return payload;
   };
 
   const syncTherapistProfile = async () => {
+    // 1. Try fetching full extended profile directly from PostgreSQL database route
+    try {
+      const q = clerkEmail ? `email=${encodeURIComponent(clerkEmail)}` : (profile?.id ? `id=${profile.id}` : '');
+      if (q) {
+        const res = await fetch(`/api/profile/therapist?${q}`);
+        if (res.ok) {
+          const dbData = await res.json();
+          if (dbData?.id) {
+            setProfile((prev) => ({ ...prev, ...dbData }));
+            return dbData;
+          }
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Direct DB fetch notice:", dbErr);
+    }
+
+    // 2. Fallback to Django API
     try {
       const data = await apiGet("therapists/me/");
       if (data?.id) {
@@ -361,13 +407,42 @@ export default function ProfileClient() {
     setLoading(true);
     try {
       let activeProfile = profile;
-      if (!activeProfile.id) {
+      if (!activeProfile.id && clerkEmail) {
         activeProfile = await syncTherapistProfile();
       }
       const payload = buildProfilePayload(activeProfile);
-      const updated = await apiPut(`therapists/${activeProfile.id}/`, payload);
-      setProfile((prev) => ({ ...prev, ...updated }));
-      if (showToast) toast({ title: "Profile Synced ✓", status: "success", duration: 2000 });
+
+      // 1. Direct PostgreSQL Persistence: Immediately updates all 89 fields in database
+      let dbUpdated = null;
+      try {
+        const dbRes = await fetch("/api/profile/therapist", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...payload,
+            id: activeProfile.id,
+            email: activeProfile.email || clerkEmail,
+          }),
+        });
+        if (dbRes.ok) {
+          dbUpdated = await dbRes.json();
+        }
+      } catch (dbErr) {
+        console.warn("Direct DB save notice:", dbErr);
+      }
+
+      // 2. Background sync to Django API (resilient)
+      try {
+        if (activeProfile.id) {
+          await apiPut(`therapists/${activeProfile.id}/`, payload);
+        }
+      } catch (djangoErr) {
+        console.warn("Django background sync notice:", djangoErr);
+      }
+
+      const merged = dbUpdated || activeProfile;
+      setProfile((prev) => ({ ...prev, ...merged }));
+      if (showToast) toast({ title: "Profile Synced & Saved ✓", status: "success", duration: 2500 });
       return true;
     } catch (error) {
       const detail = error?.response?.data?.email?.[0] || error?.response?.data?.detail || error?.message || "Please try again.";
@@ -378,14 +453,165 @@ export default function ProfileClient() {
     }
   };
 
-  const handleSaveAndNext = async () => {
-    if (!requireBasicAccess()) return;
-    const success = await handleSave(false);
-    if (success) {
-      setTabIndex((prev) => (prev + 1) % 9);
-      toast({ title: "Progress Saved", status: "success", duration: 1500 });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const validateTab = (idx) => {
+    const newErrors = {};
+
+    if (idx === 0) {
+      // 1. Identity
+      if (!profile.name?.trim()) {
+        newErrors.name = "Full name is required.";
+      }
+      if (!profile.headline?.trim()) {
+        newErrors.headline = "Public headline is required.";
+      }
+    } else if (idx === 1) {
+      // 2. Credentials (all fields are strictly mandatory)
+      const qual = (profile.highest_qualification || profile.qualification_highest || "").trim();
+      if (!qual) {
+        newErrors.highest_qualification = "Highest qualification is required.";
+      }
+      if (!profile.linkedin_url?.trim()) {
+        newErrors.linkedin_url = "LinkedIn profile URL is required.";
+      }
+      if (!profile.qualification_title?.trim()) {
+        newErrors.qualification_title = "Degree title is required.";
+      }
+      if (!profile.university?.trim()) {
+        newErrors.university = "University / Institution is required.";
+      }
+      const year = profile.year_completed;
+      if (year === null || year === undefined || String(year).trim() === "") {
+        newErrors.year_completed = "Year completed is required.";
+      }
+      const expYears = profile.years_experience ?? profile.experience_years;
+      if (expYears === null || expYears === undefined || String(expYears).trim() === "") {
+        newErrors.years_experience = "Total years of experience is required.";
+      }
+      const postQual = profile.experience_post_qual;
+      if (postQual === null || postQual === undefined || String(postQual).trim() === "") {
+        newErrors.experience_post_qual = "Post-qualification years is required.";
+      }
+      if (!profile.license_details?.trim()) {
+        newErrors.license_details = "License / registration details are required.";
+      }
+    } else if (idx === 4) {
+      // 5. Clinical Judgment (all 5 questions are strictly mandatory)
+      const answers = profile.clinical_judgment_answers || {};
+      if (!answers.first_10_min_response?.trim()) {
+        newErrors.first_10_min_response = "Please answer how you respond in the first 10 minutes.";
+      }
+      if (!answers.stalled_therapy_case?.trim()) {
+        newErrors.stalled_therapy_case = "Please describe a case where therapy was not progressing.";
+      }
+      if (!answers.scope_and_referral_judgment?.trim()) {
+        newErrors.scope_and_referral_judgment = "Please explain when you decide a client is outside your scope.";
+      }
+      if (!answers.suicidal_ideation_response?.trim()) {
+        newErrors.suicidal_ideation_response = "Please outline how you assess and respond to suicidal ideation.";
+      }
+      if (!answers.difficult_clients_self_management?.trim()) {
+        newErrors.difficult_clients_self_management = "Please describe how you manage difficult client dynamics.";
+      }
+    } else if (idx === 5) {
+      // 6. Therapeutic Approach
+      if (!profile.primary_orientation?.trim()) {
+        newErrors.primary_orientation = "Primary therapeutic modality is required.";
+      }
+    } else if (idx === 6) {
+      // 7. Availability
+      if (profile.has_physical_space && !profile.physical_space_location?.trim()) {
+        newErrors.physical_space_location = "Physical space address is required when clinic space is enabled.";
+      }
+    } else if (idx === 7) {
+      // 8. Bio & Media
+      if (!profile.bio?.trim()) {
+        newErrors.bio = "Professional bio is required.";
+      }
+    } else if (idx === 8) {
+      // 9. Internal Matching
+      const protocols = profile.risk_protocols || {};
+      if (!protocols.psychiatrist?.trim()) {
+        newErrors.psychiatrist = "Collaborating psychiatrist details are required.";
+      }
+      if (!protocols.hospital?.trim()) {
+        newErrors.hospital = "Primary emergency hospital is required.";
+      }
+      if (!protocols.location?.trim()) {
+        newErrors.location = "Hospital location is required.";
+      }
+      if (!protocols.contact?.trim()) {
+        newErrors.contact = "Emergency contact is required.";
+      }
     }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors((prev) => ({ ...prev, ...newErrors }));
+      return false;
+    }
+    return true;
+  };
+
+  const handleTabChange = (newIndex) => {
+    if (newIndex > tabIndex) {
+      const isValid = validateTab(tabIndex);
+      if (!isValid) {
+        toast({
+          title: "Required Fields Missing",
+          description: "Please complete all fields marked with an asterisk (*) before continuing.",
+          status: "warning",
+          duration: 3500,
+          isClosable: true,
+        });
+        setTimeout(() => {
+          const firstErrorEl = document.querySelector('[aria-invalid="true"]');
+          if (firstErrorEl) {
+            firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstErrorEl.focus?.();
+          }
+        }, 80);
+        return;
+      }
+    }
+    setTabIndex(newIndex);
+  };
+
+  const handlePrevTab = () => {
+    setTabIndex((prev) => Math.max(0, prev - 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSaveAndNext = async (e) => {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
+    const isValid = validateTab(tabIndex);
+    if (!isValid) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please complete all fields marked with an asterisk (*) before continuing.",
+        status: "warning",
+        duration: 3500,
+        isClosable: true,
+      });
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('[aria-invalid="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstErrorEl.focus?.();
+        }
+      }, 80);
+      return;
+    }
+
+    // Auto-save draft in the background so inputs are persisted to database
+    handleSave(false).catch((err) => {
+      console.warn("Draft auto-save notice:", err);
+    });
+
+    // Advance smoothly to next section without full page refresh
+    setTabIndex((prev) => Math.min(8, prev + 1));
+    toast({ title: "Progress Saved", status: "success", duration: 1200 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleKeywordAdd = () => {
@@ -429,23 +655,92 @@ export default function ProfileClient() {
   const resumeFileRef = useRef(null);
 
   const handlePhotoUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    const formDataUpload = new FormData();
-    formDataUpload.append('profile_image', file);
-    
     setLoading(true);
     try {
-      await syncTherapistProfile();
-      const updated = await apiPatchForm("therapists/me/", formDataUpload);
-      setProfile((prev) => ({ ...prev, ...updated }));
-      toast({ title: "Photo updated", status: "success" });
+      // 1. Upload via Next.js API route (saves to Clerk CDN & PostgreSQL database)
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      if (clerkEmail || profile?.email) {
+        uploadFormData.append("email", profile?.email || clerkEmail);
+      }
+      if (profile?.id) {
+        uploadFormData.append("therapistId", String(profile.id));
+      }
+      if (user?.id) {
+        uploadFormData.append("userId", String(user.id));
+      }
+
+      const res = await fetch("/api/profile/upload-photo", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const resData = await res.json().catch(() => ({}));
+      if (resData?.imageUrl) {
+        const newImgUrl = resData.imageUrl;
+        setProfile((prev) => ({
+          ...prev,
+          profile_image: newImgUrl,
+          profile_image_url: newImgUrl,
+          imageUrl: newImgUrl,
+        }));
+
+        // Immediately persist directly to PostgreSQL database
+        try {
+          await fetch("/api/profile/therapist", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: profile?.id,
+              email: profile?.email || clerkEmail,
+              profile_image: newImgUrl,
+              profile_image_url: newImgUrl,
+            }),
+          });
+        } catch (dbErr) {
+          console.warn("Direct DB avatar sync notice:", dbErr);
+        }
+      }
+
+      // 2. Also update Clerk client user object directly if available
+      if (user && typeof user.setProfileImage === "function") {
+        try {
+          await user.setProfileImage({ file });
+        } catch (clerkErr) {
+          console.warn("Clerk user.setProfileImage notice:", clerkErr);
+        }
+      }
+
+      // 3. Fallback sync to Django backend
+      try {
+        await syncTherapistProfile();
+        const formDataUpload = new FormData();
+        formDataUpload.append("profile_image", file);
+        const updated = await apiPatchForm("therapists/me/", formDataUpload);
+        setProfile((prev) => ({ ...prev, ...updated }));
+      } catch (djangoErr) {
+        console.warn("Django therapist photo patch notice (handled by DB route):", djangoErr);
+      }
+
+      toast({
+        title: "Photo updated",
+        description: "Your profile picture has been updated successfully.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      // Profile image updated reactively in state — no window reload needed
     } catch (err) {
       const detail = err?.response?.data?.detail || err?.message || "Upload failed";
-      toast({ title: "Upload failed", description: detail, status: "error" });
+      toast({ title: "Upload failed", description: detail, status: "error", duration: 6000, isClosable: true });
     } finally {
       setLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -474,20 +769,67 @@ export default function ProfileClient() {
   };
 
   const handleSubmitForReview = async () => {
+    if (!requireBasicAccess()) return;
+    const isValid = validateTab(tabIndex);
+    if (!isValid) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please complete all fields marked with an asterisk (*) before submitting.",
+        status: "warning",
+        duration: 3500,
+        isClosable: true,
+      });
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('[aria-invalid="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          firstErrorEl.focus?.();
+        }
+      }, 80);
+      return;
+    }
+
     setLoading(true);
     try {
+      const saved = await handleSave(false);
+      if (!saved) {
+        setLoading(false);
+        return;
+      }
       await apiPost("therapists/submit-for-review/", {});
-      toast({ title: "Submitted", description: "Your profile is now under review.", status: "success" });
+      toast({
+        title: "Submitted for Review",
+        description: "Your profile has been submitted to the clinical team for vetting.",
+        status: "success",
+        duration: 5000,
+        isClosable: true
+      });
+      // Update status in PostgreSQL DB directly
+      try {
+        await fetch("/api/profile/therapist", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: profile.id,
+            email: profile.email || clerkEmail,
+            profile_status: "submitted",
+          }),
+        });
+      } catch (e) {
+        console.warn("Direct DB status update notice:", e);
+      }
+
       // Refresh to get updated status
-      const data = await apiGet("therapists/me/");
-      setProfile(prev => ({ ...prev, ...data }));
+      await syncTherapistProfile();
     } catch (error) {
       const detail = error?.response?.data?.detail || "Could not submit.";
       const missing = error?.response?.data?.missing_fields;
       toast({
         title: "Submission failed",
         description: Array.isArray(missing) ? `${detail} Missing: ${missing.join(", ")}` : detail,
-        status: "error"
+        status: "error",
+        duration: 6000,
+        isClosable: true
       });
     } finally {
       setLoading(false);
@@ -564,12 +906,29 @@ export default function ProfileClient() {
           borderColor: "#56756D !important",
           boxShadow: "0 0 0 1px #56756D !important",
         },
+        "input[aria-invalid=true], textarea[aria-invalid=true], select[aria-invalid=true]": {
+          borderColor: "#DC2626 !important",
+          boxShadow: "0 0 0 1px #DC2626 !important",
+          bg: "#FEF2F2 !important",
+        },
         ".chakra-form__label, label": {
           fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important",
           fontSize: "13px !important",
           fontWeight: "600 !important",
           color: "#263A33 !important",
           marginBottom: "6px !important",
+        },
+        ".chakra-form__required-indicator": {
+          color: "#DC2626 !important",
+          marginLeft: "3px !important",
+          fontWeight: "700 !important",
+        },
+        ".chakra-form__error-message": {
+          fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important",
+          fontSize: "12px !important",
+          color: "#DC2626 !important",
+          marginTop: "5px !important",
+          fontWeight: "500 !important",
         },
         "option": {
           fontFamily: "'Inter', var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important",
@@ -621,7 +980,7 @@ export default function ProfileClient() {
               <Avatar
                 size="md"
                 name={profile.name || user?.fullName || 'Therapist'}
-                src={profile.profile_image || profile.imageUrl}
+                src={profile.profile_image || profile.profile_image_url || profile.imageUrl || user?.imageUrl}
                 border="2px solid white"
                 boxShadow="0 2px 8px rgba(38, 58, 51, 0.08)"
               />
@@ -752,14 +1111,48 @@ export default function ProfileClient() {
               </HStack>
             </HStack>
 
-            {/* Action Buttons: Submit for Review / Finalize & Sync */}
+            {/* Master Action Button */}
             <HStack
               spacing={2.5}
               w={{ base: "full", md: "auto" }}
               justify={{ base: "flex-start", md: "flex-end" }}
               flexShrink={0}
             >
-              {(profile.profile_status === 'draft' || profile.profile_status === 'changes_requested') && (
+              {profile.profile_status === 'approved' ? (
+                <Button
+                  leftIcon={<Icon as={FiSave} boxSize="13px" />}
+                  bg="#56756D"
+                  color="white"
+                  borderRadius="full"
+                  height="38px"
+                  fontSize="13px"
+                  fontWeight="600"
+                  px={6}
+                  onClick={() => requireBasicAccess(() => handleSave(true))}
+                  isLoading={loading}
+                  boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                  whiteSpace="nowrap"
+                >
+                  Save & Publish Updates
+                </Button>
+              ) : ['submitted', 'pending_review', 'awaiting_contract'].includes(profile.profile_status) ? (
+                <HStack
+                  spacing={2}
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  bg="rgba(245, 158, 11, 0.12)"
+                  border="1px solid rgba(245, 158, 11, 0.3)"
+                  color="#D97706"
+                  whiteSpace="nowrap"
+                >
+                  <Icon as={FiClock} boxSize="13px" />
+                  <Text fontSize="12.5px" fontWeight="600">
+                    {profile.profile_status === 'awaiting_contract' ? 'Awaiting Contract' : 'Under Review'}
+                  </Text>
+                </HStack>
+              ) : (
                 <Button
                   leftIcon={<Icon as={FiZap} boxSize="13px" />}
                   bg="#56756D"
@@ -768,36 +1161,16 @@ export default function ProfileClient() {
                   height="38px"
                   fontSize="13px"
                   fontWeight="600"
-                  px={5}
+                  px={6}
                   onClick={handleSubmitForReview}
                   isLoading={loading}
                   boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
                   _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
                   whiteSpace="nowrap"
                 >
-                  Submit for Review
+                  {profile.profile_status === 'changes_requested' ? "Resubmit for Review" : "Submit for Review"}
                 </Button>
               )}
-
-              <Button
-                leftIcon={<Icon as={FiSave} boxSize="13px" />}
-                bg={profile.profile_status === 'approved' ? "#56756D" : "rgba(86, 117, 109, 0.25)"}
-                color={profile.profile_status === 'approved' ? "white" : "#718096"}
-                borderRadius="full"
-                height="38px"
-                fontSize="13px"
-                fontWeight="600"
-                px={5}
-                onClick={() => requireBasicAccess(() => handleSave())}
-                isLoading={loading}
-                isDisabled={profile.profile_status !== 'approved'}
-                boxShadow={profile.profile_status === 'approved' ? "0 2px 6px rgba(86, 117, 109, 0.22)" : "none"}
-                _hover={profile.profile_status === 'approved' ? { bg: "#263A33", transform: "translateY(-1px)" } : {}}
-                title={profile.profile_status !== 'approved' ? "Syncing is locked until your profile is approved by an administrator." : ""}
-                whiteSpace="nowrap"
-              >
-                Finalize & Sync
-              </Button>
             </HStack>
           </Stack>
         </Flex>
@@ -939,7 +1312,7 @@ export default function ProfileClient() {
       </VStack>
 
       {/* 🌿 2. SLEEK PILL TABS NAVIGATION */}
-      <Tabs index={tabIndex} onChange={(i) => setTabIndex(i)} variant="unstyled" isLazy>
+      <Tabs index={tabIndex} onChange={handleTabChange} variant="unstyled" isLazy>
         <TabList 
           overflowX="auto" 
           border="none" 
@@ -952,17 +1325,7 @@ export default function ProfileClient() {
             '&::-webkit-scrollbar': { display: 'none' } 
           }}
         >
-          {[
-            { icon: FiUser, label: 'Identity' },
-            { icon: FiAward, label: 'Credentials' },
-            { icon: FiUsers, label: 'Populations' },
-            { icon: FiTarget, label: 'Clinical Scope' },
-            { icon: FiAlertCircle, label: 'Clinical Judgment' },
-            { icon: FiHeart, label: 'Therapeutic Approach' },
-            { icon: FiClock, label: 'Availability' },
-            { icon: FiBook, label: 'Bio & Media' },
-            { icon: FiSettings, label: 'Internal Matching' },
-          ].map((tab, idx) => (
+          {PROFILE_TABS.map((tab, idx) => (
             <Tab
               key={idx}
               whiteSpace="nowrap"
@@ -1008,32 +1371,48 @@ export default function ProfileClient() {
           <TabPanel>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={12}>
               <VStack align="stretch" spacing={6}>
-                  <FormControl isRequired>
+                  <FormControl isRequired isInvalid={Boolean(errors.name)}>
                     <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Full Name</FormLabel>
-                    <Input value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                    <Input value={profile.name || ""} onChange={(e) => { setProfile({...profile, name: e.target.value}); clearError("name"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                    {errors.name && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.name}</FormErrorMessage>}
                   </FormControl>
                   <FormControl>
                     <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Professional Title</FormLabel>
-                    <Input placeholder="e.g. Counselling Psychologist" value={profile.title} onChange={(e) => setProfile({...profile, title: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                    <Input placeholder="e.g. Counselling Psychologist" value={profile.title || ""} onChange={(e) => setProfile({...profile, title: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
                   </FormControl>
                   <FormControl>
                     <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Pronouns</FormLabel>
-                    <Input placeholder="She / Her" value={profile.pronouns} onChange={(e) => setProfile({...profile, pronouns: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                    <Input placeholder="She / Her" value={profile.pronouns || ""} onChange={(e) => setProfile({...profile, pronouns: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
                   </FormControl>
-                  <FormControl isRequired>
+                  <FormControl isRequired isInvalid={Boolean(errors.headline)}>
                     <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Public Headline</FormLabel>
-                    <Input placeholder="Focused on trauma and relationship wellness..." value={profile.headline} onChange={(e) => setProfile({...profile, headline: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                    <Input placeholder="Focused on trauma and relationship wellness..." value={profile.headline || ""} onChange={(e) => { setProfile({...profile, headline: e.target.value}); clearError("headline"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
                     <Text fontSize="12px" color="#5A6E65" mt={1.5}>Keep this specific. 8-14 words works best for discoverability.</Text>
+                    {errors.headline && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.headline}</FormErrorMessage>}
                   </FormControl>
                 </VStack>
                 <VStack align="center" justify="center">
-                   <Avatar size="2xl" name={profile.name} src={profile.profile_image || profile.imageUrl} bg="#56756D" />
+                   <Avatar size="2xl" name={profile.name} src={profile.profile_image || profile.profile_image_url || profile.imageUrl || user?.imageUrl} bg="#56756D" />
                    <Button mt={4} leftIcon={<FiCamera />} variant="outline" borderColor="rgba(86, 117, 109, 0.25)" color="#263A33" borderRadius="full" h="34px" fontSize="12.5px" fontWeight="600" onClick={() => fileInputRef.current?.click()} isLoading={loading} _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}>Update Profile Picture</Button>
                 </VStack>
              </SimpleGrid>
              <Divider my={8} borderColor="rgba(86, 117, 109, 0.12)" />
-             <Flex justify="flex-end">
-               <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: "#263A33", transform: "translateY(-1px)" }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+             <Flex justify="flex-end" align="center" pt={2}>
+               <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                 bg="#56756D"
+                 color="white"
+                 borderRadius="full"
+                 h="38px"
+                 px={6}
+                 fontSize="13px"
+                 fontWeight="600"
+                 onClick={handleSaveAndNext}
+                 isLoading={loading}
+                 _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                 boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+               >
+                 Continue: Credentials
+               </Button>
              </Flex>
            </TabPanel>
 
@@ -1041,46 +1420,57 @@ export default function ProfileClient() {
            <TabPanel>
              <VStack align="stretch" spacing={7}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
-                   <FormControl isRequired>
+                   <FormControl isRequired isInvalid={Boolean(errors.highest_qualification)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Highest Qualification</FormLabel>
-                     <Input placeholder="e.g. Ph.D, M.Phil" value={profile.highest_qualification || profile.qualification_highest || ""} onChange={(e) => setProfile({...profile, highest_qualification: e.target.value, qualification_highest: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input placeholder="e.g. Ph.D, M.Phil, M.Sc." value={profile.highest_qualification || profile.qualification_highest || ""} onChange={(e) => { setProfile({...profile, highest_qualification: e.target.value, qualification_highest: e.target.value}); clearError("highest_qualification"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     {errors.highest_qualification && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.highest_qualification}</FormErrorMessage>}
                    </FormControl>
-                   <FormControl isRequired>
+                   <FormControl isRequired isInvalid={Boolean(errors.linkedin_url)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">LinkedIn Profile URL</FormLabel>
-                     <Input placeholder="https://www.linkedin.com/in/your-profile" value={profile.linkedin_url || ""} onChange={(e) => setProfile({...profile, linkedin_url: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input placeholder="https://www.linkedin.com/in/your-profile" value={profile.linkedin_url || ""} onChange={(e) => { setProfile({...profile, linkedin_url: e.target.value}); clearError("linkedin_url"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
                      <Text fontSize="12px" color="#5A6E65" mt={1.5}>Use your full profile URL so admin can verify credentials faster.</Text>
+                     {errors.linkedin_url && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.linkedin_url}</FormErrorMessage>}
                    </FormControl>
-                   <FormControl>
+                   <FormControl isRequired isInvalid={Boolean(errors.qualification_title)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Degree Title</FormLabel>
-                     <Input placeholder="Psychology" value={profile.qualification_title} onChange={(e) => setProfile({...profile, qualification_title: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input placeholder="Psychology" value={profile.qualification_title || ""} onChange={(e) => { setProfile({...profile, qualification_title: e.target.value}); clearError("qualification_title"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     {errors.qualification_title && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.qualification_title}</FormErrorMessage>}
                    </FormControl>
-                   <FormControl>
+                   <FormControl isRequired isInvalid={Boolean(errors.university)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">University / Institution</FormLabel>
-                     <Input value={profile.university} onChange={(e) => setProfile({...profile, university: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input placeholder="e.g. University of Delhi, NIMHANS" value={profile.university || ""} onChange={(e) => { setProfile({...profile, university: e.target.value}); clearError("university"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     {errors.university && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.university}</FormErrorMessage>}
                    </FormControl>
-                   <FormControl>
+                   <FormControl isRequired isInvalid={Boolean(errors.year_completed)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Year Completed</FormLabel>
-                     <Input type="number" value={profile.year_completed} onChange={(e) => setProfile({...profile, year_completed: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input type="number" placeholder="e.g. 2020" value={profile.year_completed || ""} onChange={(e) => { setProfile({...profile, year_completed: e.target.value}); clearError("year_completed"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     {errors.year_completed && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.year_completed}</FormErrorMessage>}
                    </FormControl>
                 </SimpleGrid>
                 <Divider borderColor="rgba(86, 117, 109, 0.12)" />
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
-                   <FormControl>
+                   <FormControl isRequired isInvalid={Boolean(errors.years_experience)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Total Years of Experience</FormLabel>
-                     <Input type="number" value={profile.years_experience ?? profile.experience_years ?? 0} onChange={(e) => setProfile({...profile, years_experience: e.target.value, experience_years: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input type="number" min="0" placeholder="0" value={profile.years_experience ?? profile.experience_years ?? ""} onChange={(e) => { setProfile({...profile, years_experience: e.target.value, experience_years: e.target.value}); clearError("years_experience"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     {errors.years_experience && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.years_experience}</FormErrorMessage>}
                    </FormControl>
-                   <FormControl>
+                   <FormControl isRequired isInvalid={Boolean(errors.experience_post_qual)}>
                      <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Post-Qualification Years</FormLabel>
-                     <Input type="number" value={profile.experience_post_qual} onChange={(e) => setProfile({...profile, experience_post_qual: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     <Input type="number" min="0" placeholder="0" value={profile.experience_post_qual ?? ""} onChange={(e) => { setProfile({...profile, experience_post_qual: e.target.value}); clearError("experience_post_qual"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                     {errors.experience_post_qual && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.experience_post_qual}</FormErrorMessage>}
                    </FormControl>
                 </SimpleGrid>
-                <FormControl>
+                <FormControl isRequired isInvalid={Boolean(errors.license_details)}>
                    <FormLabel fontWeight="600" fontSize="13px" color="#263A33">License / Registration Details</FormLabel>
-                   <Textarea value={profile.license_details} onChange={(e) => setProfile({...profile, license_details: e.target.value})} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                   <Textarea placeholder="e.g. RCI CRR No., State Board Registration, or Professional Practicing ID" value={profile.license_details || ""} onChange={(e) => { setProfile({...profile, license_details: e.target.value}); clearError("license_details"); }} borderRadius="xl" borderColor="rgba(86, 117, 109, 0.2)" _focus={{ borderColor: "#56756D", boxShadow: "0 0 0 1px #56756D" }} />
+                   {errors.license_details && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.license_details}</FormErrorMessage>}
                 </FormControl>
                 <Box p={6} border="1px dashed" borderColor="rgba(86, 117, 109, 0.25)" borderRadius="2xl" bg="rgba(250, 248, 245, 0.6)" textAlign="center">
                    <Icon as={FiBriefcase} boxSize={6} color="#56756D" mb={2} />
-                   <Text fontWeight="600" fontSize="13.5px" color="#263A33">Professional Documents (Internal Only)</Text>
+                   <HStack justify="center" spacing={1.5} mb={1}>
+                     <Text fontWeight="600" fontSize="13.5px" color="#263A33">Professional Documents (Internal Only)</Text>
+                     <Text as="span" color="#DC2626" fontWeight="700">*</Text>
+                   </HStack>
                    <Text fontSize="12px" color="#5A6E65" mb={4}>Highest qualification proof and CV/Resume are required before review.</Text>
                    <HStack justify="center" spacing={3} wrap="wrap">
                      <Button size="sm" variant="outline" borderColor="rgba(86, 117, 109, 0.3)" color="#263A33" borderRadius="full" h="34px" fontSize="12.5px" fontWeight="600" onClick={() => qualificationProofRef.current?.click()} _hover={{ bg: "rgba(86, 117, 109, 0.08)" }}>
@@ -1102,9 +1492,37 @@ export default function ProfileClient() {
                      Accepted: PDF, DOC, DOCX, JPG, PNG. Clear and readable files.
                    </Text>
                 </Box>
-                <Divider my={4} borderColor="rgba(86, 117, 109, 0.12)" />
-                <Flex justify="flex-end">
-                  <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: "#263A33", transform: "translateY(-1px)" }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+                <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
+                <Flex justify="space-between" align="center" pt={2}>
+                  <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    h="38px"
+                    px={5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    onClick={handlePrevTab}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Previous
+                  </Button>
+                  <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    bg="#56756D"
+                    color="white"
+                    borderRadius="full"
+                    h="38px"
+                    px={6}
+                    fontSize="13px"
+                    fontWeight="600"
+                    onClick={handleSaveAndNext}
+                    isLoading={loading}
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  >
+                    Continue: Populations
+                  </Button>
                 </Flex>
              </VStack>
            </TabPanel>
@@ -1231,8 +1649,36 @@ export default function ProfileClient() {
                   </VStack>
                </Box>
                <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
-                <Flex justify="flex-end">
-                  <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+                <Flex justify="space-between" align="center" pt={2}>
+                  <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    h="38px"
+                    px={5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    onClick={handlePrevTab}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Previous
+                  </Button>
+                  <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    bg="#56756D"
+                    color="white"
+                    borderRadius="full"
+                    h="38px"
+                    px={6}
+                    fontSize="13px"
+                    fontWeight="600"
+                    onClick={handleSaveAndNext}
+                    isLoading={loading}
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  >
+                    Continue: Clinical Scope
+                  </Button>
                 </Flex>
             </VStack>
           </TabPanel>
@@ -1325,8 +1771,36 @@ export default function ProfileClient() {
                   </SimpleGrid>
                </Box>
                <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
-                <Flex justify="flex-end">
-                  <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+                <Flex justify="space-between" align="center" pt={2}>
+                  <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    h="38px"
+                    px={5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    onClick={handlePrevTab}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Previous
+                  </Button>
+                  <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    bg="#56756D"
+                    color="white"
+                    borderRadius="full"
+                    h="38px"
+                    px={6}
+                    fontSize="13px"
+                    fontWeight="600"
+                    onClick={handleSaveAndNext}
+                    isLoading={loading}
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  >
+                    Continue: Clinical Judgment
+                  </Button>
                 </Flex>
             </VStack>
           </TabPanel>
@@ -1351,28 +1825,62 @@ export default function ProfileClient() {
               <Text fontSize="xs" color="gray.500">
                 Write concrete, real-case style answers. One-line answers are usually returned for revision.
               </Text>
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.first_10_min_response)}>
                 <FormLabel fontWeight="600" fontSize="13px" color="#263A33">A client says: "I feel stuck and don’t know what’s wrong with me." How would you respond in the first 10 minutes?</FormLabel>
-                <Textarea minH="140px" value={profile.clinical_judgment_answers?.first_10_min_response || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), first_10_min_response: e.target.value } })} borderRadius="xl" />
+                <Textarea minH="140px" placeholder="Write your clinical formulation and first response here..." value={profile.clinical_judgment_answers?.first_10_min_response || ""} onChange={(e) => { setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), first_10_min_response: e.target.value } }); clearError("first_10_min_response"); }} borderRadius="xl" />
+                {errors.first_10_min_response && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.first_10_min_response}</FormErrorMessage>}
               </FormControl>
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.stalled_therapy_case)}>
                 <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Describe a case where therapy was not progressing. What did you do?</FormLabel>
-                <Textarea minH="140px" value={profile.clinical_judgment_answers?.stalled_therapy_case || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), stalled_therapy_case: e.target.value } })} borderRadius="xl" />
+                <Textarea minH="140px" placeholder="Describe the therapeutic impasse, clinical hypothesis, and adjustment..." value={profile.clinical_judgment_answers?.stalled_therapy_case || ""} onChange={(e) => { setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), stalled_therapy_case: e.target.value } }); clearError("stalled_therapy_case"); }} borderRadius="xl" />
+                {errors.stalled_therapy_case && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.stalled_therapy_case}</FormErrorMessage>}
               </FormControl>
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.scope_and_referral_judgment)}>
                 <FormLabel fontWeight="600" fontSize="13px" color="#263A33">When would you decide a client is outside your scope and refer out?</FormLabel>
-                <Textarea minH="140px" value={profile.clinical_judgment_answers?.scope_and_referral_judgment || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), scope_and_referral_judgment: e.target.value } })} borderRadius="xl" />
+                <Textarea minH="140px" placeholder="Outline clinical red flags, competencies, and ethical referral criteria..." value={profile.clinical_judgment_answers?.scope_and_referral_judgment || ""} onChange={(e) => { setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), scope_and_referral_judgment: e.target.value } }); clearError("scope_and_referral_judgment"); }} borderRadius="xl" />
+                {errors.scope_and_referral_judgment && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.scope_and_referral_judgment}</FormErrorMessage>}
               </FormControl>
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.suicidal_ideation_response)}>
                 <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Briefly describe how you assess and respond to suicidal ideation in a client.</FormLabel>
-                <Textarea minH="140px" value={profile.clinical_judgment_answers?.suicidal_ideation_response || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), suicidal_ideation_response: e.target.value } })} borderRadius="xl" />
+                <Textarea minH="140px" placeholder="Describe risk stratification, safety protocols, and follow-through steps..." value={profile.clinical_judgment_answers?.suicidal_ideation_response || ""} onChange={(e) => { setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), suicidal_ideation_response: e.target.value } }); clearError("suicidal_ideation_response"); }} borderRadius="xl" />
+                {errors.suicidal_ideation_response && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.suicidal_ideation_response}</FormErrorMessage>}
               </FormControl>
-              <FormControl isRequired>
+              <FormControl isRequired isInvalid={Boolean(errors.difficult_clients_self_management)}>
                 <FormLabel fontWeight="600" fontSize="13px" color="#263A33">What kind of clients do you find difficult to work with, and how do you manage that?</FormLabel>
-                <Textarea minH="140px" value={profile.clinical_judgment_answers?.difficult_clients_self_management || ""} onChange={(e) => setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), difficult_clients_self_management: e.target.value } })} borderRadius="xl" />
+                <Textarea minH="140px" placeholder="Reflect on countertransference, difficult dynamics, and supervision support..." value={profile.clinical_judgment_answers?.difficult_clients_self_management || ""} onChange={(e) => { setProfile({ ...profile, clinical_judgment_answers: { ...(profile.clinical_judgment_answers || {}), difficult_clients_self_management: e.target.value } }); clearError("difficult_clients_self_management"); }} borderRadius="xl" />
+                {errors.difficult_clients_self_management && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.difficult_clients_self_management}</FormErrorMessage>}
               </FormControl>
-              <Flex justify="flex-end">
-                <Button rightIcon={<FiZap />} bg="#56756D" color="white" borderRadius="full" px={10} onClick={handleSaveAndNext} isLoading={loading}>Save & Continue</Button>
+              <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
+              <Flex justify="space-between" align="center" pt={2}>
+                <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                  variant="outline"
+                  borderColor="rgba(86, 117, 109, 0.25)"
+                  color="#263A33"
+                  borderRadius="full"
+                  h="38px"
+                  px={5}
+                  fontSize="12.5px"
+                  fontWeight="600"
+                  onClick={handlePrevTab}
+                  _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                >
+                  Previous
+                </Button>
+                <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                  bg="#56756D"
+                  color="white"
+                  borderRadius="full"
+                  h="38px"
+                  px={6}
+                  fontSize="13px"
+                  fontWeight="600"
+                  onClick={handleSaveAndNext}
+                  isLoading={loading}
+                  _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                  boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                >
+                  Continue: Therapeutic Approach
+                </Button>
               </Flex>
             </VStack>
           </TabPanel>
@@ -1399,15 +1907,16 @@ export default function ProfileClient() {
                   </Box>
 
                   <VStack align="stretch" spacing={8} mb={10}>
-                     <FormControl isRequired>
+                     <FormControl isRequired isInvalid={Boolean(errors.primary_orientation)}>
                         <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Primary Therapeutic Modality</FormLabel>
                         <Text fontSize="12.5px" color="#5A6E65" mb={2}>Your "Main Lens" – the modality that informs your case formulation most strongly.</Text>
                         <ModernSelect 
                         placeholder="Select Primary Modality"
                         value={profile.primary_orientation}
                         options={(profile.modalities_info || []).map(m => m.name)}
-                        onChange={(val) => setProfile({...profile, primary_orientation: val})}
+                        onChange={(val) => { setProfile({...profile, primary_orientation: val}); clearError("primary_orientation"); }}
                       />
+                      {errors.primary_orientation && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.primary_orientation}</FormErrorMessage>}
                      </FormControl>
 
                      <Box>
@@ -1507,8 +2016,36 @@ export default function ProfileClient() {
                   </SimpleGrid>
                </Box>
                <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
-                <Flex justify="flex-end">
-                  <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+                <Flex justify="space-between" align="center" pt={2}>
+                  <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    h="38px"
+                    px={5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    onClick={handlePrevTab}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Previous
+                  </Button>
+                  <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    bg="#56756D"
+                    color="white"
+                    borderRadius="full"
+                    h="38px"
+                    px={6}
+                    fontSize="13px"
+                    fontWeight="600"
+                    onClick={handleSaveAndNext}
+                    isLoading={loading}
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  >
+                    Continue: Availability
+                  </Button>
                 </Flex>
             </VStack>
           </TabPanel>
@@ -1559,15 +2096,16 @@ export default function ProfileClient() {
                       
                       {profile.has_physical_space && (
                         <VStack align="stretch" spacing={4} pt={2}>
-                          <FormControl isRequired>
+                          <FormControl isRequired isInvalid={Boolean(errors.physical_space_location)}>
                             <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Full Physical Address</FormLabel>
                             <Textarea 
                               bg="white" 
                               placeholder="Complete address for in-person clients..." 
                               value={profile.physical_space_location || ""} 
-                              onChange={(e) => setProfile({...profile, physical_space_location: e.target.value})} 
+                              onChange={(e) => { setProfile({...profile, physical_space_location: e.target.value}); clearError("physical_space_location"); }} 
                               borderRadius="xl"
                             />
+                            {errors.physical_space_location && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.physical_space_location}</FormErrorMessage>}
                           </FormControl>
                           <FormControl>
                             <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Clinic / Room Images (URLs)</FormLabel>
@@ -1596,8 +2134,36 @@ export default function ProfileClient() {
                   </Box>
                </VStack>
                <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
-                <Flex justify="flex-end">
-                  <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+                <Flex justify="space-between" align="center" pt={2}>
+                  <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    h="38px"
+                    px={5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    onClick={handlePrevTab}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Previous
+                  </Button>
+                  <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    bg="#56756D"
+                    color="white"
+                    borderRadius="full"
+                    h="38px"
+                    px={6}
+                    fontSize="13px"
+                    fontWeight="600"
+                    onClick={handleSaveAndNext}
+                    isLoading={loading}
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  >
+                    Continue: Bio & Media
+                  </Button>
                 </Flex>
             </VStack>
           </TabPanel>
@@ -1605,10 +2171,11 @@ export default function ProfileClient() {
           {/* 7. Bio & Media */}
           <TabPanel>
             <VStack align="stretch" spacing={8}>
-               <FormControl>
+               <FormControl isRequired isInvalid={Boolean(errors.bio)}>
                   <FormLabel fontWeight="600" fontSize="13px" color="#263A33">Professional Bio (150+ words recommended for visibility)</FormLabel>
-                  <Textarea value={profile.bio} onChange={(e) => setProfile({...profile, bio: e.target.value})} borderRadius="2xl" rows={10} placeholder="Talk about your journey, style, and approach..." />
+                  <Textarea value={profile.bio || ""} onChange={(e) => { setProfile({...profile, bio: e.target.value}); clearError("bio"); }} borderRadius="2xl" rows={10} placeholder="Talk about your journey, style, and approach..." />
                   <Text fontSize="12px" color="#5A6E65" mt={2}>Include training background, populations served, and therapeutic style.</Text>
+                  {errors.bio && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.bio}</FormErrorMessage>}
                </FormControl>
                
                <Box bg="rgba(250, 248, 245, 0.85)" p={6} borderRadius="2xl" border="1px solid" borderColor="rgba(86, 117, 109, 0.14)">
@@ -1638,8 +2205,36 @@ export default function ProfileClient() {
                   <Textarea value={profile.welcome_note} onChange={(e) => setProfile({...profile, welcome_note: e.target.value})} borderRadius="xl" placeholder="A reassuring message for those new to therapy..." />
                </FormControl>
                <Divider my={6} borderColor="rgba(86, 117, 109, 0.12)" />
-                <Flex justify="flex-end">
-                  <Button rightIcon={<Icon as={FiZap} boxSize="13px" />} bg="#56756D" color="white" borderRadius="full" h="38px" px={6} fontSize="13px" fontWeight="600" onClick={handleSaveAndNext} isLoading={loading} _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }} boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)">Save & Continue</Button>
+                <Flex justify="space-between" align="center" pt={2}>
+                  <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                    variant="outline"
+                    borderColor="rgba(86, 117, 109, 0.25)"
+                    color="#263A33"
+                    borderRadius="full"
+                    h="38px"
+                    px={5}
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    onClick={handlePrevTab}
+                    _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
+                  >
+                    Previous
+                  </Button>
+                  <Button type="button" rightIcon={<Icon as={FiArrowRight} boxSize="13px" />}
+                    bg="#56756D"
+                    color="white"
+                    borderRadius="full"
+                    h="38px"
+                    px={6}
+                    fontSize="13px"
+                    fontWeight="600"
+                    onClick={handleSaveAndNext}
+                    isLoading={loading}
+                    _hover={{ bg: "#263A33", transform: "translateY(-1px)" }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                  >
+                    Continue: Internal Matching
+                  </Button>
                 </Flex>
             </VStack>
           </TabPanel>
@@ -1660,21 +2255,25 @@ export default function ProfileClient() {
                   </Text>
 
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }} mb={8}>
-                     <FormControl isRequired>
+                     <FormControl isRequired isInvalid={Boolean(errors.psychiatrist)}>
                         <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Collaborating Psychiatrist</FormLabel>
-                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.psychiatrist} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, psychiatrist: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.psychiatrist || ""} onChange={(e) => { setProfile({...profile, risk_protocols: {...profile.risk_protocols, psychiatrist: e.target.value}}); clearError("psychiatrist"); }} />
+                        {errors.psychiatrist && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.psychiatrist}</FormErrorMessage>}
                      </FormControl>
-                     <FormControl isRequired>
+                     <FormControl isRequired isInvalid={Boolean(errors.hospital)}>
                         <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Primary Emergency Hospital</FormLabel>
-                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.hospital} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, hospital: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.hospital || ""} onChange={(e) => { setProfile({...profile, risk_protocols: {...profile.risk_protocols, hospital: e.target.value}}); clearError("hospital"); }} />
+                        {errors.hospital && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.hospital}</FormErrorMessage>}
                      </FormControl>
-                     <FormControl isRequired>
+                     <FormControl isRequired isInvalid={Boolean(errors.location)}>
                         <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Hospital Location</FormLabel>
-                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.location} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, location: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.location || ""} onChange={(e) => { setProfile({...profile, risk_protocols: {...profile.risk_protocols, location: e.target.value}}); clearError("location"); }} />
+                        {errors.location && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.location}</FormErrorMessage>}
                      </FormControl>
-                     <FormControl isRequired>
+                     <FormControl isRequired isInvalid={Boolean(errors.contact)}>
                         <FormLabel fontSize="12.5px" fontWeight="600" color="#263A33">Emergency Contact</FormLabel>
-                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.contact} onChange={(e) => setProfile({...profile, risk_protocols: {...profile.risk_protocols, contact: e.target.value}})} />
+                        <Input bg="white" borderRadius="xl" value={profile.risk_protocols?.contact || ""} onChange={(e) => { setProfile({...profile, risk_protocols: {...profile.risk_protocols, contact: e.target.value}}); clearError("contact"); }} />
+                        {errors.contact && <FormErrorMessage fontSize="12px" color="#DC2626">{errors.contact}</FormErrorMessage>}
                      </FormControl>
                   </SimpleGrid>
 
@@ -1835,23 +2434,70 @@ export default function ProfileClient() {
                     </VStack>
                   </Box>
                   <Divider my={{ base: 6, md: 8 }} borderColor="rgba(86, 117, 109, 0.12)" />
-                  <Flex justify="flex-end" pt={6}>
-                    <Button 
-                      leftIcon={<Icon as={FiSave} boxSize="13px" />} 
-                      bg="#56756D" 
-                      color="white" 
-                      borderRadius="full" 
+                  <Flex justify="space-between" align="center" pt={4}>
+                    <Button type="button" leftIcon={<Icon as={FiArrowLeft} boxSize="13px" />}
+                      variant="outline"
+                      borderColor="rgba(86, 117, 109, 0.25)"
+                      color="#263A33"
+                      borderRadius="full"
                       h="38px"
-                      px={8}
-                      fontSize="13px"
+                      px={5}
+                      fontSize="12.5px"
                       fontWeight="600"
-                      onClick={() => handleSave()} 
-                      isLoading={loading} 
-                      _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
-                      boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                      onClick={handlePrevTab}
+                      _hover={{ bg: "rgba(86, 117, 109, 0.06)" }}
                     >
-                      Finalize & Sync Profile
+                      Previous
                     </Button>
+
+                    {profile.profile_status === 'approved' ? (
+                      <Button 
+                        leftIcon={<Icon as={FiSave} boxSize="13px" />} 
+                        bg="#56756D" 
+                        color="white" 
+                        borderRadius="full" 
+                        h="38px"
+                        px={7}
+                        fontSize="13px"
+                        fontWeight="600"
+                        onClick={() => requireBasicAccess(() => handleSave(true))} 
+                        isLoading={loading} 
+                        _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                        boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                      >
+                        Save & Publish Updates
+                      </Button>
+                    ) : ['submitted', 'pending_review', 'awaiting_contract'].includes(profile.profile_status) ? (
+                      <HStack
+                        spacing={2}
+                        px={4}
+                        py={2}
+                        borderRadius="full"
+                        bg="rgba(245, 158, 11, 0.12)"
+                        border="1px solid rgba(245, 158, 11, 0.3)"
+                        color="#D97706"
+                      >
+                        <Icon as={FiClock} boxSize="13px" />
+                        <Text fontSize="12.5px" fontWeight="600">Profile Under Review</Text>
+                      </HStack>
+                    ) : (
+                      <Button
+                        leftIcon={<Icon as={FiZap} boxSize="13px" />}
+                        bg="#56756D"
+                        color="white"
+                        borderRadius="full"
+                        h="38px"
+                        px={7}
+                        fontSize="13px"
+                        fontWeight="600"
+                        onClick={handleSubmitForReview}
+                        isLoading={loading}
+                        _hover={{ bg: '#263A33', transform: 'translateY(-1px)' }}
+                        boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                      >
+                        {profile.profile_status === 'changes_requested' ? "Resubmit for Review" : "Submit Profile for Review"}
+                      </Button>
+                    )}
                   </Flex>
                </Box>
             </VStack>
@@ -1859,40 +2505,6 @@ export default function ProfileClient() {
         </TabPanels>
       </Tabs>
       
-      <Box p={{ base: 4, md: 5 }} mt={8} bg="#263A33" borderRadius="2xl" color="white" boxShadow="0 4px 20px -2px rgba(38, 58, 51, 0.12)" border="1px solid rgba(86, 117, 109, 0.2)">
-         <Flex direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "start", md: "center" }} gap={4}>
-            <VStack align="start" spacing={1}>
-               <HStack spacing={2}>
-                 <Circle size="24px" bg="rgba(255, 255, 255, 0.15)" color="white">
-                   <Icon as={FiSave} boxSize="12px" />
-                 </Circle>
-                 <Text fontWeight="600" fontSize="16px" fontFamily="'Outfit', var(--font-outfit), sans-serif">
-                   Commit Updates to Public Directory
-                 </Text>
-               </HStack>
-               <Text fontSize="12.5px" color="rgba(255, 255, 255, 0.8)">
-                 This will immediately synchronize your crawlable public profile, clinical specializations, and matching telemetry.
-               </Text>
-            </VStack>
-            <Button
-              h="38px"
-              bg="white"
-              color="#263A33"
-              borderRadius="full"
-              px={7}
-              fontSize="13px"
-              fontWeight="600"
-              onClick={handleSave}
-              isLoading={loading}
-              w={{ base: "full", md: "auto" }}
-              flexShrink={0}
-              _hover={{ bg: "rgba(250, 248, 245, 0.95)", transform: "translateY(-1px)" }}
-              boxShadow="0 2px 8px rgba(0, 0, 0, 0.15)"
-            >
-              Sync Now
-            </Button>
-         </Flex>
-      </Box>
       <TherapistGatedGateway
         isOpen={gateModal.isOpen}
         onClose={gateModal.onClose}

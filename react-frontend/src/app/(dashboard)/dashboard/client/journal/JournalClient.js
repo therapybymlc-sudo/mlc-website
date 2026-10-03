@@ -28,10 +28,14 @@ import {
   IconButton,
   Circle,
   Flex,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiSave, FiDownload, FiChevronRight, FiChevronLeft, FiBookOpen, FiFeather, FiCheck, FiFileText } from "react-icons/fi";
+import { FiSave, FiDownload, FiChevronRight, FiChevronLeft, FiBookOpen, FiFeather, FiCheck, FiFileText, FiChevronDown } from "react-icons/fi";
 import { apiGet, apiPost } from "../../../../../api.js";
 import dynamic from 'next/dynamic';
 const RichTextEditor = dynamic(() => import("../../../../../components/RichTextEditor.jsx"), {
@@ -40,6 +44,8 @@ const RichTextEditor = dynamic(() => import("../../../../../components/RichTextE
 });
 import { useAuth } from "../../../../../context/AuthContext";
 import { useUser } from "@clerk/nextjs";
+import { generateJournalPDF, triggerBlobDownload } from "./journalPdfExporter";
+import { generateJournalEpub } from "./epubExporter";
 const JournalBookView = dynamic(() => import("./JournalBookView"), {
   ssr: false,
   loading: () => <Center h="100vh" w="100vw" position="fixed" top="0" left="0" bg="rgba(0,0,0,0.8)" zIndex={2000}><Spinner color="white" /></Center>
@@ -76,6 +82,49 @@ export default function JournalClient() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showBook, setShowBook] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState('pdf');
+
+  const handleExportJournal = async (format = 'pdf') => {
+    if (!entries || entries.length === 0) return;
+    setExporting(true);
+    setExportFormat(format);
+    const userName = clientProfile?.name || user?.fullName || user?.firstName || "MLC Client";
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `My_Therapeutic_Journey_${dateStr}.${format}`;
+    try {
+      let blob;
+      if (format === 'epub') {
+        blob = await generateJournalEpub(entries, userName);
+      } else {
+        blob = await generateJournalPDF(entries, userName);
+      }
+      triggerBlobDownload(blob, filename);
+      toast({
+        render: () => (
+          <Box p={3} px={4} bg="linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)" border="1px solid rgba(16, 185, 129, 0.35)" borderRadius="2xl" boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.16)">
+            <Text fontSize="13px" fontWeight="600" color="#065F46">Journal Exported</Text>
+            <Text fontSize="12px" color="#047857">Downloaded as {format.toUpperCase()} successfully.</Text>
+          </Box>
+        ),
+        duration: 3500,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    } catch (err) {
+      console.error(`Journal ${format} export failed:`, err);
+      toast({
+        title: "Export Failed",
+        description: `Could not generate ${format.toUpperCase()} archive.`,
+        status: "error",
+        duration: 3500,
+        isClosable: true,
+      });
+    } finally {
+      setExporting(false);
+      setExportFormat('pdf');
+    }
+  };
 
   async function fetchEntries() {
     try {
@@ -564,6 +613,94 @@ export default function JournalClient() {
           </HStack>
 
           <HStack spacing={2.5}>
+            <Menu placement="bottom-end" autoSelect={false}>
+              {({ isOpen }) => (
+                <>
+                  <MenuButton
+                    as={Button}
+                    size="sm"
+                    height="38px"
+                    borderRadius="full"
+                    bg="#56756D"
+                    color="white"
+                    fontSize="12.5px"
+                    fontWeight="600"
+                    px={4}
+                    leftIcon={<Icon as={FiDownload} boxSize="13px" />}
+                    rightIcon={
+                      <Icon
+                        as={FiChevronDown}
+                        boxSize="13px"
+                        transform={isOpen ? "rotate(180deg)" : "none"}
+                        transition="transform 0.2s"
+                      />
+                    }
+                    isLoading={exporting}
+                    loadingText={exportFormat === 'epub' ? "Exporting ePub..." : "Exporting PDF..."}
+                    isDisabled={entries.length === 0}
+                    _hover={{ bg: '#263A33' }}
+                    _active={{ bg: '#182722' }}
+                    boxShadow="0 2px 6px rgba(86, 117, 109, 0.22)"
+                    whiteSpace="nowrap"
+                  >
+                    Export Journal
+                  </MenuButton>
+                  <MenuList
+                    bg="white"
+                    borderRadius="xl"
+                    p={1.5}
+                    border="1px solid rgba(86, 117, 109, 0.15)"
+                    boxShadow="0 14px 34px -4px rgba(38, 58, 51, 0.18), 0 2px 8px rgba(0, 0, 0, 0.04)"
+                    zIndex={1500}
+                    minW="210px"
+                  >
+                    <MenuItem
+                      borderRadius="lg"
+                      px={3}
+                      py={2.5}
+                      fontSize="12.5px"
+                      fontFamily="'Inter', sans-serif"
+                      fontWeight="500"
+                      color="#263A33"
+                      _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                      onClick={() => handleExportJournal('pdf')}
+                    >
+                      <HStack spacing={2.5}>
+                        <Circle size="26px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                          <Icon as={FiFileText} boxSize="13px" />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <Text fontWeight="600" fontSize="12.5px" color="#263A33">PDF Document</Text>
+                          <Text fontSize="10.5px" color="#718096">Printable formatted archive (.pdf)</Text>
+                        </VStack>
+                      </HStack>
+                    </MenuItem>
+                    <MenuItem
+                      borderRadius="lg"
+                      px={3}
+                      py={2.5}
+                      fontSize="12.5px"
+                      fontFamily="'Inter', sans-serif"
+                      fontWeight="500"
+                      color="#263A33"
+                      _hover={{ bg: "rgba(86, 117, 109, 0.1)" }}
+                      onClick={() => handleExportJournal('epub')}
+                    >
+                      <HStack spacing={2.5}>
+                        <Circle size="26px" bg="rgba(86, 117, 109, 0.12)" color="#56756D">
+                          <Icon as={FiBookOpen} boxSize="13px" />
+                        </Circle>
+                        <VStack align="start" spacing={0}>
+                          <Text fontWeight="600" fontSize="12.5px" color="#263A33">ePub eBook</Text>
+                          <Text fontSize="10.5px" color="#718096">E-reader and Apple Books (.epub)</Text>
+                        </VStack>
+                      </HStack>
+                    </MenuItem>
+                  </MenuList>
+                </>
+              )}
+            </Menu>
+
             <Button
               size="sm"
               height="38px"

@@ -1020,7 +1020,11 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Feedback is required."}, status=status.HTTP_400_BAD_REQUEST)
         therapist.profile_status = TherapistProfile.ProfileStatus.CHANGES_REQUESTED
         therapist.admin_feedback = feedback
-        therapist.save(update_fields=["profile_status", "admin_feedback"])
+        update_fields_list = ["profile_status", "admin_feedback"]
+        if therapist.supervision_status in ["approved", "awaiting_contract"]:
+            therapist.supervision_status = "pending"
+            update_fields_list.append("supervision_status")
+        therapist.save(update_fields=update_fields_list)
         return Response({"detail": "Profile sent back for changes."})
 
     @action(detail=True, methods=["post"], url_path="approve-content-send-contract")
@@ -1031,7 +1035,11 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         therapist.profile_status = TherapistProfile.ProfileStatus.AWAITING_CONTRACT
         if feedback:
             therapist.admin_feedback = feedback
-        therapist.save(update_fields=["profile_status", "admin_feedback"])
+        update_fields_list = ["profile_status", "admin_feedback"] if feedback else ["profile_status"]
+        if therapist.supervision_status in ["approved", "awaiting_contract"]:
+            therapist.supervision_status = "pending"
+            update_fields_list.append("supervision_status")
+        therapist.save(update_fields=update_fields_list)
         _sync_application_review_notes(therapist.email, feedback)
 
         email_sent, email_error = send_therapist_contract_email(
@@ -1081,7 +1089,11 @@ class TherapistProfileViewSet(viewsets.ModelViewSet):
         therapist = self.get_object()
         therapist.is_verified = False
         therapist.profile_status = TherapistProfile.ProfileStatus.DRAFT
-        therapist.save(update_fields=["is_verified", "profile_status"])
+        update_fields_list = ["is_verified", "profile_status"]
+        if therapist.supervision_status in ["approved", "awaiting_contract"]:
+            therapist.supervision_status = "pending"
+            update_fields_list.append("supervision_status")
+        therapist.save(update_fields=update_fields_list)
         return Response({
             "detail": "Therapist profile unpublished from directory.",
             "is_verified": therapist.is_verified,
@@ -1245,6 +1257,7 @@ class TherapistSessionLinkViewSet(viewsets.ModelViewSet):
 class ClientProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ClientProfileSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         user = self.request.user
@@ -1258,11 +1271,16 @@ class ClientProfileViewSet(viewsets.ModelViewSet):
         # Clients see only their own profile(s).
         return ClientProfile.objects.filter(user=user).distinct().order_by("name")
 
-    @action(detail=False, methods=["get"], url_path="me")
+    @action(detail=False, methods=["get", "patch"], url_path="me")
     def me(self, request):
         client = _resolve_client_from_request(request)
         if not client:
             return Response({"detail": "Client profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        if request.method == "PATCH":
+            serializer = self.get_serializer(client, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
         serializer = self.get_serializer(client)
         return Response(serializer.data)
 
@@ -4776,38 +4794,48 @@ class QuickBookingViewSet(viewsets.ModelViewSet):
             if instance.notes:
                 details += f"\nClient Notes: {instance.notes}"
 
-            admin_recipients = [
-                e.strip() for e in str(
-                    getattr(settings, "THERAPIST_INTAKE_NOTIFY_EMAILS", "therapybymlc@gmail.com")
-                ).split(",") if e.strip()
-            ]
-            send_templated_email(
-                template_name="emails/contact_inquiry_admin.html",
-                context={
-                    "name": instance.full_name,
-                    "email": instance.email,
-                    "phone": instance.phone or "Not provided",
-                    "message": details,
-                    "admin_messages_url": admin_url,
-                },
-                to=admin_recipients,
-                subject=f"New Quick Booking Request: {instance.full_name} — MLC Health",
-                reply_to=instance.email,
-            )
-
-            if instance.email:
+            # 1. Admin Alert Email
+            try:
+                admin_recipients = [
+                    e.strip() for e in str(
+                        getattr(settings, "THERAPIST_INTAKE_NOTIFY_EMAILS", "therapybymlc@gmail.com")
+                    ).split(",") if e.strip()
+                ]
                 send_templated_email(
-                    template_name="emails/contact_inquiry_client.html",
+                    template_name="emails/contact_inquiry_admin.html",
                     context={
                         "name": instance.full_name,
+                        "email": instance.email,
+                        "phone": instance.phone or "Not provided",
+                        "message": details,
+                        "admin_messages_url": admin_url,
                     },
-                    to=instance.email,
-                    subject="We've Received Your Booking Request 🌿 — MLC Health",
-                    reply_to="therapy@mlchealth.in",
+                    to=admin_recipients,
+                    subject=f"New Quick Booking Request: {instance.full_name} — MLC Health",
+                    reply_to=instance.email,
                 )
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).warning("Failed to send quick booking admin email: %s", exc)
+
+            # 2. Client Confirmation Email
+            try:
+                if instance.email:
+                    send_templated_email(
+                        template_name="emails/contact_inquiry_client.html",
+                        context={
+                            "name": instance.full_name,
+                        },
+                        to=instance.email,
+                        subject="We've Received Your Booking Request 🌿 — MLC Health",
+                        reply_to="therapy@mlchealth.in",
+                    )
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).warning("Failed to send quick booking client email: %s", exc)
         except Exception as exc:
             import logging
-            logging.getLogger(__name__).warning("Failed to send quick booking inquiry emails: %s", exc)
+            logging.getLogger(__name__).warning("Failed in quick booking perform_create: %s", exc)
 
 
 class SafetyPlanViewSet(viewsets.ModelViewSet):

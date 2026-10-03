@@ -284,33 +284,296 @@ export default function EarningsClient() {
   }, [statusFilter, activeTransactions]);
 
   const handleDownloadInvoice = (tx) => {
-    const invoiceContent = `MLC HEALTHCARE - THERAPIST SETTLEMENT RECEIPT\n` +
-      `--------------------------------------------------\n` +
-      `Transaction ID: ${tx.id}\n` +
-      `Date:           ${tx.date}\n` +
-      `Client:         ${tx.client}\n` +
-      `Service:        ${tx.sessionType}\n` +
-      `Amount:         INR ${tx.amount.toLocaleString()}\n` +
-      `Status:         ${tx.status}\n` +
-      `Therapist Payout Rate: 85%\n` +
-      `--------------------------------------------------\n` +
-      `Therapy by MLC • Confidential Medical Billing Document`;
+    const rawApptId = String(tx.id || '').replace(/^TX-/, '');
+    const isAppt = Boolean(rawApptId && !isNaN(Number(rawApptId)));
 
-    const blob = new Blob([invoiceContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Invoice_${tx.id}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        render: () => (
+          <Box p={3} px={4} bg="linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)" border="1px solid rgba(245, 158, 11, 0.3)" borderRadius="2xl" boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.16)">
+            <Text fontSize="13px" fontWeight="600" color="#92400E">Pop-up Blocked</Text>
+            <Text fontSize="12px" color="#B45309">Please allow pop-ups to open and print your settlement receipt.</Text>
+          </Box>
+        ),
+        duration: 4000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+      return;
+    }
+
+    const isSettled = String(tx.status).toLowerCase() === 'settled';
+    const amountNum = typeof tx.amount === 'number' ? tx.amount : parseFloat(String(tx.amount || 0).replace(/[^\d.]/g, '')) || 0;
+    const therapistPayout = Math.round(amountNum * 0.85);
+    const platformFee = Math.round(amountNum * 0.15);
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settlement Receipt - ${tx.id} | Therapy by MLC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #FAF8F5;
+      color: #263A33;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .receipt-container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border: 1px solid rgba(86, 117, 109, 0.16);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px -4px rgba(38, 58, 51, 0.06);
+      padding: 40px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(86, 117, 109, 0.14);
+      padding-bottom: 24px;
+      margin-bottom: 28px;
+    }
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 22px;
+      color: #263A33;
+      letter-spacing: -0.015em;
+    }
+    .brand-subtitle {
+      font-size: 12px;
+      color: #5A6E65;
+      margin-top: 3px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: ${isSettled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)'};
+      color: ${isSettled ? '#059669' : '#D97706'};
+      border: 1px solid ${isSettled ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'};
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      background: rgba(250, 248, 245, 0.85);
+      border: 1px solid rgba(86, 117, 109, 0.1);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .meta-item .label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #718096;
+      margin-bottom: 4px;
+    }
+    .meta-item .value {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #263A33;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 28px;
+    }
+    th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #718096;
+      border-bottom: 1px solid rgba(86, 117, 109, 0.14);
+      padding: 10px 12px;
+      text-align: left;
+    }
+    td {
+      font-size: 13px;
+      padding: 12px;
+      border-bottom: 1px solid rgba(86, 117, 109, 0.08);
+      color: #263A33;
+    }
+    .total-box {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 28px;
+    }
+    .total-card {
+      width: 290px;
+      background: #FAF8F5;
+      border: 1px solid rgba(86, 117, 109, 0.14);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      color: #5A6E65;
+      margin-bottom: 8px;
+    }
+    .total-row.grand {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #263A33;
+      border-top: 1px solid rgba(86, 117, 109, 0.16);
+      padding-top: 8px;
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+    .footer-note {
+      font-size: 11px;
+      color: #718096;
+      line-height: 1.6;
+      border-top: 1px solid rgba(86, 117, 109, 0.12);
+      padding-top: 20px;
+      text-align: center;
+    }
+    .action-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .btn {
+      padding: 9px 20px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-primary {
+      background: #56756D;
+      color: white;
+      box-shadow: 0 2px 6px rgba(86, 117, 109, 0.22);
+    }
+    .btn-primary:hover { background: #263A33; }
+    .btn-outline {
+      background: white;
+      border: 1px solid rgba(86, 117, 109, 0.25);
+      color: #263A33;
+    }
+    .btn-outline:hover { background: rgba(86, 117, 109, 0.06); }
+    @media print {
+      body { background: white; padding: 0; }
+      .receipt-container { box-shadow: none; border: none; padding: 0; }
+      .action-bar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="window.print()">Print Receipt</button>
+    ${isAppt ? `<button class="btn btn-outline" onclick="if (window.opener) { window.opener.dispatchEvent(new CustomEvent('mlc:open-invoice', { detail: { appointmentId: '${rawApptId}' } })); window.opener.focus(); } else { window.open('/dashboard/client/invoice/${rawApptId}', '_blank'); }">View Session Invoice</button>` : ''}
+    <button class="btn btn-outline" onclick="window.close()">Close</button>
+  </div>
+  <div class="receipt-container">
+    <div class="header">
+      <div>
+        <div class="brand-title">Therapy by MLC</div>
+        <div class="brand-subtitle">Clinical Care Practice • Practitioner Settlement Statement</div>
+      </div>
+      <span class="badge">${tx.status}</span>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="label">Settlement Reference</div>
+        <div class="value">${tx.id}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Date Recorded</div>
+        <div class="value">${new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Client Dossier</div>
+        <div class="value">${tx.client}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Clinical Service</div>
+        <div class="value">${tx.sessionType}</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th style="text-align: right;">Gross Fee</th>
+          <th style="text-align: right;">Practitioner Share</th>
+          <th style="text-align: right;">Net Payout</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>${tx.sessionType}</strong><br>
+            <span style="font-size: 11.5px; color: #5A6E65;">Ref: ${tx.id} • Confirmed Session</span>
+          </td>
+          <td style="text-align: right;">₹${amountNum.toLocaleString()}</td>
+          <td style="text-align: right;">85%</td>
+          <td style="text-align: right; font-weight: 700; color: #065F46;">₹${therapistPayout.toLocaleString()}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="total-box">
+      <div class="total-card">
+        <div class="total-row">
+          <span>Session Gross</span>
+          <span>₹${amountNum.toLocaleString()}</span>
+        </div>
+        <div class="total-row">
+          <span>Platform Support (15%)</span>
+          <span>-₹${platformFee.toLocaleString()}</span>
+        </div>
+        <div class="total-row grand">
+          <span>Therapist Net</span>
+          <span style="color: #065F46;">₹${therapistPayout.toLocaleString()}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      This document constitutes an electronic practitioner settlement statement issued under Therapy by MLC clinical operational protocols. All clinical and financial transaction records are strictly confidential and encrypted in compliance with Digital Personal Data Protection (DPDP) guidelines.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
 
     toast({
       render: () => (
         <Box p={3} px={4} bg="linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)" border="1px solid rgba(16, 185, 129, 0.35)" borderRadius="2xl" boxShadow="0 14px 34px -4px rgba(6, 78, 59, 0.16)">
-          <Text fontSize="13px" fontWeight="600" color="#065F46">Invoice Downloaded</Text>
-          <Text fontSize="12px" color="#047857">Receipt for {tx.id} saved to your device.</Text>
+          <Text fontSize="13px" fontWeight="600" color="#065F46">Settlement Receipt Ready</Text>
+          <Text fontSize="12px" color="#047857">Receipt window opened for printing.</Text>
         </Box>
       ),
       duration: 3500,

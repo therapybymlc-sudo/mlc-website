@@ -8,7 +8,14 @@ const GA_MEASUREMENT_ID =
 
 function hasAnalyticsConsent() {
   if (typeof window === 'undefined') return false;
-  return localStorage.getItem('mlc_cookie_consent') === 'accepted';
+  try {
+    return (
+      localStorage.getItem('mlc_cookie_consent_v2') === 'accepted' ||
+      localStorage.getItem('mlc_cookie_consent') === 'accepted'
+    );
+  } catch {
+    return false;
+  }
 }
 
 export default function GoogleAnalytics() {

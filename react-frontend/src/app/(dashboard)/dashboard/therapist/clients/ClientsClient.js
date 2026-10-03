@@ -12,6 +12,7 @@ import { resourcesApi } from "../../../../../api/resources.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { exportAllClientNotes, exportNoteToPDF } from "../../../../../utils/ClinicalPDFService.js";
 import ModernDatePicker from "../../../../../components/ModernDatePicker";
+import { openInvoiceModal } from "../../../../../components/InvoiceModal";
 
 const initialClient = {
   name: "",
@@ -1415,9 +1416,7 @@ export default function ClientsClient() {
                       borderColor="rgba(86, 117, 109, 0.25)" 
                       color="#263A33" 
                       borderRadius="full"
-                      as={Link}
-                      href={`/dashboard/client/invoice/${appt.id}`}
-                      isExternal
+                      onClick={() => openInvoiceModal(appt.id)}
                       _hover={{ bg: "rgba(169, 203, 183, 0.1)" }}
                     >
                       View

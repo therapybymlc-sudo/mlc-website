@@ -32,7 +32,7 @@ import {
   FiArrowRight, FiCheck, FiUsers, FiClock, FiCalendar, 
   FiVideo, FiBookOpen, FiUser, FiInfo, FiLayers, 
   FiActivity, FiShield, FiHeart, FiFileText, FiAward,
-  FiCompass, FiTarget, FiStar
+  FiCompass, FiTarget, FiStar, FiMessageCircle
 } from "react-icons/fi";
 import NextLink from "next/link";
 
@@ -139,55 +139,60 @@ export default function SupervisionPage() {
               {/* Key Highlights Grid */}
               <Box 
                 w="full" 
-                py={{ base: 5, md: 6 }} 
-                px={{ base: 4, md: 6 }}
-                bg="whiteAlpha.50" 
+                py={{ base: 3.5, md: 4 }} 
+                px={{ base: 3, md: 4 }}
+                bg="rgba(14, 38, 33, 0.75)" 
                 borderRadius="2xl" 
                 border="1px solid" 
-                borderColor="whiteAlpha.150"
-                backdropFilter="blur(10px)"
+                borderColor="rgba(201, 169, 96, 0.22)"
+                boxShadow="0 8px 30px -4px rgba(0, 0, 0, 0.3)"
+                backdropFilter="blur(16px)"
+                overflowX={{ base: "auto", lg: "visible" }}
+                sx={{
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' }
+                }}
               >
-                <SimpleGrid columns={{ base: 2, sm: 3, md: 5 }} spacing={{ base: 4, md: 5 }}>
-                  <VStack align="start" spacing={1}>
-                    <HStack spacing={2} color="#C9A960">
-                      <Icon as={FiUsers} boxSize={4} />
-                      <Text color="white" fontWeight="700" fontSize="14px">6 Therapists</Text>
-                    </HStack>
-                    <Text color="whiteAlpha.600" fontSize="12px">Intimate Cohort</Text>
-                  </VStack>
-
-                  <VStack align="start" spacing={1}>
-                    <HStack spacing={2} color="#C9A960">
-                      <Icon as={FiCalendar} boxSize={4} />
-                      <Text color="white" fontWeight="700" fontSize="14px">12 Weeks</Text>
-                    </HStack>
-                    <Text color="whiteAlpha.600" fontSize="12px">Curated Arc</Text>
-                  </VStack>
-
-                  <VStack align="start" spacing={1}>
-                    <HStack spacing={2} color="#C9A960">
-                      <Icon as={FiClock} boxSize={4} />
-                      <Text color="white" fontWeight="700" fontSize="14px">90 Minutes</Text>
-                    </HStack>
-                    <Text color="whiteAlpha.600" fontSize="12px">Weekly Sessions</Text>
-                  </VStack>
-
-                  <VStack align="start" spacing={1}>
-                    <HStack spacing={2} color="#C9A960">
-                      <Icon as={FiVideo} boxSize={4} />
-                      <Text color="white" fontWeight="700" fontSize="14px">Live Online</Text>
-                    </HStack>
-                    <Text color="whiteAlpha.600" fontSize="12px">Across India</Text>
-                  </VStack>
-
-                  <VStack align="start" spacing={1}>
-                    <HStack spacing={2} color="#C9A960">
-                      <Icon as={FiUser} boxSize={4} />
-                      <Text color="white" fontWeight="700" fontSize="14px">Ahmed Asif</Text>
-                    </HStack>
-                    <Text color="whiteAlpha.600" fontSize="12px">Lead Supervisor</Text>
-                  </VStack>
-                </SimpleGrid>
+                <Flex
+                  direction="row"
+                  align="center"
+                  justify="space-between"
+                  w="full"
+                  gap={{ base: 3, sm: 2, xl: 2 }}
+                  minW={{ base: "540px", lg: "auto" }}
+                >
+                  {[
+                    { icon: FiUsers, title: "6 Therapists", sub: "Intimate Cohort" },
+                    { icon: FiCalendar, title: "12 Weeks", sub: "Curated Arc" },
+                    { icon: FiClock, title: "90 Minutes", sub: "Weekly Sessions" },
+                    { icon: FiVideo, title: "Live Online", sub: "Across India" },
+                    { icon: FiUser, title: "Ahmed Asif", sub: "Lead Supervisor" },
+                  ].map((item, idx) => (
+                    <React.Fragment key={idx}>
+                      {idx > 0 && (
+                        <Divider 
+                          orientation="vertical" 
+                          h="26px" 
+                          borderColor="whiteAlpha.200" 
+                          flexShrink={0}
+                        />
+                      )}
+                      <HStack spacing={2} align="center" flex="1" justify="center" minW="max-content">
+                        <Circle size="28px" bg="rgba(201, 169, 96, 0.12)" color="#C9A960" flexShrink={0}>
+                          <Icon as={item.icon} boxSize="13px" />
+                        </Circle>
+                        <VStack align="start" spacing={0} minW="max-content">
+                          <Text color="white" fontWeight="600" fontSize={{ base: "12.5px", md: "13px" }} whiteSpace="nowrap" lineHeight="1.25">
+                            {item.title}
+                          </Text>
+                          <Text color="whiteAlpha.600" fontSize="10.5px" fontWeight="500" whiteSpace="nowrap" lineHeight="1.25">
+                            {item.sub}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </React.Fragment>
+                  ))}
+                </Flex>
               </Box>
 
               {/* Action Buttons */}
@@ -231,52 +236,149 @@ export default function SupervisionPage() {
             </MotionVStack>
 
             {/* Right decorative visual card */}
-            <Box flex="0.8" w="full" position="relative" display={{ base: "none", lg: "block" }}>
+            <Box flex="0.85" maxW="460px" w="full" position="relative" display={{ base: "none", lg: "block" }}>
+              {/* Ambient Warm Golden & Sage Aura */}
               <Box 
                 position="absolute" 
-                inset="-12px" 
-                bg="linear-gradient(135deg, rgba(201, 169, 96, 0.2), rgba(255, 255, 255, 0.02))" 
+                inset="-16px" 
+                bg="radial-gradient(ellipse at 50% 30%, rgba(201, 169, 96, 0.22) 0%, rgba(86, 117, 109, 0.16) 45%, transparent 75%)" 
                 borderRadius="3xl" 
-                transform="rotate(-2deg)" 
                 zIndex={0} 
-                filter="blur(1px)"
+                filter="blur(16px)"
+                pointerEvents="none"
               />
+              
+              {/* Main Premium Card */}
               <Box 
-                bg="rgba(16, 43, 38, 0.75)" 
+                bg="rgba(14, 38, 33, 0.85)" 
                 backdropFilter="blur(24px)" 
                 border="1px solid" 
-                borderColor="whiteAlpha.200" 
+                borderColor="rgba(201, 169, 96, 0.25)" 
                 borderRadius="3xl" 
-                p={8} 
+                p={5} 
                 zIndex={1} 
                 position="relative"
-                boxShadow="0 20px 40px rgba(0,0,0,0.3)"
+                boxShadow="0 24px 50px -10px rgba(4, 20, 16, 0.6), 0 2px 10px rgba(0, 0, 0, 0.15)"
               >
-                <VStack align="stretch" spacing={6}>
-                  <Box p={4} bg="whiteAlpha.50" borderRadius="2xl" border="1px solid" borderColor="whiteAlpha.100" textAlign="center">
+                <VStack align="stretch" spacing={4}>
+                  {/* Framed Supervision Image with Glass Pill Badge & Gradient Scrim */}
+                  <Box 
+                    position="relative" 
+                    borderRadius="2xl" 
+                    overflow="hidden" 
+                    border="1px solid rgba(255, 255, 255, 0.14)"
+                    boxShadow="0 8px 24px rgba(0, 0, 0, 0.28)"
+                    bg="#0F2823"
+                  >
                     <Image 
-                      src="/images/supervision_line.png" 
-                      alt="Clinical Supervision Line Art" 
-                      w="140px" 
-                      mx="auto" 
-                      mixBlendMode="screen"
-                      opacity={0.9}
-                      py={2}
+                      src="/images/clinical_supervision_hero.jpg" 
+                      alt="Reflective Clinical Supervision at MLC Health" 
+                      w="full" 
+                      h="270px" 
+                      objectFit="cover" 
+                      objectPosition="center 20%"
+                      transition="transform 0.4s ease"
+                      _hover={{ transform: "scale(1.02)" }}
                     />
+                    
+                    {/* Bottom subtle gradient scrim */}
+                    <Box 
+                      position="absolute" 
+                      inset="0" 
+                      bgGradient="linear(to-t, rgba(14, 38, 33, 0.8) 0%, rgba(14, 38, 33, 0.1) 40%, transparent 70%)" 
+                      pointerEvents="none" 
+                    />
+
+                    {/* Floating pill badge */}
+                    <HStack 
+                      position="absolute" 
+                      top={3} 
+                      left={3} 
+                      spacing={1.5} 
+                      px={3} 
+                      py={1} 
+                      bg="rgba(12, 35, 30, 0.82)" 
+                      backdropFilter="blur(12px)" 
+                      borderRadius="full" 
+                      border="1px solid rgba(201, 169, 96, 0.35)"
+                      boxShadow="0 4px 12px rgba(0,0,0,0.3)"
+                    >
+                      <Circle size="6px" bg="#C9A960" />
+                      <Text 
+                        color="#DFBF74" 
+                        fontSize="10.5px" 
+                        fontWeight="700" 
+                        letterSpacing="0.08em" 
+                        textTransform="uppercase"
+                        fontFamily="'Inter', var(--font-inter), sans-serif"
+                      >
+                        Reflective Practice
+                      </Text>
+                    </HStack>
+
+                    {/* Subtle bottom-right cohort size detail */}
+                    <HStack 
+                      position="absolute" 
+                      bottom={3} 
+                      right={3} 
+                      spacing={1.5} 
+                      px={2.5} 
+                      py={1} 
+                      bg="rgba(12, 35, 30, 0.75)" 
+                      backdropFilter="blur(8px)" 
+                      borderRadius="lg" 
+                      border="1px solid rgba(255, 255, 255, 0.1)"
+                    >
+                      <Icon as={FiUsers} color="#C9A960" boxSize="11px" />
+                      <Text color="whiteAlpha.900" fontSize="10.5px" fontWeight="600" fontFamily="'Inter', var(--font-inter), sans-serif">
+                        Cohort of 6
+                      </Text>
+                    </HStack>
                   </Box>
 
-                  <Text color="whiteAlpha.900" fontStyle="italic" textAlign="center" fontSize="15px" lineHeight="1.6" px={2}>
+                  {/* Upright Serene Quote (No Italics per AGENTS.md) */}
+                  <Text 
+                    color="whiteAlpha.950" 
+                    fontFamily="'Outfit', var(--font-outfit), sans-serif"
+                    fontWeight="500" 
+                    textAlign="center" 
+                    fontSize="14.5px" 
+                    lineHeight="1.55" 
+                    letterSpacing="-0.01em"
+                    px={2}
+                    pt={0.5}
+                  >
                     &ldquo;Supervision that shapes how you think, not just what you do in the room.&rdquo;
                   </Text>
                   
                   <Divider borderColor="whiteAlpha.150" />
                   
-                  <HStack justify="space-between" pt={1}>
-                    <HStack spacing={2}>
-                      <Circle size="8px" bg="#C9A960" />
-                      <Text color="#C9A960" fontWeight="800" fontSize="12px" letterSpacing="0.08em">MLC CLINICAL FORMATION</Text>
+                  {/* Card Footer Bar */}
+                  <HStack justify="space-between" align="center" pt={0.5}>
+                    <HStack spacing={2} align="center">
+                      <Circle size="7px" bg="#C9A960" />
+                      <Text 
+                        color="#C9A960" 
+                        fontWeight="700" 
+                        fontSize="11px" 
+                        letterSpacing="0.08em" 
+                        textTransform="uppercase"
+                        fontFamily="'Inter', var(--font-inter), sans-serif"
+                      >
+                        MLC Clinical Formation
+                      </Text>
                     </HStack>
-                    <Badge colorScheme="green" bg="#56756D" color="rgba(169,203,183,0.15)" px={3} py={1} borderRadius="full" fontSize="11px">
+                    <Badge 
+                      bg="rgba(201, 169, 96, 0.16)" 
+                      color="#DFBF74" 
+                      border="1px solid rgba(201, 169, 96, 0.35)"
+                      px={3} 
+                      py={1} 
+                      borderRadius="full" 
+                      fontSize="11px"
+                      fontWeight="700"
+                      letterSpacing="0.04em"
+                    >
                       Cohort 2026
                     </Badge>
                   </HStack>
@@ -355,56 +457,120 @@ export default function SupervisionPage() {
       </Box>
 
       {/* 🧭 WHAT MAKES THIS DIFFERENT */}
-      <Box py={{ base: 16, md: 24 }} bg="#F8FAF9" borderY="1px solid" borderColor="gray.100">
+      <Box py={{ base: 12, md: 16 }} bg="#FAF8F5" borderY="1px solid" borderColor="rgba(86, 117, 109, 0.12)">
         <Container maxW="6xl">
-          <VStack spacing={{ base: 12, md: 16 }}>
-            <VStack spacing={3} textAlign="center" maxW="3xl">
-              <Badge bg="rgba(169,203,183,0.1)" color="#56756D" px={4} py={1.5} borderRadius="full" fontSize="xs" fontWeight="700" letterSpacing="0.05em">
+          <VStack spacing={{ base: 8, md: 10 }}>
+            <VStack spacing={2} textAlign="center" maxW="2xl">
+              <Badge 
+                bg="rgba(86, 117, 109, 0.12)" 
+                color="#56756D" 
+                px={3.5} 
+                py={1} 
+                borderRadius="full" 
+                fontSize="10.5px" 
+                fontWeight="700" 
+                letterSpacing="0.08em" 
+                textTransform="uppercase"
+              >
                 THE DISTINCTION
               </Badge>
               <Heading 
-                fontSize={{ base: "28px", md: "38px" }} 
-                fontFamily="'Playfair Display', var(--font-playfair), serif" 
+                fontSize={{ base: "26px", md: "34px" }} 
+                fontFamily="'Outfit', var(--font-outfit), sans-serif" 
                 color="#263A33" 
-                fontWeight="500"
+                fontWeight="600"
+                letterSpacing="-0.015em"
               >
                 Why Supervise with MLC?
               </Heading>
-              <Text fontSize={{ base: "15px", md: "16px" }} color="rgba(46,46,46,0.6)">
+              <Text fontSize="14px" color="#5A6E65" lineHeight="1.6" maxW="xl">
                 A meticulously designed reflective container built for transformative clinical depth.
               </Text>
             </VStack>
 
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={{ base: 6, md: 8 }} w="full">
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={{ base: 3.5, md: 4.5 }} w="full">
               {[
-                { title: "Therapist Formation", desc: "This programme goes far beyond quick prescriptive answers. It deliberately fosters your voice, stance, and identity as a clinician." },
-                { title: "Reflective Practice", desc: "Learn to systematically unpack countertransference, somatic reactions, and implicit dynamics rather than mechanically applying templates." },
-                { title: "Small Cohorts", desc: "Strictly limited to six therapists to guarantee genuine psychological safety, active participation, and detailed personalized feedback." },
-                { title: "Real Conversations", desc: "Explore actual case material, intricate ethical dilemmas, moments of clinical stuckness, and vulnerability without fear of judgment." },
-                { title: "Evidence-Based", desc: "Anchored in contemporary psychotherapy research, developmental supervision frameworks, and evidence-supported modalities." },
-                { title: "Safe Container", desc: "Confidential, respectful, and rigorously collaborative. Growth requires genuine inquiry; pretense has no place here." }
+                { 
+                  icon: FiCompass, 
+                  title: "Therapist Formation", 
+                  desc: "This programme goes far beyond quick prescriptive answers. It deliberately fosters your voice, stance, and identity as a clinician." 
+                },
+                { 
+                  icon: FiLayers, 
+                  title: "Reflective Practice", 
+                  desc: "Learn to systematically unpack countertransference, somatic reactions, and implicit dynamics rather than mechanically applying templates." 
+                },
+                { 
+                  icon: FiUsers, 
+                  title: "Small Cohorts", 
+                  desc: "Strictly limited to six therapists to guarantee genuine psychological safety, active participation, and detailed personalized feedback." 
+                },
+                { 
+                  icon: FiMessageCircle, 
+                  title: "Real Conversations", 
+                  desc: "Explore actual case material, intricate ethical dilemmas, moments of clinical stuckness, and vulnerability without fear of judgment." 
+                },
+                { 
+                  icon: FiBookOpen, 
+                  title: "Evidence-Based", 
+                  desc: "Anchored in contemporary psychotherapy research, developmental supervision frameworks, and evidence-supported modalities." 
+                },
+                { 
+                  icon: FiShield, 
+                  title: "Safe Container", 
+                  desc: "Confidential, respectful, and rigorously collaborative. Growth requires genuine inquiry; pretense has no place here." 
+                }
               ].map((card, i) => (
                 <Box 
                   key={i} 
                   bg="white" 
-                  p={{ base: 7, md: 8 }} 
+                  p={{ base: 4.5, md: 5 }} 
                   borderRadius="2xl" 
                   border="1px solid" 
-                  borderColor="gray.150" 
-                  boxShadow="0 4px 20px rgba(0, 0, 0, 0.03)"
-                  _hover={{ boxShadow: "0 12px 30px rgba(0, 0, 0, 0.07)", transform: "translateY(-4px)", borderColor: "rgba(86,117,109,0.15)" }}
-                  transition="all 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
-                  display="flex"
-                  flexDirection="column"
-                  h="full"
+                  borderColor="rgba(86, 117, 109, 0.14)" 
+                  boxShadow="0 2px 10px -2px rgba(38, 58, 51, 0.03)"
+                  _hover={{ 
+                    boxShadow: "0 10px 24px -4px rgba(38, 58, 51, 0.08)", 
+                    transform: "translateY(-2px)", 
+                    borderColor: "rgba(86, 117, 109, 0.3)" 
+                  }}
+                  transition="all 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
                 >
-                  <Circle bg="rgba(169,203,183,0.1)" size="48px" mb={5}>
-                    <Icon as={FiCheck} color="#56756D" boxSize={5} />
-                  </Circle>
-                  <Heading size="md" fontFamily="'Playfair Display', var(--font-playfair), serif" color="#263A33" mb={3} fontWeight="600">
-                    {card.title}
-                  </Heading>
-                  <Text fontSize="14.5px" color="rgba(46,46,46,0.75)" lineHeight="1.7">
+                  <Flex justify="space-between" align="center" mb={2.5}>
+                    <HStack spacing={2.5}>
+                      <Circle size="34px" bg="rgba(86, 117, 109, 0.1)" color="#56756D" flexShrink={0}>
+                        <Icon as={card.icon} boxSize="16px" />
+                      </Circle>
+                      <Heading 
+                        fontSize="15.5px" 
+                        fontFamily="'Outfit', var(--font-outfit), sans-serif" 
+                        color="#263A33" 
+                        fontWeight="600"
+                        letterSpacing="-0.01em"
+                        lineHeight="1.3"
+                      >
+                        {card.title}
+                      </Heading>
+                    </HStack>
+                    <Badge 
+                      bg="rgba(86, 117, 109, 0.08)" 
+                      color="#56756D" 
+                      fontSize="10px" 
+                      fontWeight="700" 
+                      borderRadius="full" 
+                      px={2} 
+                      py={0.5}
+                      fontFamily="'Outfit', sans-serif"
+                    >
+                      0{i + 1}
+                    </Badge>
+                  </Flex>
+                  <Text 
+                    fontSize="13px" 
+                    color="#5A6E65" 
+                    lineHeight="1.6"
+                    fontFamily="'Inter', var(--font-inter), sans-serif"
+                  >
                     {card.desc}
                   </Text>
                 </Box>

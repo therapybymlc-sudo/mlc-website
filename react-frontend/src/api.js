@@ -152,7 +152,11 @@ export async function apiGet(path) {
       path.includes("earnings") ||
       path.includes("messages") ||
       path.includes("threads") ||
-      path.includes("notifications");
+      path.includes("notifications") ||
+      path.startsWith("appointments") ||
+      path.startsWith("client-appointments") ||
+      path.startsWith("therapist-booking-requests") ||
+      path.startsWith("availability-slots");
     const isMutedReport = path.includes("admin/reports/");
     const isTimeout = err.code === "ECONNABORTED" || err.message?.includes("timeout");
 

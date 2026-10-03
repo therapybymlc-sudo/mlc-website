@@ -28,7 +28,7 @@ import { useAuth } from "../../../../../context/AuthContext";
 import { apiPatch } from "../../../../../api.js";
 
 export default function ProfileClient() {
-  const { clientProfile, loading: authLoading } = useAuth();
+  const { user, clientProfile, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -38,6 +38,7 @@ export default function ProfileClient() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState(null);
   const fileInputRef = useRef(null);
   const toast = useToast();
 
@@ -88,29 +89,6 @@ export default function ProfileClient() {
     }
   };
 
-  const handleRepair = async () => {
-    setIsSaving(true);
-    try {
-      const { apiPost } = await import("../../../../../api.js");
-      await apiPost("clients/repair-account/");
-      toast({
-        title: "Account Repaired",
-        description: "Your profiles have been merged and your records are now linked.",
-        status: "success",
-        duration: 4000,
-      });
-      setTimeout(() => window.location.reload(), 1500);
-    } catch (error) {
-      toast({
-        title: "Repair Failed",
-        description: error.response?.data?.detail || "Something went wrong during the repair process.",
-        status: "error",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   if (!isMounted || authLoading) {
     return (
       <Center h="60vh">
@@ -126,22 +104,91 @@ export default function ProfileClient() {
   };
 
   const handlePhotoUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    const formDataUpload = new FormData();
-    formDataUpload.append('profile_image', file);
-    
+    // Instant local preview for immediate visual feedback
+    const localUrl = URL.createObjectURL(file);
+    setPreviewPhoto(localUrl);
     setIsSaving(true);
+
     try {
-      const { apiPatch: apiPatchMulti } = await import("../../../../../api.js");
-      await apiPatchMulti(`clients/${clientProfile.id}/`, formDataUpload);
-      toast({ title: "Photo updated", status: "success" });
-      setTimeout(() => window.location.reload(), 1000);
+      // 1. Upload via Next.js API route (saves to Clerk CDN & PostgreSQL database)
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+      if (formData.email || clientProfile?.email) {
+        uploadFormData.append("email", formData.email || clientProfile?.email);
+      }
+      if (clientProfile?.id) {
+        uploadFormData.append("clientId", String(clientProfile.id));
+      }
+      if (user?.id) {
+        uploadFormData.append("userId", String(user.id));
+      }
+
+      const res = await fetch("/api/profile/upload-photo", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(resData.error || "Failed to upload photo to server.");
+      }
+
+      if (resData.imageUrl) {
+        setPreviewPhoto(resData.imageUrl);
+      }
+
+      // 2. Also update Clerk client user object directly if available
+      if (user && typeof user.setProfileImage === "function") {
+        try {
+          await user.setProfileImage({ file });
+        } catch (clerkErr) {
+          console.warn("Clerk user.setProfileImage notice:", clerkErr);
+        }
+      }
+
+      // 3. Fallback sync to Django backend (including name & email so partial validation succeeds)
+      try {
+        const { apiPatchForm } = await import("../../../../../api.js");
+        const djangoForm = new FormData();
+        djangoForm.append("profile_image", file);
+        if (formData.name) djangoForm.append("name", formData.name);
+        if (formData.email) djangoForm.append("email", formData.email);
+        const targetEndpoint = clientProfile?.id ? `clients/${clientProfile.id}/` : `clients/me/`;
+        await apiPatchForm(targetEndpoint, djangoForm);
+      } catch (djangoErr) {
+        console.warn("Django patch notice (handled by DB route):", djangoErr);
+      }
+
+      toast({
+        title: "Photo updated",
+        description: "Your profile picture has been updated successfully.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Reload after slight delay to let auth tokens and profile re-sync
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
     } catch (err) {
-      toast({ title: "Upload failed", status: "error" });
+      console.error("Profile photo upload failed:", err);
+      toast({
+        title: "Upload failed",
+        description: err.message || "An unexpected error occurred while uploading your photo.",
+        status: "error",
+        duration: 6000,
+        isClosable: true,
+      });
+      setPreviewPhoto(null);
     } finally {
       setIsSaving(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -216,7 +263,7 @@ export default function ProfileClient() {
                 My Profile
               </Heading>
               <Text color="#5A6E65" fontSize="13px" fontWeight="400">
-                Manage your personal details, contact preferences, and clinical records link.
+                Manage your personal details, contact preferences, and profile display.
               </Text>
             </VStack>
           </HStack>
@@ -278,7 +325,7 @@ export default function ProfileClient() {
                 <Avatar 
                   size="2xl" 
                   name={formData.name || "Client"} 
-                  src={clientProfile?.profile_image} 
+                  src={previewPhoto || user?.imageUrl || clientProfile?.profile_image} 
                   bg="#56756D"
                   color="white"
                   border="4px solid white" 
@@ -342,48 +389,6 @@ export default function ProfileClient() {
                 </HStack>
               </VStack>
             </VStack>
-          </Box>
-          
-          {/* 🔗 Clinical Records Callout */}
-          <Box 
-            p={5} 
-            bg="rgba(86, 117, 109, 0.04)" 
-            borderRadius="2xl"
-            border="1px solid rgba(86, 117, 109, 0.15)"
-          >
-            <HStack mb={2.5} spacing={2.5}>
-              <Circle size="28px" bg="rgba(86, 117, 109, 0.1)" color="#56756D">
-                <Icon as={FiAlertCircle} boxSize="14px" />
-              </Circle>
-              <Text 
-                fontWeight="600" 
-                fontSize="13.5px" 
-                color="#263A33" 
-                fontFamily="'Outfit', var(--font-outfit), sans-serif"
-              >
-                Clinical Records Link
-              </Text>
-            </HStack>
-            <Text fontSize="12.5px" color="#5A6E65" lineHeight="1.5" mb={3.5}>
-              Updating your email will automatically link your account to existing therapeutic records and clinical history matching that address.
-            </Text>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              borderColor="rgba(86, 117, 109, 0.3)"
-              color="#263A33"
-              w="full" 
-              borderRadius="full"
-              fontSize="12.5px"
-              fontWeight="600"
-              height="34px"
-              onClick={handleRepair}
-              isLoading={isSaving}
-              loadingText="Repairing..."
-              _hover={{ bg: "rgba(86, 117, 109, 0.08)", borderColor: "#56756D" }}
-            >
-              Repair & Merge Records
-            </Button>
           </Box>
         </VStack>
 

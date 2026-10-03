@@ -36,17 +36,84 @@ export default function BookNowClient() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.name?.trim()) {
+      toast({
+        title: "Full Name Required",
+        description: "Please enter your full name.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!formData.phone?.trim()) {
+      toast({
+        title: "Phone Number Required",
+        description: "Please enter your WhatsApp or phone number.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!formData.email?.trim()) {
+      toast({
+        title: "Email Address Required",
+        description: "Please enter your email address so we can confirm your request.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!formData.service) {
+      toast({
+        title: "Care Type Required",
+        description: "Please select a therapy modality or care type.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Map slot to valid TimeField format (HH:MM:SS) for PostgreSQL/Django
+      let mappedTime = null;
+      let slotNote = "";
+      if (formData.time === "Morning") {
+        mappedTime = "09:00:00";
+        slotNote = "Preferred Time: Morning (9 AM – 12 PM)";
+      } else if (formData.time === "Afternoon") {
+        mappedTime = "13:00:00";
+        slotNote = "Preferred Time: Afternoon (12 PM – 4 PM)";
+      } else if (formData.time === "Evening") {
+        mappedTime = "17:00:00";
+        slotNote = "Preferred Time: Evening (4 PM – 8 PM)";
+      } else if (formData.time === "Weekend") {
+        mappedTime = null;
+        slotNote = "Preferred Time: Weekend Preferred";
+      } else if (formData.time && formData.time.includes(":")) {
+        mappedTime = formData.time;
+      }
+
+      const combinedNotes = [slotNote, formData.notes?.trim()].filter(Boolean).join("\n");
+
       await apiPost("quick-bookings/", {
-        full_name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
+        full_name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
         preferred_date: formData.date || null,
-        preferred_time: formData.time || null,
+        preferred_time: mappedTime,
         service_type: formData.service,
-        notes: formData.notes,
+        notes: combinedNotes || null,
       });
+
       toast({
         title: "Booking Request Received 🌿",
         description: "Our clinical coordination team will reach out within 24 hours.",
@@ -64,11 +131,18 @@ export default function BookNowClient() {
         notes: "",
       });
     } catch (err) {
+      console.error("Booking submission error:", err);
+      const detail = err.response?.data?.preferred_time?.[0] || 
+                     err.response?.data?.service_type?.[0] || 
+                     err.response?.data?.email?.[0] || 
+                     err.response?.data?.phone?.[0] ||
+                     err.message || 
+                     "Something went wrong while sending your request. Please try again or email us directly.";
       toast({
         title: "Submission Error",
-        description: "Something went wrong while sending your request. Please try again or email us directly.",
+        description: detail,
         status: "error",
-        duration: 4000,
+        duration: 5000,
         isClosable: true,
       });
     } finally {
@@ -493,7 +567,7 @@ export default function BookNowClient() {
                 <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3.5} w="full">
                   <FormControl isRequired>
                     <FormLabel fontSize="11.5px" fontWeight="600" color="#3D5A52" fontFamily="'Inter', sans-serif" mb={1} letterSpacing="0.02em">
-                      FULL NAME *
+                      FULL NAME
                     </FormLabel>
                     <Input 
                       placeholder="e.g. Jane Sharma" 
@@ -512,7 +586,7 @@ export default function BookNowClient() {
 
                   <FormControl isRequired>
                     <FormLabel fontSize="11.5px" fontWeight="600" color="#3D5A52" fontFamily="'Inter', sans-serif" mb={1} letterSpacing="0.02em">
-                      WHATSAPP / PHONE *
+                      WHATSAPP / PHONE
                     </FormLabel>
                     <Input 
                       placeholder="+91 98765 43210" 
@@ -534,7 +608,7 @@ export default function BookNowClient() {
                 <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3.5} w="full">
                   <FormControl isRequired>
                     <FormLabel fontSize="11.5px" fontWeight="600" color="#3D5A52" fontFamily="'Inter', sans-serif" mb={1} letterSpacing="0.02em">
-                      EMAIL ADDRESS *
+                      EMAIL ADDRESS
                     </FormLabel>
                     <Input 
                       type="email" 
@@ -554,7 +628,7 @@ export default function BookNowClient() {
 
                   <FormControl isRequired>
                     <FormLabel fontSize="11.5px" fontWeight="600" color="#3D5A52" fontFamily="'Inter', sans-serif" mb={1} letterSpacing="0.02em">
-                      CARE TYPE *
+                      CARE TYPE
                     </FormLabel>
                     <ModernSelect
                       value={formData.service}

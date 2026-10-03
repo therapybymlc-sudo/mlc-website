@@ -398,7 +398,13 @@ export default function SidebarContent({ links, pathname, signOut, onClose }) {
               borderRadius="full"
               color="#56756D"
               aria-label="Sign Out"
-              onClick={() => signOut()}
+              onClick={() => {
+                if (typeof signOut === 'function') {
+                  signOut({ redirectUrl: '/login' });
+                } else if (typeof window !== 'undefined') {
+                  window.location.href = '/login';
+                }
+              }}
               _hover={{ bg: 'red.50', color: 'red.600' }}
             />
           </Tooltip>
